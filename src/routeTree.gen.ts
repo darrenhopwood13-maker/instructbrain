@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as ReportsIdRouteImport } from './routes/reports.$id'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthAcceptInviteRoute = AuthAcceptInviteRouteImport.update({
   id: '/auth/accept-invite',
   path: '/auth/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSignInRoute = AuthSignInRouteImport.update({
@@ -56,6 +62,7 @@ const SettingsOrganisationRoute = SettingsOrganisationRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth/accept-invite'
+    | '/auth/callback'
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth/accept-invite'
+    | '/auth/callback'
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth/accept-invite'
+    | '/auth/callback'
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSignInRoute: typeof AuthSignInRoute
   ProjectsIdRoute: typeof ProjectsIdRoute
   ReportsIdRoute: typeof ReportsIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/accept-invite'
       fullPath: '/auth/accept-invite'
       preLoaderRoute: typeof AuthAcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/sign-in': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   AuthSignInRoute: AuthSignInRoute,
   ProjectsIdRoute: ProjectsIdRoute,
   ReportsIdRoute: ReportsIdRoute,
