@@ -59,7 +59,9 @@ function from(table: string) {
 /* Snapshot coercion                                                    */
 /* ------------------------------------------------------------------ */
 
-export { coerceSnapshot } from "@/lib/report/snapshot";
+import { coerceSnapshot } from "@/lib/report/snapshot";
+export { coerceSnapshot };
+
 
 
 /* ------------------------------------------------------------------ */
