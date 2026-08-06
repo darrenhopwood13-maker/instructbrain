@@ -1,14 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  SchemaValidationError,
+  draftsFromEnvelope,
+  envelopeJsonSchema,
+  needsEscalation,
   notAssessedDraft,
-  observationJsonSchema,
-  parseObservations,
+  parseEnvelope,
   toDraftFinding,
+  type Envelope,
   type Observation,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { mapWithConcurrency } from "@/lib/ai/provider.server";
+import { toneOfStatus } from "@/lib/survey-types";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+
+/** Fixtures live in the test file. No invented data exists in src/ outside tests. */
 
 const roofing: SurveyTypeSnapshot = {
   id: "weatherproofing",
@@ -20,6 +27,7 @@ const roofing: SurveyTypeSnapshot = {
     { id: "defective", label: "Not weathertight", tone: "fail" },
   ],
   hazardCategories: [{ id: "flashing", label: "Flashing", defaultTrades: ["Roofing"] }],
+  regulatoryReferences: [{ id: "bs8217", label: "BS 8217 Reinforced bitumen membranes" }],
   aiGuidance: { focus: "Assess the weathering detail only." },
 };
 
@@ -31,70 +39,133 @@ const siteWalk: SurveyTypeSnapshot = {
   statuses: [{ id: "observation", label: "Observation", tone: "neutral" }],
 };
 
+const options = { confidenceThreshold: 0.6, tradeConfidenceThreshold: 0.6, tier: "triage" };
+
 function observation(overrides: Partial<Observation> = {}): Observation {
   return {
+    category: null,
     status: "compliant",
     confidence: 0.9,
-    category: null,
+    finding: "Lead flashing dressed correctly into the brick joint.",
     severity: null,
-    observation: "Lead flashing dressed correctly into the brick joint.",
+    severity_rationale: null,
     remedial: null,
+    suggested_trade: null,
+    trade_reasoning: null,
+    trade_confidence: null,
+    region: null,
+    involves_person: false,
     likely_cause: null,
     regulatory_reference: null,
-    suggested_trade: null,
-    trade_confidence: null,
-    trade_reasoning: null,
-    involves_person: null,
     ...overrides,
   };
 }
 
-describe("AI failure never becomes a pass", () => {
+function envelope(overrides: Partial<Envelope> = {}): Envelope {
+  return { assessable: true, abstain_reason: null, observations: [observation()], ...overrides };
+}
+
+const isPass = (status: string) => toneOfStatus(roofing, status) === "pass";
+
+describe("invariant 1 — AI failure never becomes a pass", () => {
   it("keeps a confident, recognised status", () => {
-    expect(toDraftFinding(observation(), roofing, thresholds).status).toBe("compliant");
+    expect(toDraftFinding(observation(), roofing, options).status).toBe("compliant");
   });
 
-  it("routes low confidence to not_assessed", () => {
-    const draft = toDraftFinding(observation({ confidence: 0.4 }), roofing, thresholds);
+  it.each([
+    ["low confidence", observation({ confidence: 0.4 })],
+    ["absent confidence", observation({ confidence: null })],
+    ["an unrecognised status", observation({ status: "looks_fine_to_me" })],
+    ["a null status", observation({ status: null })],
+  ])("routes %s to not_assessed", (_label, input) => {
+    const draft = toDraftFinding(input, roofing, options);
     expect(draft.status).toBe("not_assessed");
+    expect(isPass(draft.status)).toBe(false);
   });
 
-  it("routes a null confidence to not_assessed", () => {
-    expect(toDraftFinding(observation({ confidence: null }), roofing, thresholds).status).toBe(
-      "not_assessed",
-    );
-  });
-
-  it("routes an unknown status to not_assessed, never to a passing status", () => {
-    const draft = toDraftFinding(
-      observation({ status: "looks_fine_to_me" }),
+  it("routes assessable:false to not_assessed and keeps the abstain reason", () => {
+    const drafts = draftsFromEnvelope(
+      envelope({ assessable: false, abstain_reason: "the photograph is too dark to read." }),
       roofing,
-      thresholds,
+      options,
     );
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]!.status).toBe("not_assessed");
+    expect(drafts[0]!.ai_abstain_reason).toContain("too dark");
+  });
+
+  it("rejects an empty observations array on a single-finding type", () => {
+    const drafts = draftsFromEnvelope(envelope({ observations: [] }), roofing, options);
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]!.status).toBe("not_assessed");
+  });
+
+  it("accepts an empty array on a multi-finding type", () => {
+    expect(draftsFromEnvelope(envelope({ observations: [] }), siteWalk, options)).toEqual([]);
+  });
+
+  it("rejects two observations on a single-finding type", () => {
+    const drafts = draftsFromEnvelope(
+      envelope({ observations: [observation(), observation()] }),
+      roofing,
+      options,
+    );
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]!.status).toBe("not_assessed");
+  });
+
+  it("does not throw uncaught on malformed JSON, and preserves the reason", () => {
+    let draft;
+    try {
+      parseEnvelope("not json at all");
+      throw new Error("parseEnvelope should have rejected this");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SchemaValidationError);
+      draft = notAssessedDraft((error as Error).message, "triage");
+    }
     expect(draft.status).toBe("not_assessed");
+    expect(isPass(draft.status)).toBe(false);
+    expect(draft.finding_text).toContain("not an object");
   });
 
-  it("yields nothing from malformed provider output", () => {
-    expect(parseObservations("not json at all")).toEqual([]);
-    expect(parseObservations({ observations: "nope" })).toEqual([]);
-    expect(parseObservations(null)).toEqual([]);
-  });
-
-  it("marks an error as not_assessed with a readable reason", () => {
-    const draft = notAssessedDraft("the provider returned 500.");
+  it("marks a transport error as not_assessed with a readable reason", () => {
+    const draft = notAssessedDraft("the provider returned 500.", "escalation");
     expect(draft.status).toBe("not_assessed");
     expect(draft.finding_text).toContain("the provider returned 500.");
+    expect(draft.ai_tier).toBe("escalation");
   });
 });
 
-const thresholds = { confidenceThreshold: 0.6, tradeConfidenceThreshold: 0.6 };
+describe("escalation", () => {
+  it("escalates low confidence, abstentions and fail-tone results", () => {
+    expect(needsEscalation(envelope({ assessable: false }), roofing, 0.6)).toBe(true);
+    expect(
+      needsEscalation(envelope({ observations: [observation({ confidence: 0.3 })] }), roofing, 0.6),
+    ).toBe(true);
+    expect(
+      needsEscalation(
+        envelope({ observations: [observation({ status: "defective" })] }),
+        roofing,
+        0.6,
+      ),
+    ).toBe(true);
+  });
 
-describe("trade attribution is a suggestion", () => {
+  it("leaves a confident pass alone", () => {
+    expect(needsEscalation(envelope(), roofing, 0.6)).toBe(false);
+  });
+});
+
+describe("invariant 6 — trade attribution is a suggestion", () => {
   it("never writes assigned_trade", () => {
     const draft = toDraftFinding(
-      observation({ suggested_trade: "Roofing", trade_confidence: 0.9, trade_reasoning: "Lead detail." }),
+      observation({
+        suggested_trade: "Roofing",
+        trade_confidence: 0.9,
+        trade_reasoning: "Lead detail.",
+      }),
       roofing,
-      thresholds,
+      options,
     );
     expect(draft).not.toHaveProperty("assigned_trade");
     expect(draft.ai_suggested_trade).toBe("Roofing");
@@ -105,16 +176,16 @@ describe("trade attribution is a suggestion", () => {
     const draft = toDraftFinding(
       observation({ suggested_trade: "Roofing", trade_confidence: 0.2 }),
       roofing,
-      thresholds,
+      options,
     );
     expect(draft.ai_suggested_trade).toBeNull();
   });
 });
 
-describe("people are handled separately", () => {
+describe("invariant 7 — people are handled separately", () => {
   it("marks an observation involving a person as confidential", () => {
-    const draft = toDraftFinding(observation({ involves_person: true }), roofing, thresholds);
-    expect(draft.is_confidential).toBe(true);
+    expect(toDraftFinding(observation({ involves_person: true }), roofing, options).is_confidential)
+      .toBe(true);
   });
 
   it("instructs the model never to describe a person", () => {
@@ -122,20 +193,58 @@ describe("people are handled separately", () => {
   });
 });
 
-describe("no discipline's vocabulary leaks", () => {
+describe("regulatory references", () => {
+  it("keeps a reference the definition supplies", () => {
+    const draft = toDraftFinding(
+      observation({ regulatory_reference: "bs8217" }),
+      roofing,
+      options,
+    );
+    expect(draft.regulatory_reference).toBe("bs8217");
+  });
+
+  it("discards an invented reference rather than storing it", () => {
+    const draft = toDraftFinding(
+      observation({ regulatory_reference: "bs9999_invented" }),
+      roofing,
+      options,
+    );
+    expect(draft.regulatory_reference).toBeNull();
+  });
+});
+
+describe("invariant 5 — no discipline's vocabulary leaks", () => {
   it("only offers the statuses the definition declares, plus not_assessed", () => {
-    const schema = observationJsonSchema(roofing);
-    const statuses = schema.properties.observations.items.properties.status.enum as string[];
-    expect(statuses).toContain("compliant");
-    expect(statuses).toContain("not_assessed");
-    expect(statuses).not.toContain("observation");
+    const schema = envelopeJsonSchema(roofing);
+    const statuses = schema.properties.observations.items.properties["status"] as {
+      enum: string[];
+    };
+    expect(statuses.enum).toContain("compliant");
+    expect(statuses.enum).toContain("not_assessed");
+    expect(statuses.enum).not.toContain("observation");
   });
 
   it("keeps one definition's words out of another's prompt", () => {
     const walk = buildSystemPrompt(siteWalk);
     expect(walk).not.toContain("Weathertight");
     expect(walk).not.toContain("Flashing");
+    expect(walk).not.toContain("BS 8217");
     expect(buildSystemPrompt(roofing)).toContain("Weathertight");
+  });
+
+  it("shares no distinctive term between two definitions' prompts", () => {
+    const distinctive = (text: string) =>
+      new Set(
+        text
+          .toLowerCase()
+          .split(/[^a-z0-9_]+/)
+          .filter((word) => word.length > 6),
+      );
+    const roofingWords = distinctive(buildSystemPrompt(roofing));
+    const walkWords = distinctive(buildSystemPrompt(siteWalk));
+    for (const term of ["weathertight", "weatherproofing", "flashing", "bitumen"]) {
+      expect(roofingWords.has(term) && walkWords.has(term)).toBe(false);
+    }
   });
 
   it("tells a single-finding type to return at most one entry", () => {
