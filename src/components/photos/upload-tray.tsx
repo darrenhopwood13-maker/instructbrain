@@ -22,8 +22,8 @@ const stateLabels: Record<UploadItem["state"], string> = {
 
 function StateIcon({ state }: { state: UploadItem["state"] }) {
   if (state === "done" || state === "skipped")
-    return <Check aria-hidden="true" className="size-4 text-pass-foreground" />;
-  if (state === "error") return <X aria-hidden="true" className="size-4 text-fail-foreground" />;
+    return <Check aria-hidden="true" className="size-4 text-pass" />;
+  if (state === "error") return <X aria-hidden="true" className="size-4 text-fail" />;
   if (state === "cancelled")
     return <ImageOff aria-hidden="true" className="size-4 text-muted-foreground" />;
   return <Clock aria-hidden="true" className="size-4 text-muted-foreground" />;
@@ -88,7 +88,7 @@ export function UploadTray({
       />
 
       {failed.length > 0 ? (
-        <p className="mt-3 flex items-start gap-2 rounded-md border border-fail bg-fail-muted p-2.5 text-sm text-fail-foreground">
+        <p className="mt-3 flex items-start gap-2 rounded-md border border-fail bg-fail-soft p-2.5 text-sm text-fail">
           <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>
             {failed.length} photograph{failed.length === 1 ? "" : "s"} did not reach storage. They

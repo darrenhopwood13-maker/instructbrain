@@ -91,7 +91,7 @@ export function PhotoGrid({
               <p
                 className={
                   "mt-1 flex items-center gap-1.5 text-xs " +
-                  (capture.missing ? "text-warn-foreground" : "text-muted-foreground")
+                  (capture.missing ? "text-warn" : "text-muted-foreground")
                 }
               >
                 {capture.missing ? (

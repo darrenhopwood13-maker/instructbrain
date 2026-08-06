@@ -47,7 +47,7 @@ export function CaptureFieldsForm({
                 </span>
               ) : null}
               {missing ? (
-                <span className="text-xs font-medium text-warn-foreground">Not yet completed</span>
+                <span className="text-xs font-medium text-warn">Not yet completed</span>
               ) : null}
             </Label>
 
