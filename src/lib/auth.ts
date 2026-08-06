@@ -141,6 +141,13 @@ export async function requestPasswordReset(email: string) {
   if (error) throw error;
 }
 
+/** First user to arrive creates their organisation and becomes its owner. */
+export async function createOrganisation(name: string) {
+  const { data, error } = await supabase.rpc("create_organisation", { _name: name });
+  if (error) throw error;
+  return data;
+}
+
 export async function setOwnPassword(password: string) {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
