@@ -7,8 +7,8 @@
  * parameter "for consistency" and silently destroy the analysis path — a 2mm
  * sealant gap does not survive a resize, and that is the entire product.
  *
- * There is intentionally no import from "@/lib/photos/thumbnail" here, and a
- * test asserts that stays true.
+ * Nothing in this file may import the thumbnail module, and a test asserts
+ * that stays true.
  *
  * This derivative exists for one reason only: vision models cannot read HEIC /
  * HEIF / AVIF. A JPEG source is NEVER re-encoded — it is passed through
