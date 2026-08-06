@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
-        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link to="/" className="flex min-w-0 items-center gap-2.5 rounded-md">
             <span
               aria-hidden="true"
@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </span>
           </Link>
-          <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
+          <nav aria-label="Primary" className="ml-auto hidden items-center gap-1 sm:flex">
             {nav.map((item) => (
               <Link
                 key={item.to}
