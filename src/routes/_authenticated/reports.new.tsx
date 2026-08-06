@@ -185,6 +185,9 @@ function NewReport() {
           <Label htmlFor="report-title">Report title</Label>
           <Input
             id="report-title"
+            name="report-title-new"
+            autoComplete="off"
+            data-form-type="other"
             required
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -200,10 +203,14 @@ function NewReport() {
           <Label htmlFor="report-reference">Report reference</Label>
           <Input
             id="report-reference"
+            name="report-reference-new"
+            autoComplete="off"
+            data-form-type="other"
             value={reference}
             onChange={(event) => setReference(event.target.value)}
           />
         </div>
+
       </section>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
