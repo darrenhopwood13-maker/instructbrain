@@ -87,7 +87,21 @@ export function ReviewList({
   );
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLUListElement>) => {
+    // Never steal a keystroke from a field, and never fire while a pop-out
+    // dialog owns the screen — on a phone the on-screen keyboard is a field.
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName))
+    ) {
+      return;
+    }
+    if (typeof window !== "undefined" && window.document.querySelector("[data-radix-focus-guard]")) {
+      return;
+    }
     const key = event.key.toLowerCase();
+
     if (key === "j" || event.key === "ArrowDown") {
       event.preventDefault();
       setActive((i) => Math.min(i + 1, items.length - 1));
