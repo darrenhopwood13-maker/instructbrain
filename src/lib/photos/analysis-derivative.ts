@@ -3,7 +3,7 @@
  *
  * WHY THIS IS ITS OWN MODULE, DELIBERATELY SHARING NOTHING WITH thumbnail.ts:
  * the thumbnail module exists to DOWNSCALE. This module must NEVER downscale.
- * If the two ever shared a helper, someone would later add a `maxEdge`
+ * If the two ever shared a helper, someone would later add a max-edge
  * parameter "for consistency" and silently destroy the analysis path — a 2mm
  * sealant gap does not survive a resize, and that is the entire product.
  *
