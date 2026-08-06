@@ -1,4 +1,4 @@
-import type { Finding } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
 
 /**
  * Invariant 7: findings involving a person are confidential and are EXCLUDED

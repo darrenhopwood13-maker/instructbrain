@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Camera, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { getProject, projects } from "@/lib/mock-data";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ErrorState, LoadingState } from "@/components/query-states";
+import { EmptyState } from "@/components/empty-state";
+import { FolderOpen } from "lucide-react";
+import { createReport, projectsQuery } from "@/lib/data";
+import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
   captureFieldsOf,
@@ -20,7 +27,7 @@ import { toast } from "sonner";
 
 type NewReportSearch = { project?: string | undefined };
 
-export const Route = createFileRoute("/reports/new")({
+export const Route = createFileRoute("/_authenticated/reports/new")({
   validateSearch: (search: Record<string, unknown>): NewReportSearch => ({
     project: typeof search["project"] === "string" ? search["project"] : undefined,
   }),
@@ -43,23 +50,55 @@ export const Route = createFileRoute("/reports/new")({
 });
 
 function NewReport() {
-  const { project: projectId } = Route.useSearch();
+  const { project: projectParam } = Route.useSearch();
   const navigate = useNavigate();
-  const project = projectId ? getProject(projectId) : undefined;
+  const queryClient = useQueryClient();
+  const { organisationIds, organisationId, userId } = useOrganisations();
+  const projects = useQuery(projectsQuery(organisationIds));
+
   const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
+  const [projectId, setProjectId] = useState<string>(projectParam ?? "");
+  const [title, setTitle] = useState("");
+  const [reference, setReference] = useState("");
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
+  const projectList = projects.data ?? [];
+  const project = useMemo(
+    () => projectList.find((item) => item.id === (projectId || projectParam)),
+    [projectList, projectId, projectParam],
+  );
+  const effectiveProjectId = projectId || projectParam || "";
+  const titleInvalid = title.trim().length === 0;
 
-  const start = () => {
-    if (!selected) return;
-    // The definition is COPIED into the report at creation; the report never
-    // reads a live definition again.
-    const snapshot = snapshotOf(selected);
-    toast.success(`${snapshot.label} report started`, {
-      description: "The survey type is frozen into this report. Upload photographs next.",
-    });
-    void navigate({ to: "/reports/$id", params: { id: "r-8801" } });
-  };
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!selected) throw new Error("Choose a survey type first.");
+      if (!organisationId) throw new Error("You are not a member of an organisation yet.");
+      if (!effectiveProjectId) throw new Error("Choose the project this report belongs to.");
+      // The definition is COPIED into the report at creation; the report never
+      // reads a live definition again.
+      return createReport({
+        organisationId,
+        projectId: effectiveProjectId,
+        title,
+        reference,
+        definition: snapshotOf(selected),
+        authorId: userId,
+      });
+    },
+    onSuccess: async (reportId) => {
+      await queryClient.invalidateQueries({ queryKey: ["reports", "project", effectiveProjectId] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Report started", {
+        description: "The survey type is frozen into this report. Upload photographs next.",
+      });
+      void navigate({
+        to: "/reports/$id",
+        params: { id: reportId },
+        search: { tab: "photos" },
+      });
+    },
+  });
 
   return (
     <AppShell>
@@ -96,22 +135,78 @@ function NewReport() {
           severity scale and the sections of the issued document. Choose it before uploading, and
           it is frozen into this report.
         </p>
-        {project ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            For {project.name} ({project.reference})
-          </p>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            No project selected — pick one from{" "}
-            <Link to="/" className="font-semibold underline">
-              your {projects.length} projects
-            </Link>{" "}
-            first.
-          </p>
-        )}
       </header>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <section aria-labelledby="report-details" className="mt-6 max-w-2xl space-y-4">
+        <h2 id="report-details" className="editorial-title text-lg font-semibold">
+          Report details
+        </h2>
+
+        {projects.isPending ? (
+          <LoadingState label="Loading your projects…" />
+        ) : projects.isError ? (
+          <ErrorState
+            title="Your projects could not be loaded"
+            error={projects.error}
+            onRetry={() => void projects.refetch()}
+          />
+        ) : projectList.length === 0 ? (
+          <EmptyState
+            icon={FolderOpen}
+            eyebrow="No projects"
+            title="Create a project first"
+            description="A report always belongs to a project. Create one, then come back and start the report."
+            action={
+              <Button variant="brand" asChild>
+                <Link to="/">Go to projects</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="report-project">Project</Label>
+            <select
+              id="report-project"
+              value={effectiveProjectId}
+              onChange={(event) => setProjectId(event.target.value)}
+              className="h-11 w-full rounded-md border border-border bg-surface-raised px-3 text-sm"
+            >
+              <option value="">Select a project…</option>
+              {projectList.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} ({item.reference})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="report-title">Report title</Label>
+          <Input
+            id="report-title"
+            required
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            aria-invalid={titleInvalid || undefined}
+            aria-describedby="report-title-help"
+          />
+          <p id="report-title-help" className="text-xs text-muted-foreground">
+            Required. For example, the level, block or area this survey covers.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="report-reference">Report reference</Label>
+          <Input
+            id="report-reference"
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+          />
+        </div>
+      </section>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <fieldset>
           <legend className="editorial-title text-lg font-semibold">Survey types</legend>
           <div role="radiogroup" aria-label="Survey type" className="mt-3 space-y-3">
@@ -220,10 +315,20 @@ function NewReport() {
         ) : null}
       </div>
 
+      {mutation.error ? (
+        <div className="mt-6">
+          <ErrorState title="The report could not be created" error={mutation.error} />
+        </div>
+      ) : null}
+
       <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-6">
-        <Button variant="brand" onClick={start} disabled={!selected}>
+        <Button
+          variant="brand"
+          onClick={() => mutation.mutate()}
+          disabled={!selected || !effectiveProjectId || titleInvalid || mutation.isPending}
+        >
           <Camera aria-hidden="true" />
-          Start report and upload photographs
+          {mutation.isPending ? "Creating…" : "Start report and upload photographs"}
           <ArrowRight aria-hidden="true" />
         </Button>
         <p className="text-sm text-muted-foreground">

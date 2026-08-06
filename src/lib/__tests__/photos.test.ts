@@ -11,7 +11,7 @@ import {
 } from "@/lib/photos/storage-paths";
 import { overallProgress, runUploadQueue } from "@/lib/photos/upload-queue";
 import { detachPhoto, nextRef } from "@/lib/finding-refs";
-import type { Finding } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
 /* Synthetic JPEGs                                                     */

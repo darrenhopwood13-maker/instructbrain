@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { findings as seedFindings, type Finding } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
 import {
   NOT_ASSESSED_ID,
   definesField,
@@ -27,10 +27,10 @@ import { toast } from "sonner";
  */
 export function ReviewList({
   snapshot,
-  initialFindings = seedFindings,
+  findings,
 }: {
   snapshot: SurveyTypeSnapshot;
-  initialFindings?: Finding[];
+  findings: Finding[];
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -41,7 +41,7 @@ export function ReviewList({
 
   // Unresolved `not_assessed` items sort to the top of the queue.
   const [items, setItems] = useState<Finding[]>(() =>
-    [...initialFindings].sort((a, b) => {
+    [...findings].sort((a, b) => {
       const aBlocked = resolveStatus(snapshot, a.status).id === NOT_ASSESSED_ID ? 0 : 1;
       const bBlocked = resolveStatus(snapshot, b.status).id === NOT_ASSESSED_ID ? 0 : 1;
       return aBlocked - bBlocked;
