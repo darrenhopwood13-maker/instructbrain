@@ -51,13 +51,13 @@ function OrganisationSettings() {
     if (!organisation) return;
     setName(organisation.name);
     setAddress(organisation.address ?? "");
-    if (organisation.brandColour) setBrand(organisation.brandColour);
+    if (organisation.brand_colour) setBrand(organisation.brand_colour);
   }, [organisation]);
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      return updateOrganisation(organisationId, { name, brandColour: brand, address });
+      return updateOrganisation(organisationId, { name, brand_colour: brand, address });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["organisation"] });
@@ -124,7 +124,7 @@ function OrganisationSettings() {
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold">
-                  {organisation?.logoPath ? "Logo uploaded" : "No logo uploaded"}
+                  {organisation?.logo_path ? "Logo uploaded" : "No logo uploaded"}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   PNG or SVG, at least 512px wide.
