@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as TmpAuditRouteImport } from './routes/tmp-audit'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -29,6 +30,11 @@ import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/pub
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TmpAuditRoute = TmpAuditRouteImport.update({
+  id: '/tmp-audit',
+  path: '/tmp-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -119,6 +125,7 @@ const ApiPublicSharedReportTokenRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/tmp-audit': typeof TmpAuditRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRoutesByTo {
+  '/tmp-audit': typeof TmpAuditRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/tmp-audit': typeof TmpAuditRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/tmp-audit'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/tmp-audit'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/tmp-audit'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  TmpAuditRoute: typeof TmpAuditRoute
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tmp-audit': {
+      id: '/tmp-audit'
+      path: '/tmp-audit'
+      fullPath: '/tmp-audit'
+      preLoaderRoute: typeof TmpAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -407,6 +427,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  TmpAuditRoute: TmpAuditRoute,
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
@@ -419,13 +440,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
