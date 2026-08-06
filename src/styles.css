@@ -70,65 +70,78 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
-  /* Navy console */
-  --background: oklch(0.22 0.06 262);
-  --foreground: oklch(0.97 0.008 262);
-  --surface: oklch(0.22 0.06 262);
-  --surface-raised: oklch(0.27 0.062 262);
-  --surface-sunken: oklch(0.19 0.055 262);
+  /* Layout rhythm, matched to instructSite (max-w 1280, px-6/lg:px-10, py-20) */
+  --container-max: 1280px;
+  --container-pad: 1.5rem;
+  --container-pad-lg: 2.5rem;
+  --section-y: 5rem;
+  --stack-gap: 1.5rem;
 
-  --card: oklch(0.27 0.062 262);
-  --card-foreground: oklch(0.97 0.008 262);
-  --popover: oklch(0.25 0.06 262);
-  --popover-foreground: oklch(0.97 0.008 262);
+  /* Royal navy console — instructSite hsl(220 55% 31%) family */
+  --background: oklch(0.386 0.105 262.6);
+  --foreground: oklch(0.985 0 0);
+  --surface: oklch(0.386 0.105 262.6);
+  --surface-raised: oklch(0.367 0.1 262.8);
+  --surface-sunken: oklch(0.342 0.091 262.9);
 
-  --brand-blue: oklch(0.32 0.08 262);
-  --brand-blue-soft: oklch(0.33 0.075 262);
-  --brand-blue-ink: oklch(0.93 0.03 262);
+  --card: oklch(0.356 0.076 262.6);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.356 0.076 262.6);
+  --popover-foreground: oklch(0.985 0 0);
 
-  /* Shiny orange accent — the single accent hue (instructSite family) */
-  --brand-accent: oklch(0.68 0.185 47);
-  --brand-accent-light: oklch(0.78 0.16 55);
-  --brand-accent-deep: oklch(0.56 0.16 42);
-  --brand-accent-soft: oklch(0.33 0.075 50);
-  --brand-accent-ink: oklch(0.87 0.11 65);
+  --brand-blue: oklch(0.386 0.105 262.6);
+  --brand-blue-soft: oklch(0.323 0.059 262.7);
+  --brand-blue-ink: oklch(0.887 0.011 261.8);
 
-  --gloss-highlight: oklch(1 0 0 / 38%);
+  /* Accent orange — instructSite #FF5E00 / hsl(22 100% 55%) */
+  --brand-accent: oklch(0.686 0.21 41.1);
+  --brand-accent-light: oklch(0.741 0.165 50.6);
+  --brand-accent-deep: oklch(0.626 0.2 38.2);
+  --brand-accent-soft: oklch(0.41 0.115 46.3);
+  /* Text-safe accent: 7.2:1 on the navy surface */
+  --brand-accent-ink: oklch(0.895 0.08 70.2);
+
+  --gloss-highlight: oklch(1 0 0 / 35%);
   --gradient-gloss: linear-gradient(
     180deg,
-    var(--brand-accent-light) 0%,
-    var(--brand-accent) 52%,
-    var(--brand-accent-deep) 100%
+    oklch(0.686 0.21 41.1 / 95%) 0%,
+    oklch(0.626 0.2 38.2 / 86%) 100%
+  );
+  --gradient-panel: linear-gradient(
+    180deg,
+    oklch(0.342 0.091 262.9 / 90%) 0%,
+    oklch(0.367 0.1 262.8 / 96%) 100%
   );
 
-  --primary: oklch(0.68 0.185 47);
-  --primary-foreground: oklch(0.16 0.04 55);
-  --secondary: oklch(0.31 0.062 262);
-  --secondary-foreground: oklch(0.95 0.01 262);
-  --muted: oklch(0.3 0.055 262);
-  --muted-foreground: oklch(0.79 0.022 262);
-  --accent: oklch(0.33 0.075 50);
-  --accent-foreground: oklch(0.9 0.1 65);
+  --primary: oklch(0.686 0.21 41.1);
+  --primary-foreground: oklch(0.198 0.037 264.2);
+  --secondary: oklch(0.323 0.059 262.7);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.417 0.06 263.1);
+  --muted-foreground: oklch(0.887 0.011 261.8);
+  --accent: oklch(0.41 0.115 46.3);
+  --accent-foreground: oklch(0.895 0.08 70.2);
   --destructive: oklch(0.58 0.2 25);
   --destructive-foreground: oklch(0.99 0.005 25);
 
-  --border: oklch(1 0 0 / 12%);
-  --border-strong: oklch(1 0 0 / 24%);
+  --border: oklch(1 0 0 / 14%);
+  --border-strong: oklch(0.686 0.21 41.1 / 62%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.78 0.16 55);
+  --ring: oklch(0.741 0.165 50.6);
 
-  /* Status — re-tuned for navy, kept clearly distinct from the orange accent */
-  --pass: oklch(0.84 0.17 158);
-  --pass-soft: oklch(0.34 0.09 158);
-  --fail: oklch(0.72 0.2 13);
-  --fail-soft: oklch(0.33 0.12 13);
-  --warn: oklch(0.92 0.17 105);
-  --warn-soft: oklch(0.36 0.08 105);
-  --flag: oklch(0.84 0.13 215);
-  --flag-soft: oklch(0.33 0.08 222);
+  /* Status — warn pushed to amber-yellow so it can never read as the accent */
+  --pass: oklch(0.86 0.17 158);
+  --pass-soft: oklch(0.38 0.09 158);
+  --fail: oklch(0.74 0.2 13);
+  --fail-soft: oklch(0.37 0.12 13);
+  --warn: oklch(0.93 0.16 103);
+  --warn-soft: oklch(0.4 0.08 103);
+  --flag: oklch(0.85 0.12 215);
+  --flag-soft: oklch(0.37 0.08 222);
 }
+
 
 /*
  * Paper scope — the legal-adjacent document. Any subtree marked `.paper`
