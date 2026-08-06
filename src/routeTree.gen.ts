@@ -14,11 +14,11 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
-import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
-import { Route as ReportsIdRouteImport } from './routes/reports.$id'
-import { Route as ReportsNewRouteImport } from './routes/reports.new'
-import { Route as SettingsDirectoryRouteImport } from './routes/settings.directory'
-import { Route as SettingsOrganisationRouteImport } from './routes/settings.organisation'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
+import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
+import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
+import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -44,53 +44,55 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProjectsIdRoute = ProjectsIdRouteImport.update({
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ReportsIdRoute = ReportsIdRouteImport.update({
+const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ReportsNewRoute = ReportsNewRouteImport.update({
+const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   id: '/reports/new',
   path: '/reports/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SettingsDirectoryRoute = SettingsDirectoryRouteImport.update({
-  id: '/settings/directory',
-  path: '/settings/directory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsOrganisationRoute = SettingsOrganisationRouteImport.update({
-  id: '/settings/organisation',
-  path: '/settings/organisation',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedSettingsDirectoryRoute =
+  AuthenticatedSettingsDirectoryRouteImport.update({
+    id: '/settings/directory',
+    path: '/settings/directory',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsOrganisationRoute =
+  AuthenticatedSettingsOrganisationRouteImport.update({
+    id: '/settings/organisation',
+    path: '/settings/organisation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
-  '/projects/$id': typeof ProjectsIdRoute
-  '/reports/$id': typeof ReportsIdRoute
-  '/reports/new': typeof ReportsNewRoute
-  '/settings/directory': typeof SettingsDirectoryRoute
-  '/settings/organisation': typeof SettingsOrganisationRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
+  '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
 }
 export interface FileRoutesByTo {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
-  '/projects/$id': typeof ProjectsIdRoute
-  '/reports/$id': typeof ReportsIdRoute
-  '/reports/new': typeof ReportsNewRoute
-  '/settings/directory': typeof SettingsDirectoryRoute
-  '/settings/organisation': typeof SettingsOrganisationRoute
   '/': typeof AuthenticatedIndexRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
+  '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,12 +100,12 @@ export interface FileRoutesById {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
-  '/projects/$id': typeof ProjectsIdRoute
-  '/reports/$id': typeof ReportsIdRoute
-  '/reports/new': typeof ReportsNewRoute
-  '/settings/directory': typeof SettingsDirectoryRoute
-  '/settings/organisation': typeof SettingsOrganisationRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
+  '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,24 +124,24 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/'
     | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
-    | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
-    | '/projects/$id'
-    | '/reports/$id'
-    | '/reports/new'
-    | '/settings/directory'
-    | '/settings/organisation'
     | '/_authenticated/'
+    | '/_authenticated/projects/$id'
+    | '/_authenticated/reports/$id'
+    | '/_authenticated/reports/new'
+    | '/_authenticated/settings/directory'
+    | '/_authenticated/settings/organisation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,11 +149,6 @@ export interface RootRouteChildren {
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSignInRoute: typeof AuthSignInRoute
-  ProjectsIdRoute: typeof ProjectsIdRoute
-  ReportsIdRoute: typeof ReportsIdRoute
-  ReportsNewRoute: typeof ReportsNewRoute
-  SettingsDirectoryRoute: typeof SettingsDirectoryRoute
-  SettingsOrganisationRoute: typeof SettingsOrganisationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,50 +188,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/projects/$id': {
-      id: '/projects/$id'
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
       path: '/projects/$id'
       fullPath: '/projects/$id'
-      preLoaderRoute: typeof ProjectsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/reports/$id': {
-      id: '/reports/$id'
+    '/_authenticated/reports/$id': {
+      id: '/_authenticated/reports/$id'
       path: '/reports/$id'
       fullPath: '/reports/$id'
-      preLoaderRoute: typeof ReportsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReportsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/reports/new': {
-      id: '/reports/new'
+    '/_authenticated/reports/new': {
+      id: '/_authenticated/reports/new'
       path: '/reports/new'
       fullPath: '/reports/new'
-      preLoaderRoute: typeof ReportsNewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReportsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/settings/directory': {
-      id: '/settings/directory'
+    '/_authenticated/settings/directory': {
+      id: '/_authenticated/settings/directory'
       path: '/settings/directory'
       fullPath: '/settings/directory'
-      preLoaderRoute: typeof SettingsDirectoryRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsDirectoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/settings/organisation': {
-      id: '/settings/organisation'
+    '/_authenticated/settings/organisation': {
+      id: '/_authenticated/settings/organisation'
       path: '/settings/organisation'
       fullPath: '/settings/organisation'
-      preLoaderRoute: typeof SettingsOrganisationRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsOrganisationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRoute
+  AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
+  AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedReportsIdRoute: AuthenticatedReportsIdRoute,
+  AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedSettingsDirectoryRoute: AuthenticatedSettingsDirectoryRoute,
+  AuthenticatedSettingsOrganisationRoute:
+    AuthenticatedSettingsOrganisationRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -245,11 +253,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSignInRoute: AuthSignInRoute,
-  ProjectsIdRoute: ProjectsIdRoute,
-  ReportsIdRoute: ReportsIdRoute,
-  ReportsNewRoute: ReportsNewRoute,
-  SettingsDirectoryRoute: SettingsDirectoryRoute,
-  SettingsOrganisationRoute: SettingsOrganisationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
