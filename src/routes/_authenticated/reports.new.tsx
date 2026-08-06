@@ -225,7 +225,7 @@ function NewReport() {
                   className={
                     "block cursor-pointer rounded-xl border bg-surface-raised p-4 transition-colors " +
                     (active
-                      ? "border-brand-purple ring-2 ring-brand-purple/30"
+                      ? "border-brand-accent ring-2 ring-brand-accent/30"
                       : "border-border hover:border-border-strong")
                   }
                 >
@@ -236,7 +236,7 @@ function NewReport() {
                       value={definition.id}
                       checked={active}
                       onChange={() => setSelectedId(definition.id)}
-                      className="mt-1 size-4 accent-[var(--brand-purple)]"
+                      className="mt-1 size-4 accent-[var(--brand-accent)]"
                     />
                     <span className="min-w-0">
                       <span className="block font-semibold">{definitionLabel(definition)}</span>

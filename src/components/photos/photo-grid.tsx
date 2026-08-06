@@ -46,14 +46,14 @@ export function PhotoGrid({
             key={photo.id}
             className={
               "overflow-hidden rounded-xl border bg-surface-raised shadow-raised transition-colors " +
-              (isSelected ? "border-brand-purple ring-2 ring-brand-purple/30" : "border-border")
+              (isSelected ? "border-brand-accent ring-2 ring-brand-accent/30" : "border-border")
             }
           >
             <div className="relative">
               <button
                 type="button"
                 onClick={() => onOpen(photo)}
-                className="block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+                className="block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
                 aria-label={`Open photograph ${photo.sequence}, ${photo.original_filename ?? "untitled"}`}
               >
                 {url ? (

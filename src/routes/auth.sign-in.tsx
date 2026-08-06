@@ -55,7 +55,7 @@ function SignIn() {
           Invited by a colleague?{" "}
           <Link
             to="/auth/accept-invite"
-            className="font-semibold text-brand-purple-ink underline underline-offset-2"
+            className="font-semibold text-brand-accent-ink underline underline-offset-2"
           >
             Accept your invitation
           </Link>

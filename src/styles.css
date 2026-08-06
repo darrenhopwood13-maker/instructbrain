@@ -34,11 +34,11 @@
   --color-brand-blue: var(--brand-blue);
   --color-brand-blue-soft: var(--brand-blue-soft);
   --color-brand-blue-ink: var(--brand-blue-ink);
-  --color-brand-purple: var(--brand-purple);
-  --color-brand-purple-soft: var(--brand-purple-soft);
-  --color-brand-purple-ink: var(--brand-purple-ink);
-  --color-brand-purple-light: var(--brand-purple-light);
-  --color-brand-purple-deep: var(--brand-purple-deep);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-soft: var(--brand-accent-soft);
+  --color-brand-accent-ink: var(--brand-accent-ink);
+  --color-brand-accent-light: var(--brand-accent-light);
+  --color-brand-accent-deep: var(--brand-accent-deep);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -89,18 +89,18 @@
   --brand-blue-ink: oklch(0.93 0.03 262);
 
   /* Shiny purple accent */
-  --brand-purple: oklch(0.55 0.24 295);
-  --brand-purple-light: oklch(0.66 0.21 297);
-  --brand-purple-deep: oklch(0.42 0.2 293);
-  --brand-purple-soft: oklch(0.34 0.1 295);
-  --brand-purple-ink: oklch(0.86 0.11 297);
+  --brand-accent: oklch(0.55 0.24 295);
+  --brand-accent-light: oklch(0.66 0.21 297);
+  --brand-accent-deep: oklch(0.42 0.2 293);
+  --brand-accent-soft: oklch(0.34 0.1 295);
+  --brand-accent-ink: oklch(0.86 0.11 297);
 
   --gloss-highlight: oklch(1 0 0 / 38%);
   --gradient-gloss: linear-gradient(
     180deg,
-    var(--brand-purple-light) 0%,
-    var(--brand-purple) 52%,
-    var(--brand-purple-deep) 100%
+    var(--brand-accent-light) 0%,
+    var(--brand-accent) 52%,
+    var(--brand-accent-deep) 100%
   );
 
   --primary: oklch(0.55 0.24 295);
@@ -150,11 +150,11 @@
   --brand-blue: oklch(0.46 0.15 258);
   --brand-blue-soft: oklch(0.95 0.028 258);
   --brand-blue-ink: oklch(0.3 0.09 258);
-  --brand-purple: oklch(0.48 0.21 295);
-  --brand-purple-light: oklch(0.58 0.21 297);
-  --brand-purple-deep: oklch(0.38 0.18 293);
-  --brand-purple-soft: oklch(0.955 0.03 297);
-  --brand-purple-ink: oklch(0.36 0.15 297);
+  --brand-accent: oklch(0.48 0.21 295);
+  --brand-accent-light: oklch(0.58 0.21 297);
+  --brand-accent-deep: oklch(0.38 0.18 293);
+  --brand-accent-soft: oklch(0.955 0.03 297);
+  --brand-accent-ink: oklch(0.36 0.15 297);
 
   --primary: oklch(0.46 0.15 258);
   --primary-foreground: oklch(0.99 0.003 258);
@@ -259,7 +259,7 @@
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--brand-purple-ink);
+  color: var(--brand-accent-ink);
 }
 
 @utility rule-top {

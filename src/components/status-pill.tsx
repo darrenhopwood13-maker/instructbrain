@@ -48,7 +48,7 @@ export function StatusPill({
 
 const reportStyles: Record<ReportStatus, string> = {
   draft: "bg-surface-sunken text-muted-foreground border-border",
-  in_review: "bg-brand-purple-soft text-brand-purple-ink border-brand-purple/25",
+  in_review: "bg-brand-accent-soft text-brand-accent-ink border-brand-accent/25",
   issued: "bg-brand-blue-soft text-brand-blue-ink border-brand-blue/25",
 };
 

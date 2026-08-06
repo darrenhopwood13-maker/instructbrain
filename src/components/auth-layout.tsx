@@ -24,7 +24,7 @@ export function AuthLayout({
           </span>
           <span>
             <span className="wordmark block text-base leading-tight">
-              <span className="text-brand-purple-light">Report</span>{" "}
+              <span className="text-brand-accent-light">Report</span>{" "}
               <span className="text-foreground">Ready</span>
             </span>
           </span>

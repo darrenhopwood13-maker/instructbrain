@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/settings/organisation")({
 
 const swatches = [
   { id: "blue", label: "Instruct Blue", className: "bg-brand-blue" },
-  { id: "purple", label: "Instruct Purple", className: "bg-brand-purple" },
+  { id: "orange", label: "Instruct Orange", className: "bg-brand-accent" },
   { id: "ink", label: "Deep Ink", className: "bg-brand-blue-ink" },
 ];
 
@@ -147,7 +147,7 @@ function OrganisationSettings() {
                   onClick={() => setBrand(swatch.id)}
                   className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3 text-sm font-medium transition-colors ${
                     brand === swatch.id
-                      ? "border-brand-purple bg-brand-purple-soft text-brand-purple-ink"
+                      ? "border-brand-accent bg-brand-accent-soft text-brand-accent-ink"
                       : "border-border bg-surface-raised hover:bg-surface-sunken"
                   }`}
                 >
