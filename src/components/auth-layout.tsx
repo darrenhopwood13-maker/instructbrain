@@ -26,9 +26,6 @@ export function AuthLayout({
             <span className="editorial-title block text-base font-semibold leading-tight">
               Report Ready
             </span>
-            <span className="text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Instruct Suite
-            </span>
           </span>
         </div>
 
