@@ -6,7 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ReportStatusPill } from "@/components/status-pill";
 import { ReviewList } from "@/components/review-list";
-import { getReport, getProject } from "@/lib/mock-data";
+import { getReport, getProject, findingsForSnapshot } from "@/lib/mock-data";
+import { definitionLabel } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/reports/$id")({
   loader: ({ params }) => {
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/reports/$id")({
   head: ({ loaderData }) => {
     const title = loaderData ? `${loaderData.report.title} — Report Ready` : "Report — Report Ready";
     const description = loaderData
-      ? `${loaderData.report.surveyType} report workspace: photographs, AI-drafted findings review and issued output.`
+      ? `${definitionLabel(loaderData.report.surveyTypeSnapshot)} report workspace: photographs, AI-drafted findings review and issued output.`
       : "Report workspace.";
     return {
       meta: [
@@ -56,7 +57,7 @@ function ReportWorkspace() {
 
       <header className="border-b border-border pb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="eyebrow">{report.surveyType}</p>
+          <p className="eyebrow">{definitionLabel(report.surveyTypeSnapshot)}</p>
           <ReportStatusPill status={report.status} />
         </div>
         <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
@@ -85,7 +86,10 @@ function ReportWorkspace() {
         </TabsContent>
 
         <TabsContent value="review" className="mt-6">
-          <ReviewList snapshot={report.surveyTypeSnapshot} />
+          <ReviewList
+            snapshot={report.surveyTypeSnapshot}
+            initialFindings={findingsForSnapshot(report.surveyTypeSnapshot)}
+          />
         </TabsContent>
 
         <TabsContent value="output" className="mt-6">
