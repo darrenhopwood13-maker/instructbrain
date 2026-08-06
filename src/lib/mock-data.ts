@@ -1,4 +1,5 @@
-export type FindingStatus = "pass" | "fail" | "warn" | "flag";
+import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+
 export type ReportStatus = "draft" | "in_review" | "issued";
 
 export type Project = {
@@ -16,6 +17,8 @@ export type Report = {
   projectId: string;
   title: string;
   surveyType: string;
+  /** Frozen copy of the survey type definition. Owns all discipline vocabulary. */
+  surveyTypeSnapshot: SurveyTypeSnapshot;
   status: ReportStatus;
   reference: string;
   photoCount: number;
@@ -26,13 +29,17 @@ export type Report = {
 
 export type Finding = {
   id: string;
+  /** Assigned once at creation and persisted. Never derived from position. */
   ref: string;
   title: string;
   location: string;
   trade: string;
-  status: FindingStatus;
+  /** A status id defined by the report's survey type snapshot. */
+  status: string;
   aiDrafted: boolean;
   confirmed: boolean;
+  isConfidential: boolean;
+  photoIds: string[];
   note: string;
 };
 
@@ -45,17 +52,51 @@ export type DirectoryEntry = {
   phone: string;
 };
 
-export const statusLabels: Record<FindingStatus, string> = {
-  pass: "Pass",
-  fail: "Fail",
-  warn: "Advisory",
-  flag: "Flagged for review",
-};
-
 export const reportStatusLabels: Record<ReportStatus, string> = {
   draft: "Draft",
   in_review: "In review",
   issued: "Issued",
+};
+
+/**
+ * Sample survey type definition. In production this is a `survey_type_definitions`
+ * row, frozen into the report as `survey_type_snapshot` at creation.
+ */
+export const prePlasterSnapshot: SurveyTypeSnapshot = {
+  id: "std-pre-plaster",
+  name: "Pre-plaster QA",
+  version: 3,
+  requiresLifecycle: true,
+  statuses: [
+    { id: "compliant", label: "Compliant", tone: "pass" },
+    { id: "defective", label: "Defective", tone: "fail" },
+    { id: "monitor", label: "Monitor", tone: "caution" },
+    { id: "not_applicable", label: "Not applicable", tone: "neutral" },
+    { id: "not_assessed", label: "Not assessed", tone: "unknown" },
+  ],
+  severities: ["Minor", "Significant", "Critical"],
+  trades: ["Fire stopping", "Drylining", "Insulation", "M&E", "Structures"],
+  captureFields: [
+    { id: "location", label: "Location", type: "text" },
+    { id: "grid_ref", label: "Grid reference", type: "text" },
+  ],
+  outputSections: ["Scope", "Methodology", "Observations", "Close-out"],
+};
+
+export const fireStoppingSnapshot: SurveyTypeSnapshot = {
+  id: "std-fire-stopping",
+  name: "Fire stopping audit",
+  version: 2,
+  requiresLifecycle: true,
+  statuses: [
+    { id: "sealed", label: "Sealed", tone: "pass" },
+    { id: "breach", label: "Breach", tone: "fail" },
+    { id: "partial", label: "Partially sealed", tone: "caution" },
+    { id: "not_assessed", label: "Not assessed", tone: "unknown" },
+  ],
+  severities: ["Minor", "Significant", "Critical"],
+  trades: ["Fire stopping", "M&E"],
+  outputSections: ["Scope", "Methodology", "Breaches", "Close-out"],
 };
 
 export const projects: Project[] = [
@@ -103,18 +144,20 @@ export const reports: Report[] = [
     projectId: "p-1042",
     title: "Level 06 — Pre-plaster inspection",
     surveyType: "Pre-plaster QA",
+    surveyTypeSnapshot: prePlasterSnapshot,
     status: "in_review",
     reference: "RW-002/PP/06",
     photoCount: 148,
     findingCount: 37,
     updated: "2 hours ago",
     author: "H. Okonjo MRICS",
-    },
+  },
   {
     id: "r-8802",
     projectId: "p-1042",
     title: "External envelope — Weekly progress",
     surveyType: "Progress record",
+    surveyTypeSnapshot: prePlasterSnapshot,
     status: "draft",
     reference: "RW-002/EX/W12",
     photoCount: 62,
@@ -127,6 +170,7 @@ export const reports: Report[] = [
     projectId: "p-1042",
     title: "Core B — Fire stopping audit",
     surveyType: "Fire stopping audit",
+    surveyTypeSnapshot: fireStoppingSnapshot,
     status: "issued",
     reference: "RW-002/FS/B",
     photoCount: 211,
@@ -139,6 +183,7 @@ export const reports: Report[] = [
     projectId: "p-1043",
     title: "Block A — Handover snagging",
     surveyType: "Snagging",
+    surveyTypeSnapshot: prePlasterSnapshot,
     status: "draft",
     reference: "KMA-0117/SN/A",
     photoCount: 0,
@@ -155,9 +200,11 @@ export const findings: Finding[] = [
     title: "Penetration through compartment wall not sealed",
     location: "Level 06, Core B riser",
     trade: "Fire stopping",
-    status: "fail",
+    status: "defective",
     aiDrafted: true,
     confirmed: false,
+    isConfidential: false,
+    photoIds: ["ph-11", "ph-12"],
     note: "Cable bundle passes through 60-minute compartment wall with no collar or batt seal present.",
   },
   {
@@ -166,9 +213,11 @@ export const findings: Finding[] = [
     title: "Insulation compressed behind service run",
     location: "Level 06, Grid E/4",
     trade: "Insulation",
-    status: "warn",
+    status: "monitor",
     aiDrafted: true,
     confirmed: false,
+    isConfidential: false,
+    photoIds: ["ph-12"],
     note: "Mineral wool compressed to approximately half depth behind horizontal containment.",
   },
   {
@@ -177,21 +226,25 @@ export const findings: Finding[] = [
     title: "Head restraint fixings correctly installed",
     location: "Level 06, Grid C/2",
     trade: "Drylining",
-    status: "pass",
+    status: "compliant",
     aiDrafted: true,
     confirmed: true,
+    isConfidential: false,
+    photoIds: ["ph-13"],
     note: "Deflection head detail matches approved drawing DL-204 Rev C.",
   },
   {
     id: "f-4",
     ref: "F-004",
-    title: "Unable to determine substrate from photograph",
+    title: "Substrate could not be determined from the photograph",
     location: "Level 06, Grid A/7",
     trade: "Drylining",
-    status: "flag",
+    status: "not_assessed",
     aiDrafted: true,
     confirmed: false,
-    note: "Image is out of focus. Re-photograph required before this finding can be confirmed.",
+    isConfidential: false,
+    photoIds: ["ph-14"],
+    note: "Image is out of focus and the analysis returned low confidence. Re-photograph required before this finding can be resolved.",
   },
   {
     id: "f-5",
@@ -199,10 +252,25 @@ export const findings: Finding[] = [
     title: "Temporary propping left in permanent works zone",
     location: "Level 06, Grid D/5",
     trade: "Structures",
-    status: "fail",
+    status: "defective",
     aiDrafted: false,
     confirmed: true,
+    isConfidential: false,
+    photoIds: ["ph-15"],
     note: "Raised on site with the works manager at time of inspection.",
+  },
+  {
+    id: "f-6",
+    ref: "F-006",
+    title: "Access arrangement requires supervisor review",
+    location: "Level 06, Core A stair",
+    trade: "Structures",
+    status: "not_assessed",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: true,
+    photoIds: ["ph-16"],
+    note: "Restricted record. Reviewed by supervisor and above only, and excluded from every subcontractor distribution.",
   },
 ];
 
@@ -248,7 +316,7 @@ export const overdueItems = [
     title: "Fire stopping omission — Core B riser, Level 04",
     trade: "Fire stopping",
     due: "Overdue by 9 days",
-    status: "fail" as FindingStatus,
+    status: "defective",
   },
   {
     id: "o-2",
@@ -256,7 +324,7 @@ export const overdueItems = [
     title: "Damaged vapour control layer not remediated",
     trade: "Drylining",
     due: "Overdue by 4 days",
-    status: "fail" as FindingStatus,
+    status: "defective",
   },
   {
     id: "o-3",
@@ -264,7 +332,7 @@ export const overdueItems = [
     title: "Missing photographic evidence of close-out",
     trade: "M&E",
     due: "Overdue by 1 day",
-    status: "warn" as FindingStatus,
+    status: "monitor",
   },
 ];
 

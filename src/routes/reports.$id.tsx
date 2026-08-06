@@ -85,7 +85,7 @@ function ReportWorkspace() {
         </TabsContent>
 
         <TabsContent value="review" className="mt-6">
-          <ReviewList />
+          <ReviewList snapshot={report.surveyTypeSnapshot} />
         </TabsContent>
 
         <TabsContent value="output" className="mt-6">

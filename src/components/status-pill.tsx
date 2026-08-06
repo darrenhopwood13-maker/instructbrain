@@ -1,45 +1,46 @@
 import { cn } from "@/lib/utils";
-import {
-  statusLabels,
-  reportStatusLabels,
-  type FindingStatus,
-  type ReportStatus,
-} from "@/lib/mock-data";
+import { reportStatusLabels, type ReportStatus } from "@/lib/mock-data";
+import type { StatusDefinition, StatusTone } from "@/lib/survey-types";
 
-const findingStyles: Record<FindingStatus, string> = {
+const toneStyles: Record<StatusTone, string> = {
   pass: "bg-pass-soft text-pass border-pass/25",
   fail: "bg-fail-soft text-fail border-fail/25",
-  warn: "bg-warn-soft text-warn border-warn/25",
-  flag: "bg-flag-soft text-flag border-flag/25",
+  caution: "bg-warn-soft text-warn border-warn/25",
+  neutral: "bg-surface-sunken text-muted-foreground border-border",
+  unknown: "bg-flag-soft text-flag border-flag/40",
 };
 
-const findingGlyph: Record<FindingStatus, string> = {
+const toneGlyph: Record<StatusTone, string> = {
   pass: "✓",
   fail: "✕",
-  warn: "!",
-  flag: "◆",
+  caution: "!",
+  neutral: "–",
+  unknown: "?",
 };
 
-/** Status is never colour-only: every pill carries a glyph and a text label. */
+/**
+ * Status is never colour-only: every pill carries a glyph and the label from
+ * the survey type definition. No status id is hardcoded here.
+ */
 export function StatusPill({
   status,
   className,
 }: {
-  status: FindingStatus;
+  status: StatusDefinition;
   className?: string;
 }) {
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
-        findingStyles[status],
+        toneStyles[status.tone] ?? toneStyles.neutral,
         className,
       )}
     >
       <span aria-hidden="true" className="text-[0.7em] leading-none">
-        {findingGlyph[status]}
+        {toneGlyph[status.tone] ?? toneGlyph.neutral}
       </span>
-      {statusLabels[status]}
+      {status.label}
     </span>
   );
 }

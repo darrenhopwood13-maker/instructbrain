@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendMagicLink } from "@/lib/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/sign-in")({
@@ -21,6 +23,29 @@ export const Route = createFileRoute("/auth/sign-in")({
 });
 
 function SignIn() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSending(true);
+    try {
+      await sendMagicLink(email.trim());
+      setSent(true);
+      toast.success("Check your email", {
+        description: "We have sent a one-time sign-in link to that address.",
+      });
+    } catch (error) {
+      toast.error("Could not send the sign-in link", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <AuthLayout
       title="Sign in"
@@ -37,30 +62,45 @@ function SignIn() {
         </span>
       }
     >
-      <form
-        className="space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.info("Sign-in is not connected yet", {
-            description: "Authentication will be wired to your own backend in a later step.",
-          });
-        }}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" autoComplete="email" required placeholder="name@practice.co.uk" />
+      {sent ? (
+        <div className="space-y-4" role="status">
+          <p className="text-sm leading-relaxed">
+            A sign-in link is on its way to <span className="font-semibold">{email}</span>. Open it
+            on this device to continue.
+          </p>
+          <Button variant="quiet" className="w-full" onClick={() => setSent(false)}>
+            Use a different email
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => navigate({ to: "/auth/callback" })}
+          >
+            I have already signed in
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" autoComplete="current-password" required />
-        </div>
-        <Button type="submit" variant="brand" className="w-full">
-          Sign in
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          UI only in this release — no credentials are sent anywhere.
-        </p>
-      </form>
+      ) : (
+        <form className="space-y-5" onSubmit={submit}>
+          <div className="space-y-2">
+            <Label htmlFor="email">Work email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@practice.co.uk"
+            />
+          </div>
+          <Button type="submit" variant="brand" className="w-full" disabled={sending}>
+            {sending ? "Sending link…" : "Email me a sign-in link"}
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Passwordless by default. You set your own password later if you want one.
+          </p>
+        </form>
+      )}
     </AuthLayout>
   );
 }
