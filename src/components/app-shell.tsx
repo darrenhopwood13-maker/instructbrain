@@ -1,6 +1,47 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { FolderOpen, Building2, Users, FileText } from "lucide-react";
 import type { ReactNode } from "react";
+import { useSession, signOut } from "@/lib/auth";
+
+/** Reflects the live session: signed-out users get a sign-in link, signed-in users get sign-out. */
+function AccountAffordance() {
+  const navigate = useNavigate();
+  const { user, loading } = useSession();
+
+  if (loading) {
+    return <span className="text-sm text-muted-foreground">…</span>;
+  }
+
+  if (!user) {
+    return (
+      <Link
+        to="/auth/sign-in"
+        className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+      >
+        Sign in
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:block">
+        {user.email}
+      </span>
+      <button
+        type="button"
+        onClick={async () => {
+          await signOut();
+          navigate({ to: "/auth/sign-in", replace: true });
+        }}
+        className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 
 const nav = [
   { to: "/", label: "Projects", icon: FolderOpen, exact: true },
