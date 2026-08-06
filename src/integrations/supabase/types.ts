@@ -660,6 +660,7 @@ export type Database = {
       is_org_member: { Args: { _org: string }; Returns: boolean }
       project_org: { Args: { _project_id: string }; Returns: string }
       report_org: { Args: { _report_id: string }; Returns: string }
+      safe_uuid: { Args: { _t: string }; Returns: string }
     }
     Enums: {
       app_role: "owner" | "admin" | "surveyor" | "viewer" | "supervisor"
