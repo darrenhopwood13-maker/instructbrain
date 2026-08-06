@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
+import { FieldCard } from "@/components/field-card";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Finding } from "@/lib/types";
