@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
 
 function PrintReport() {
   const { id } = Route.useParams();
-  const { auto } = useSearch({ from: "/_authenticated/reports/$id/print" });
+  const { auto } = Route.useSearch();
   const query = useQuery(reportDocumentQuery(id));
   const document = query.data ?? null;
 
