@@ -5,6 +5,11 @@ import { cn } from "@/lib/utils";
 import { findings as seedFindings, type Finding } from "@/lib/mock-data";
 import {
   NOT_ASSESSED_ID,
+  definesField,
+  derivedFieldsOf,
+  regulatoryReferencesOf,
+  resolveCategory,
+  resolveSeverity,
   resolveStatus,
   reviewShortcuts,
   type StatusDefinition,
@@ -44,6 +49,17 @@ export function ReviewList({
   );
   const [active, setActive] = useState(0);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
+
+  const derivedFields = useMemo(() => derivedFieldsOf(snapshot), [snapshot]);
+  const showCause = definesField(snapshot, "likely_cause");
+  const showReference = definesField(snapshot, "regulatory_reference");
+  const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
+  const causeGuidance =
+    derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
+
+  const updateItem = useCallback((index: number, patch: Partial<Finding>) => {
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }, []);
 
   const setStatus = useCallback(
     (index: number, status: StatusDefinition) => {
@@ -227,6 +243,124 @@ export function ReviewList({
                 {item.location} · {item.trade}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">{item.note}</p>
+              {(() => {
+                const severity = resolveSeverity(snapshot, item.severity);
+                const category = resolveCategory(snapshot, item.category);
+                if (!severity && !category) return null;
+                return (
+                  <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {category ? <span>{category.label}</span> : null}
+                    {severity ? (
+                      <span title={severity.guidance ?? undefined}>
+                        Severity: <span className="font-semibold">{severity.label}</span>
+                      </span>
+                    ) : null}
+                  </p>
+                );
+              })()}
+
+              {showCause ? (
+                <div className="mt-3 rounded-lg border border-border bg-surface-sunken p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label
+                      htmlFor={`cause-${item.id}`}
+                      className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                    >
+                      Likely cause
+                    </label>
+                    {item.likelyCauseConfirmed ? (
+                      <span className="text-[0.6875rem] font-semibold text-muted-foreground">
+                        Confirmed by reviewer
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-purple/25 bg-brand-purple-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-purple-ink">
+                        <Sparkles aria-hidden="true" className="size-3" />
+                        AI suggestion — unconfirmed
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    id={`cause-${item.id}`}
+                    value={item.likelyCause ?? ""}
+                    placeholder="No cause could be inferred from the photograph."
+                    aria-describedby={causeGuidance ? `cause-help-${item.id}` : undefined}
+                    onChange={(event) =>
+                      updateItem(index, {
+                        likelyCause: event.target.value,
+                        likelyCauseConfirmed: false,
+                      })
+                    }
+                    className="mt-2 w-full rounded-md border border-input bg-surface-raised p-2 text-sm"
+                    rows={2}
+                  />
+                  {causeGuidance ? (
+                    <p id={`cause-help-${item.id}`} className="mt-1 text-xs text-muted-foreground">
+                      {causeGuidance}
+                    </p>
+                  ) : null}
+                  {!item.likelyCauseConfirmed ? (
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      className="mt-2"
+                      onClick={() => updateItem(index, { likelyCauseConfirmed: true })}
+                    >
+                      Confirm cause
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {showReference ? (
+                <div className="mt-3 rounded-lg border border-border bg-surface-sunken p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label
+                      htmlFor={`ref-${item.id}`}
+                      className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                    >
+                      Regulatory reference
+                    </label>
+                    {item.regulatoryReferenceConfirmed ? (
+                      <span className="text-[0.6875rem] font-semibold text-muted-foreground">
+                        Confirmed by reviewer
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-purple/25 bg-brand-purple-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-purple-ink">
+                        <Sparkles aria-hidden="true" className="size-3" />
+                        AI suggestion — unconfirmed
+                      </span>
+                    )}
+                  </div>
+                  <select
+                    id={`ref-${item.id}`}
+                    value={item.regulatoryReference ?? ""}
+                    onChange={(event) =>
+                      updateItem(index, {
+                        regulatoryReference: event.target.value === "" ? null : event.target.value,
+                        regulatoryReferenceConfirmed: false,
+                      })
+                    }
+                    className="mt-2 w-full rounded-md border border-input bg-surface-raised p-2 text-sm"
+                  >
+                    <option value="">No reference</option>
+                    {references.map((reference) => (
+                      <option key={reference.id} value={reference.id}>
+                        {reference.label}
+                      </option>
+                    ))}
+                  </select>
+                  {!item.regulatoryReferenceConfirmed ? (
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      className="mt-2"
+                      onClick={() => updateItem(index, { regulatoryReferenceConfirmed: true })}
+                    >
+                      Confirm reference
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               {blocked ? (
                 <p className="mt-2 text-sm font-semibold text-flag">
                   Not assessed — blocks export until a person sets a status.

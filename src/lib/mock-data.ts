@@ -1,4 +1,10 @@
-import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+import type { SurveyDefinition } from "@/lib/survey-types";
+import {
+  snaggingDefinition,
+  siteWalkDefinition,
+  weatherproofingDefinition,
+  snapshotOf,
+} from "@/lib/survey-definitions";
 
 export type ReportStatus = "draft" | "in_review" | "issued";
 
@@ -16,9 +22,8 @@ export type Report = {
   id: string;
   projectId: string;
   title: string;
-  surveyType: string;
   /** Frozen copy of the survey type definition. Owns all discipline vocabulary. */
-  surveyTypeSnapshot: SurveyTypeSnapshot;
+  surveyTypeSnapshot: SurveyDefinition;
   status: ReportStatus;
   reference: string;
   photoCount: number;
@@ -36,11 +41,20 @@ export type Finding = {
   trade: string;
   /** A status id defined by the report's survey type snapshot. */
   status: string;
+  /** A severity id defined by the report's survey type snapshot. */
+  severity?: string;
+  /** A category id from whichever category list the definition provides. */
+  category?: string;
   aiDrafted: boolean;
   confirmed: boolean;
   isConfidential: boolean;
   photoIds: string[];
   note: string;
+  /** Only defined by disciplines whose definition asks for it. */
+  likelyCause?: string | null;
+  likelyCauseConfirmed?: boolean;
+  regulatoryReference?: string | null;
+  regulatoryReferenceConfirmed?: boolean;
 };
 
 export type DirectoryEntry = {
@@ -56,47 +70,6 @@ export const reportStatusLabels: Record<ReportStatus, string> = {
   draft: "Draft",
   in_review: "In review",
   issued: "Issued",
-};
-
-/**
- * Sample survey type definition. In production this is a `survey_type_definitions`
- * row, frozen into the report as `survey_type_snapshot` at creation.
- */
-export const prePlasterSnapshot: SurveyTypeSnapshot = {
-  id: "std-pre-plaster",
-  name: "Pre-plaster QA",
-  version: 3,
-  requiresLifecycle: true,
-  statuses: [
-    { id: "compliant", label: "Compliant", tone: "pass" },
-    { id: "defective", label: "Defective", tone: "fail" },
-    { id: "monitor", label: "Monitor", tone: "caution" },
-    { id: "not_applicable", label: "Not applicable", tone: "neutral" },
-    { id: "not_assessed", label: "Not assessed", tone: "unknown" },
-  ],
-  severities: ["Minor", "Significant", "Critical"],
-  trades: ["Fire stopping", "Drylining", "Insulation", "M&E", "Structures"],
-  captureFields: [
-    { id: "location", label: "Location", type: "text" },
-    { id: "grid_ref", label: "Grid reference", type: "text" },
-  ],
-  outputSections: ["Scope", "Methodology", "Observations", "Close-out"],
-};
-
-export const fireStoppingSnapshot: SurveyTypeSnapshot = {
-  id: "std-fire-stopping",
-  name: "Fire stopping audit",
-  version: 2,
-  requiresLifecycle: true,
-  statuses: [
-    { id: "sealed", label: "Sealed", tone: "pass" },
-    { id: "breach", label: "Breach", tone: "fail" },
-    { id: "partial", label: "Partially sealed", tone: "caution" },
-    { id: "not_assessed", label: "Not assessed", tone: "unknown" },
-  ],
-  severities: ["Minor", "Significant", "Critical"],
-  trades: ["Fire stopping", "M&E"],
-  outputSections: ["Scope", "Methodology", "Breaches", "Close-out"],
 };
 
 export const projects: Project[] = [
@@ -142,39 +115,36 @@ export const reports: Report[] = [
   {
     id: "r-8801",
     projectId: "p-1042",
-    title: "Level 06 — Pre-plaster inspection",
-    surveyType: "Pre-plaster QA",
-    surveyTypeSnapshot: prePlasterSnapshot,
+    title: "Level 06 — Pre-handover inspection",
+    surveyTypeSnapshot: snapshotOf(snaggingDefinition),
     status: "in_review",
-    reference: "RW-002/PP/06",
+    reference: "RW-002/SN/06",
     photoCount: 148,
-    findingCount: 37,
+    findingCount: 6,
     updated: "2 hours ago",
     author: "H. Okonjo MRICS",
   },
   {
     id: "r-8802",
     projectId: "p-1042",
-    title: "External envelope — Weekly progress",
-    surveyType: "Progress record",
-    surveyTypeSnapshot: prePlasterSnapshot,
+    title: "Thursday walk — Levels 04 to 07",
+    surveyTypeSnapshot: snapshotOf(siteWalkDefinition),
     status: "draft",
-    reference: "RW-002/EX/W12",
+    reference: "RW-002/SW/W12",
     photoCount: 62,
-    findingCount: 0,
+    findingCount: 3,
     updated: "Yesterday",
     author: "D. Whitfield",
   },
   {
     id: "r-8803",
     projectId: "p-1042",
-    title: "Core B — Fire stopping audit",
-    surveyType: "Fire stopping audit",
-    surveyTypeSnapshot: fireStoppingSnapshot,
+    title: "Podium roof — Membrane condition survey",
+    surveyTypeSnapshot: snapshotOf(weatherproofingDefinition),
     status: "issued",
-    reference: "RW-002/FS/B",
+    reference: "RW-002/WP/PD",
     photoCount: 211,
-    findingCount: 54,
+    findingCount: 3,
     updated: "12 June 2026",
     author: "H. Okonjo MRICS",
   },
@@ -182,8 +152,7 @@ export const reports: Report[] = [
     id: "r-8804",
     projectId: "p-1043",
     title: "Block A — Handover snagging",
-    surveyType: "Snagging",
-    surveyTypeSnapshot: prePlasterSnapshot,
+    surveyTypeSnapshot: snapshotOf(snaggingDefinition),
     status: "draft",
     reference: "KMA-0117/SN/A",
     photoCount: 0,
@@ -193,99 +162,242 @@ export const reports: Report[] = [
   },
 ];
 
-export const findings: Finding[] = [
+/** Snagging findings — vocabulary comes from the snagging definition only. */
+export const snaggingFindings: Finding[] = [
   {
     id: "f-1",
     ref: "F-001",
-    title: "Penetration through compartment wall not sealed",
-    location: "Level 06, Core B riser",
-    trade: "Fire stopping",
-    status: "defective",
+    title: "Sealant missing to head of door frame",
+    location: "Level 06, Plot 6.04 hallway",
+    trade: "Carpenter / joiner",
+    status: "snag",
+    severity: "workmanship",
+    category: "joinery",
     aiDrafted: true,
     confirmed: false,
     isConfidential: false,
     photoIds: ["ph-11", "ph-12"],
-    note: "Cable bundle passes through 60-minute compartment wall with no collar or batt seal present.",
+    note: "Approximately 900mm of the frame head is unsealed, with a gap of 3–5mm to the plaster reveal.",
+    likelyCause: "Second fix completed before the plaster reveal was made good.",
+    likelyCauseConfirmed: false,
+    regulatoryReference: "bs_8000",
+    regulatoryReferenceConfirmed: false,
   },
   {
     id: "f-2",
     ref: "F-002",
-    title: "Insulation compressed behind service run",
-    location: "Level 06, Grid E/4",
-    trade: "Insulation",
+    title: "Cracking to plaster at wall/ceiling junction",
+    location: "Level 06, Plot 6.04 living room",
+    trade: "Plasterer",
     status: "monitor",
+    severity: "cosmetic",
+    category: "wet_trades",
     aiDrafted: true,
     confirmed: false,
     isConfidential: false,
     photoIds: ["ph-12"],
-    note: "Mineral wool compressed to approximately half depth behind horizontal containment.",
+    note: "Hairline crack running approximately 1.2m along the junction.",
+    likelyCause: "Most likely shrinkage or minor settlement. Movement cannot be ruled out from the photograph alone.",
+    likelyCauseConfirmed: false,
+    regulatoryReference: null,
+    regulatoryReferenceConfirmed: false,
   },
   {
     id: "f-3",
     ref: "F-003",
-    title: "Head restraint fixings correctly installed",
-    location: "Level 06, Grid C/2",
-    trade: "Drylining",
-    status: "compliant",
+    title: "Tiling and grout line acceptable",
+    location: "Level 06, Plot 6.04 bathroom",
+    trade: "Tiler",
+    status: "acceptable",
+    severity: "cosmetic",
+    category: "tiling",
     aiDrafted: true,
     confirmed: true,
     isConfidential: false,
     photoIds: ["ph-13"],
-    note: "Deflection head detail matches approved drawing DL-204 Rev C.",
+    note: "Setting out and grout joints consistent with the approved sample.",
+    likelyCause: null,
+    likelyCauseConfirmed: true,
+    regulatoryReference: null,
+    regulatoryReferenceConfirmed: true,
   },
   {
     id: "f-4",
     ref: "F-004",
-    title: "Substrate could not be determined from the photograph",
-    location: "Level 06, Grid A/7",
-    trade: "Drylining",
+    title: "Element could not be identified from the photograph",
+    location: "Level 06, Plot 6.05",
+    trade: "",
     status: "not_assessed",
+    category: "finishes",
     aiDrafted: true,
     confirmed: false,
     isConfidential: false,
     photoIds: ["ph-14"],
     note: "Image is out of focus and the analysis returned low confidence. Re-photograph required before this finding can be resolved.",
+    likelyCause: null,
+    likelyCauseConfirmed: false,
+    regulatoryReference: null,
+    regulatoryReferenceConfirmed: false,
   },
   {
     id: "f-5",
     ref: "F-005",
-    title: "Temporary propping left in permanent works zone",
-    location: "Level 06, Grid D/5",
-    trade: "Structures",
-    status: "defective",
+    title: "Damaged plasterboard to riser cupboard reveal",
+    location: "Level 06, Plot 6.05 hallway",
+    trade: "Plasterer",
+    status: "snag",
+    severity: "workmanship",
+    category: "wet_trades",
     aiDrafted: false,
     confirmed: true,
     isConfidential: false,
     photoIds: ["ph-15"],
     note: "Raised on site with the works manager at time of inspection.",
+    likelyCause: "Impact damage during movement of materials.",
+    likelyCauseConfirmed: true,
+    regulatoryReference: null,
+    regulatoryReferenceConfirmed: true,
   },
   {
     id: "f-6",
     ref: "F-006",
     title: "Access arrangement requires supervisor review",
     location: "Level 06, Core A stair",
-    trade: "Structures",
+    trade: "Principal contractor",
     status: "not_assessed",
+    category: "fire_safety",
     aiDrafted: true,
     confirmed: false,
     isConfidential: true,
     photoIds: ["ph-16"],
     note: "Restricted record. Reviewed by supervisor and above only, and excluded from every subcontractor distribution.",
+    likelyCause: null,
+    likelyCauseConfirmed: false,
+    regulatoryReference: null,
+    regulatoryReferenceConfirmed: false,
   },
 ];
+
+/** Site walk findings — no likely cause or regulatory reference in this discipline. */
+export const siteWalkFindings: Finding[] = [
+  {
+    id: "sw-1",
+    ref: "O-001",
+    title: "Pallets and offcuts obstructing the escape route",
+    location: "Level 05, Core B lobby",
+    trade: "Principal contractor",
+    status: "observation",
+    severity: "same_day",
+    category: "fire_safety",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: false,
+    photoIds: ["sw-ph-1"],
+    note: "Stacked pallets reduce the escape route to roughly 600mm clear width.",
+  },
+  {
+    id: "sw-2",
+    ref: "O-002",
+    title: "Trailing leads across a walkway",
+    location: "Level 04, Grid C/3",
+    trade: "M&E",
+    status: "observation",
+    severity: "this_week",
+    category: "electrical",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: false,
+    photoIds: ["sw-ph-2"],
+    note: "Two 110V leads run uncovered across the main circulation route.",
+  },
+  {
+    id: "sw-3",
+    ref: "O-003",
+    title: "Unsafe act recorded — restricted",
+    location: "Level 07, external edge",
+    trade: "",
+    status: "observation",
+    severity: "immediate",
+    category: "ppe_behaviour",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: true,
+    photoIds: ["sw-ph-3"],
+    note: "Restricted record. Described as a general safety issue only, supervisor and above, excluded from every distribution.",
+  },
+];
+
+/** Weatherproofing findings — single finding per photograph. */
+export const weatherproofingFindings: Finding[] = [
+  {
+    id: "wp-1",
+    ref: "M-001",
+    title: "Lifted lap to single ply seam",
+    location: "Podium roof, bay 3",
+    trade: "",
+    status: "damaged",
+    severity: "high",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: false,
+    photoIds: ["wp-ph-1"],
+    note: "Approximately 400mm of seam is debonded with the edge lifting clear of the substrate.",
+  },
+  {
+    id: "wp-2",
+    ref: "M-002",
+    title: "Parapet upstand termination sound",
+    location: "Podium roof, north parapet",
+    trade: "",
+    status: "intact",
+    severity: "low",
+    aiDrafted: true,
+    confirmed: true,
+    isConfidential: false,
+    photoIds: ["wp-ph-2"],
+    note: "Termination bar and sealant continuous, no lifting observed.",
+  },
+  {
+    id: "wp-3",
+    ref: "M-003",
+    title: "Ponding adjacent to outlet",
+    location: "Podium roof, bay 5 outlet",
+    trade: "",
+    status: "monitor",
+    severity: "medium",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: false,
+    photoIds: ["wp-ph-3"],
+    note: "Standing water approximately 2m² retained 48 hours after rainfall.",
+  },
+];
+
+const findingSets: Record<string, Finding[]> = {
+  [snaggingDefinition.id]: snaggingFindings,
+  [siteWalkDefinition.id]: siteWalkFindings,
+  [weatherproofingDefinition.id]: weatherproofingFindings,
+};
+
+export function findingsForSnapshot(snapshot: SurveyDefinition | null | undefined): Finding[] {
+  return snapshot ? (findingSets[snapshot.id] ?? []) : [];
+}
+
+/** Default working set used by the review list. */
+export const findings: Finding[] = snaggingFindings;
 
 export const directory: DirectoryEntry[] = [
   {
     id: "d-1",
-    trade: "Fire stopping",
-    company: "Meridian Passive Fire Ltd",
+    trade: "Carpenter / joiner",
+    company: "Meridian Joinery Ltd",
     contact: "Sean Carberry",
-    email: "s.carberry@meridianpf.co.uk",
+    email: "s.carberry@meridianjoinery.co.uk",
     phone: "0161 496 0114",
   },
   {
     id: "d-2",
-    trade: "Drylining",
+    trade: "Plasterer",
     company: "Ashcroft Interiors",
     contact: "Nadia Rahman",
     email: "nadia@ashcroftinteriors.co.uk",
@@ -301,10 +413,10 @@ export const directory: DirectoryEntry[] = [
   },
   {
     id: "d-4",
-    trade: "Structures",
-    company: "Kelmarsh Frame Contractors",
+    trade: "Principal contractor",
+    company: "Kelmarsh Construction",
     contact: "Bridget Lowe",
-    email: "b.lowe@kelmarshframe.co.uk",
+    email: "b.lowe@kelmarshconstruction.co.uk",
     phone: "01604 231 990",
   },
 ];
@@ -313,26 +425,23 @@ export const overdueItems = [
   {
     id: "o-1",
     ref: "F-014",
-    title: "Fire stopping omission — Core B riser, Level 04",
-    trade: "Fire stopping",
+    title: "Damaged door leaf not replaced — Plot 4.02",
+    trade: "Carpenter / joiner",
     due: "Overdue by 9 days",
-    status: "defective",
   },
   {
     id: "o-2",
     ref: "F-022",
-    title: "Damaged vapour control layer not remediated",
-    trade: "Drylining",
+    title: "Sealant to shower tray not reinstated",
+    trade: "Tiler",
     due: "Overdue by 4 days",
-    status: "defective",
   },
   {
     id: "o-3",
-    ref: "F-031",
-    title: "Missing photographic evidence of close-out",
+    ref: "O-031",
+    title: "Trailing leads not cleared from access route",
     trade: "M&E",
     due: "Overdue by 1 day",
-    status: "monitor",
   },
 ];
 

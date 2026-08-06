@@ -237,7 +237,9 @@ export type Database = {
           id: string
           is_confidential: boolean
           lifecycle_state: string
+          likely_cause: string | null
           ref: string
+          regulatory_reference: string | null
           remedial_text: string | null
           report_id: string
           reviewed_at: string | null
@@ -266,7 +268,9 @@ export type Database = {
           id?: string
           is_confidential?: boolean
           lifecycle_state?: string
+          likely_cause?: string | null
           ref: string
+          regulatory_reference?: string | null
           remedial_text?: string | null
           report_id: string
           reviewed_at?: string | null
@@ -295,7 +299,9 @@ export type Database = {
           id?: string
           is_confidential?: boolean
           lifecycle_state?: string
+          likely_cause?: string | null
           ref?: string
+          regulatory_reference?: string | null
           remedial_text?: string | null
           report_id?: string
           reviewed_at?: string | null

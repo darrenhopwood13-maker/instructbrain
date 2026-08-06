@@ -3,9 +3,9 @@ import { FileText, AlarmClock, Plus, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
-import { StatusPill, ReportStatusPill } from "@/components/status-pill";
-import { getProject, reportsForProject, overdueItems, prePlasterSnapshot } from "@/lib/mock-data";
-import { resolveStatus } from "@/lib/survey-types";
+import { ReportStatusPill } from "@/components/status-pill";
+import { getProject, reportsForProject, overdueItems } from "@/lib/mock-data";
+import { definitionLabel } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/projects/$id")({
   loader: ({ params }) => {
@@ -53,10 +53,12 @@ function ProjectDashboard() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">{project.address}</p>
         </div>
-        <Button variant="brand" className="shrink-0">
-          <Plus aria-hidden="true" />
-          <span className="hidden sm:inline">New report</span>
-          <span className="sr-only sm:hidden">New report</span>
+        <Button variant="brand" className="shrink-0" asChild>
+          <Link to="/reports/new" search={{ project: project.id }}>
+            <Plus aria-hidden="true" />
+            <span className="hidden sm:inline">New report</span>
+            <span className="sr-only sm:hidden">New report</span>
+          </Link>
         </Button>
       </header>
 
@@ -72,7 +74,13 @@ function ProjectDashboard() {
                 eyebrow="No reports"
                 title="This project has no reports yet"
                 description="Start a report, choose a survey type, and upload the photographs taken on site."
-                action={<Button variant="brand">Start a report</Button>}
+                action={
+                  <Button variant="brand" asChild>
+                    <Link to="/reports/new" search={{ project: project.id }}>
+                      Start a report
+                    </Link>
+                  </Button>
+                }
               />
             </div>
           ) : (
@@ -88,7 +96,7 @@ function ProjectDashboard() {
                       <span className="eyebrow">{report.reference}</span>
                       <span className="mt-0.5 block truncate font-semibold">{report.title}</span>
                       <span className="mt-0.5 block text-sm text-muted-foreground">
-                        {report.surveyType} · {report.photoCount} photos · {report.findingCount}{" "}
+                        {definitionLabel(report.surveyTypeSnapshot)} · {report.photoCount} photos · {report.findingCount}{" "}
                         findings · {report.updated}
                       </span>
                     </span>
@@ -124,7 +132,12 @@ function ProjectDashboard() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="eyebrow">{item.ref}</p>
-                    <StatusPill status={resolveStatus(prePlasterSnapshot, item.status)} />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-fail/25 bg-fail-soft px-2.5 py-0.5 text-xs font-semibold text-fail">
+                      <span aria-hidden="true" className="text-[0.7em] leading-none">
+                        !
+                      </span>
+                      Overdue
+                    </span>
                   </div>
                   <p className="mt-1.5 text-sm font-semibold leading-snug">{item.title}</p>
                   <p className="mt-1.5 text-sm text-muted-foreground">
