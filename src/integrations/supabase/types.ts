@@ -383,7 +383,9 @@ export type Database = {
       photos: {
         Row: {
           blurred_path: string | null
+          capture_fields: Json
           captured_at: string | null
+          checksum: string | null
           created_at: string
           faces_detected: boolean
           gps_lat: number | null
@@ -399,7 +401,9 @@ export type Database = {
         }
         Insert: {
           blurred_path?: string | null
+          capture_fields?: Json
           captured_at?: string | null
+          checksum?: string | null
           created_at?: string
           faces_detected?: boolean
           gps_lat?: number | null
@@ -415,7 +419,9 @@ export type Database = {
         }
         Update: {
           blurred_path?: string | null
+          capture_fields?: Json
           captured_at?: string | null
+          checksum?: string | null
           created_at?: string
           faces_detected?: boolean
           gps_lat?: number | null

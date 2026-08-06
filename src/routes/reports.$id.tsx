@@ -1,13 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Camera, FileOutput, ChevronRight, Download, Send } from "lucide-react";
+import { FileOutput, ChevronRight, Download, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ReportStatusPill } from "@/components/status-pill";
 import { ReviewList } from "@/components/review-list";
+import { PhotosPanel } from "@/components/photos/photos-panel";
 import { getReport, getProject, findingsForSnapshot } from "@/lib/mock-data";
 import { definitionLabel } from "@/lib/survey-types";
+
 
 export const Route = createFileRoute("/reports/$id")({
   loader: ({ params }) => {
@@ -76,14 +78,9 @@ function ReportWorkspace() {
         </TabsList>
 
         <TabsContent value="photos" className="mt-6">
-          <EmptyState
-            icon={Camera}
-            eyebrow="Step one"
-            title="No photographs uploaded yet"
-            description="Upload the photographs captured on site. Each image is matched to a location and drafted against the chosen survey type."
-            action={<Button variant="brand">Upload photographs</Button>}
-          />
+          <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
         </TabsContent>
+
 
         <TabsContent value="review" className="mt-6">
           <ReviewList
