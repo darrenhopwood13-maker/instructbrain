@@ -14,6 +14,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as SharedTokenRouteImport } from './routes/shared.$token'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
@@ -45,6 +46,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/auth/sign-up',
+  path: '/auth/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SharedTokenRoute = SharedTokenRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/shared/$token'
     | '/projects/$id'
     | '/reports/$id'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/shared/$token'
     | '/'
     | '/projects/$id'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/shared/$token'
     | '/_authenticated/'
     | '/_authenticated/projects/$id'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
   SharedTokenRoute: typeof SharedTokenRoute
   ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
 }
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/sign-in'
       fullPath: '/auth/sign-in'
       preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/auth/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shared/$token': {
@@ -328,6 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSignInRoute: AuthSignInRoute,
+  AuthSignUpRoute: AuthSignUpRoute,
   SharedTokenRoute: SharedTokenRoute,
   ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
 }
