@@ -443,23 +443,26 @@ export function ReviewList({
                 </p>
               ) : null}
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {shortcuts
-                  .filter(({ status: option }) => option.id !== NOT_ASSESSED_ID)
-                  .map(({ status: option }) => (
-                    <Button
-                      key={option.id}
-                      size="sm"
-                      variant="quiet"
-                      onClick={() => setStatus(index, option)}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                <span className="ml-auto text-xs font-medium text-muted-foreground">
+              <div className="mt-4 rule-top pt-3">
+                <p className="text-xs font-medium text-muted-foreground">
                   {item.confirmed && !blocked ? "Confirmed by reviewer" : "Awaiting confirmation"}
-                </span>
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {shortcuts
+                    .filter(({ status: option }) => option.id !== NOT_ASSESSED_ID)
+                    .map(({ status: option }) => (
+                      <Button
+                        key={option.id}
+                        variant="quiet"
+                        className="min-h-11 flex-1 basis-32 sm:flex-none sm:basis-auto"
+                        onClick={() => setStatus(index, option)}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                </div>
               </div>
+
             </li>
           );
         })}
