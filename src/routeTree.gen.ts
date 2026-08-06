@@ -19,6 +19,8 @@ import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
 import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
+import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
+import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -71,6 +73,18 @@ const AuthenticatedSettingsOrganisationRoute =
     path: '/settings/organisation',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsIdPrintRoute =
+  AuthenticatedReportsIdPrintRouteImport.update({
+    id: '/print',
+    path: '/print',
+    getParentRoute: () => AuthenticatedReportsIdRoute,
+  } as any)
+const ApiPublicSharedReportTokenRoute =
+  ApiPublicSharedReportTokenRouteImport.update({
+    id: '/api/public/shared-report/$token',
+    path: '/api/public/shared-report/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -78,10 +92,12 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
-  '/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRoutesByTo {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
@@ -89,10 +105,12 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/': typeof AuthenticatedIndexRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
-  '/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,10 +120,12 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
-  '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRoute
+  '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,6 +139,8 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/reports/$id/print'
+    | '/api/public/shared-report/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/accept-invite'
@@ -130,6 +152,8 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/reports/$id/print'
+    | '/api/public/shared-report/$token'
   id:
     | '__root__'
     | '/_authenticated'
@@ -142,6 +166,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/new'
     | '/_authenticated/settings/directory'
     | '/_authenticated/settings/organisation'
+    | '/_authenticated/reports/$id/print'
+    | '/api/public/shared-report/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -149,6 +175,7 @@ export interface RootRouteChildren {
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSignInRoute: typeof AuthSignInRoute
+  ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -223,13 +250,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsOrganisationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/$id/print': {
+      id: '/_authenticated/reports/$id/print'
+      path: '/print'
+      fullPath: '/reports/$id/print'
+      preLoaderRoute: typeof AuthenticatedReportsIdPrintRouteImport
+      parentRoute: typeof AuthenticatedReportsIdRoute
+    }
+    '/api/public/shared-report/$token': {
+      id: '/api/public/shared-report/$token'
+      path: '/api/public/shared-report/$token'
+      fullPath: '/api/public/shared-report/$token'
+      preLoaderRoute: typeof ApiPublicSharedReportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface AuthenticatedReportsIdRouteChildren {
+  AuthenticatedReportsIdPrintRoute: typeof AuthenticatedReportsIdPrintRoute
+}
+
+const AuthenticatedReportsIdRouteChildren: AuthenticatedReportsIdRouteChildren =
+  {
+    AuthenticatedReportsIdPrintRoute: AuthenticatedReportsIdPrintRoute,
+  }
+
+const AuthenticatedReportsIdRouteWithChildren =
+  AuthenticatedReportsIdRoute._addFileChildren(
+    AuthenticatedReportsIdRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
-  AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRoute
+  AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
@@ -238,7 +293,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
-  AuthenticatedReportsIdRoute: AuthenticatedReportsIdRoute,
+  AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedSettingsDirectoryRoute: AuthenticatedSettingsDirectoryRoute,
   AuthenticatedSettingsOrganisationRoute:
@@ -253,17 +308,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSignInRoute: AuthSignInRoute,
+  ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
