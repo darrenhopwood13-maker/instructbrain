@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+        <div className="shell-container flex items-center gap-4 py-5">
           <Link to="/" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span
               aria-hidden="true"
@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-16">
+      <main id="main" className="shell-container flex-1 pb-28 pt-10 sm:pb-20 lg:pt-12">
         {children}
       </main>
 

@@ -39,7 +39,7 @@ function ProjectsIndex() {
 
   return (
     <AppShell>
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 pb-6">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 pb-10">
         <div className="min-w-0">
           <p className="eyebrow">Portfolio</p>
           <h1 className="editorial-title mt-1 truncate text-2xl font-semibold sm:text-3xl">
@@ -80,7 +80,7 @@ function ProjectsIndex() {
           }
         />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-5 sm:grid-cols-2 lg:gap-6">
           {projects.map((project) => (
             <li key={project.id}>
               <Link

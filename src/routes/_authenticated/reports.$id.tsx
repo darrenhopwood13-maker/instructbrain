@@ -169,18 +169,18 @@ function ReportWorkspace() {
         ) : null}
       </header>
 
-      <Tabs defaultValue={tab ?? "photos"} className="mt-6">
+      <Tabs defaultValue={tab ?? "photos"} className="mt-10">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="photos">Photos</TabsTrigger>
           <TabsTrigger value="review">Review</TabsTrigger>
           <TabsTrigger value="output">Report</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="photos" className="mt-6">
+        <TabsContent value="photos" className="mt-10">
           <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
         </TabsContent>
 
-        <TabsContent value="review" className="mt-6">
+        <TabsContent value="review" className="mt-10">
           <div className="mb-5">
             <AnalysisPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
           </div>
@@ -205,7 +205,7 @@ function ReportWorkspace() {
           )}
         </TabsContent>
 
-        <TabsContent value="output" className="mt-6">
+        <TabsContent value="output" className="mt-10">
           {document.isPending ? (
             <LoadingState label="Assembling the document…" />
           ) : document.isError ? (
