@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
+import { Route as ReportsIdRouteImport } from './routes/reports.$id'
+import { Route as SettingsDirectoryRouteImport } from './routes/settings.directory'
+import { Route as SettingsOrganisationRouteImport } from './routes/settings.organisation'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +25,74 @@ const ProjectsIdRoute = ProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsIdRoute = ReportsIdRouteImport.update({
+  id: '/reports/$id',
+  path: '/reports/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsDirectoryRoute = SettingsDirectoryRouteImport.update({
+  id: '/settings/directory',
+  path: '/settings/directory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsOrganisationRoute = SettingsOrganisationRouteImport.update({
+  id: '/settings/organisation',
+  path: '/settings/organisation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/projects/$id'
+  fullPaths:
+    | '/'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/projects/$id'
-  id: '__root__' | '/' | '/projects/$id'
+  to:
+    | '/'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
+  id:
+    | '__root__'
+    | '/'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProjectsIdRoute: typeof ProjectsIdRoute
+  ReportsIdRoute: typeof ReportsIdRoute
+  SettingsDirectoryRoute: typeof SettingsDirectoryRoute
+  SettingsOrganisationRoute: typeof SettingsOrganisationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +111,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports/$id': {
+      id: '/reports/$id'
+      path: '/reports/$id'
+      fullPath: '/reports/$id'
+      preLoaderRoute: typeof ReportsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/directory': {
+      id: '/settings/directory'
+      path: '/settings/directory'
+      fullPath: '/settings/directory'
+      preLoaderRoute: typeof SettingsDirectoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/organisation': {
+      id: '/settings/organisation'
+      path: '/settings/organisation'
+      fullPath: '/settings/organisation'
+      preLoaderRoute: typeof SettingsOrganisationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProjectsIdRoute: ProjectsIdRoute,
+  ReportsIdRoute: ReportsIdRoute,
+  SettingsDirectoryRoute: SettingsDirectoryRoute,
+  SettingsOrganisationRoute: SettingsOrganisationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

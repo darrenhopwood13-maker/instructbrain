@@ -6,12 +6,14 @@ import { findings as seedFindings, statusLabels, type FindingStatus } from "@/li
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-const keyToStatus: Record<string, FindingStatus> = {
-  p: "pass",
-  f: "fail",
-  a: "warn",
-  r: "flag",
-};
+const statusOptions: Array<[string, FindingStatus]> = [
+  ["p", "pass"],
+  ["f", "fail"],
+  ["a", "warn"],
+  ["r", "flag"],
+];
+
+const keyToStatus = new Map<string, FindingStatus>(statusOptions);
 
 /**
  * Keyboard-first review list. j/k move, 1..n jump, p/f/a/r set status,
@@ -46,9 +48,12 @@ export function ReviewList() {
       );
       toast.success("Finding confirmed");
       setActive((i) => Math.min(i + 1, items.length - 1));
-    } else if (keyToStatus[key]) {
-      event.preventDefault();
-      setStatus(active, keyToStatus[key]);
+    } else {
+      const mapped = keyToStatus.get(key);
+      if (mapped) {
+        event.preventDefault();
+        setStatus(active, mapped);
+      }
     }
   };
 
@@ -138,14 +143,14 @@ export function ReviewList() {
             </p>
             <p className="mt-2 text-sm leading-relaxed text-foreground/80">{item.note}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {(Object.keys(keyToStatus) as Array<keyof typeof keyToStatus>).map((key) => (
+              {statusOptions.map(([key, status]) => (
                 <Button
                   key={key}
                   size="sm"
                   variant="quiet"
-                  onClick={() => setStatus(index, keyToStatus[key])}
+                  onClick={() => setStatus(index, status)}
                 >
-                  {statusLabels[keyToStatus[key]]}
+                  {statusLabels[status]}
                 </Button>
               ))}
               <span className="ml-auto text-xs font-medium text-muted-foreground">
