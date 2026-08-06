@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as ReportsIdRouteImport } from './routes/reports.$id'
 import { Route as SettingsDirectoryRouteImport } from './routes/settings.directory'
@@ -18,6 +20,16 @@ import { Route as SettingsOrganisationRouteImport } from './routes/settings.orga
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthAcceptInviteRoute = AuthAcceptInviteRouteImport.update({
+  id: '/auth/accept-invite',
+  path: '/auth/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIdRoute = ProjectsIdRouteImport.update({
@@ -43,6 +55,8 @@ const SettingsOrganisationRoute = SettingsOrganisationRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/settings/directory': typeof SettingsDirectoryRoute
@@ -50,6 +64,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/settings/directory': typeof SettingsDirectoryRoute
@@ -58,6 +74,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/settings/directory': typeof SettingsDirectoryRoute
@@ -67,6 +85,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
     | '/settings/directory'
@@ -74,6 +94,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
     | '/settings/directory'
@@ -81,6 +103,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
     | '/settings/directory'
@@ -89,6 +113,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
+  AuthSignInRoute: typeof AuthSignInRoute
   ProjectsIdRoute: typeof ProjectsIdRoute
   ReportsIdRoute: typeof ReportsIdRoute
   SettingsDirectoryRoute: typeof SettingsDirectoryRoute
@@ -102,6 +128,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/accept-invite': {
+      id: '/auth/accept-invite'
+      path: '/auth/accept-invite'
+      fullPath: '/auth/accept-invite'
+      preLoaderRoute: typeof AuthAcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/$id': {
@@ -137,6 +177,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthAcceptInviteRoute: AuthAcceptInviteRoute,
+  AuthSignInRoute: AuthSignInRoute,
   ProjectsIdRoute: ProjectsIdRoute,
   ReportsIdRoute: ReportsIdRoute,
   SettingsDirectoryRoute: SettingsDirectoryRoute,
