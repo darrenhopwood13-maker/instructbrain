@@ -238,11 +238,10 @@ export function ReviewList({
                   <StatusPill status={status} />
                 </span>
               </div>
-              <p className="mt-2 font-semibold leading-snug">{item.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-2 break-words font-semibold leading-snug">{item.title}</p>
+              <p className="mt-1 break-words text-sm text-muted-foreground">
                 {item.location} · {item.trade}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/80">{item.note}</p>
               {(() => {
                 const severity = resolveSeverity(snapshot, item.severity);
                 const category = resolveCategory(snapshot, item.category);
@@ -259,113 +258,175 @@ export function ReviewList({
                 );
               })()}
 
-              {showCause ? (
-                <div className="mt-3 rounded-lg border border-border bg-surface-sunken p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label
-                      htmlFor={`cause-${item.id}`}
-                      className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-                    >
-                      Likely cause
-                    </label>
-                    {item.likelyCauseConfirmed ? (
-                      <span className="text-[0.6875rem] font-semibold text-muted-foreground">
-                        Confirmed by reviewer
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
-                        <Sparkles aria-hidden="true" className="size-3" />
-                        AI suggestion — unconfirmed
-                      </span>
+              <div className="mt-3 space-y-3">
+                <FieldCard
+                  label="Description"
+                  popOutDescription="What the assessment observed in the photograph."
+                >
+                  <p className="whitespace-pre-wrap">
+                    {item.description || item.note || (
+                      <span className="text-muted-foreground">No description recorded.</span>
                     )}
-                  </div>
-                  <textarea
-                    id={`cause-${item.id}`}
-                    value={item.likelyCause ?? ""}
-                    placeholder="No cause could be inferred from the photograph."
-                    aria-describedby={causeGuidance ? `cause-help-${item.id}` : undefined}
-                    onChange={(event) =>
-                      updateItem(index, {
-                        likelyCause: event.target.value,
-                        likelyCauseConfirmed: false,
-                      })
-                    }
-                    className="mt-2 w-full rounded-md border border-input bg-surface-raised p-2 text-sm"
-                    rows={2}
-                  />
-                  {causeGuidance ? (
-                    <p id={`cause-help-${item.id}`} className="mt-1 text-xs text-muted-foreground">
-                      {causeGuidance}
-                    </p>
-                  ) : null}
-                  {!item.likelyCauseConfirmed ? (
-                    <Button
-                      size="sm"
-                      variant="quiet"
-                      className="mt-2"
-                      onClick={() => updateItem(index, { likelyCauseConfirmed: true })}
-                    >
-                      Confirm cause
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
+                  </p>
+                </FieldCard>
 
-              {showReference ? (
-                <div className="mt-3 rounded-lg border border-border bg-surface-sunken p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label
-                      htmlFor={`ref-${item.id}`}
-                      className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-                    >
-                      Regulatory reference
-                    </label>
-                    {item.regulatoryReferenceConfirmed ? (
-                      <span className="text-[0.6875rem] font-semibold text-muted-foreground">
-                        Confirmed by reviewer
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
-                        <Sparkles aria-hidden="true" className="size-3" />
-                        AI suggestion — unconfirmed
+                {showCause ? (
+                  <FieldCard
+                    label="Likely cause"
+                    popOutDescription={
+                      causeGuidance ?? "An assessment of cause, not a finding of fact."
+                    }
+                    badge={
+                      item.likelyCauseConfirmed ? (
+                        <span className="text-[0.6875rem] font-semibold text-muted-foreground">
+                          Confirmed by reviewer
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
+                          <Sparkles aria-hidden="true" className="size-3" />
+                          AI suggestion — unconfirmed
+                        </span>
+                      )
+                    }
+                    popOut={
+                      <div>
+                        <label
+                          htmlFor={`cause-${item.id}`}
+                          className="eyebrow block text-muted-foreground"
+                        >
+                          Likely cause
+                        </label>
+                        <textarea
+                          id={`cause-${item.id}`}
+                          value={item.likelyCause ?? ""}
+                          placeholder="No cause could be inferred from the photograph."
+                          aria-describedby={causeGuidance ? `cause-help-${item.id}` : undefined}
+                          onChange={(event) =>
+                            updateItem(index, {
+                              likelyCause: event.target.value,
+                              likelyCauseConfirmed: false,
+                            })
+                          }
+                          className="mt-2 w-full rounded-md border border-input bg-surface-raised p-3 text-base leading-relaxed"
+                          rows={7}
+                        />
+                        {causeGuidance ? (
+                          <p
+                            id={`cause-help-${item.id}`}
+                            className="mt-1 text-xs text-muted-foreground"
+                          >
+                            {causeGuidance}
+                          </p>
+                        ) : null}
+                        {!item.likelyCauseConfirmed ? (
+                          <Button
+                            variant="brand"
+                            className="mt-3 min-h-11 w-full sm:w-auto"
+                            onClick={() => updateItem(index, { likelyCauseConfirmed: true })}
+                          >
+                            Confirm cause
+                          </Button>
+                        ) : null}
+                      </div>
+                    }
+                  >
+                    <p className="whitespace-pre-wrap">
+                      {item.likelyCause || (
+                        <span className="text-muted-foreground">
+                          No cause could be inferred from the photograph.
+                        </span>
+                      )}
+                    </p>
+                  </FieldCard>
+                ) : null}
+
+                <FieldCard
+                  label="Remedial action"
+                  popOutDescription="The recommended action recorded against this finding."
+                >
+                  <p className="whitespace-pre-wrap">
+                    {item.remedial || (
+                      <span className="text-muted-foreground">
+                        No remedial action recorded yet.
                       </span>
                     )}
-                  </div>
-                  <select
-                    id={`ref-${item.id}`}
-                    value={item.regulatoryReference ?? ""}
-                    onChange={(event) =>
-                      updateItem(index, {
-                        regulatoryReference: event.target.value === "" ? null : event.target.value,
-                        regulatoryReferenceConfirmed: false,
-                      })
+                  </p>
+                </FieldCard>
+
+                {showReference ? (
+                  <FieldCard
+                    label="Regulatory reference"
+                    popOutDescription="Chosen from the references this survey type defines. Nothing outside that list can be recorded."
+                    badge={
+                      item.regulatoryReferenceConfirmed ? (
+                        <span className="text-[0.6875rem] font-semibold text-muted-foreground">
+                          Confirmed by reviewer
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
+                          <Sparkles aria-hidden="true" className="size-3" />
+                          AI suggestion — unconfirmed
+                        </span>
+                      )
                     }
-                    className="mt-2 w-full rounded-md border border-input bg-surface-raised p-2 text-sm"
+                    popOut={
+                      <div>
+                        <label
+                          htmlFor={`ref-${item.id}`}
+                          className="eyebrow block text-muted-foreground"
+                        >
+                          Regulatory reference
+                        </label>
+                        <select
+                          id={`ref-${item.id}`}
+                          value={item.regulatoryReference ?? ""}
+                          onChange={(event) =>
+                            updateItem(index, {
+                              regulatoryReference:
+                                event.target.value === "" ? null : event.target.value,
+                              regulatoryReferenceConfirmed: false,
+                            })
+                          }
+                          className="mt-2 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+                        >
+                          <option value="">No reference</option>
+                          {references.map((reference) => (
+                            <option key={reference.id} value={reference.id}>
+                              {reference.label}
+                            </option>
+                          ))}
+                        </select>
+                        {!item.regulatoryReferenceConfirmed ? (
+                          <Button
+                            variant="brand"
+                            className="mt-3 min-h-11 w-full sm:w-auto"
+                            onClick={() =>
+                              updateItem(index, { regulatoryReferenceConfirmed: true })
+                            }
+                          >
+                            Confirm reference
+                          </Button>
+                        ) : null}
+                      </div>
+                    }
                   >
-                    <option value="">No reference</option>
-                    {references.map((reference) => (
-                      <option key={reference.id} value={reference.id}>
-                        {reference.label}
-                      </option>
-                    ))}
-                  </select>
-                  {!item.regulatoryReferenceConfirmed ? (
-                    <Button
-                      size="sm"
-                      variant="quiet"
-                      className="mt-2"
-                      onClick={() => updateItem(index, { regulatoryReferenceConfirmed: true })}
-                    >
-                      Confirm reference
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
+                    <p className="break-words">
+                      {references.find((reference) => reference.id === item.regulatoryReference)
+                        ?.label ??
+                        item.regulatoryReference ?? (
+                          <span className="text-muted-foreground">No reference selected.</span>
+                        )}
+                    </p>
+                  </FieldCard>
+                ) : null}
+              </div>
+
               {blocked ? (
-                <p className="mt-2 text-sm font-semibold text-flag">
+                <p className="mt-3 text-sm font-semibold text-flag">
                   Not assessed — blocks export until a person sets a status.
                 </p>
               ) : null}
+
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {shortcuts
                   .filter(({ status: option }) => option.id !== NOT_ASSESSED_ID)
