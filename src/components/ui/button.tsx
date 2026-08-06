@@ -9,24 +9,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "gloss font-semibold",
+        default: "gloss font-bold",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        outline: "gloss-outline font-bold",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        brand: "gloss font-semibold focus-visible:ring-brand-accent",
+        link: "text-brand-accent-ink underline-offset-4 hover:underline",
+        brand: "gloss font-bold focus-visible:ring-brand-accent",
         quiet: "border border-border bg-surface-raised text-foreground hover:bg-surface-sunken",
       },
       size: {
-        default: "h-11 px-4 py-2 sm:h-9",
+        default: "h-11 px-5 py-2",
         sm: "h-9 rounded-md px-3 text-xs sm:h-8",
-        lg: "h-12 rounded-md px-8",
-        icon: "size-11 sm:size-9",
+        lg: "h-12 rounded-xl px-8",
+        icon: "size-11 sm:size-10",
       },
 
     },
+
     defaultVariants: {
       variant: "default",
       size: "default",
