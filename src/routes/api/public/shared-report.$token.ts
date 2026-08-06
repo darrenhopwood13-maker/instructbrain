@@ -14,8 +14,23 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           return Response.json({ error: "Invalid link." }, { status: 400 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const admin = supabaseAdmin as any;
+        let admin: any;
+        try {
+          const module = await import("@/integrations/supabase/client.server");
+          admin = module.supabaseAdmin as any;
+          // Touch the client so a missing service key fails here, as JSON.
+          void admin.from;
+        } catch (error) {
+          return Response.json(
+            {
+              error:
+                "Share links are not available on this deployment yet: the server is missing its Supabase service key.",
+              detail: error instanceof Error ? error.message : String(error),
+            },
+            { status: 503 },
+          );
+        }
+
 
         const { data: shares } = await admin
           .from("report_shares")
