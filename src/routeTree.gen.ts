@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
+import { Route as ReportsIdRouteImport } from './routes/reports.$id'
+import { Route as SettingsDirectoryRouteImport } from './routes/settings.directory'
+import { Route as SettingsOrganisationRouteImport } from './routes/settings.organisation'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthAcceptInviteRoute = AuthAcceptInviteRouteImport.update({
+  id: '/auth/accept-invite',
+  path: '/auth/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsIdRoute = ProjectsIdRouteImport.update({
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsIdRoute = ReportsIdRouteImport.update({
+  id: '/reports/$id',
+  path: '/reports/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsDirectoryRoute = SettingsDirectoryRouteImport.update({
+  id: '/settings/directory',
+  path: '/settings/directory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsOrganisationRoute = SettingsOrganisationRouteImport.update({
+  id: '/settings/organisation',
+  path: '/settings/organisation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth/accept-invite': typeof AuthAcceptInviteRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/projects/$id': typeof ProjectsIdRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/settings/directory': typeof SettingsDirectoryRoute
+  '/settings/organisation': typeof SettingsOrganisationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth/accept-invite'
+    | '/auth/sign-in'
+    | '/projects/$id'
+    | '/reports/$id'
+    | '/settings/directory'
+    | '/settings/organisation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  ProjectsIdRoute: typeof ProjectsIdRoute
+  ReportsIdRoute: typeof ReportsIdRoute
+  SettingsDirectoryRoute: typeof SettingsDirectoryRoute
+  SettingsOrganisationRoute: typeof SettingsOrganisationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +130,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/accept-invite': {
+      id: '/auth/accept-invite'
+      path: '/auth/accept-invite'
+      fullPath: '/auth/accept-invite'
+      preLoaderRoute: typeof AuthAcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$id': {
+      id: '/projects/$id'
+      path: '/projects/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof ProjectsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/$id': {
+      id: '/reports/$id'
+      path: '/reports/$id'
+      fullPath: '/reports/$id'
+      preLoaderRoute: typeof ReportsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/directory': {
+      id: '/settings/directory'
+      path: '/settings/directory'
+      fullPath: '/settings/directory'
+      preLoaderRoute: typeof SettingsDirectoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/organisation': {
+      id: '/settings/organisation'
+      path: '/settings/organisation'
+      fullPath: '/settings/organisation'
+      preLoaderRoute: typeof SettingsOrganisationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthAcceptInviteRoute: AuthAcceptInviteRoute,
+  AuthSignInRoute: AuthSignInRoute,
+  ProjectsIdRoute: ProjectsIdRoute,
+  ReportsIdRoute: ReportsIdRoute,
+  SettingsDirectoryRoute: SettingsDirectoryRoute,
+  SettingsOrganisationRoute: SettingsOrganisationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
