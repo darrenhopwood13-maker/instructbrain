@@ -4,7 +4,7 @@
 
 /*
  * Report Ready — design system.
- * Dark navy console (Instruct suite family) with a shiny purple accent.
+ * Dark navy console (Instruct suite family) with a shiny orange accent.
  * The report document itself stays paper: see the `.paper` scope below.
  * Never hardcode colour values in components; use these tokens.
  */
@@ -66,7 +66,7 @@
 
   --shadow-raised: 0 1px 0 oklch(1 0 0 / 6%) inset, 0 12px 30px -18px oklch(0 0 0 / 70%);
   --shadow-sheet: 0 30px 70px -20px oklch(0 0 0 / 65%);
-  --shadow-glow: 0 0 0 1px oklch(1 0 0 / 10%), 0 8px 24px -8px oklch(0.55 0.24 295 / 55%);
+  --shadow-glow: 0 0 0 1px oklch(1 0 0 / 10%), 0 8px 24px -8px oklch(0.66 0.19 46 / 55%);
 }
 
 :root {
@@ -88,12 +88,12 @@
   --brand-blue-soft: oklch(0.33 0.075 262);
   --brand-blue-ink: oklch(0.93 0.03 262);
 
-  /* Shiny purple accent */
-  --brand-accent: oklch(0.55 0.24 295);
-  --brand-accent-light: oklch(0.66 0.21 297);
-  --brand-accent-deep: oklch(0.42 0.2 293);
-  --brand-accent-soft: oklch(0.34 0.1 295);
-  --brand-accent-ink: oklch(0.86 0.11 297);
+  /* Shiny orange accent — the single accent hue (instructSite family) */
+  --brand-accent: oklch(0.68 0.185 47);
+  --brand-accent-light: oklch(0.78 0.16 55);
+  --brand-accent-deep: oklch(0.56 0.16 42);
+  --brand-accent-soft: oklch(0.33 0.075 50);
+  --brand-accent-ink: oklch(0.87 0.11 65);
 
   --gloss-highlight: oklch(1 0 0 / 38%);
   --gradient-gloss: linear-gradient(
@@ -103,31 +103,31 @@
     var(--brand-accent-deep) 100%
   );
 
-  --primary: oklch(0.55 0.24 295);
-  --primary-foreground: oklch(0.99 0.005 295);
+  --primary: oklch(0.68 0.185 47);
+  --primary-foreground: oklch(0.21 0.05 55);
   --secondary: oklch(0.31 0.062 262);
   --secondary-foreground: oklch(0.95 0.01 262);
   --muted: oklch(0.3 0.055 262);
   --muted-foreground: oklch(0.79 0.022 262);
-  --accent: oklch(0.34 0.1 295);
-  --accent-foreground: oklch(0.9 0.09 297);
+  --accent: oklch(0.33 0.075 50);
+  --accent-foreground: oklch(0.9 0.1 65);
   --destructive: oklch(0.58 0.2 25);
   --destructive-foreground: oklch(0.99 0.005 25);
 
   --border: oklch(1 0 0 / 12%);
   --border-strong: oklch(1 0 0 / 24%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.66 0.21 297);
+  --ring: oklch(0.78 0.16 55);
 
-  /* Status — re-tuned for navy, distinct from the purple accent */
-  --pass: oklch(0.82 0.17 155);
-  --pass-soft: oklch(0.34 0.09 155);
-  --fail: oklch(0.75 0.17 22);
-  --fail-soft: oklch(0.34 0.11 22);
-  --warn: oklch(0.85 0.15 85);
-  --warn-soft: oklch(0.35 0.08 80);
-  --flag: oklch(0.83 0.13 210);
-  --flag-soft: oklch(0.33 0.08 220);
+  /* Status — re-tuned for navy, kept clearly distinct from the orange accent */
+  --pass: oklch(0.84 0.17 158);
+  --pass-soft: oklch(0.34 0.09 158);
+  --fail: oklch(0.72 0.2 13);
+  --fail-soft: oklch(0.33 0.12 13);
+  --warn: oklch(0.92 0.17 105);
+  --warn-soft: oklch(0.36 0.08 105);
+  --flag: oklch(0.84 0.13 215);
+  --flag-soft: oklch(0.33 0.08 222);
 }
 
 /*
@@ -150,11 +150,11 @@
   --brand-blue: oklch(0.46 0.15 258);
   --brand-blue-soft: oklch(0.95 0.028 258);
   --brand-blue-ink: oklch(0.3 0.09 258);
-  --brand-accent: oklch(0.48 0.21 295);
-  --brand-accent-light: oklch(0.58 0.21 297);
-  --brand-accent-deep: oklch(0.38 0.18 293);
-  --brand-accent-soft: oklch(0.955 0.03 297);
-  --brand-accent-ink: oklch(0.36 0.15 297);
+  --brand-accent: oklch(0.44 0.14 258);
+  --brand-accent-light: oklch(0.54 0.14 258);
+  --brand-accent-deep: oklch(0.34 0.12 258);
+  --brand-accent-soft: oklch(0.955 0.025 258);
+  --brand-accent-ink: oklch(0.32 0.1 258);
 
   --primary: oklch(0.46 0.15 258);
   --primary-foreground: oklch(0.99 0.003 258);
@@ -162,24 +162,24 @@
   --secondary-foreground: oklch(0.3 0.05 262);
   --muted: oklch(0.958 0.008 262);
   --muted-foreground: oklch(0.44 0.025 262);
-  --accent: oklch(0.955 0.03 297);
-  --accent-foreground: oklch(0.36 0.15 297);
+  --accent: oklch(0.955 0.025 258);
+  --accent-foreground: oklch(0.32 0.1 258);
   --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
   --border: oklch(0.9 0.012 262);
   --border-strong: oklch(0.8 0.02 262);
   --input: oklch(0.88 0.014 262);
-  --ring: oklch(0.48 0.2 297);
+  --ring: oklch(0.44 0.16 258);
 
   --pass: oklch(0.42 0.11 158);
   --pass-soft: oklch(0.955 0.03 158);
   --fail: oklch(0.47 0.19 27);
   --fail-soft: oklch(0.958 0.025 27);
-  --warn: oklch(0.47 0.12 70);
-  --warn-soft: oklch(0.96 0.04 80);
-  --flag: oklch(0.42 0.18 297);
-  --flag-soft: oklch(0.955 0.03 297);
+  --warn: oklch(0.45 0.11 95);
+  --warn-soft: oklch(0.96 0.05 100);
+  --flag: oklch(0.4 0.15 258);
+  --flag-soft: oklch(0.955 0.025 258);
 
   --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
 
@@ -276,7 +276,7 @@
   box-shadow:
     0 1px 0 oklch(1 0 0 / 25%) inset,
     0 -6px 14px -8px oklch(0 0 0 / 60%) inset,
-    0 10px 26px -10px oklch(0.55 0.24 295 / 65%);
+    0 10px 26px -10px oklch(0.66 0.19 46 / 65%);
   overflow: hidden;
 
   &::after {
