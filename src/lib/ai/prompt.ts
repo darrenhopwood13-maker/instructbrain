@@ -1,7 +1,7 @@
 import {
   aiGuidanceOf,
   allowsMultipleFindingsPerPhoto,
-  categoriesOf,
+  categoryGroupsOf,
   definesField,
   definitionLabel,
   regulatoryReferencesOf,
@@ -13,16 +13,33 @@ import {
 
 /**
  * Invariant 5: every discipline-specific word in the prompt comes out of the
- * snapshot. Nothing here names roofing, fire-stopping or any other trade,
- * status or hazard.
+ * report's survey_type_snapshot. Nothing in this file names a discipline, a
+ * status, a hazard, a trade or a defect — if it did, the invariant is broken.
  */
 
 const UNIVERSAL_RULES = [
   "You are assisting a UK construction professional. Describe only what is visible in the photograph.",
-  "Never describe, identify, count, characterise or speculate about any person. If a person appears in the photograph, set involves_person to true and describe only the condition or hazard, never the person.",
-  "Abstention is preferred to guessing. If you are not confident, return a low confidence value — you will be marked as not assessed and a person will review it, which is the correct outcome.",
-  "Suggesting a responsible trade is a commercial act. Return suggested_trade as null unless the photograph itself makes attribution reasonable, and always explain your reasoning.",
+  "Never describe, identify, count, characterise or speculate about any person. If a person appears, set involves_person to true and describe only the condition, never the person.",
+  "Abstention is preferred to guessing. Set assessable to false with a short abstain_reason when the photograph cannot support an assessment, and return a low confidence whenever you are unsure. Being marked as not assessed and reviewed by a person is the correct outcome.",
+  "Naming a responsible trade is a commercial act. Return suggested_trade as null unless the photograph itself makes attribution reasonable, and always give your reasoning and a separate trade_confidence.",
   "Return British English. Be factual and unemotional; this text is issued to a client as part of a formal document.",
+  "confidence and trade_confidence are numbers between 0 and 1. region is normalised to the image: x, y, w and h between 0 and 1, or null.",
+];
+
+/** Guidance keys are rendered in a stable, readable order; unknown keys follow. */
+const GUIDANCE_ORDER = [
+  "persona",
+  "focus",
+  "failCriteria",
+  "excludeCriteria",
+  "abstainGuidance",
+  "multiFindingGuidance",
+  "descriptionGuidance",
+  "causeGuidance",
+  "regulatoryGuidance",
+  "remedialGuidance",
+  "peopleGuidance",
+  "tradeGuidance",
 ];
 
 function list(label: string, items: string[]): string | null {
@@ -30,11 +47,21 @@ function list(label: string, items: string[]): string | null {
   return `${label}:\n${items.map((item) => `- ${item}`).join("\n")}`;
 }
 
+function orderedGuidance(snapshot: SurveyTypeSnapshot) {
+  const entries = aiGuidanceOf(snapshot);
+  const rank = (key: string) => {
+    const index = GUIDANCE_ORDER.indexOf(key);
+    return index === -1 ? GUIDANCE_ORDER.length : index;
+  };
+  return [...entries].sort((a, b) => rank(a.key) - rank(b.key));
+}
+
 export function buildSystemPrompt(snapshot: SurveyTypeSnapshot): string {
   const multiple = allowsMultipleFindingsPerPhoto(snapshot);
 
   const sections: Array<string | null> = [
     `Survey type: ${definitionLabel(snapshot)}.`,
+    list("Survey-specific guidance", orderedGuidance(snapshot).map((entry) => `${entry.label}: ${entry.text}`)),
     ...UNIVERSAL_RULES,
     multiple
       ? "A single photograph may contain several separate observations. Return one array entry per distinct observation."
@@ -46,49 +73,64 @@ export function buildSystemPrompt(snapshot: SurveyTypeSnapshot): string {
       ),
     ),
     list(
-      "Severity values (use the id exactly, or null)",
+      "Severity scale (use the id exactly, or null) — give severity_rationale in one sentence",
       severitiesOf(snapshot).map((severity) =>
         [`${severity.id} — ${severity.label}`, severity.guidance].filter(Boolean).join(": "),
       ),
     ),
-    list(
-      "Category values (use the id exactly, or null)",
-      categoriesOf(snapshot).map((category) => `${category.id} — ${category.label}`),
+    ...categoryGroupsOf(snapshot).map((group) =>
+      list(
+        `${group.label} (use the id exactly in category, or null)`,
+        group.items.map((item) => `${item.id} — ${item.label}`),
+      ),
     ),
+    list("Trades this survey type recognises", tradesOf(snapshot)),
     definesField(snapshot, "regulatory_reference")
       ? list(
-          "Regulatory references (use the id exactly, or null)",
-          regulatoryReferencesOf(snapshot).map((ref) => `${ref.id} — ${ref.label}`),
+          "Regulatory references — regulatory_reference must be one of these ids exactly, or null. Never invent one",
+          regulatoryReferencesOf(snapshot).map((reference) => `${reference.id} — ${reference.label}`),
         )
-      : "Do not return a regulatory_reference for this survey type; return null.",
+      : "Do not return a regulatory_reference for this survey type; omit it or return null.",
     definesField(snapshot, "likely_cause")
-      ? "Where the photograph supports it, give a short likely_cause. Otherwise return null."
-      : "Do not return a likely_cause for this survey type; return null.",
-    list("Trades this survey type recognises", tradesOf(snapshot)),
-    list(
-      "Survey-specific guidance",
-      aiGuidanceOf(snapshot).map((entry) => `${entry.label}: ${entry.text}`),
-    ),
-    "confidence and trade_confidence are numbers between 0 and 1.",
+      ? null
+      : "Do not return a likely_cause for this survey type; omit it or return null.",
+    "Return the envelope: assessable, abstain_reason and the observations array.",
   ];
 
   return sections.filter((section): section is string => !!section).join("\n\n");
 }
 
-export function buildUserPrompt(context: {
+export type PhotoContext = {
   captureFields: Record<string, string>;
   capturedAt: string | null;
   filename: string | null;
-}): string {
-  const entries = Object.entries(context.captureFields ?? {})
+};
+
+export type ProjectContext = {
+  name: string | null;
+  client: string | null;
+  address: string | null;
+};
+
+export function buildUserPrompt(photo: PhotoContext, project: ProjectContext): string {
+  const captureEntries = Object.entries(photo.captureFields ?? {})
     .filter(([, value]) => typeof value === "string" && value.trim() !== "")
     .map(([key, value]) => `- ${key}: ${value}`);
 
+  const projectEntries = [
+    project.name ? `- Project: ${project.name}` : null,
+    project.client ? `- Client: ${project.client}` : null,
+    project.address ? `- Address: ${project.address}` : null,
+  ].filter(Boolean) as string[];
+
   return [
-    "Assess this photograph against the survey type above and return the observations array.",
-    entries.length > 0 ? `Capture information recorded on site:\n${entries.join("\n")}` : null,
-    context.capturedAt ? `Photograph taken at: ${context.capturedAt}` : null,
-    context.filename ? `Filename: ${context.filename}` : null,
+    "Assess this photograph against the survey type above and return the envelope.",
+    projectEntries.length > 0 ? `Project context:\n${projectEntries.join("\n")}` : null,
+    captureEntries.length > 0
+      ? `Capture information recorded on site:\n${captureEntries.join("\n")}`
+      : null,
+    photo.capturedAt ? `Photograph taken at: ${photo.capturedAt}` : null,
+    photo.filename ? `Filename: ${photo.filename}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");

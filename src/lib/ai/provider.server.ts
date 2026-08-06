@@ -1,129 +1,137 @@
 /**
- * Provider-agnostic vision adapter. Call sites know nothing about the
- * provider, the endpoint, the key or the wire format — they call
- * `analyseImage` and get an observations array back.
+ * Tiered analysis of one photograph, with retry and backoff.
  *
- * Server-only: the key never reaches the browser.
+ * TRIAGE runs over everything. ESCALATION re-runs anything uncertain,
+ * abstained, or resolving to a fail-tone status — a false negative on a defect
+ * costs far more than the extra tokens.
  */
-import { aiConfig, type AiConfig } from "@/lib/ai/config";
-import { observationJsonSchema, parseObservations, type Observation } from "@/lib/ai/observation";
+import { adapters, AiProviderError, type AdapterResponse } from "@/lib/ai/adapters.server";
+import { aiConfig, estimateCostUsd, type AiConfig, type AnalysisTier } from "@/lib/ai/config";
+import {
+  needsEscalation,
+  parseEnvelope,
+  SchemaValidationError,
+  type Envelope,
+} from "@/lib/ai/observation";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
-export class AiProviderError extends Error {
-  readonly status: number | undefined;
-  readonly retryable: boolean;
-  constructor(message: string, status?: number) {
-    super(message);
-    this.name = "AiProviderError";
-    this.status = status;
-    this.retryable = status === 429 || (typeof status === "number" && status >= 500);
-  }
-}
+export { AiProviderError };
 
-export type AnalyseRequest = {
-  snapshot: SurveyTypeSnapshot;
-  systemPrompt: string;
-  userPrompt: string;
-  /** Full-resolution source. Never a thumbnail — see analysisSourcePath. */
-  imageUrl: string;
+export type TierAttempt = {
+  tier: AnalysisTier;
+  model: string;
+  provider: string;
+  usage: { inputTokens: number; outputTokens: number };
+  costUsd: number;
+  raw: unknown;
+  envelope: Envelope | null;
+  error: string | null;
 };
 
-export type AnalyseResult = { observations: Observation[]; raw: unknown };
-
-function apiKey(): string {
-  const key = process.env["OPENAI_API_KEY"];
-  if (!key) {
-    throw new AiProviderError(
-      "No AI provider key is configured on the server, so nothing could be assessed.",
-    );
-  }
-  return key;
-}
-
-async function callOpenAi(request: AnalyseRequest, config: AiConfig): Promise<AnalyseResult> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey()}`,
-    },
-    body: JSON.stringify({
-      model: config.visionModel,
-      max_tokens: config.maxOutputTokens,
-      messages: [
-        { role: "system", content: request.systemPrompt },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: request.userPrompt },
-            { type: "image_url", image_url: { url: request.imageUrl, detail: "high" } },
-          ],
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "survey_observations",
-          strict: true,
-          schema: observationJsonSchema(request.snapshot),
-        },
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new AiProviderError(
-      `The AI provider returned ${response.status}. ${body.slice(0, 300)}`.trim(),
-      response.status,
-    );
-  }
-
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
-  };
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content !== "string" || content.trim() === "") {
-    throw new AiProviderError("The AI provider returned an empty response.");
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    throw new AiProviderError("The AI provider returned output that was not valid JSON.");
-  }
-
-  return { observations: parseObservations(parsed), raw: parsed };
-}
+export type AnalysisOutcome = {
+  /** The envelope that will be written, or null when nothing usable came back. */
+  envelope: Envelope | null;
+  /** Why nothing usable came back. Becomes a `not_assessed` finding. */
+  failure: string | null;
+  attempts: TierAttempt[];
+  tier: AnalysisTier;
+  totalCostUsd: number;
+  totalTokens: { inputTokens: number; outputTokens: number };
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Exponential backoff with jitter, applied only to 429 and 5xx. */
-export async function analyseImage(
-  request: AnalyseRequest,
-  config: AiConfig = aiConfig(),
-): Promise<AnalyseResult> {
-  let lastError: unknown;
+export type AnalyseInput = {
+  snapshot: SurveyTypeSnapshot;
+  systemPrompt: string;
+  userPrompt: string;
+  imageUrl: string;
+};
 
-  for (let attempt = 0; attempt <= config.maxRetries; attempt += 1) {
+/** Exponential backoff with jitter, applied only to 429, 5xx and network faults. */
+async function callTier(
+  input: AnalyseInput,
+  tier: AnalysisTier,
+  config: AiConfig,
+): Promise<TierAttempt> {
+  const model = config.models[tier];
+  const adapter = adapters[config.provider];
+  const attempt: TierAttempt = {
+    tier,
+    model,
+    provider: config.provider,
+    usage: { inputTokens: 0, outputTokens: 0 },
+    costUsd: 0,
+    raw: null,
+    envelope: null,
+    error: null,
+  };
+
+  let lastError: unknown = null;
+
+  for (let index = 0; index <= config.maxRetries; index += 1) {
     try {
-      switch (config.provider) {
-        case "openai":
-          return await callOpenAi(request, config);
-        default:
-          throw new AiProviderError(`Unsupported AI provider: ${String(config.provider)}`);
-      }
+      const response: AdapterResponse = await adapter({ ...input, model, tier, config });
+      attempt.raw = response.raw;
+      attempt.usage = response.usage;
+      attempt.costUsd = estimateCostUsd(model, response.usage);
+      attempt.envelope = parseEnvelope(response.payload);
+      return attempt;
     } catch (error) {
       lastError = error;
+      if (error instanceof SchemaValidationError) break;
       const retryable = error instanceof AiProviderError && error.retryable;
-      if (!retryable || attempt === config.maxRetries) break;
-      const delay = config.baseRetryDelayMs * 2 ** attempt + Math.random() * 250;
-      await sleep(delay);
+      if (!retryable || index === config.maxRetries) break;
+      await sleep(config.baseRetryDelayMs * 2 ** index + Math.random() * 250);
     }
   }
 
-  throw lastError instanceof Error ? lastError : new AiProviderError("The AI call failed.");
+  attempt.error =
+    lastError instanceof Error ? lastError.message : "the AI call failed for an unknown reason.";
+  return attempt;
+}
+
+/**
+ * Runs triage, then escalation where warranted. Never throws for a provider
+ * fault: the caller turns `failure` into a `not_assessed` finding.
+ */
+export async function analysePhotograph(
+  input: AnalyseInput,
+  config: AiConfig = aiConfig(),
+): Promise<AnalysisOutcome> {
+  const attempts: TierAttempt[] = [];
+
+  const triage = await callTier(input, "triage", config);
+  attempts.push(triage);
+
+  let chosen = triage;
+  if (
+    config.escalationEnabled &&
+    config.models.escalation !== config.models.triage &&
+    (triage.envelope === null ||
+      needsEscalation(triage.envelope, input.snapshot, config.confidenceThreshold))
+  ) {
+    const escalation = await callTier(input, "escalation", config);
+    attempts.push(escalation);
+    if (escalation.envelope !== null) chosen = escalation;
+  }
+
+  const totalTokens = attempts.reduce(
+    (total, attempt) => ({
+      inputTokens: total.inputTokens + attempt.usage.inputTokens,
+      outputTokens: total.outputTokens + attempt.usage.outputTokens,
+    }),
+    { inputTokens: 0, outputTokens: 0 },
+  );
+
+  return {
+    envelope: chosen.envelope,
+    failure: chosen.envelope === null ? (chosen.error ?? "the AI call failed.") : null,
+    attempts,
+    tier: chosen.tier,
+    totalCostUsd: attempts.reduce((total, attempt) => total + attempt.costUsd, 0),
+    totalTokens,
+  };
 }
 
 /** Bounded concurrency. Order of results matches order of inputs. */
