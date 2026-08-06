@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { FolderOpen, Building2, Users, FileText } from "lucide-react";
+import { FolderOpen, Building2, Users, FileText, UserCog } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession, signOut } from "@/lib/auth";
 
@@ -47,6 +47,7 @@ const nav = [
   { to: "/", label: "Projects", icon: FolderOpen, exact: true },
   { to: "/settings/organisation", label: "Organisation", icon: Building2, exact: false },
   { to: "/settings/directory", label: "Directory", icon: Users, exact: false },
+  { to: "/settings/account", label: "Account", icon: UserCog, exact: false },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -102,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Primary mobile"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
-        <ul className="grid grid-cols-3">
+        <ul className="grid grid-cols-4">
           {nav.map((item) => (
             <li key={item.to}>
               <Link
