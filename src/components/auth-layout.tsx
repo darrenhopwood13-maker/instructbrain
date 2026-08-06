@@ -13,7 +13,7 @@ export function AuthLayout({
   footer?: ReactNode;
 }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-surface px-4 py-12">
+    <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2.5">
           <span
@@ -24,7 +24,7 @@ export function AuthLayout({
           </span>
           <span>
             <span className="wordmark block text-base leading-tight">
-              <span className="text-brand-purple-ink">Report</span>{" "}
+              <span className="text-brand-purple-light">Report</span>{" "}
               <span className="text-foreground">Ready</span>
             </span>
           </span>
