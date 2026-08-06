@@ -12,7 +12,7 @@ import {
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { mapWithConcurrency } from "@/lib/ai/provider.server";
-import { toneOfStatus } from "@/lib/survey-types";
+import { resolveStatus } from "@/lib/survey-types";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /** Fixtures live in the test file. No invented data exists in src/ outside tests. */
@@ -65,7 +65,7 @@ function envelope(overrides: Partial<Envelope> = {}): Envelope {
   return { assessable: true, abstain_reason: null, observations: [observation()], ...overrides };
 }
 
-const isPass = (status: string) => toneOfStatus(roofing, status) === "pass";
+const isPass = (status: string) => resolveStatus(roofing, status).tone === "pass";
 
 describe("invariant 1 — AI failure never becomes a pass", () => {
   it("keeps a confident, recognised status", () => {
