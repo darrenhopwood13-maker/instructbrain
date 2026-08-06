@@ -454,13 +454,14 @@ export function ReviewList({
                       <Button
                         key={option.id}
                         variant="quiet"
-                        className="min-h-11 flex-1 basis-32 sm:flex-none sm:basis-auto"
+                        className="h-auto min-h-11 w-full whitespace-normal px-3 py-2 text-center sm:w-auto"
                         onClick={() => setStatus(index, option)}
                       >
                         {option.label}
                       </Button>
                     ))}
                 </div>
+
               </div>
 
             </li>
