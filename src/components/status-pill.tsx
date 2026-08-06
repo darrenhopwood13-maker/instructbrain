@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { reportStatusLabels, type ReportStatus } from "@/lib/mock-data";
+import { reportStatusLabels, type ReportStatus } from "@/lib/types";
 import type { StatusDefinition, StatusTone } from "@/lib/survey-types";
 
 const toneStyles: Record<StatusTone, string> = {

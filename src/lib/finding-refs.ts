@@ -1,4 +1,4 @@
-import type { Finding } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
 
 /**
  * Invariant 4: `ref` is assigned once at creation and persisted. Deleting a
