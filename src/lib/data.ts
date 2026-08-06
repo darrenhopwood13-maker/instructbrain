@@ -417,6 +417,9 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     isConfidential: row.is_confidential,
     photoIds,
     note: row.remedial_text ?? row.finding_text ?? "",
+    description: row.finding_text ?? "",
+    remedial: row.remedial_text ?? "",
+
     likelyCause: row.likely_cause,
     likelyCauseConfirmed: row.human_edited,
     regulatoryReference: row.regulatory_reference,

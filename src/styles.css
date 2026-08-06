@@ -194,9 +194,13 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* Backstop only. The offending elements are fixed at source; `clip` still
+       lets programmatic and keyboard scrolling reach content, unlike hidden. */
+    overflow-x: clip;
   }
 
   body {
+    overflow-x: clip;
     background-color: var(--color-surface);
     background-image:
       linear-gradient(
@@ -210,6 +214,48 @@
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "tnum";
   }
+
+  /* No image may be wider than the column it sits in. */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  /* Refs, filenames, tokens and URLs wrap rather than widening the layout. */
+  p,
+  li,
+  dd,
+  dt,
+  h1,
+  h2,
+  h3,
+  h4,
+  td,
+  th,
+  figcaption,
+  label {
+    overflow-wrap: anywhere;
+  }
+
+  /* Touch: every control clears 44x44 on a coarse pointer. */
+  @media (pointer: coarse) {
+    button,
+    a[href],
+    [role="button"],
+    summary,
+    select,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+      min-height: 44px;
+    }
+
+    button,
+    [role="button"] {
+      min-width: 44px;
+    }
+  }
+
 
   /* Faint blueprint grid, well below text contrast. */
   body::before {
