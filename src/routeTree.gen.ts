@@ -14,6 +14,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as SharedTokenRouteImport } from './routes/shared.$token'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
@@ -44,6 +45,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SharedTokenRoute = SharedTokenRouteImport.update({
+  id: '/shared/$token',
+  path: '/shared/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/shared/$token': typeof SharedTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/shared/$token': typeof SharedTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/sign-in': typeof AuthSignInRoute
+  '/shared/$token': typeof SharedTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/shared/$token'
     | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/shared/$token'
     | '/'
     | '/projects/$id'
     | '/reports/$id'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/sign-in'
+    | '/shared/$token'
     | '/_authenticated/'
     | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthSignInRoute: typeof AuthSignInRoute
+  SharedTokenRoute: typeof SharedTokenRoute
   ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
 }
 
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/sign-in'
       fullPath: '/auth/sign-in'
       preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shared/$token': {
+      id: '/shared/$token'
+      path: '/shared/$token'
+      fullPath: '/shared/$token'
+      preLoaderRoute: typeof SharedTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/projects/$id': {
@@ -308,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthSignInRoute: AuthSignInRoute,
+  SharedTokenRoute: SharedTokenRoute,
   ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
 }
 export const routeTree = rootRouteImport
