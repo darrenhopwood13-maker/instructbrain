@@ -11,6 +11,7 @@
 
 export const PHOTO_BUCKET = "report-photos";
 export const THUMBNAIL_SEGMENT = "thumbnails";
+export const ANALYSIS_SEGMENT = "analysis";
 
 export class ThumbnailNotAnalysableError extends Error {
   constructor(path: string) {
