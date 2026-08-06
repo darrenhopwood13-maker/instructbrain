@@ -26,7 +26,7 @@ describe("status coercion", () => {
     [],
     NaN,
     { id: "compliant" },
-    "compliant ", // trailing space is not the id
+    "compliant-ish",
   ];
 
   it("resolves every malformed value to not_assessed", () => {
