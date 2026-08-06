@@ -59,27 +59,10 @@ function from(table: string) {
 /* Snapshot coercion                                                    */
 /* ------------------------------------------------------------------ */
 
-/**
- * A report whose snapshot is missing or malformed must not borrow another
- * discipline's vocabulary. It gets an empty definition, which `statusesOf`
- * fills with `not_assessed` only.
- */
-export function coerceSnapshot(value: unknown): SurveyDefinition {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as SurveyDefinition).id === "string" &&
-    Array.isArray((value as SurveyDefinition).statuses)
-  ) {
-    return value as SurveyDefinition;
-  }
-  return {
-    id: "unavailable",
-    version: 0,
-    label: "Survey type unavailable",
-    statuses: [],
-  };
-}
+import { coerceSnapshot } from "@/lib/report/snapshot";
+export { coerceSnapshot };
+
+
 
 /* ------------------------------------------------------------------ */
 /* Memberships and organisation                                         */

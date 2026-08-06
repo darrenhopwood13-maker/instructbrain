@@ -72,10 +72,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="editorial-title block truncate text-base font-semibold leading-tight">
                 Report Ready
               </span>
-              <span className="hidden text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-muted-foreground sm:block">
-                Instruct Suite
-              </span>
             </span>
+
           </Link>
           <nav aria-label="Primary" className="ml-auto hidden items-center gap-1 sm:flex">
             {nav.map((item) => (

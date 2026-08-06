@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { FileOutput, FileText, ChevronRight, Download, Send } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileText, ChevronRight, History } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
@@ -10,9 +10,22 @@ import { ReportStatusPill } from "@/components/status-pill";
 import { ReviewList } from "@/components/review-list";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { AnalysisPanel } from "@/components/ai/analysis-panel";
+import { ReportDocumentView } from "@/components/report/report-document-view";
+import { ReportActions } from "@/components/report/report-actions";
+import { InlineField } from "@/components/report/inline-field";
 
 import { findingsQuery, reportQuery } from "@/lib/data";
+import {
+  reportDocumentQuery,
+  reportVersionsQuery,
+  updateFinding,
+  updateReportFields,
+  type FindingPatch,
+  type ReportPatch,
+} from "@/lib/report/report-data";
+import { formatDocumentDate, type DocFinding } from "@/lib/report/document";
 import { definitionLabel } from "@/lib/survey-types";
+import { useOrganisations } from "@/lib/use-organisations";
 
 type ReportSearch = { tab?: "photos" | "review" | "output" };
 
@@ -24,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
   head: () => {
     const title = "Report workspace — Report Ready";
     const description =
-      "Photographs, AI-drafted findings review and issued output for this report.";
+      "Photographs, AI-drafted findings review and the issued document for this report.";
     return {
       meta: [
         { title },
@@ -40,8 +53,31 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 function ReportWorkspace() {
   const { id } = Route.useParams();
   const { tab } = Route.useSearch();
+  const queryClient = useQueryClient();
+  const { organisationId } = useOrganisations();
   const query = useQuery(reportQuery(id));
   const findings = useQuery(findingsQuery(id));
+  const document = useQuery(reportDocumentQuery(id));
+  const versions = useQuery(reportVersionsQuery(id));
+
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["report-document", id] });
+    await queryClient.invalidateQueries({ queryKey: ["findings", id] });
+  };
+
+  const onReportPatch = async (patch: ReportPatch, before: Record<string, unknown>) => {
+    await updateReportFields(id, patch, before);
+    await refresh();
+  };
+
+  const onFindingPatch = async (
+    finding: DocFinding,
+    patch: FindingPatch,
+    before: Record<string, unknown>,
+  ) => {
+    await updateFinding(id, finding.id, patch, before);
+    await refresh();
+  };
 
   if (query.isPending) {
     return (
@@ -82,6 +118,8 @@ function ReportWorkspace() {
   }
 
   const { report, project } = query.data;
+  const doc = document.data ?? null;
+  const locked = doc?.report.status === "issued";
 
   return (
     <AppShell>
@@ -112,18 +150,30 @@ function ReportWorkspace() {
         <div className="flex flex-wrap items-center gap-3">
           <p className="eyebrow">{definitionLabel(report.surveyTypeSnapshot)}</p>
           <ReportStatusPill status={report.status} />
+          {doc && doc.report.currentVersion > 0 ? (
+            <span className="text-xs text-muted-foreground">
+              Version {doc.report.currentVersion} · issued{" "}
+              {formatDocumentDate(doc.report.issuedAt)}
+            </span>
+          ) : null}
         </div>
         <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
           {report.title}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">Updated {report.updated}</p>
+
+        {doc ? (
+          <div className="mt-4">
+            <ReportActions document={doc} organisationId={organisationId} />
+          </div>
+        ) : null}
       </header>
 
       <Tabs defaultValue={tab ?? "photos"} className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="photos">Photos</TabsTrigger>
           <TabsTrigger value="review">Review</TabsTrigger>
-          <TabsTrigger value="output">Output</TabsTrigger>
+          <TabsTrigger value="output">Report</TabsTrigger>
         </TabsList>
 
         <TabsContent value="photos" className="mt-6">
@@ -155,37 +205,89 @@ function ReportWorkspace() {
           )}
         </TabsContent>
 
-
         <TabsContent value="output" className="mt-6">
-          <div className="rounded-xl border border-border bg-surface-raised p-5 shadow-raised">
-            <p className="eyebrow">Step three</p>
-            <h2 className="editorial-title mt-1 text-lg font-semibold">Issue the report</h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Once every finding is confirmed, Report Ready produces the client PDF and a per-trade
-              extract for each subcontractor in the project directory.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button variant="brand" disabled>
-                <Send aria-hidden="true" />
-                Issue to client
-              </Button>
-              <Button variant="quiet" disabled>
-                <Download aria-hidden="true" />
-                Download draft PDF
-              </Button>
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Disabled until all findings are confirmed in the Review tab.
-            </p>
-          </div>
-
-          <div className="mt-6">
-            <EmptyState
-              icon={FileOutput}
-              title="No issued versions"
-              description="Issued PDFs and trade extracts will be listed here with their issue date, recipient and version number."
+          {document.isPending ? (
+            <LoadingState label="Assembling the document…" />
+          ) : document.isError ? (
+            <ErrorState
+              title="The document could not be assembled"
+              error={document.error}
+              onRetry={() => void document.refetch()}
             />
-          </div>
+          ) : doc ? (
+            <>
+              {locked ? (
+                <p className="mb-5 rounded-lg border border-brand-blue/30 bg-brand-blue-soft px-4 py-3 text-sm text-brand-blue-ink">
+                  This report has been issued as version {doc.report.currentVersion} and is locked.
+                  Reopen it to make changes; the issued version is kept exactly as it was issued.
+                </p>
+              ) : null}
+
+              <section className="mb-8 grid gap-4 rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:grid-cols-2">
+                <InlineField
+                  label="Report title"
+                  value={doc.report.title}
+                  readOnly={locked}
+                  onSave={(next) => onReportPatch({ title: next }, { title: doc.report.title })}
+                />
+                <InlineField
+                  label="Subtitle"
+                  value={doc.report.subtitle ?? ""}
+                  readOnly={locked}
+                  onSave={(next) =>
+                    onReportPatch({ subtitle: next || null }, { subtitle: doc.report.subtitle })
+                  }
+                />
+                <InlineField
+                  label="Reference"
+                  value={doc.report.reference ?? ""}
+                  readOnly={locked}
+                  onSave={(next) =>
+                    onReportPatch({ reference: next || null }, { reference: doc.report.reference })
+                  }
+                />
+                <InlineField
+                  label="Report date"
+                  type="date"
+                  value={doc.report.reportDate}
+                  readOnly={locked}
+                  onSave={(next) =>
+                    onReportPatch(
+                      { report_date: next || doc.report.reportDate },
+                      { report_date: doc.report.reportDate },
+                    )
+                  }
+                />
+              </section>
+
+              <ReportDocumentView
+                document={doc}
+                editable={!locked}
+                onReportPatch={onReportPatch}
+                onFindingPatch={onFindingPatch}
+              />
+
+              <section className="mt-10 rounded-xl border border-border bg-surface-raised p-4">
+                <h2 className="editorial-title flex items-center gap-2 text-base font-semibold">
+                  <History aria-hidden="true" className="size-4" />
+                  Issued versions
+                </h2>
+                {(versions.data ?? []).length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Nothing issued yet. Issuing freezes a copy of this document as version 1.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {(versions.data ?? []).map((version) => (
+                      <li key={version.id}>
+                        Version {version.version} — issued {formatDocumentDate(version.issued_at)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </>
+          ) : null}
         </TabsContent>
       </Tabs>
     </AppShell>

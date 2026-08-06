@@ -164,3 +164,75 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-muted-foreground);
 }
+
+/* ------------------------------------------------------------------ */
+/* Print                                                               */
+/* ------------------------------------------------------------------ */
+
+.print-running-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 14mm 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  .no-print,
+  nav[aria-label="Primary"],
+  nav[aria-label="Primary mobile"],
+  nav[aria-label="Breadcrumb"] {
+    display: none !important;
+  }
+
+  /* Repeats at the top of every printed page: a dropped copy stays reorderable. */
+  .print-running-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 4pt;
+    border-bottom: 0.5pt solid #cbd5e1;
+    font-size: 8pt;
+    color: #475569;
+  }
+
+  .print-page-number::after {
+    content: "Page " counter(page) " of " counter(pages);
+  }
+
+  .report-document {
+    font-size: 10pt;
+  }
+
+  .report-document img {
+    max-height: 90mm;
+    object-fit: contain;
+    break-inside: avoid;
+  }
+
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  .break-before-page {
+    break-before: page;
+  }
+
+  .break-after-page {
+    break-after: page;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}
