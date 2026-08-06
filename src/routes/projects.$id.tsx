@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { StatusPill, ReportStatusPill } from "@/components/status-pill";
-import { getProject, reportsForProject, overdueItems } from "@/lib/mock-data";
+import { getProject, reportsForProject, overdueItems, prePlasterSnapshot } from "@/lib/mock-data";
+import { resolveStatus } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/projects/$id")({
   loader: ({ params }) => {
@@ -123,7 +124,7 @@ function ProjectDashboard() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="eyebrow">{item.ref}</p>
-                    <StatusPill status={item.status} />
+                    <StatusPill status={resolveStatus(prePlasterSnapshot, item.status)} />
                   </div>
                   <p className="mt-1.5 text-sm font-semibold leading-snug">{item.title}</p>
                   <p className="mt-1.5 text-sm text-muted-foreground">
