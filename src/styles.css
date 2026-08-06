@@ -4,7 +4,8 @@
 
 /*
  * Report Ready — design system.
- * Light, editorial, document-led. Blue = structure, purple = accent/AI, white = surface.
+ * Dark navy console (Instruct suite family) with a shiny purple accent.
+ * The report document itself stays paper: see the `.paper` scope below.
  * Never hardcode colour values in components; use these tokens.
  */
 
@@ -15,8 +16,10 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
 
-  --font-sans: "Inter var", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Spectral", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-wordmark: "Audiowide", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -34,6 +37,8 @@
   --color-brand-purple: var(--brand-purple);
   --color-brand-purple-soft: var(--brand-purple-soft);
   --color-brand-purple-ink: var(--brand-purple-ink);
+  --color-brand-purple-light: var(--brand-purple-light);
+  --color-brand-purple-deep: var(--brand-purple-deep);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -59,18 +64,83 @@
   --color-flag: var(--flag);
   --color-flag-soft: var(--flag-soft);
 
-  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
-  --shadow-sheet: 0 24px 60px -24px oklch(0.3 0.06 262 / 24%);
+  --shadow-raised: 0 1px 0 oklch(1 0 0 / 6%) inset, 0 12px 30px -18px oklch(0 0 0 / 70%);
+  --shadow-sheet: 0 30px 70px -20px oklch(0 0 0 / 65%);
+  --shadow-glow: 0 0 0 1px oklch(1 0 0 / 10%), 0 8px 24px -8px oklch(0.55 0.24 295 / 55%);
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  --background: oklch(0.985 0.004 262);
+  /* Navy console */
+  --background: oklch(0.22 0.06 262);
+  --foreground: oklch(0.97 0.008 262);
+  --surface: oklch(0.22 0.06 262);
+  --surface-raised: oklch(0.27 0.062 262);
+  --surface-sunken: oklch(0.19 0.055 262);
+
+  --card: oklch(0.27 0.062 262);
+  --card-foreground: oklch(0.97 0.008 262);
+  --popover: oklch(0.25 0.06 262);
+  --popover-foreground: oklch(0.97 0.008 262);
+
+  --brand-blue: oklch(0.32 0.08 262);
+  --brand-blue-soft: oklch(0.33 0.075 262);
+  --brand-blue-ink: oklch(0.93 0.03 262);
+
+  /* Shiny purple accent */
+  --brand-purple: oklch(0.55 0.24 295);
+  --brand-purple-light: oklch(0.66 0.21 297);
+  --brand-purple-deep: oklch(0.42 0.2 293);
+  --brand-purple-soft: oklch(0.34 0.1 295);
+  --brand-purple-ink: oklch(0.86 0.11 297);
+
+  --gloss-highlight: oklch(1 0 0 / 38%);
+  --gradient-gloss: linear-gradient(
+    180deg,
+    var(--brand-purple-light) 0%,
+    var(--brand-purple) 52%,
+    var(--brand-purple-deep) 100%
+  );
+
+  --primary: oklch(0.55 0.24 295);
+  --primary-foreground: oklch(0.99 0.005 295);
+  --secondary: oklch(0.31 0.062 262);
+  --secondary-foreground: oklch(0.95 0.01 262);
+  --muted: oklch(0.3 0.055 262);
+  --muted-foreground: oklch(0.79 0.022 262);
+  --accent: oklch(0.34 0.1 295);
+  --accent-foreground: oklch(0.9 0.09 297);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.99 0.005 25);
+
+  --border: oklch(1 0 0 / 12%);
+  --border-strong: oklch(1 0 0 / 24%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.66 0.21 297);
+
+  /* Status — re-tuned for navy, distinct from the purple accent */
+  --pass: oklch(0.82 0.17 155);
+  --pass-soft: oklch(0.34 0.09 155);
+  --fail: oklch(0.75 0.17 22);
+  --fail-soft: oklch(0.34 0.11 22);
+  --warn: oklch(0.85 0.15 85);
+  --warn-soft: oklch(0.35 0.08 80);
+  --flag: oklch(0.83 0.13 210);
+  --flag-soft: oklch(0.33 0.08 220);
+}
+
+/*
+ * Paper scope — the legal-adjacent document. Any subtree marked `.paper`
+ * flips the tokens back to a white sheet so the output reads as a document,
+ * not a console. Print output is always paper.
+ */
+.paper {
+  --background: oklch(1 0 0);
   --foreground: oklch(0.21 0.035 262);
-  --surface: oklch(0.985 0.004 262);
+  --surface: oklch(1 0 0);
   --surface-raised: oklch(1 0 0);
-  --surface-sunken: oklch(0.958 0.008 262);
+  --surface-sunken: oklch(0.965 0.006 262);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.035 262);
@@ -80,7 +150,9 @@
   --brand-blue: oklch(0.46 0.15 258);
   --brand-blue-soft: oklch(0.95 0.028 258);
   --brand-blue-ink: oklch(0.3 0.09 258);
-  --brand-purple: oklch(0.52 0.2 297);
+  --brand-purple: oklch(0.48 0.21 295);
+  --brand-purple-light: oklch(0.58 0.21 297);
+  --brand-purple-deep: oklch(0.38 0.18 293);
   --brand-purple-soft: oklch(0.955 0.03 297);
   --brand-purple-ink: oklch(0.36 0.15 297);
 
@@ -89,25 +161,30 @@
   --secondary: oklch(0.958 0.008 262);
   --secondary-foreground: oklch(0.3 0.05 262);
   --muted: oklch(0.958 0.008 262);
-  --muted-foreground: oklch(0.5 0.025 262);
+  --muted-foreground: oklch(0.44 0.025 262);
   --accent: oklch(0.955 0.03 297);
   --accent-foreground: oklch(0.36 0.15 297);
-  --destructive: oklch(0.51 0.2 27);
+  --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
-  --border: oklch(0.905 0.012 262);
-  --border-strong: oklch(0.82 0.02 262);
-  --input: oklch(0.885 0.014 262);
-  --ring: oklch(0.52 0.2 297);
+  --border: oklch(0.9 0.012 262);
+  --border-strong: oklch(0.8 0.02 262);
+  --input: oklch(0.88 0.014 262);
+  --ring: oklch(0.48 0.2 297);
 
-  --pass: oklch(0.45 0.11 158);
+  --pass: oklch(0.42 0.11 158);
   --pass-soft: oklch(0.955 0.03 158);
-  --fail: oklch(0.5 0.19 27);
+  --fail: oklch(0.47 0.19 27);
   --fail-soft: oklch(0.958 0.025 27);
-  --warn: oklch(0.52 0.12 70);
+  --warn: oklch(0.47 0.12 70);
   --warn-soft: oklch(0.96 0.04 80);
-  --flag: oklch(0.52 0.2 297);
+  --flag: oklch(0.42 0.18 297);
   --flag-soft: oklch(0.955 0.03 297);
+
+  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
+
+  background-color: var(--surface);
+  color: var(--foreground);
 }
 
 @layer base {
@@ -121,9 +198,42 @@
 
   body {
     background-color: var(--color-surface);
+    background-image:
+      linear-gradient(
+        160deg,
+        oklch(0.19 0.055 262) 0%,
+        oklch(0.24 0.065 262) 55%,
+        oklch(0.28 0.07 264) 100%
+      );
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+  }
+
+  /* Faint blueprint grid, well below text contrast. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to right, oklch(1 0 0 / 6%) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(1 0 0 / 6%) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 
   :focus-visible {
@@ -133,20 +243,59 @@
 }
 
 @utility editorial-title {
-  font-family: var(--font-serif);
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
+@utility wordmark {
+  font-family: var(--font-wordmark);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* Uppercase letterspaced accent micro-label above section headings. */
 @utility eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-muted-foreground);
+  color: var(--brand-purple-ink);
 }
 
 @utility rule-top {
   border-top: 1px solid var(--color-border);
+}
+
+/* Glossy illuminated primary control. */
+@utility gloss {
+  position: relative;
+  isolation: isolate;
+  background-image: var(--gradient-gloss);
+  color: var(--color-primary-foreground);
+  border: 1px solid oklch(1 0 0 / 22%);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 25%) inset,
+    0 -6px 14px -8px oklch(0 0 0 / 60%) inset,
+    0 10px 26px -10px oklch(0.55 0.24 295 / 65%);
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 42%;
+    border-radius: inherit;
+    background: linear-gradient(180deg, var(--gloss-highlight), transparent);
+    pointer-events: none;
+  }
+
+  &:hover {
+    filter: brightness(1.07);
+  }
+
+  &:active {
+    filter: brightness(0.95);
+  }
 }
 
 @utility kbd-hint {
@@ -158,11 +307,18 @@
   border: 1px solid var(--color-border-strong);
   border-bottom-width: 2px;
   border-radius: 0.3125rem;
-  background: var(--color-surface-raised);
+  background: var(--color-surface-sunken);
   font-size: 0.6875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-muted-foreground);
+  color: var(--color-foreground);
+}
+
+/* The document as a sheet of paper floating on the console. */
+@utility paper-sheet {
+  border-radius: 0.25rem;
+  box-shadow: var(--shadow-sheet);
+  border: 1px solid oklch(0 0 0 / 20%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -181,7 +337,13 @@
 
   html,
   body {
-    background: #ffffff;
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+  }
+
+  body::before {
+    display: none !important;
   }
 
   .no-print,
@@ -189,6 +351,11 @@
   nav[aria-label="Primary mobile"],
   nav[aria-label="Breadcrumb"] {
     display: none !important;
+  }
+
+  .paper-sheet {
+    box-shadow: none !important;
+    border: 0 !important;
   }
 
   /* Repeats at the top of every printed page: a dropped copy stays reorderable. */

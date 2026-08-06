@@ -13,21 +13,23 @@ export function AuthLayout({
   footer?: ReactNode;
 }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-surface px-4 py-12">
+    <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="grid size-9 place-items-center rounded-md bg-brand-blue text-primary-foreground"
+            className="gloss grid size-9 place-items-center rounded-md"
           >
             <FileText className="size-4" />
           </span>
           <span>
-            <span className="editorial-title block text-base font-semibold leading-tight">
-              Report Ready
+            <span className="wordmark block text-base leading-tight">
+              <span className="text-brand-purple-light">Report</span>{" "}
+              <span className="text-foreground">Ready</span>
             </span>
           </span>
         </div>
+
 
         <div className="mt-6 rounded-xl border border-border bg-surface-raised p-6 shadow-raised sm:p-8">
           <h1 className="editorial-title text-2xl font-semibold">{title}</h1>

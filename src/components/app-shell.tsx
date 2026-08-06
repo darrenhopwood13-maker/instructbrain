@@ -51,7 +51,7 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-surface">
+    <div className="flex min-h-dvh flex-col">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-purple focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
@@ -64,17 +64,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span
               aria-hidden="true"
-              className="grid size-8 shrink-0 place-items-center rounded-md bg-brand-blue text-primary-foreground"
+              className="gloss grid size-8 shrink-0 place-items-center rounded-md"
             >
               <FileText className="size-4" />
             </span>
             <span className="min-w-0">
-              <span className="editorial-title block truncate text-base font-semibold leading-tight">
-                Report Ready
+              <span className="wordmark block truncate text-base leading-tight">
+                <span className="text-brand-purple-light">Report</span>{" "}
+                <span className="text-foreground">Ready</span>
               </span>
             </span>
 
           </Link>
+
           <nav aria-label="Primary" className="ml-auto hidden items-center gap-1 sm:flex">
             {nav.map((item) => (
               <Link

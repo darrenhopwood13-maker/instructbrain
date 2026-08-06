@@ -57,15 +57,18 @@ function SharedReport() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {query.isPending ? (
           <LoadingState label="Opening the shared report…" />
         ) : query.isError ? (
           <ErrorState title="This link could not be opened" error={query.error} />
         ) : query.data ? (
-          <ReportDocumentView document={query.data} print />
+          <div className="paper paper-sheet px-5 py-8 sm:px-10 sm:py-12">
+            <ReportDocumentView document={query.data} print />
+          </div>
         ) : null}
       </main>
+
     </div>
   );
 }
