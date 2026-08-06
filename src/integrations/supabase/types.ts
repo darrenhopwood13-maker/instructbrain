@@ -665,10 +665,114 @@ export type Database = {
           },
         ]
       }
+      report_shares: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          label: string | null
+          organisation_id: string
+          report_id: string
+          revoked_at: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          label?: string | null
+          organisation_id: string
+          report_id: string
+          revoked_at?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          label?: string | null
+          organisation_id?: string
+          report_id?: string
+          revoked_at?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_shares_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_shares_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_versions: {
+        Row: {
+          created_at: string
+          document: Json
+          id: string
+          issued_at: string
+          issued_by: string | null
+          organisation_id: string
+          report_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          document: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          organisation_id: string
+          report_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          document?: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          organisation_id?: string
+          report_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_versions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_versions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           author_id: string | null
+          cover_photo_id: string | null
           created_at: string
+          current_version: number
           executive_summary: string | null
           id: string
           issued_at: string | null
@@ -682,12 +786,16 @@ export type Database = {
           subtitle: string | null
           survey_type_id: string | null
           survey_type_snapshot: Json
+          synthesis: Json | null
+          synthesis_confirmed: boolean
           title: string
           updated_at: string
         }
         Insert: {
           author_id?: string | null
+          cover_photo_id?: string | null
           created_at?: string
+          current_version?: number
           executive_summary?: string | null
           id?: string
           issued_at?: string | null
@@ -701,12 +809,16 @@ export type Database = {
           subtitle?: string | null
           survey_type_id?: string | null
           survey_type_snapshot: Json
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean
           title: string
           updated_at?: string
         }
         Update: {
           author_id?: string | null
+          cover_photo_id?: string | null
           created_at?: string
+          current_version?: number
           executive_summary?: string | null
           id?: string
           issued_at?: string | null
@@ -720,10 +832,19 @@ export type Database = {
           subtitle?: string | null
           survey_type_id?: string | null
           survey_type_snapshot?: Json
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_cover_photo_id_fkey"
+            columns: ["cover_photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_organisation_id_fkey"
             columns: ["organisation_id"]
