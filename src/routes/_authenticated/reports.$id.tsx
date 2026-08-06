@@ -9,7 +9,7 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
 import { ReviewList } from "@/components/review-list";
 import { PhotosPanel } from "@/components/photos/photos-panel";
-import { DraftFindingsButton } from "@/components/ai/draft-findings-button";
+import { AnalysisPanel } from "@/components/ai/analysis-panel";
 
 import { findingsQuery, reportQuery } from "@/lib/data";
 import { definitionLabel } from "@/lib/survey-types";
