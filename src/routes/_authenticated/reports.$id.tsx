@@ -131,22 +131,8 @@ function ReportWorkspace() {
         </TabsContent>
 
         <TabsContent value="review" className="mt-6">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-raised p-4 shadow-raised">
-            <div>
-              <p className="eyebrow">Step two</p>
-              <h2 className="editorial-title mt-1 text-base font-semibold">
-                Draft, then review every finding
-              </h2>
-              <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                {report.photoCount} photograph{report.photoCount === 1 ? "" : "s"} on this report.
-                Drafting never confirms a finding or assigns a trade.
-              </p>
-            </div>
-            <DraftFindingsButton
-              reportId={report.id}
-              snapshot={report.surveyTypeSnapshot}
-              photoCount={report.photoCount}
-            />
+          <div className="mb-5">
+            <AnalysisPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
           </div>
 
           {findings.isPending ? (
