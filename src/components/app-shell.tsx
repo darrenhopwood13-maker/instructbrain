@@ -48,12 +48,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Link
-            to="/auth/sign-in"
-            className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken sm:hidden"
-          >
-            Account
-          </Link>
+          <AccountAffordance />
+
         </div>
       </header>
 
