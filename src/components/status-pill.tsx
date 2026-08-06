@@ -5,18 +5,19 @@ import type { StatusDefinition, StatusTone } from "@/lib/survey-types";
 const toneStyles: Record<StatusTone, string> = {
   pass: "bg-pass-soft text-pass border-pass/25",
   fail: "bg-fail-soft text-fail border-fail/25",
-  caution: "bg-warn-soft text-warn border-warn/25",
+  warn: "bg-warn-soft text-warn border-warn/25",
+  flag: "bg-flag-soft text-flag border-flag/40",
   neutral: "bg-surface-sunken text-muted-foreground border-border",
-  unknown: "bg-flag-soft text-flag border-flag/40",
 };
 
 const toneGlyph: Record<StatusTone, string> = {
   pass: "✓",
   fail: "✕",
-  caution: "!",
+  warn: "!",
+  flag: "?",
   neutral: "–",
-  unknown: "?",
 };
+
 
 /**
  * Status is never colour-only: every pill carries a glyph and the label from
