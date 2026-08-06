@@ -87,7 +87,7 @@ const swatches = [
 ];
 
 function OrganisationSettings() {
-  const { organisationId } = useOrganisations();
+  const { organisationId, role } = useOrganisations();
   const query = useQuery(organisationQuery(organisationId));
   const queryClient = useQueryClient();
 
@@ -124,6 +124,8 @@ function OrganisationSettings() {
           These details appear on the cover and footer of every report you issue.
         </p>
       </header>
+
+      {role === "owner" || role === "admin" ? <EmailDeliveryWarning /> : null}
 
       {query.isPending ? (
         <LoadingState label="Loading your organisation…" />
