@@ -4,16 +4,23 @@ import { PHOTO_BUCKET, analysisSourcePath } from "@/lib/photos/storage-paths";
 /**
  * The single entry point for handing a photograph to an AI model.
  *
- * Invariant 3: this resolves the ORIGINAL, full-resolution object. It never
- * resolves a thumbnail — `analysisSourcePath` throws if asked to.
+ * Invariant 3: this resolves the full-resolution object — the analysis
+ * derivative where one exists (HEIC and friends, transcoded at identical pixel
+ * dimensions), otherwise the untouched original. It never resolves a
+ * thumbnail — `analysisSourcePath` throws if asked to.
  */
 export type AnalysableSource = { path: string; signedUrl: string };
 
 export async function analysisSourceFor(
-  photo: { storage_path?: string | null; thumbnail_path?: string | null },
+  photo: {
+    storage_path?: string | null;
+    thumbnail_path?: string | null;
+    analysis_path?: string | null;
+  },
   expiresIn = 900,
 ): Promise<AnalysableSource> {
   const path = analysisSourcePath(photo);
+
   const { data, error } = await supabase.storage
     .from(PHOTO_BUCKET)
     .createSignedUrl(path, expiresIn);

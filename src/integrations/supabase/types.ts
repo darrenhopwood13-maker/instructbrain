@@ -382,6 +382,7 @@ export type Database = {
       }
       photos: {
         Row: {
+          analysis_path: string | null
           blurred_path: string | null
           capture_fields: Json
           captured_at: string | null
@@ -400,6 +401,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          analysis_path?: string | null
           blurred_path?: string | null
           capture_fields?: Json
           captured_at?: string | null
@@ -418,6 +420,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          analysis_path?: string | null
           blurred_path?: string | null
           capture_fields?: Json
           captured_at?: string | null

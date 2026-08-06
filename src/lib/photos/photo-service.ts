@@ -3,7 +3,12 @@ import { nextRef } from "@/lib/finding-refs";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
 import {
+  createAnalysisDerivative,
+  modelReadableFromBytes,
+} from "@/lib/photos/analysis-derivative";
+import {
   PHOTO_BUCKET,
+  analysisPath,
   collisionSafeFilename,
   originalPath,
   reportPrefix,
@@ -15,6 +20,7 @@ export type PhotoRow = {
   report_id: string;
   storage_path: string;
   thumbnail_path: string | null;
+  analysis_path: string | null;
   original_filename: string | null;
   captured_at: string | null;
   gps_lat: number | null;
@@ -28,7 +34,7 @@ export type PhotoRow = {
 };
 
 const photoColumns =
-  "id, report_id, storage_path, thumbnail_path, original_filename, captured_at, gps_lat, gps_lng, width, height, sequence, checksum, capture_fields, created_at";
+  "id, report_id, storage_path, thumbnail_path, analysis_path, original_filename, captured_at, gps_lat, gps_lng, width, height, sequence, checksum, capture_fields, created_at";
 
 function table() {
   // The generated types lag a migration; the shape above is the contract.
@@ -146,13 +152,31 @@ export function uploadOriginal(
  * DISPLAY DERIVATIVE PATH — entirely separate from the original above and
  * only ever read by the grid. Failure here is non-fatal.
  */
-async function uploadThumbnail(path: string, file: File): Promise<string | null> {
+async function uploadThumbnail(path: string, file: Blob): Promise<string | null> {
   const thumbnail = await createDisplayThumbnail(file);
   if (!thumbnail) return null;
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
     .upload(path, thumbnail.blob, { contentType: "image/jpeg", upsert: true });
   return error ? null : path;
+}
+
+/**
+ * ANALYSIS DERIVATIVE PATH — a third, separate path. Only used for sources a
+ * vision model cannot read (HEIC / HEIF / AVIF). Full resolution, never
+ * downscaled; see `analysis-derivative.ts` for why it shares no code with the
+ * thumbnail module. A JPEG never reaches this function.
+ */
+async function uploadAnalysisDerivative(
+  path: string,
+  file: File,
+): Promise<{ path: string; blob: Blob } | null> {
+  const derivative = await createAnalysisDerivative(file);
+  if (!derivative) return null;
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, derivative.blob, { contentType: "image/jpeg", upsert: true });
+  return error ? null : { path, blob: derivative.blob };
 }
 
 export type UploadTarget = {
@@ -208,10 +232,23 @@ export async function uploadPhoto(
 
   await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
 
-  const thumbnail = await uploadThumbnail(
-    thumbnailPath(target.organisationId, target.reportId, filename),
-    file,
-  );
+  // Formats the model cannot read get a full-resolution JPEG twin. The
+  // decision is made from the actual bytes received, because iOS Safari
+  // sometimes transcodes a HEIC to JPEG on pick and sometimes does not.
+  const analysis = modelReadableFromBytes(bytes)
+    ? null
+    : await uploadAnalysisDerivative(
+        analysisPath(target.organisationId, target.reportId, filename),
+        file,
+      );
+  onProgress(0.88);
+
+  // Thumbnail: fall back to the derivative when the browser cannot decode the
+  // source directly. A missing thumbnail must never block an upload.
+  const thumbTarget = thumbnailPath(target.organisationId, target.reportId, filename);
+  const thumbnail =
+    (await uploadThumbnail(thumbTarget, file)) ??
+    (analysis ? await uploadThumbnail(thumbTarget, analysis.blob) : null);
   onProgress(0.92);
 
   const { data, error } = await table()
@@ -219,6 +256,7 @@ export async function uploadPhoto(
       report_id: target.reportId,
       storage_path: original,
       thumbnail_path: thumbnail,
+      analysis_path: analysis?.path ?? null,
       original_filename: file.name || null,
       captured_at: provenance.capturedAt,
       gps_lat: provenance.gpsLat,
@@ -261,7 +299,7 @@ export async function updateCaptureFields(
 export async function deletePhotos(photos: PhotoRow[]): Promise<void> {
   if (photos.length === 0) return;
   const paths = photos.flatMap((photo) =>
-    [photo.storage_path, photo.thumbnail_path].filter((value): value is string => !!value),
+    [photo.storage_path, photo.thumbnail_path, photo.analysis_path].filter((value): value is string => !!value),
   );
   await supabase.storage.from(PHOTO_BUCKET).remove(paths);
   const { error } = await table()
