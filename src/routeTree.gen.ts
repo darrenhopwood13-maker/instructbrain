@@ -15,6 +15,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as ProjectsIdRouteImport } from './routes/projects.$id'
 import { Route as ReportsIdRouteImport } from './routes/reports.$id'
+import { Route as ReportsNewRouteImport } from './routes/reports.new'
 import { Route as SettingsDirectoryRouteImport } from './routes/settings.directory'
 import { Route as SettingsOrganisationRouteImport } from './routes/settings.organisation'
 
@@ -48,6 +49,11 @@ const ReportsIdRoute = ReportsIdRouteImport.update({
   path: '/reports/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsNewRoute = ReportsNewRouteImport.update({
+  id: '/reports/new',
+  path: '/reports/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsDirectoryRoute = SettingsDirectoryRouteImport.update({
   id: '/settings/directory',
   path: '/settings/directory',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
+  '/reports/new': typeof ReportsNewRoute
   '/settings/directory': typeof SettingsDirectoryRoute
   '/settings/organisation': typeof SettingsOrganisationRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
+  '/reports/new': typeof ReportsNewRoute
   '/settings/directory': typeof SettingsDirectoryRoute
   '/settings/organisation': typeof SettingsOrganisationRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/projects/$id': typeof ProjectsIdRoute
   '/reports/$id': typeof ReportsIdRoute
+  '/reports/new': typeof ReportsNewRoute
   '/settings/directory': typeof SettingsDirectoryRoute
   '/settings/organisation': typeof SettingsOrganisationRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
+    | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
+    | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/projects/$id'
     | '/reports/$id'
+    | '/reports/new'
     | '/settings/directory'
     | '/settings/organisation'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   ProjectsIdRoute: typeof ProjectsIdRoute
   ReportsIdRoute: typeof ReportsIdRoute
+  ReportsNewRoute: typeof ReportsNewRoute
   SettingsDirectoryRoute: typeof SettingsDirectoryRoute
   SettingsOrganisationRoute: typeof SettingsOrganisationRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports/new': {
+      id: '/reports/new'
+      path: '/reports/new'
+      fullPath: '/reports/new'
+      preLoaderRoute: typeof ReportsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/directory': {
       id: '/settings/directory'
       path: '/settings/directory'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   ProjectsIdRoute: ProjectsIdRoute,
   ReportsIdRoute: ReportsIdRoute,
+  ReportsNewRoute: ReportsNewRoute,
   SettingsDirectoryRoute: SettingsDirectoryRoute,
   SettingsOrganisationRoute: SettingsOrganisationRoute,
 }

@@ -18,7 +18,7 @@ import {
 import { StatusPill } from "@/components/status-pill";
 import { toast } from "sonner";
 
-type NewReportSearch = { project?: string };
+type NewReportSearch = { project?: string | undefined };
 
 export const Route = createFileRoute("/reports/new")({
   validateSearch: (search: Record<string, unknown>): NewReportSearch => ({
