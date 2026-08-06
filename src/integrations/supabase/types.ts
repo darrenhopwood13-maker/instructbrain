@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_analysis_cache: {
+        Row: {
+          checksum: string
+          created_at: string
+          envelope: Json
+          id: string
+          model: string
+          organisation_id: string
+          provider: string
+          raw_output: Json | null
+          snapshot_key: string
+          tier: string
+        }
+        Insert: {
+          checksum: string
+          created_at?: string
+          envelope: Json
+          id?: string
+          model: string
+          organisation_id: string
+          provider: string
+          raw_output?: Json | null
+          snapshot_key: string
+          tier: string
+        }
+        Update: {
+          checksum?: string
+          created_at?: string
+          envelope?: Json
+          id?: string
+          model?: string
+          organisation_id?: string
+          provider?: string
+          raw_output?: Json | null
+          snapshot_key?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analysis_cache_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_events: {
+        Row: {
+          cached: boolean
+          cost_usd: number
+          created_at: string
+          id: string
+          input_tokens: number
+          model: string
+          organisation_id: string
+          outcome: string
+          output_tokens: number
+          photo_id: string | null
+          provider: string
+          report_id: string | null
+          tier: string
+        }
+        Insert: {
+          cached?: boolean
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model: string
+          organisation_id: string
+          outcome?: string
+          output_tokens?: number
+          photo_id?: string | null
+          provider: string
+          report_id?: string | null
+          tier: string
+        }
+        Update: {
+          cached?: boolean
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          organisation_id?: string
+          outcome?: string
+          output_tokens?: number
+          photo_id?: string | null
+          provider?: string
+          report_id?: string | null
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_events_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_events_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_events_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -219,9 +336,12 @@ export type Database = {
       }
       findings: {
         Row: {
+          ai_abstain_reason: string | null
           ai_confidence: number | null
           ai_raw_output: Json | null
+          ai_region: Json | null
           ai_suggested_trade: string | null
+          ai_tier: string | null
           ai_trade_confidence: number | null
           ai_trade_reasoning: string | null
           assigned_contact_id: string | null
@@ -246,13 +366,17 @@ export type Database = {
           reviewed_by: string | null
           sequence: number
           severity: string | null
+          severity_rationale: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          ai_abstain_reason?: string | null
           ai_confidence?: number | null
           ai_raw_output?: Json | null
+          ai_region?: Json | null
           ai_suggested_trade?: string | null
+          ai_tier?: string | null
           ai_trade_confidence?: number | null
           ai_trade_reasoning?: string | null
           assigned_contact_id?: string | null
@@ -277,13 +401,17 @@ export type Database = {
           reviewed_by?: string | null
           sequence?: number
           severity?: string | null
+          severity_rationale?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          ai_abstain_reason?: string | null
           ai_confidence?: number | null
           ai_raw_output?: Json | null
+          ai_region?: Json | null
           ai_suggested_trade?: string | null
+          ai_tier?: string | null
           ai_trade_confidence?: number | null
           ai_trade_reasoning?: string | null
           assigned_contact_id?: string | null
@@ -308,6 +436,7 @@ export type Database = {
           reviewed_by?: string | null
           sequence?: number
           severity?: string | null
+          severity_rationale?: string | null
           status?: string
           updated_at?: string
         }
@@ -356,6 +485,7 @@ export type Database = {
       organisations: {
         Row: {
           address: string | null
+          ai_monthly_cost_cap: number
           brand_colour: string | null
           created_at: string
           id: string
@@ -364,6 +494,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_monthly_cost_cap?: number
           brand_colour?: string | null
           created_at?: string
           id?: string
@@ -372,6 +503,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_monthly_cost_cap?: number
           brand_colour?: string | null
           created_at?: string
           id?: string
