@@ -357,7 +357,7 @@ export function PhotosPanel({
         <input
           ref={filePickerRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif,.HEIC,.HEIF,image/heic,image/heif"
           multiple
           className="sr-only"
           onChange={(event) => {
@@ -368,7 +368,7 @@ export function PhotosPanel({
         <input
           ref={cameraRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif,.HEIC,.HEIF,image/heic,image/heif"
           capture="environment"
           multiple
           className="sr-only"
@@ -377,6 +377,11 @@ export function PhotosPanel({
             event.target.value = "";
           }}
         />
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          iPhone HEIC photographs are supported. Whatever your phone hands over — HEIC or JPEG —
+          is stored as the original, and a full-resolution copy is made for analysis when needed.
+        </p>
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
           <Button variant="brand" onClick={() => filePickerRef.current?.click()} disabled={busy}>
@@ -388,6 +393,7 @@ export function PhotosPanel({
             Take a photograph
           </Button>
         </div>
+
       </section>
 
       <UploadTray
