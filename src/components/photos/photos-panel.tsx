@@ -414,14 +414,15 @@ export function PhotosPanel({
         />
       ) : (
         <>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
-            <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3 sm:justify-between">
+            <div className="min-w-0 flex-1 basis-full sm:basis-auto">
               <h3 className="editorial-title truncate text-base font-semibold">
                 {photos.length} photograph{photos.length === 1 ? "" : "s"}
               </h3>
               <p className="text-sm text-muted-foreground">{selected.size} selected</p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="flex min-w-0 flex-wrap gap-2">
+
               <Button
                 variant="quiet"
                 size="sm"
