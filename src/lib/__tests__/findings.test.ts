@@ -22,7 +22,32 @@ import {
 } from "@/lib/survey-definitions";
 import { selectDistributionFindings, distributionRefs } from "@/lib/distribution";
 import { detachPhoto, nextRef } from "@/lib/finding-refs";
-import { findings } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
+
+/** Fixtures live in the test file — no invented data exists in application code. */
+function finding(overrides: Partial<Finding> & Pick<Finding, "id" | "ref">): Finding {
+  return {
+    title: "Observation",
+    location: "Level 2",
+    trade: "Principal contractor",
+    status: "snag",
+    aiDrafted: true,
+    confirmed: false,
+    isConfidential: false,
+    photoIds: [],
+    note: "",
+    ...overrides,
+  };
+}
+
+const findings: Finding[] = [
+  finding({ id: "f1", ref: "F-001", photoIds: ["ph-11", "ph-12"] }),
+  finding({ id: "f2", ref: "F-002", photoIds: ["ph-12"] }),
+  finding({ id: "f3", ref: "F-003", trade: "Roofing" }),
+  finding({ id: "f4", ref: "F-004", isConfidential: true }),
+  finding({ id: "f5", ref: "F-005", isConfidential: true, trade: "Roofing" }),
+  finding({ id: "f6", ref: "F-006" }),
+];
 
 const snapshot = snaggingDefinition;
 
