@@ -64,7 +64,7 @@ function PrintReport() {
   ].join(" · ");
 
   return (
-    <div className="print-surface bg-surface">
+    <div className="paper print-surface min-h-dvh">
       <div className="print-running-header" aria-hidden="true">
         <span>{runningLine}</span>
         <span className="print-page-number" />
@@ -88,5 +88,6 @@ function PrintReport() {
         <ReportDocumentView document={document} print />
       </main>
     </div>
+
   );
 }

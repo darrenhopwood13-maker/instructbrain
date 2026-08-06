@@ -260,12 +260,15 @@ function ReportWorkspace() {
                 />
               </section>
 
-              <ReportDocumentView
-                document={doc}
-                editable={!locked}
-                onReportPatch={onReportPatch}
-                onFindingPatch={onFindingPatch}
-              />
+              <div className="paper paper-sheet px-5 py-8 sm:px-10 sm:py-12">
+                <ReportDocumentView
+                  document={doc}
+                  editable={!locked}
+                  onReportPatch={onReportPatch}
+                  onFindingPatch={onFindingPatch}
+                />
+              </div>
+
 
               <section className="mt-10 rounded-xl border border-border bg-surface-raised p-4">
                 <h2 className="editorial-title flex items-center gap-2 text-base font-semibold">
