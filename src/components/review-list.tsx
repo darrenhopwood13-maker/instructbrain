@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { findings as seedFindings, type Finding } from "@/lib/mock-data";
+import type { Finding } from "@/lib/types";
 import {
   NOT_ASSESSED_ID,
   definesField,
