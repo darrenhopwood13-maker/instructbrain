@@ -261,11 +261,11 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
           className={
             document.report.synthesisConfirmed
               ? "rounded-xl border border-border bg-surface-raised p-4"
-              : "rounded-xl border border-brand-purple/40 bg-brand-purple-soft/40 p-4"
+              : "rounded-xl border border-brand-accent/40 bg-brand-accent-soft/40 p-4"
           }
         >
           {!document.report.synthesisConfirmed ? (
-            <p className="eyebrow text-brand-purple-ink">
+            <p className="eyebrow text-brand-accent-ink">
               AI-generated — not yet confirmed by a person
             </p>
           ) : null}

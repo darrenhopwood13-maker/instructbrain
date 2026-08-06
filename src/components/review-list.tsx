@@ -214,7 +214,7 @@ export function ReviewList({
               className={cn(
                 "rounded-xl border bg-surface-raised p-4 outline-none transition-colors",
                 index === active
-                  ? "border-brand-purple ring-2 ring-brand-purple/30"
+                  ? "border-brand-accent ring-2 ring-brand-accent/30"
                   : blocked
                     ? "border-flag/40"
                     : "border-border hover:border-border-strong",
@@ -223,7 +223,7 @@ export function ReviewList({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="eyebrow">{item.ref}</span>
                 {item.aiDrafted ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-brand-purple/25 bg-brand-purple-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-purple-ink">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
                     <Sparkles aria-hidden="true" className="size-3" />
                     AI drafted
                   </span>
@@ -273,7 +273,7 @@ export function ReviewList({
                         Confirmed by reviewer
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-purple/25 bg-brand-purple-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-purple-ink">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
                         <Sparkles aria-hidden="true" className="size-3" />
                         AI suggestion — unconfirmed
                       </span>
@@ -325,7 +325,7 @@ export function ReviewList({
                         Confirmed by reviewer
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-purple/25 bg-brand-purple-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-purple-ink">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
                         <Sparkles aria-hidden="true" className="size-3" />
                         AI suggestion — unconfirmed
                       </span>

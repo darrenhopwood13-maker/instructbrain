@@ -39,7 +39,7 @@ export function PhotoFigure({
         {src && region ? (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute rounded-sm border-2 border-brand-purple shadow-[0_0_0_9999px_rgba(15,23,42,0.18)]"
+            className="pointer-events-none absolute rounded-sm border-2 border-brand-accent shadow-[0_0_0_9999px_rgba(15,23,42,0.18)]"
             style={{
               left: `${region.x * 100}%`,
               top: `${region.y * 100}%`,

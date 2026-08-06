@@ -72,7 +72,7 @@ export function InlineField({
   }
 
   const shared =
-    "mt-1 w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-sm leading-relaxed focus:border-brand-purple focus:outline-none focus:ring-2 focus:ring-brand-purple/30";
+    "mt-1 w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-sm leading-relaxed focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/30";
 
   return (
     <div className={className}>

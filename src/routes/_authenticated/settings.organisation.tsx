@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImageUp } from "lucide-react";
+import { ImageUp, AlertTriangle } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,14 +30,64 @@ export const Route = createFileRoute("/_authenticated/settings/organisation")({
   component: OrganisationSettings,
 });
 
+
+/**
+ * Owners and admins need to know that the default Supabase sender is not a
+ * production email service. Being locked out of your own account is what
+ * happens when this is left alone.
+ */
+function EmailDeliveryWarning() {
+  return (
+    <div
+      role="alert"
+      className="mt-6 max-w-2xl rounded-xl border border-warn/40 bg-warn-soft p-4 sm:p-5"
+    >
+      <div className="flex items-start gap-3">
+        <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warn" />
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold">
+            Action required: email is not production-ready
+          </h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            Sign-in links, confirmations, password resets and invitations are currently sent by
+            Supabase&rsquo;s built-in sender. It is heavily rate-limited (a handful of messages per
+            hour, shared across the whole project), it is not guaranteed to be delivered, and it
+            will silently stop working under real use. People will be locked out of their own
+            accounts.
+          </p>
+          <p className="mt-3 text-sm font-medium">Configure custom SMTP before real use:</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm leading-relaxed text-muted-foreground">
+            <li>Create a Resend account and verify your sending domain (SPF, DKIM, DMARC records).</li>
+            <li>
+              In Supabase, open Authentication → Emails → SMTP Settings and enable a custom SMTP
+              provider.
+            </li>
+            <li>
+              Host <span className="font-mono text-xs">smtp.resend.com</span>, port{" "}
+              <span className="font-mono text-xs">465</span>, username{" "}
+              <span className="font-mono text-xs">resend</span>, password: a Resend API key.
+            </li>
+            <li>Set the sender name and a sender address on your verified domain.</li>
+            <li>Raise the auth email rate limit once SMTP is active, and send a test message.</li>
+          </ul>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Until then, keep password sign-in as the primary route: it does not depend on email
+            after the account is confirmed.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const swatches = [
   { id: "blue", label: "Instruct Blue", className: "bg-brand-blue" },
-  { id: "purple", label: "Instruct Purple", className: "bg-brand-purple" },
+  { id: "orange", label: "Instruct Orange", className: "bg-brand-accent" },
   { id: "ink", label: "Deep Ink", className: "bg-brand-blue-ink" },
 ];
 
 function OrganisationSettings() {
-  const { organisationId } = useOrganisations();
+  const { organisationId, role } = useOrganisations();
   const query = useQuery(organisationQuery(organisationId));
   const queryClient = useQueryClient();
 
@@ -74,6 +124,8 @@ function OrganisationSettings() {
           These details appear on the cover and footer of every report you issue.
         </p>
       </header>
+
+      {role === "owner" || role === "admin" ? <EmailDeliveryWarning /> : null}
 
       {query.isPending ? (
         <LoadingState label="Loading your organisation…" />
@@ -147,7 +199,7 @@ function OrganisationSettings() {
                   onClick={() => setBrand(swatch.id)}
                   className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3 text-sm font-medium transition-colors ${
                     brand === swatch.id
-                      ? "border-brand-purple bg-brand-purple-soft text-brand-purple-ink"
+                      ? "border-brand-accent bg-brand-accent-soft text-brand-accent-ink"
                       : "border-border bg-surface-raised hover:bg-surface-sunken"
                   }`}
                 >

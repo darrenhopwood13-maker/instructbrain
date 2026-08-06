@@ -76,7 +76,7 @@ function AcceptInvite() {
           Already have an account?{" "}
           <Link
             to="/auth/sign-in"
-            className="font-semibold text-brand-purple-ink underline underline-offset-2"
+            className="font-semibold text-brand-accent-ink underline underline-offset-2"
           >
             Sign in
           </Link>

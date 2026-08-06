@@ -78,7 +78,7 @@ function PrintReport() {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-md bg-brand-purple px-4 py-2 text-sm font-semibold text-primary-foreground"
+          className="rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-primary-foreground"
         >
           Print or save as PDF
         </button>
