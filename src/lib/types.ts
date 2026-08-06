@@ -56,6 +56,10 @@ export type Finding = {
   isConfidential: boolean;
   photoIds: string[];
   note: string;
+  /** Presentation split of `note`: the observation and the recommended action. */
+  description?: string;
+  remedial?: string;
+
   /** Only defined by disciplines whose definition asks for it. */
   likelyCause?: string | null;
   likelyCauseConfirmed?: boolean;
