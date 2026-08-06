@@ -29,14 +29,13 @@ describe("status coercion", () => {
     "compliant ", // trailing space is not the id
   ];
 
-  it.each(malformed.map((value, i) => [i, value]))(
-    "resolves malformed value #%i to not_assessed",
-    (_i, value) => {
+  it("resolves every malformed value to not_assessed", () => {
+    for (const value of malformed) {
       const status = resolveStatus(prePlasterSnapshot, value);
       expect(status.id).toBe(NOT_ASSESSED_ID);
       expect(status.tone).not.toBe("pass");
-    },
-  );
+    }
+  });
 
   it("never resolves an unknown value to a passing status", () => {
     for (const value of malformed) {
