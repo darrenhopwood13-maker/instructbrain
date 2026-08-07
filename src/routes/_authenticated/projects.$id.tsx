@@ -96,11 +96,7 @@ function ProjectDashboard() {
           <p className="mt-2 text-sm text-muted-foreground">{current.address}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="quiet" className="min-h-11" asChild>
-            <Link to="/projects/$id/directory" params={{ id: current.id }}>
-              Directory
-            </Link>
-          </Button>
+
           {usage.exhausted ? (
             <Button variant="brand" className="min-h-11" asChild>
               <Link to="/upgrade">
