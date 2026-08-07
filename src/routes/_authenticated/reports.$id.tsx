@@ -7,13 +7,14 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
-import { ReviewList } from "@/components/review-list";
+import { ReviewList, type ConfirmPatch } from "@/components/review-list";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { AnalysisPanel } from "@/components/ai/analysis-panel";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { ReportActions } from "@/components/report/report-actions";
 import { InlineField } from "@/components/report/inline-field";
 
+import { supabase } from "@/integrations/supabase/client";
 import { findingsQuery, reportQuery } from "@/lib/data";
 import {
   reportDocumentQuery,
@@ -227,7 +228,12 @@ function ReportWorkspace() {
               description="Upload photographs on the Photos tab, then draft findings from them here."
             />
           ) : (
-            <ReviewList snapshot={report.surveyTypeSnapshot} findings={findings.data ?? []} />
+            <ReviewList
+              snapshot={report.surveyTypeSnapshot}
+              findings={findings.data ?? []}
+              onConfirm={onConfirm}
+              onConfirmMany={writeConfirmations}
+            />
           )}
         </TabsContent>
 

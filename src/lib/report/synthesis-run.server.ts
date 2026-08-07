@@ -48,7 +48,7 @@ export async function synthesiseForReport(
   const rows = (findings ?? []) as Array<Record<string, any>>;
   if (rows.length === 0) {
     throw new Error(
-      "There are no confirmed findings to summarise yet. Confirm findings in the Review tab first.",
+      "There are no confirmed findings yet. Go to the Review tab, and for each finding either choose a status or press Confirm all, then try Draft summary again.",
     );
   }
 
