@@ -4,6 +4,7 @@ import {
   categoryGroupsOf,
   definesField,
   definitionLabel,
+  houseVoiceOf,
   regulatoryReferencesOf,
   severitiesOf,
   statusesOf,
@@ -59,7 +60,11 @@ function orderedGuidance(snapshot: SurveyTypeSnapshot) {
 export function buildSystemPrompt(snapshot: SurveyTypeSnapshot): string {
   const multiple = allowsMultipleFindingsPerPhoto(snapshot);
 
+  const statuses = statusesOf(snapshot);
+
   const sections: Array<string | null> = [
+    // The house voice is DATA on the definition. Nothing here supplies it.
+    houseVoiceOf(snapshot),
     `Survey type: ${definitionLabel(snapshot)}.`,
     list("Survey-specific guidance", orderedGuidance(snapshot).map((entry) => `${entry.label}: ${entry.text}`)),
     ...UNIVERSAL_RULES,
@@ -68,10 +73,17 @@ export function buildSystemPrompt(snapshot: SurveyTypeSnapshot): string {
       : "This survey type records at most one observation per photograph. Return an array containing at most one entry, and an empty array if there is nothing to record.",
     list(
       "Allowed status values (use the id exactly)",
-      statusesOf(snapshot).map((status) =>
+      statuses.map((status) =>
         [`${status.id} — ${status.label}`, status.description].filter(Boolean).join(": "),
       ),
     ),
+    statuses.length > 2
+      ? [
+          `All ${statuses.length} of the status values listed above are available to you, and each is expected to be used wherever it fits.`,
+          `Real building conditions are not binary: the intermediate states exist precisely because most of what you will see sits between ${statuses[0]!.label} and ${statuses[statuses.length - 1]!.label}.`,
+          "Returning only the extreme statuses across a survey is itself a signal of poor assessment. Choose the status that actually describes the condition, including the intermediate ones and the not-assessed state.",
+        ].join(" ")
+      : null,
     list(
       "Severity scale (use the id exactly, or null) — give severity_rationale in one sentence",
       severitiesOf(snapshot).map((severity) =>
