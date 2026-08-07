@@ -154,7 +154,7 @@ async function payload(context: Context): Promise<Response> {
     .eq("id", report.project_id)
     .limit(1);
 
-  const findingIds = findings.map((finding) => finding.id as string);
+  const findingIds = findings.map((finding) => finding["id"] as string);
   const { data: links } = findingIds.length
     ? await context.admin
         .from("finding_photos")
@@ -212,7 +212,7 @@ async function payload(context: Context): Promise<Response> {
       projectAddress: projects?.[0]?.address ?? null,
       organisationName: organisations?.[0]?.name ?? null,
       findings: findings.map((finding) => {
-        const own = (links ?? []).filter((link: any) => link.finding_id === finding.id);
+        const own = (links ?? []).filter((link: any) => link.finding_id === finding["id"]);
         return {
           id: finding["id"],
           ref: finding["ref"],

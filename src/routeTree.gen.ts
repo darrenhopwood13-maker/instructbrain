@@ -32,6 +32,7 @@ import { Route as AuthenticatedProjectsIdDirectoryRouteImport } from './routes/_
 import { Route as AuthenticatedReportsIdDistributeRouteImport } from './routes/_authenticated/reports.$id.distribute'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
+import { Route as ApiPublicTradeAccessTokenRouteImport } from './routes/api/public/trade-access.$token'
 import { Route as AuthenticatedReportsIdExtractGroupRouteImport } from './routes/_authenticated/reports.$id.extract.$group'
 
 const IndexRoute = IndexRouteImport.update({
@@ -156,6 +157,12 @@ const ApiPublicSharedReportTokenRoute =
     path: '/api/public/shared-report/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTradeAccessTokenRoute =
+  ApiPublicTradeAccessTokenRouteImport.update({
+    id: '/api/public/trade-access/$token',
+    path: '/api/public/trade-access/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedReportsIdExtractGroupRoute =
   AuthenticatedReportsIdExtractGroupRouteImport.update({
     id: '/extract/$group',
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRoutesByTo {
@@ -211,6 +219,7 @@ export interface FileRoutesByTo {
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRoutesById {
@@ -238,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRouteTypes {
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/reports/$id/distribute'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/api/public/trade-access/$token'
     | '/reports/$id/extract/$group'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/reports/$id/distribute'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/api/public/trade-access/$token'
     | '/reports/$id/extract/$group'
   id:
     | '__root__'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/$id/distribute'
     | '/_authenticated/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/api/public/trade-access/$token'
     | '/_authenticated/reports/$id/extract/$group'
   fileRoutesById: FileRoutesById
 }
@@ -333,6 +346,7 @@ export interface RootRouteChildren {
   SharedTokenRoute: typeof SharedTokenRoute
   ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
   ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
+  ApiPublicTradeAccessTokenRoute: typeof ApiPublicTradeAccessTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -498,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSharedReportTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/trade-access/$token': {
+      id: '/api/public/trade-access/$token'
+      path: '/api/public/trade-access/$token'
+      fullPath: '/api/public/trade-access/$token'
+      preLoaderRoute: typeof ApiPublicTradeAccessTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/reports/$id/extract/$group': {
       id: '/_authenticated/reports/$id/extract/$group'
       path: '/extract/$group'
@@ -581,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   SharedTokenRoute: SharedTokenRoute,
   ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
   ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
+  ApiPublicTradeAccessTokenRoute: ApiPublicTradeAccessTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
