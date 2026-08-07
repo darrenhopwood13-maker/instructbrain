@@ -179,11 +179,24 @@ export function PhotosPanel({
   const addFiles = useCallback(
     (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
-      const items: Pending[] = Array.from(fileList).map((file, index) => ({
+      let selected = Array.from(fileList);
+      // The database enforces the cap too; this only avoids doomed uploads.
+      if (remainingPhotos !== null && selected.length > remainingPhotos) {
+        toast.error("Photograph limit reached", {
+          description:
+            remainingPhotos === 0
+              ? `This report already holds the ${photoCap} photographs included in your plan.`
+              : `Only ${remainingPhotos} more photograph${remainingPhotos === 1 ? "" : "s"} can be added to this report on your plan.`,
+        });
+        selected = selected.slice(0, remainingPhotos);
+        if (selected.length === 0) return;
+      }
+      const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
         captureFields: { ...zoneValues },
       }));
+
       for (const item of items) pendingRef.current.set(item.id, item);
       setUploads((current) => [
         ...current,
