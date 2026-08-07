@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { FolderOpen, Building2, Users, FileText, UserCog } from "lucide-react";
+import { FolderOpen, Building2, Users, UserCog } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession, signOut } from "@/lib/auth";
 
