@@ -17,7 +17,7 @@ export function AuthLayout({
         <div className="flex items-center gap-2.5">
           <span>
             <span className="wordmark block text-base leading-tight">
-              <span className="text-brand-accent-light">instruct</span>
+              <span className="text-brand-accent">instruct</span>
               <span className="text-foreground">Brain</span>
             </span>
 
