@@ -66,9 +66,14 @@ function PrintReport() {
   return (
     <div className="paper print-surface min-h-dvh">
       <div className="print-running-header" aria-hidden="true">
-        <span>{runningLine}</span>
+        <span>
+          <span className="font-semibold">instructBrain</span>
+          {" · "}
+          {runningLine}
+        </span>
         <span className="print-page-number" />
       </div>
+
 
       <div className="no-print mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 pt-6">
         <p className="text-sm text-muted-foreground">
