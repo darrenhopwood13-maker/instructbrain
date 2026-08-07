@@ -13,10 +13,15 @@ import {
   resolveCategory,
   resolveSeverity,
   resolveStatus,
+  requiresTradeAssignment,
   reviewShortcuts,
   type StatusDefinition,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import {
+  TradeAssignmentCard,
+  type TradeAssignment,
+} from "@/components/review/trade-assignment-card";
 import { AlertTriangle, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +43,9 @@ export function ReviewList({
   findings,
   onConfirm,
   onConfirmMany,
+  tradeOptions = [],
+  onAssignTrade,
+  onAddTradeToDirectory,
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
@@ -45,6 +53,11 @@ export function ReviewList({
   onConfirm?: (findingId: string, patch: ConfirmPatch) => Promise<void>;
   /** Persists the same patch across many findings in one batch. */
   onConfirmMany?: (findingIds: string[], patch: ConfirmPatch) => Promise<void>;
+  /** Trades from this project's directory plus the definition's defaults. */
+  tradeOptions?: string[];
+  /** Persists a human's trade decision and its derived target date. */
+  onAssignTrade?: (findingId: string, assignment: TradeAssignment) => Promise<void>;
+  onAddTradeToDirectory?: (trade: string) => void;
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -87,6 +100,7 @@ export function ReviewList({
   const showCause = definesField(snapshot, "likely_cause");
   const showReference = definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
+  const showTrade = requiresTradeAssignment(snapshot) && !!onAssignTrade;
   const causeGuidance =
     derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
 
@@ -453,6 +467,43 @@ export function ReviewList({
                       )}
                     </p>
                   </FieldCard>
+                ) : null}
+
+                {showTrade ? (
+                  <TradeAssignmentCard
+                    finding={item}
+                    snapshot={snapshot}
+                    tradeOptions={tradeOptions}
+                    {...(onAddTradeToDirectory ? { onAddTradeToDirectory } : {})}
+                    onAssign={async (assignment) => {
+                      try {
+                        await onAssignTrade!(item.id, assignment);
+                        applyOverride(item.id, {
+                          assignedTrade: assignment.trade,
+                          trade: assignment.trade ?? item.aiSuggestedTrade ?? "Trade not assigned",
+                          dueDate: assignment.dueDate,
+                          dueDateOverridden: assignment.dueDateOverridden,
+                        });
+                        toast.success(
+                          assignment.trade
+                            ? `Assigned to ${assignment.trade}`
+                            : "Trade assignment cleared",
+                          {
+                            description: assignment.trade
+                              ? "Nothing is sent until you review and send the distribution."
+                              : "This item will go to the project's fallback recipient.",
+                          },
+                        );
+                      } catch (error) {
+                        toast.error("That assignment could not be saved", {
+                          description:
+                            error instanceof Error
+                              ? error.message
+                              : "Nothing was written to the report.",
+                        });
+                      }
+                    }}
+                  />
                 ) : null}
 
                 <FieldCard
