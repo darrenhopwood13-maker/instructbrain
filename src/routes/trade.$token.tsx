@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/query-states";
 import { allowedTransitions, lifecycleLabels, type LifecycleState } from "@/lib/lifecycle";
 import { formatTarget } from "@/lib/findings/due-date";
-import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+import { resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
 
 /**
@@ -235,8 +235,7 @@ function ItemCard({
 }) {
   const [inputId] = useState(() => `closeout-${item.id}`);
   const options = allowedTransitions(item.lifecycleState, "subcontractor");
-  const severityLabel =
-    (snapshot?.severities ?? []).find((entry) => entry.id === item.severity)?.label ?? null;
+  const severityLabel = resolveSeverity(snapshot, item.severity)?.label ?? null;
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-surface-raised">
@@ -309,7 +308,7 @@ function ItemCard({
           <Button
             key={option}
             type="button"
-            variant={option === "fixed" ? "gloss" : "gloss-outline"}
+            variant={option === "fixed" ? "brand" : "outline"}
             disabled={busy}
             className="min-h-[44px] w-full justify-center"
             onClick={() => onMove(option)}
