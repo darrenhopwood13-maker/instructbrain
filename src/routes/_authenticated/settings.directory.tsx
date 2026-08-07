@@ -11,13 +11,13 @@ import { useOrganisations } from "@/lib/use-organisations";
 export const Route = createFileRoute("/_authenticated/settings/directory")({
   head: () => ({
     meta: [
-      { title: "Project directory — Report Ready" },
+      { title: "Project directory — instructBrain" },
       {
         name: "description",
         content:
           "Trades, companies and contacts used to distribute per-trade report extracts to subcontractors.",
       },
-      { property: "og:title", content: "Project directory — Report Ready" },
+      { property: "og:title", content: "Project directory — instructBrain" },
       {
         property: "og:description",
         content: "Trades, companies and contacts for per-trade report distribution.",

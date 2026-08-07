@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
     auto: search["auto"] === "1" || search["auto"] === true ? true : undefined,
   }),
   head: () => {
-    const title = "Report document — Report Ready";
+    const title = "Report document — instructBrain";
     const description = "Print-ready view of the assembled survey report.";
     return {
       meta: [

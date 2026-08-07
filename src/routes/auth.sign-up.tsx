@@ -14,16 +14,16 @@ import {
 export const Route = createFileRoute("/auth/sign-up")({
   head: () => ({
     meta: [
-      { title: "Create an account — Report Ready" },
+      { title: "Create an account — instructBrain" },
       {
         name: "description",
         content:
-          "Create a Report Ready account to turn site photographs into client-ready construction reports.",
+          "Create a instructBrain account to turn site photographs into client-ready construction reports.",
       },
-      { property: "og:title", content: "Create an account — Report Ready" },
+      { property: "og:title", content: "Create an account — instructBrain" },
       {
         property: "og:description",
-        content: "Set up your Report Ready account with an email and your own password.",
+        content: "Set up your instructBrain account with an email and your own password.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

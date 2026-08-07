@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
  *
  * Assumptions are stated on screen so a buyer can argue with them:
  *   write-up by hand ≈ 1 hour per 8 photographs
- *   Report Ready    ≈ 4 minutes per survey
+ *   instructBrain    ≈ 4 minutes per survey
  */
 const PHOTOS_PER_MANUAL_HOUR = 8;
 const APP_MINUTES_PER_SURVEY = 4;
@@ -150,7 +150,7 @@ export function RoiRace() {
 
         <p className="text-xs leading-relaxed text-muted-foreground">
           Assumes roughly one hour of write-up per {PHOTOS_PER_MANUAL_HOUR} photographs by hand, and{" "}
-          {APP_MINUTES_PER_SURVEY} minutes per survey with Report Ready. Change the numbers to your
+          {APP_MINUTES_PER_SURVEY} minutes per survey with instructBrain. Change the numbers to your
           own.
         </p>
       </div>
@@ -165,7 +165,7 @@ export function RoiRace() {
             caption="per survey, writing up at a desk"
           />
           <RaceBar
-            label="With Report Ready"
+            label="With instructBrain"
             tone="fast"
             progress={appProgress}
             value={`${Math.round(APP_MINUTES_PER_SURVEY * appProgress)} minutes`}

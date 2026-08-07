@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
 
-const TITLE = "Report Ready — three days of writing up becomes minutes";
+const TITLE = "instructBrain — three days of writing up becomes minutes";
 const DESCRIPTION =
-  "Photos in, client-ready report out. Report Ready drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "Photos in, client-ready report out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "Report Ready",
+          name: "instructBrain",
           applicationCategory: "BusinessApplication",
           description: DESCRIPTION,
           offers: [
@@ -169,7 +169,7 @@ function RoiSection() {
         </h2>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground">
           The write-up is the expensive part of a survey, and it happens after hours. This is what
-          it costs you now, and what it costs with Report Ready.
+          it costs you now, and what it costs with instructBrain.
         </p>
         <div className="mt-12">
           <RoiRace />
@@ -239,7 +239,7 @@ function UseCases() {
                 <dd className="mt-1 text-muted-foreground">{item.now}</dd>
               </div>
               <div className="rule-top pt-3">
-                <dt className="eyebrow">With Report Ready</dt>
+                <dt className="eyebrow">With instructBrain</dt>
                 <dd className="mt-1 font-semibold text-foreground">{item.then}</dd>
               </div>
             </dl>
@@ -314,7 +314,7 @@ function PlainEnglish() {
           In plain English
         </h2>
         <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
-          You photograph the site as you always have. Report Ready looks at every photo, describes
+          You photograph the site as you always have. instructBrain looks at every photo, describes
           what it sees in the language you'd use, decides how serious it is, and says what to do
           about it.
         </p>
@@ -505,7 +505,7 @@ function LandingFooter() {
         </nav>
       </div>
       <p className="shell-container mt-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Report Ready. An instructSite company.
+        © {new Date().getFullYear()} instructBrain. An instructSite company.
       </p>
     </footer>
   );

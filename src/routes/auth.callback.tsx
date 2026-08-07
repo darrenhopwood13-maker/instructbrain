@@ -10,10 +10,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
     meta: [
-      { title: "Completing sign in — Report Ready" },
-      { name: "description", content: "Finishing your Report Ready sign in." },
-      { property: "og:title", content: "Completing sign in — Report Ready" },
-      { property: "og:description", content: "Finishing your Report Ready sign in." },
+      { title: "Completing sign in — instructBrain" },
+      { name: "description", content: "Finishing your instructBrain sign in." },
+      { property: "og:title", content: "Completing sign in — instructBrain" },
+      { property: "og:description", content: "Finishing your instructBrain sign in." },
     ],
   }),
   ssr: false,

@@ -11,7 +11,7 @@ import { definitionLabel } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   head: () => {
-    const title = "Project — Report Ready";
+    const title = "Project — instructBrain";
     const description = "Reports, photographs and overdue open items for this project.";
     return {
       meta: [
