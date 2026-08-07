@@ -155,8 +155,7 @@ function Hero() {
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Photos in, client-ready report out. Walk the site as you always have, then issue the
-          document the same afternoon.
+          Walk the site as you always have, then issue the document the same afternoon.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button variant="brand" size="lg" asChild>
@@ -170,15 +169,6 @@ function Hero() {
           </Button>
         </div>
         <p className="mt-5 text-sm text-muted-foreground">No card required.</p>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            to="/auth/sign-in"
-            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
-          >
-            Sign in
-          </Link>
-        </p>
       </div>
     </section>
   );

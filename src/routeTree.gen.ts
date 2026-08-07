@@ -27,6 +27,7 @@ import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings.account'
 import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
 import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
+import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 
@@ -123,6 +124,11 @@ const AuthenticatedSettingsOrganisationRoute =
     path: '/settings/organisation',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicResendWebhookRoute = ApiPublicResendWebhookRouteImport.update({
+  id: '/api/public/resend-webhook',
+  path: '/api/public/resend-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedReportsIdPrintRoute =
   AuthenticatedReportsIdPrintRouteImport.update({
     id: '/print',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/api/public/resend-webhook'
     | '/projects/'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/api/public/resend-webhook'
     | '/projects'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/directory'
     | '/_authenticated/settings/organisation'
+    | '/api/public/resend-webhook'
     | '/_authenticated/projects/'
     | '/_authenticated/reports/$id/print'
     | '/api/public/shared-report/$token'
@@ -280,6 +292,7 @@ export interface RootRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   SharedTokenRoute: typeof SharedTokenRoute
+  ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
   ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
 }
 
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsOrganisationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/resend-webhook': {
+      id: '/api/public/resend-webhook'
+      path: '/api/public/resend-webhook'
+      fullPath: '/api/public/resend-webhook'
+      preLoaderRoute: typeof ApiPublicResendWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/reports/$id/print': {
       id: '/_authenticated/reports/$id/print'
       path: '/print'
@@ -478,18 +498,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   SharedTokenRoute: SharedTokenRoute,
+  ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
   ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
