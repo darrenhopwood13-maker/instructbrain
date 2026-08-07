@@ -170,6 +170,15 @@ function Hero() {
           </Button>
         </div>
         <p className="mt-5 text-sm text-muted-foreground">No card required.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            to="/auth/sign-in"
+            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+          >
+            Sign in
+          </Link>
+        </p>
       </div>
     </section>
   );
