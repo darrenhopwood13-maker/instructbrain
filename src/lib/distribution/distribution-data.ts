@@ -167,7 +167,7 @@ export const distributionPlanQuery = (reportId: string) =>
         const entry = directoryRows.find(
           (candidate) => !unassigned && candidate["trade"] === group.key,
         );
-        const contacts = ((entry?.["directory_contacts"] ?? []) as Array<Record<string, any>>) ?? [];
+        const contacts = (entry?.["directory_contacts"] ?? []) as Array<Record<string, any>>;
         const primary = contacts.find((contact) => contact["is_primary"] === true) ?? contacts[0];
 
         const recipientName = unassigned
