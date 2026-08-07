@@ -150,7 +150,7 @@ async function tradeHandlers() {
 
 const TOKEN = "abcdefghijklmnopqrstuvwx";
 
-function tradeFixture() {
+function tradeFixture(): Record<string, Row[]> {
   return {
     trade_access: [
       {
@@ -160,8 +160,8 @@ function tradeFixture() {
         organisation_id: "o1",
         trade: "Roofer",
         label: "Roofer",
-        expires_at: null,
-        revoked_at: null,
+        expires_at: null as string | null,
+        revoked_at: null as string | null,
       },
     ],
     reports: [
@@ -225,7 +225,7 @@ describe("the subcontractor trade link", () => {
 
   beforeEach(() => {
     tables = tradeFixture();
-    (globalThis as any).__tradeDb = fakeDb(tables as unknown as Record<string, Row[]>);
+    (globalThis as any).__tradeDb = fakeDb(tables);
   });
 
   it("returns only this trade's non-confidential findings", async () => {
@@ -241,13 +241,13 @@ describe("the subcontractor trade link", () => {
 
   it("explains an expired or revoked link instead of failing", async () => {
     const { GET } = await tradeHandlers();
-    tables.trade_access[0]!.revoked_at = "2026-01-01T00:00:00Z";
+    tables["trade_access"]![0]!.revoked_at = "2026-01-01T00:00:00Z";
     const revoked = await GET({ params: { token: TOKEN } });
     expect(revoked.status).toBe(404);
     expect((await revoked.json()).reason).toBe("revoked");
 
-    tables.trade_access[0]!.revoked_at = null;
-    tables.trade_access[0]!.expires_at = "2020-01-01T00:00:00Z";
+    tables["trade_access"]![0]!.revoked_at = null;
+    tables["trade_access"]![0]!.expires_at = "2020-01-01T00:00:00Z";
     const expired = await GET({ params: { token: TOKEN } });
     expect((await expired.json()).reason).toBe("expired");
   });
@@ -263,9 +263,9 @@ describe("the subcontractor trade link", () => {
       }),
     });
     expect(ok.status).toBe(200);
-    expect(tables.findings[0]!.lifecycle_state).toBe("in_progress");
-    expect(tables.audit_log).toHaveLength(1);
-    expect((tables.audit_log[0] as any).after.trade_access_id).toBe("ta1");
+    expect(tables["findings"]![0]!.lifecycle_state).toBe("in_progress");
+    expect(tables["audit_log"]!).toHaveLength(1);
+    expect((tables["audit_log"]![0] as any).after.trade_access_id).toBe("ta1");
 
     for (const id of ["f2", "f3"]) {
       const denied = await POST({
@@ -383,8 +383,16 @@ describe("nothing sends by itself", () => {
   });
 
   it("only user-triggered server functions may call a send", async () => {
-    const { globSync } = await import("node:fs");
-    const files = globSync("src/**/*.{ts,tsx}", { cwd: process.cwd() }) as string[];
+    const { readdirSync } = await import("node:fs");
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(path.join(process.cwd(), dir), { withFileTypes: true })) {
+        const next = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) walk(next);
+        else if (/\.tsx?$/.test(entry.name)) files.push(next);
+      }
+    };
+    walk("src");
     const callers = files.filter((file) => {
       if (
         file.includes("email.server") ||
