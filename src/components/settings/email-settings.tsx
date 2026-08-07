@@ -32,7 +32,7 @@ export function EmailSettingsPanel({
 
   const statusQuery = useQuery({
     queryKey: ["email-status"],
-    queryFn: () => status({ data: {} }),
+    queryFn: () => status(undefined as never),
   });
 
   const failuresQuery = useQuery({
