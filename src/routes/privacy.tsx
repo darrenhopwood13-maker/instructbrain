@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SITE_URL, absoluteUrl } from "@/lib/site-url";
+import { absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "Privacy — instructBrain";
 const DESCRIPTION =

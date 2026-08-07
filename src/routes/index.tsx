@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
-import { SITE_URL, absoluteUrl } from "@/lib/site-url";
+import { absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "instructBrain — three days of writing up becomes minutes";
 const DESCRIPTION =
