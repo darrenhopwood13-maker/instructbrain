@@ -155,8 +155,7 @@ function Hero() {
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Photos in, client-ready report out. Walk the site as you always have, then issue the
-          document the same afternoon.
+          Walk the site as you always have, then issue the document the same afternoon.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button variant="brand" size="lg" asChild>
