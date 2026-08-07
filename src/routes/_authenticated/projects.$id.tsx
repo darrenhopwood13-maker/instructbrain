@@ -1,15 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, AlarmClock, Plus, ChevronRight } from "lucide-react";
+import {
+  FileText,
+  AlarmClock,
+  Plus,
+  ChevronRight,
+  Users,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
 import { overdueItemsQuery, projectQuery, projectReportsQuery } from "@/lib/data";
+import {
+  fallbackIsSet,
+  fallbackRecipientQuery,
+  projectDirectoryQuery,
+} from "@/lib/directory/directory-data";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel } from "@/lib/survey-types";
+
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   head: () => {
