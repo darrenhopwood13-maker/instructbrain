@@ -17,7 +17,7 @@ import { useSession } from "@/lib/auth";
 
 const TITLE = "instructBrain — three days of writing up becomes minutes";
 const DESCRIPTION =
-  "Photos in, client-ready report out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "Photos in. Client-ready reports out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
