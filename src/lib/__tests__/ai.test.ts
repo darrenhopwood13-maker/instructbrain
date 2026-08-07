@@ -12,7 +12,8 @@ import {
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { mapWithConcurrency } from "@/lib/ai/provider.server";
-import { resolveStatus } from "@/lib/survey-types";
+import { resolveStatus, statusesOf } from "@/lib/survey-types";
+import { systemDefinitions, weatherproofingDefinition } from "@/lib/survey-definitions";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /** Fixtures live in the test file. No invented data exists in src/ outside tests. */
@@ -267,5 +268,82 @@ describe("concurrency", () => {
     });
     expect(peak).toBeLessThanOrEqual(5);
     expect(results[19]).toBe(38);
+  });
+});
+
+describe("house voice", () => {
+  const voiced: SurveyTypeSnapshot = {
+    ...roofing,
+    houseVoice: "You are the instructSite Oracle: ABSTENTION IS NOT HEDGING.",
+    aiGuidance: { persona: "Assessing weatherproofing membrane condition." },
+  };
+
+  it("places the snapshot's house voice before the type-specific persona", () => {
+    const prompt = buildSystemPrompt(voiced);
+    expect(prompt).toContain("ABSTENTION IS NOT HEDGING.");
+    expect(prompt.indexOf("instructSite Oracle")).toBeLessThan(
+      prompt.indexOf("Assessing weatherproofing membrane condition."),
+    );
+  });
+
+  it("supplies no house voice of its own when the snapshot has none", () => {
+    expect(buildSystemPrompt(roofing)).not.toContain("Oracle");
+  });
+
+  it("keeps the Oracle text out of the prompt builder and the AI server code", async () => {
+    const files = [
+      "src/lib/ai/prompt.ts",
+      "src/lib/ai/analyse.server.ts",
+      "src/lib/ai/provider.server.ts",
+      "src/lib/ai/adapters.server.ts",
+      "src/lib/ai/analyse.functions.ts",
+    ];
+    const fs = await import("node:fs/promises");
+    for (const file of files) {
+      const source = await fs.readFile(file, "utf8");
+      expect(source).not.toContain("Oracle");
+      expect(source).not.toContain("ABSTENTION IS NOT HEDGING");
+    }
+  });
+});
+
+describe("intermediate statuses are reachable", () => {
+  it("lists every weatherproofing status label, including the middle and not-assessed states", () => {
+    const prompt = buildSystemPrompt(weatherproofingDefinition);
+    for (const status of statusesOf(weatherproofingDefinition)) {
+      expect(prompt).toContain(status.label);
+    }
+    expect(prompt).toContain("Serviceable — monitor");
+    expect(prompt).toContain("Not assessed");
+  });
+
+  it("warns that using only the extreme statuses is poor assessment", () => {
+    expect(buildSystemPrompt(weatherproofingDefinition)).toContain(
+      "Returning only the extreme statuses",
+    );
+  });
+
+  it("carries the house voice on every system definition, at version 2", () => {
+    for (const definition of systemDefinitions) {
+      expect(definition.version).toBe(2);
+      expect(buildSystemPrompt(definition)).toContain("instructSite Oracle");
+    }
+  });
+
+  it("renders a pre-change report from its own version 1 snapshot, unchanged", () => {
+    const legacy: SurveyTypeSnapshot = {
+      id: "weatherproofing",
+      version: 1,
+      label: "Weatherproofing membrane survey",
+      statuses: [
+        { id: "intact", label: "Intact — no action required", tone: "pass" },
+        { id: "damaged", label: "Damaged — remedial required", tone: "fail" },
+      ],
+      aiGuidance: { persona: "A UK chartered building surveyor assessing weatherproofing membrane condition." },
+    };
+    const prompt = buildSystemPrompt(legacy);
+    expect(prompt).not.toContain("Oracle");
+    expect(prompt).toContain("A UK chartered building surveyor");
+    expect(resolveStatus(legacy, "monitor").id).toBe("not_assessed");
   });
 });
