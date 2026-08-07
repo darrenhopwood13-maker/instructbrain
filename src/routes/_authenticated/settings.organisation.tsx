@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImageUp, AlertTriangle } from "lucide-react";
+import { ImageUp } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { EmailSettingsPanel } from "@/components/settings/email-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
