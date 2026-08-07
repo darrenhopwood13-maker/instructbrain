@@ -96,7 +96,7 @@ export function RoiRace() {
           </div>
           <Slider
             id="roi-photos"
-            className="mt-4 py-3"
+            className="mt-4 py-3 [&_[role=slider]]:size-7 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary"
             min={10}
             max={300}
             step={5}
@@ -120,7 +120,7 @@ export function RoiRace() {
           </div>
           <Slider
             id="roi-surveys"
-            className="mt-4 py-3"
+            className="mt-4 py-3 [&_[role=slider]]:size-7 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary"
             min={1}
             max={20}
             step={1}
