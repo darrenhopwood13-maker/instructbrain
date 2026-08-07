@@ -30,6 +30,7 @@ import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/
 import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
+import { Route as AuthenticatedReportsIdExtractGroupRouteImport } from './routes/_authenticated/reports.$id.extract.$group'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -141,6 +142,12 @@ const ApiPublicSharedReportTokenRoute =
     path: '/api/public/shared-report/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedReportsIdExtractGroupRoute =
+  AuthenticatedReportsIdExtractGroupRouteImport.update({
+    id: '/extract/$group',
+    path: '/extract/$group',
+    getParentRoute: () => AuthenticatedReportsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -185,6 +193,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -209,6 +218,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
+  '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/projects/'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/reports/$id/extract/$group'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -255,6 +266,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/reports/$id/extract/$group'
   id:
     | '__root__'
     | '/'
@@ -278,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/'
     | '/_authenticated/reports/$id/print'
     | '/api/public/shared-report/$token'
+    | '/_authenticated/reports/$id/extract/$group'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -445,16 +458,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSharedReportTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/reports/$id/extract/$group': {
+      id: '/_authenticated/reports/$id/extract/$group'
+      path: '/extract/$group'
+      fullPath: '/reports/$id/extract/$group'
+      preLoaderRoute: typeof AuthenticatedReportsIdExtractGroupRouteImport
+      parentRoute: typeof AuthenticatedReportsIdRoute
+    }
   }
 }
 
 interface AuthenticatedReportsIdRouteChildren {
   AuthenticatedReportsIdPrintRoute: typeof AuthenticatedReportsIdPrintRoute
+  AuthenticatedReportsIdExtractGroupRoute: typeof AuthenticatedReportsIdExtractGroupRoute
 }
 
 const AuthenticatedReportsIdRouteChildren: AuthenticatedReportsIdRouteChildren =
   {
     AuthenticatedReportsIdPrintRoute: AuthenticatedReportsIdPrintRoute,
+    AuthenticatedReportsIdExtractGroupRoute:
+      AuthenticatedReportsIdExtractGroupRoute,
   }
 
 const AuthenticatedReportsIdRouteWithChildren =
