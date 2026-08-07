@@ -223,6 +223,82 @@ export type Database = {
           },
         ]
       }
+      directory_template_entries: {
+        Row: {
+          company_name: string
+          contacts: Json
+          created_at: string
+          id: string
+          notes: string | null
+          template_id: string
+          trade: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          contacts?: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          template_id: string
+          trade: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          contacts?: Json
+          created_at?: string
+          id?: string
+          notes?: string | null
+          template_id?: string
+          trade?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "directory_template_entries_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "directory_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      directory_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organisation_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "directory_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributions: {
         Row: {
           channel: Database["public"]["Enums"]["distribution_channel"]
@@ -351,12 +427,15 @@ export type Database = {
           confirmed_by: string | null
           created_at: string
           due_date: string | null
+          due_date_overridden: boolean
           finding_text: string | null
           hazard_category: string | null
           human_edited: boolean
           id: string
           is_confidential: boolean
+          lifecycle_note: string | null
           lifecycle_state: string
+          lifecycle_updated_at: string | null
           likely_cause: string | null
           ref: string
           regulatory_reference: string | null
@@ -386,12 +465,15 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           due_date?: string | null
+          due_date_overridden?: boolean
           finding_text?: string | null
           hazard_category?: string | null
           human_edited?: boolean
           id?: string
           is_confidential?: boolean
+          lifecycle_note?: string | null
           lifecycle_state?: string
+          lifecycle_updated_at?: string | null
           likely_cause?: string | null
           ref: string
           regulatory_reference?: string | null
@@ -421,12 +503,15 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           due_date?: string | null
+          due_date_overridden?: boolean
           finding_text?: string | null
           hazard_category?: string | null
           human_edited?: boolean
           id?: string
           is_confidential?: boolean
+          lifecycle_note?: string | null
           lifecycle_state?: string
+          lifecycle_updated_at?: string | null
           likely_cause?: string | null
           ref?: string
           regulatory_reference?: string | null
@@ -626,6 +711,8 @@ export type Database = {
           address: string | null
           client_name: string | null
           created_at: string
+          fallback_recipient_email: string | null
+          fallback_recipient_name: string | null
           id: string
           name: string
           organisation_id: string
@@ -637,6 +724,8 @@ export type Database = {
           address?: string | null
           client_name?: string | null
           created_at?: string
+          fallback_recipient_email?: string | null
+          fallback_recipient_name?: string | null
           id?: string
           name: string
           organisation_id: string
@@ -648,6 +737,8 @@ export type Database = {
           address?: string | null
           client_name?: string | null
           created_at?: string
+          fallback_recipient_email?: string | null
+          fallback_recipient_name?: string | null
           id?: string
           name?: string
           organisation_id?: string
@@ -906,6 +997,63 @@ export type Database = {
           },
         ]
       }
+      trade_access: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          label: string | null
+          organisation_id: string
+          report_id: string
+          revoked_at: string | null
+          token: string
+          trade: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          organisation_id: string
+          report_id: string
+          revoked_at?: string | null
+          token: string
+          trade: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          organisation_id?: string
+          report_id?: string
+          revoked_at?: string | null
+          token?: string
+          trade?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_access_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_access_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -913,6 +1061,10 @@ export type Database = {
     Functions: {
       create_organisation: { Args: { _name: string }; Returns: string }
       directory_org: { Args: { _directory_id: string }; Returns: string }
+      directory_template_org: {
+        Args: { _template_id: string }
+        Returns: string
+      }
       finding_is_confidential: {
         Args: { _finding_id: string }
         Returns: boolean
