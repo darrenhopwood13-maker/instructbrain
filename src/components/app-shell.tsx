@@ -44,7 +44,7 @@ function AccountAffordance() {
 
 
 const nav = [
-  { to: "/", label: "Projects", icon: FolderOpen, exact: true },
+  { to: "/projects", label: "Projects", icon: FolderOpen, exact: true },
   { to: "/settings/organisation", label: "Organisation", icon: Building2, exact: false },
   { to: "/settings/directory", label: "Directory", icon: Users, exact: false },
   { to: "/settings/account", label: "Account", icon: UserCog, exact: false },
