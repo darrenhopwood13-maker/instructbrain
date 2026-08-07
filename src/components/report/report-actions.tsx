@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Check,
   Copy,
-  Download,
   Eye,
   Link2,
   Loader2,
@@ -34,11 +33,12 @@ import {
   reportSharesQuery,
   revokeShareLink,
 } from "@/lib/report/report-data";
+import { isShareLinkLive, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
- * preview, PDF, share, print, and the issue gate itself.
+ * preview, print/PDF, share, and the issue gate itself.
  */
 export function ReportActions({
   document,
@@ -55,10 +55,20 @@ export function ReportActions({
   const printUrl = `/reports/${document.report.id}/print`;
   const blockers = issueBlockers(document);
   const issued = document.report.status === "issued";
+  // The report itself is the authority on which organisation owns it.
+  const orgId = document.organisation?.id ?? organisationId ?? null;
 
   const openPrint = (auto: boolean) => {
     const url = auto ? `${printUrl}?auto=1` : printUrl;
-    window.open(url, "_blank", "noopener");
+    const opened = window.open(url, "_blank", "noopener");
+    if (!opened) {
+      // Popup blocked, or a mobile browser refused the new tab: go there in
+      // this tab rather than appearing to do nothing.
+      toast.info("Opening the print view in this tab", {
+        description: "Your browser blocked the new tab. Use Back to return to the report.",
+      });
+      window.location.href = url;
+    }
   };
 
   const issue = useMutation({
@@ -103,19 +113,6 @@ export function ReportActions({
       }),
   });
 
-  const nativeShare = async () => {
-    const url = `${window.location.origin}${printUrl}`;
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: document.report.title, url });
-        return;
-      } catch {
-        /* the user dismissed the sheet; fall through to the dialog */
-      }
-    }
-    setShareOpen(true);
-  };
-
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -124,14 +121,10 @@ export function ReportActions({
           Preview
         </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
-          <Download aria-hidden="true" className="mr-1.5 size-4" />
-          Download PDF
-        </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
           <Printer aria-hidden="true" className="mr-1.5 size-4" />
-          Print
+          Print / Save as PDF
         </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => void nativeShare()}>
+        <Button type="button" variant="quiet" size="sm" onClick={() => setShareOpen(true)}>
           <Share2 aria-hidden="true" className="mr-1.5 size-4" />
           Share
         </Button>
@@ -182,11 +175,13 @@ export function ReportActions({
         open={shareOpen}
         onOpenChange={setShareOpen}
         reportId={document.report.id}
-        organisationId={organisationId}
+        reportTitle={document.report.title}
+        organisationId={orgId}
       />
     </>
   );
 }
+
 
 function IssueDialog({
   open,
@@ -274,11 +269,13 @@ function ShareDialog({
   open,
   onOpenChange,
   reportId,
+  reportTitle,
   organisationId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reportId: string;
+  reportTitle: string;
   organisationId: string | null;
 }) {
   const queryClient = useQueryClient();
@@ -287,8 +284,14 @@ function ShareDialog({
   const [copied, setCopied] = useState<string | null>(null);
 
   const create = useMutation({
-    mutationFn: () =>
-      createShareLink({ reportId, organisationId: organisationId ?? "", days }),
+    mutationFn: () => {
+      if (!organisationId) {
+        throw new Error(
+          "This report is not linked to an organisation, so a share link cannot be created.",
+        );
+      }
+      return createShareLink({ reportId, organisationId, days });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["report-shares", reportId] });
       toast.success("Share link created", {
@@ -309,8 +312,23 @@ function ShareDialog({
     },
   });
 
-  const urlFor = (token: string) =>
-    typeof window === "undefined" ? `/shared/${token}` : `${window.location.origin}/shared/${token}`;
+  const urlFor = shareUrlForToken;
+  const live = (shares.data ?? []).filter(isShareLinkLive);
+
+  const sendNative = async (token: string) => {
+    const url = urlFor(token);
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: reportTitle, url });
+        return;
+      } catch {
+        /* the user dismissed the share sheet */
+        return;
+      }
+    }
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copied", { description: "Paste it into your email or message." });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -322,6 +340,20 @@ function ShareDialog({
             Confidential findings are never included. Nothing is emailed by creating a link.
           </DialogDescription>
         </DialogHeader>
+
+        {!organisationId ? (
+          <div className="rounded-lg border border-flag/40 bg-flag-soft p-3 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-flag">
+              <AlertTriangle aria-hidden="true" className="size-4" />
+              No organisation for this report
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              A share link belongs to the organisation that owns the report, and this one could not
+              be resolved. Reload the page, and if it persists check the report is still listed
+              under your organisation in Settings.
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="eyebrow block">
@@ -343,10 +375,33 @@ function ShareDialog({
             disabled={!organisationId || create.isPending}
             onClick={() => create.mutate()}
           >
-            <Link2 aria-hidden="true" className="mr-1.5 size-4" />
+            {create.isPending ? (
+              <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Link2 aria-hidden="true" className="mr-1.5 size-4" />
+            )}
             Create link
           </Button>
+          <Button
+            variant="quiet"
+            size="sm"
+            disabled={live.length === 0}
+            onClick={() => {
+              const first = live[0];
+              if (first) void sendNative(first.token);
+            }}
+          >
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
+            Send link
+          </Button>
         </div>
+
+        {live.length === 0 && organisationId ? (
+          <p className="text-sm text-muted-foreground">
+            There is no active link yet. Create one before sharing — the report cannot be opened
+            without it.
+          </p>
+        ) : null}
 
         <ul className="max-h-56 space-y-2 overflow-y-auto text-sm">
           {(shares.data ?? []).map((share) => {
@@ -388,6 +443,15 @@ function ShareDialog({
                   <Button
                     variant="quiet"
                     size="sm"
+                    disabled={dead}
+                    onClick={() => void sendNative(share.token)}
+                  >
+                    <Share2 aria-hidden="true" className="size-4" />
+                    <span className="sr-only">Send link</span>
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    size="sm"
                     disabled={dead || revoke.isPending}
                     onClick={() => revoke.mutate(share.id)}
                   >
@@ -398,6 +462,7 @@ function ShareDialog({
               </li>
             );
           })}
+
           {shares.data && shares.data.length === 0 ? (
             <li className="text-sm text-muted-foreground">No links have been created yet.</li>
           ) : null}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "Privacy — instructBrain";
 const DESCRIPTION =
@@ -12,10 +13,10 @@ export const Route = createFileRoute("/privacy")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://instructbrain.lovable.app/privacy" },
+      { property: "og:url", content: absoluteUrl("/privacy") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://instructbrain.lovable.app/privacy" }],
+    links: [{ rel: "canonical", href: absoluteUrl("/privacy") }],
   }),
   component: Privacy,
 });
