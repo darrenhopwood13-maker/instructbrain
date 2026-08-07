@@ -16,9 +16,9 @@ import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
 
-const TITLE = "instructBrain — three days of writing up becomes minutes";
+const TITLE = "instructBrain — walk the site, issue the same afternoon";
 const DESCRIPTION =
-  "Photos in. Client-ready reports out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "instructBrain reads your site photographs, drafts referenced findings against your survey type and issues UK condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -108,12 +108,6 @@ function LandingHeader() {
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
       <div className="shell-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4">
         <Link to="/" className="flex min-w-0 items-center gap-3 rounded-md">
-          <span
-            aria-hidden="true"
-            className="gloss hidden size-9 shrink-0 place-items-center rounded-md sm:grid"
-          >
-            <FileText className="size-4" />
-          </span>
           <Wordmark />
         </Link>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -236,10 +230,7 @@ function UseCases() {
             key={item.title}
             className="console-panel flex flex-col rounded-xl p-6 sm:p-7"
           >
-            <span aria-hidden="true" className="gloss grid size-10 place-items-center rounded-md">
-              <item.icon className="size-5" />
-            </span>
-            <h3 className="editorial-title mt-5 text-xl font-semibold leading-snug">
+            <h3 className="editorial-title text-xl font-semibold leading-snug">
               {item.title}
             </h3>
             <dl className="mt-5 space-y-3 text-sm">
@@ -303,15 +294,7 @@ function HowItWorks() {
               key={step.title}
               className="rounded-xl border border-border bg-surface-raised p-6 shadow-raised sm:p-7"
             >
-              <div className="flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="gloss grid size-9 place-items-center rounded-md"
-                >
-                  <step.icon className="size-4" />
-                </span>
-                <span className="eyebrow">Step {index + 1}</span>
-              </div>
+              <span className="eyebrow">Step {index + 1}</span>
               <h3 className="editorial-title mt-4 text-xl font-semibold">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </li>
@@ -469,12 +452,9 @@ function ClosingCta() {
     <section className="shell-container py-24 lg:py-32" aria-labelledby="closing-heading">
       <div className="console-panel rounded-2xl p-8 sm:p-12">
         <div className="max-w-2xl">
-          <span aria-hidden="true" className="gloss grid size-11 place-items-center rounded-md">
-            <Camera className="size-5" />
-          </span>
           <h2
             id="closing-heading"
-            className="editorial-title mt-6 text-3xl font-bold sm:text-4xl"
+            className="editorial-title text-3xl font-bold sm:text-4xl"
           >
             Your next survey could be issued the same day.
           </h2>
