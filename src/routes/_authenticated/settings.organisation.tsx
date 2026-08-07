@@ -75,7 +75,12 @@ function OrganisationSettings() {
         </p>
       </header>
 
-      {role === "owner" || role === "admin" ? <EmailDeliveryWarning /> : null}
+      {role === "owner" || role === "admin" ? (
+        <EmailSettingsPanel
+          organisationId={organisationId}
+          organisationName={organisation?.name ?? "your organisation"}
+        />
+      ) : null}
 
       {query.isPending ? (
         <LoadingState label="Loading your organisation…" />
