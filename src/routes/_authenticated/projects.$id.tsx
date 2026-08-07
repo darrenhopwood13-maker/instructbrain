@@ -1,15 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, AlarmClock, Plus, ChevronRight } from "lucide-react";
+import {
+  FileText,
+  AlarmClock,
+  Plus,
+  ChevronRight,
+  Users,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
 import { overdueItemsQuery, projectQuery, projectReportsQuery } from "@/lib/data";
+import {
+  fallbackIsSet,
+  fallbackRecipientQuery,
+  projectDirectoryQuery,
+} from "@/lib/directory/directory-data";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel } from "@/lib/survey-types";
+
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   head: () => {
@@ -96,11 +110,7 @@ function ProjectDashboard() {
           <p className="mt-2 text-sm text-muted-foreground">{current.address}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="quiet" className="min-h-11" asChild>
-            <Link to="/projects/$id/directory" params={{ id: current.id }}>
-              Directory
-            </Link>
-          </Button>
+
           {usage.exhausted ? (
             <Button variant="brand" className="min-h-11" asChild>
               <Link to="/upgrade">
@@ -131,6 +141,8 @@ function ProjectDashboard() {
           </p>
         ) : null}
       </header>
+
+      <DirectoryCard projectId={current.id} />
 
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -237,5 +249,64 @@ function ProjectDashboard() {
         </section>
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * The directory is where distribution comes from, so it gets a visible home on
+ * the project rather than a link people have to hunt for. The fallback
+ * recipient is called out because distribution is blocked without one.
+ */
+function DirectoryCard({ projectId }: { projectId: string }) {
+  const directory = useQuery(projectDirectoryQuery(projectId));
+  const fallback = useQuery(fallbackRecipientQuery(projectId));
+
+  const entries = directory.data ?? [];
+  const contacts = entries.reduce((total, entry) => total + entry.contacts.length, 0);
+  const hasFallback = fallbackIsSet(fallback.data);
+
+  return (
+    <section
+      aria-labelledby="directory-heading"
+      className="mt-8 rounded-xl border border-border bg-surface-raised p-5 shadow-raised"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 id="directory-heading" className="editorial-title text-lg font-semibold">
+            Project directory
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {directory.isPending
+              ? "Loading trades and contacts…"
+              : entries.length === 0
+                ? "No trades recorded yet — add the subcontractors working on this job."
+                : `${entries.length} ${entries.length === 1 ? "trade" : "trades"} · ${contacts} ${
+                    contacts === 1 ? "contact" : "contacts"
+                  }`}
+          </p>
+          <p className="mt-2 text-sm">
+            {fallback.isPending ? (
+              <span className="text-muted-foreground">Checking the fallback recipient…</span>
+            ) : hasFallback ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-pass">
+                <Check aria-hidden="true" className="size-4" />
+                Fallback recipient set
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 font-medium text-fail">
+                <AlertTriangle aria-hidden="true" className="size-4" />
+                No fallback recipient — distribution is blocked until one is set
+              </span>
+            )}
+          </p>
+        </div>
+        <Button variant="quiet" className="min-h-11 shrink-0" asChild>
+          <Link to="/projects/$id/directory" params={{ id: projectId }}>
+            <Users aria-hidden="true" />
+            {entries.length === 0 ? "Set up directory" : "Manage directory"}
+          </Link>
+        </Button>
+      </div>
+    </section>
   );
 }

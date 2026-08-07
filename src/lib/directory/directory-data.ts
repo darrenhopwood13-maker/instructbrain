@@ -121,6 +121,50 @@ export const projectDirectoryQuery = (projectId: string | null) =>
     },
   });
 
+export type DirectoryCounts = { trades: number; contacts: number };
+
+/**
+ * Per-project totals for the directory hub, so someone can see at a glance
+ * which jobs still have nobody recorded against them.
+ */
+export const directoryCountsQuery = (projectIds: string[]) =>
+  queryOptions({
+    queryKey: ["directory-counts", [...projectIds].sort()],
+    enabled: projectIds.length > 0,
+    queryFn: async (): Promise<Record<string, DirectoryCounts>> => {
+      const entries = unwrap(
+        await from("project_directory").select("id, project_id").in("project_id", projectIds),
+      ) as Array<Record<string, any>>;
+
+      const counts: Record<string, DirectoryCounts> = {};
+      for (const projectId of projectIds) counts[projectId] = { trades: 0, contacts: 0 };
+      const projectByEntry = new Map<string, string>();
+      for (const entry of entries) {
+        const projectId = entry["project_id"] as string;
+        projectByEntry.set(entry["id"] as string, projectId);
+        const bucket = counts[projectId];
+        if (bucket) bucket.trades += 1;
+      }
+      if (entries.length === 0) return counts;
+
+      const contacts = unwrap(
+        await from("directory_contacts")
+          .select("id, directory_id")
+          .in(
+            "directory_id",
+            entries.map((entry) => entry["id"]),
+          ),
+      ) as Array<Record<string, any>>;
+
+      for (const contact of contacts) {
+        const projectId = projectByEntry.get(contact["directory_id"] as string);
+        const bucket = projectId ? counts[projectId] : undefined;
+        if (bucket) bucket.contacts += 1;
+      }
+      return counts;
+    },
+  });
+
 /* ------------------------------------------------------------------ */
 /* Entries                                                              */
 /* ------------------------------------------------------------------ */
