@@ -128,6 +128,8 @@ function ProjectDashboard() {
         ) : null}
       </header>
 
+      <DirectoryCard projectId={current.id} />
+
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section aria-labelledby="reports-heading">
