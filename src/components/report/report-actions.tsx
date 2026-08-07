@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Check,
   Copy,
-  Download,
   Eye,
   Link2,
   Loader2,
@@ -34,11 +33,12 @@ import {
   reportSharesQuery,
   revokeShareLink,
 } from "@/lib/report/report-data";
+import { isShareLinkLive, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
- * preview, PDF, share, print, and the issue gate itself.
+ * preview, print/PDF, share, and the issue gate itself.
  */
 export function ReportActions({
   document,
@@ -55,10 +55,20 @@ export function ReportActions({
   const printUrl = `/reports/${document.report.id}/print`;
   const blockers = issueBlockers(document);
   const issued = document.report.status === "issued";
+  // The report itself is the authority on which organisation owns it.
+  const orgId = document.organisation?.id ?? organisationId ?? null;
 
   const openPrint = (auto: boolean) => {
     const url = auto ? `${printUrl}?auto=1` : printUrl;
-    window.open(url, "_blank", "noopener");
+    const opened = window.open(url, "_blank", "noopener");
+    if (!opened) {
+      // Popup blocked, or a mobile browser refused the new tab: go there in
+      // this tab rather than appearing to do nothing.
+      toast.info("Opening the print view in this tab", {
+        description: "Your browser blocked the new tab. Use Back to return to the report.",
+      });
+      window.location.href = url;
+    }
   };
 
   const issue = useMutation({
@@ -103,19 +113,6 @@ export function ReportActions({
       }),
   });
 
-  const nativeShare = async () => {
-    const url = `${window.location.origin}${printUrl}`;
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: document.report.title, url });
-        return;
-      } catch {
-        /* the user dismissed the sheet; fall through to the dialog */
-      }
-    }
-    setShareOpen(true);
-  };
-
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -124,14 +121,10 @@ export function ReportActions({
           Preview
         </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
-          <Download aria-hidden="true" className="mr-1.5 size-4" />
-          Download PDF
-        </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
           <Printer aria-hidden="true" className="mr-1.5 size-4" />
-          Print
+          Print / Save as PDF
         </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => void nativeShare()}>
+        <Button type="button" variant="quiet" size="sm" onClick={() => setShareOpen(true)}>
           <Share2 aria-hidden="true" className="mr-1.5 size-4" />
           Share
         </Button>
@@ -182,11 +175,13 @@ export function ReportActions({
         open={shareOpen}
         onOpenChange={setShareOpen}
         reportId={document.report.id}
-        organisationId={organisationId}
+        reportTitle={document.report.title}
+        organisationId={orgId}
       />
     </>
   );
 }
+
 
 function IssueDialog({
   open,
