@@ -103,7 +103,7 @@ function NewReport() {
   return (
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
-        <Link to="/" className="font-medium text-muted-foreground hover:text-foreground">
+        <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           Projects
         </Link>
         {project ? (
@@ -158,7 +158,7 @@ function NewReport() {
             description="A report always belongs to a project. Create one, then come back and start the report."
             action={
               <Button variant="brand" asChild>
-                <Link to="/">Go to projects</Link>
+                <Link to="/projects">Go to projects</Link>
               </Button>
             }
           />
