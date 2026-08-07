@@ -454,22 +454,32 @@ export const findingsQuery = (reportId: string) =>
     },
   });
 
+function daysPastDue(dueDate: string): number {
+  return Math.floor((Date.now() - new Date(`${dueDate}T00:00:00Z`).getTime()) / 86_400_000);
+}
+
 function overdueLabel(dueDate: string): string {
-  const days = Math.floor((Date.now() - new Date(`${dueDate}T00:00:00Z`).getTime()) / 86_400_000);
+  const days = daysPastDue(dueDate);
   if (days <= 0) return "Due today";
   return `Overdue by ${days} day${days === 1 ? "" : "s"}`;
 }
 
-/** Real overdue items: lifecycle_state open and a due date already passed. */
+/**
+ * Real overdue items: still open, with a target date already passed. Sorted by
+ * how far past due, worst first — the thing a site manager needs to see is the
+ * item that has been sitting longest.
+ */
 export const overdueItemsQuery = (projectId: string) =>
   queryOptions({
     queryKey: ["overdue", projectId],
     queryFn: async (): Promise<OverdueItem[]> => {
       const rows = unwrap(
         await from("findings")
-          .select("id, ref, finding_text, assigned_trade, ai_suggested_trade, due_date, reports!inner(project_id)")
+          .select(
+            "id, ref, finding_text, assigned_trade, ai_suggested_trade, severity, due_date, report_id, reports!inner(project_id)",
+          )
           .eq("reports.project_id", projectId)
-          .eq("lifecycle_state", "open")
+          .in("lifecycle_state", ["open", "assigned", "in_progress", "fixed", "rejected"])
           .lt("due_date", today())
           .order("due_date", { ascending: true }),
       ) as Array<{
@@ -478,7 +488,9 @@ export const overdueItemsQuery = (projectId: string) =>
         finding_text: string | null;
         assigned_trade: string | null;
         ai_suggested_trade: string | null;
+        severity: string | null;
         due_date: string;
+        report_id: string;
       }>;
       return rows.map((row) => ({
         id: row.id,
@@ -486,9 +498,14 @@ export const overdueItemsQuery = (projectId: string) =>
         title: row.finding_text?.split("\n")[0]?.trim() || "Finding awaiting description",
         trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
         due: overdueLabel(row.due_date),
+        reportId: row.report_id,
+        severityId: row.severity,
+        dueDate: row.due_date,
+        daysOverdue: daysPastDue(row.due_date),
       }));
     },
   });
+
 
 /* ------------------------------------------------------------------ */
 /* Directory                                                            */
