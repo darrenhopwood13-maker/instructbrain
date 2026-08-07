@@ -2,10 +2,8 @@ import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Camera,
   CheckCircle2,
   ClipboardList,
-  FileText,
   HardHat,
   ScanLine,
   ShieldCheck,
@@ -205,7 +203,7 @@ const useCases = [
     who: "Site manager",
     when: "Daily or weekly",
     now: "An hour walking the site, then an evening splitting observations by trade and writing eight separate emails.",
-    then: "Photos in, per-trade extracts out.",
+    then: "One walk, split into per-trade extracts automatically.",
   },
   {
     icon: ClipboardList,
@@ -456,10 +454,10 @@ function ClosingCta() {
             id="closing-heading"
             className="editorial-title text-3xl font-bold sm:text-4xl"
           >
-            Your next survey could be issued the same day.
+            Your next survey can be off your desk before the drive home.
           </h2>
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Three reports free. No card required. Bring the photos you already have.
+            Three reports free. No card required. Bring the photographs you already have.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button variant="brand" size="lg" asChild>

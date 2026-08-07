@@ -376,6 +376,53 @@
   }
 }
 
+/* Frosted glass control — secondary actions across the app. */
+@utility glass {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--glass-surface);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--color-foreground);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 0 var(--glass-highlight) inset,
+    0 8px 20px -12px oklch(0 0 0 / 60%);
+
+  &:hover {
+    background-color: var(--glass-surface-hover);
+    border-color: var(--glass-border-hover);
+  }
+
+  &:active {
+    background-color: var(--glass-surface-hover);
+    filter: brightness(0.96);
+  }
+}
+
+/* Frosted glass with an accent tint — emphasis without the solid fill. */
+@utility glass-accent {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--glass-accent-surface);
+  backdrop-filter: blur(14px) saturate(140%);
+  color: var(--color-foreground);
+  border: 1px solid var(--glass-accent-border);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 0 var(--glass-highlight) inset,
+    0 8px 20px -12px oklch(0 0 0 / 60%);
+
+  &:hover {
+    background-color: var(--glass-accent-surface-hover);
+    border-color: var(--glass-accent-border-hover);
+  }
+
+  &:active {
+    filter: brightness(0.96);
+  }
+}
+
 /* Outline counterpart — instructSite "Apprentice Access". */
 @utility gloss-outline {
   position: relative;
