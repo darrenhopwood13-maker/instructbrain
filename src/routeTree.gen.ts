@@ -23,6 +23,7 @@ import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as SharedTokenRouteImport } from './routes/shared.$token'
 import { Route as TradeTokenRouteImport } from './routes/trade.$token'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings.account'
@@ -107,6 +108,11 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
@@ -142,15 +148,15 @@ const ApiPublicResendWebhookRoute = ApiPublicResendWebhookRouteImport.update({
 } as any)
 const AuthenticatedProjectsIdIndexRoute =
   AuthenticatedProjectsIdIndexRouteImport.update({
-    id: '/projects/$id/',
-    path: '/projects/$id/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProjectsIdRoute,
   } as any)
 const AuthenticatedProjectsIdDirectoryRoute =
   AuthenticatedProjectsIdDirectoryRouteImport.update({
-    id: '/projects/$id/directory',
-    path: '/projects/$id/directory',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/directory',
+    path: '/directory',
+    getParentRoute: () => AuthenticatedProjectsIdRoute,
   } as any)
 const AuthenticatedReportsIdDistributeRoute =
   AuthenticatedReportsIdDistributeRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/trade/$token': typeof TradeTokenRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -254,6 +261,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/trade/$token': typeof TradeTokenRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -284,6 +292,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/shared/$token'
     | '/trade/$token'
+    | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
     | '/settings/account'
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/shared/$token'
     | '/trade/$token'
+    | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
     | '/_authenticated/settings/account'
@@ -475,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/projects/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/$id': {
       id: '/_authenticated/reports/$id'
       path: '/reports/$id'
@@ -519,17 +536,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/projects/$id/': {
       id: '/_authenticated/projects/$id/'
-      path: '/projects/$id'
+      path: '/'
       fullPath: '/projects/$id/'
       preLoaderRoute: typeof AuthenticatedProjectsIdIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedProjectsIdRoute
     }
     '/_authenticated/projects/$id/directory': {
       id: '/_authenticated/projects/$id/directory'
-      path: '/projects/$id/directory'
+      path: '/directory'
       fullPath: '/projects/$id/directory'
       preLoaderRoute: typeof AuthenticatedProjectsIdDirectoryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedProjectsIdRoute
     }
     '/_authenticated/reports/$id/distribute': {
       id: '/_authenticated/reports/$id/distribute'
@@ -569,6 +586,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedProjectsIdRouteChildren {
+  AuthenticatedProjectsIdDirectoryRoute: typeof AuthenticatedProjectsIdDirectoryRoute
+  AuthenticatedProjectsIdIndexRoute: typeof AuthenticatedProjectsIdIndexRoute
+}
+
+const AuthenticatedProjectsIdRouteChildren: AuthenticatedProjectsIdRouteChildren =
+  {
+    AuthenticatedProjectsIdDirectoryRoute:
+      AuthenticatedProjectsIdDirectoryRoute,
+    AuthenticatedProjectsIdIndexRoute: AuthenticatedProjectsIdIndexRoute,
+  }
+
+const AuthenticatedProjectsIdRouteWithChildren =
+  AuthenticatedProjectsIdRoute._addFileChildren(
+    AuthenticatedProjectsIdRouteChildren,
+  )
+
 interface AuthenticatedReportsIdRouteChildren {
   AuthenticatedReportsIdDistributeRoute: typeof AuthenticatedReportsIdDistributeRoute
   AuthenticatedReportsIdPrintRoute: typeof AuthenticatedReportsIdPrintRoute
@@ -591,18 +625,18 @@ const AuthenticatedReportsIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRouteWithChildren
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
-  AuthenticatedProjectsIdDirectoryRoute: typeof AuthenticatedProjectsIdDirectoryRoute
-  AuthenticatedProjectsIdIndexRoute: typeof AuthenticatedProjectsIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRouteWithChildren,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
@@ -610,8 +644,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsOrganisationRoute:
     AuthenticatedSettingsOrganisationRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
-  AuthenticatedProjectsIdDirectoryRoute: AuthenticatedProjectsIdDirectoryRoute,
-  AuthenticatedProjectsIdIndexRoute: AuthenticatedProjectsIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -637,3 +669,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
