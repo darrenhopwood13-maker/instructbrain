@@ -91,13 +91,21 @@ function ProjectDashboard() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">{current.address}</p>
         </div>
-        <Button variant="brand" className="shrink-0" asChild>
-          <Link to="/reports/new" search={{ project: current.id }}>
-            <Plus aria-hidden="true" />
-            <span className="hidden sm:inline">New report</span>
-            <span className="sr-only sm:hidden">New report</span>
-          </Link>
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="quiet" className="min-h-11" asChild>
+            <Link to="/projects/$id/directory" params={{ id: current.id }}>
+              Directory
+            </Link>
+          </Button>
+          <Button variant="brand" className="min-h-11" asChild>
+            <Link to="/reports/new" search={{ project: current.id }}>
+              <Plus aria-hidden="true" />
+              <span className="hidden sm:inline">New report</span>
+              <span className="sr-only sm:hidden">New report</span>
+            </Link>
+          </Button>
+        </div>
+
       </header>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
