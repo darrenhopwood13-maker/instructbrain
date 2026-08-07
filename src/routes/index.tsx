@@ -93,7 +93,7 @@ function Wordmark() {
         An instructSite company
       </span>
       <span className="wordmark block truncate text-lg leading-tight">
-        <span className="text-brand-accent-light">instruct</span>
+        <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
       </span>
 
@@ -132,7 +132,7 @@ function Hero() {
     <section className="shell-container py-16 lg:py-24">
       <div className="max-w-3xl">
         <p className="wordmark text-6xl leading-none sm:text-7xl lg:text-8xl">
-          <span className="text-brand-accent-light">instruct</span>
+          <span className="text-brand-accent">instruct</span>
           <span className="text-foreground">Brain</span>
         </p>
         <p className="mt-5 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
