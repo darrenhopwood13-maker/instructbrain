@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
 
-const TITLE = "Report Ready — three days of writing up becomes minutes";
+const TITLE = "instructBrain — three days of writing up becomes minutes";
 const DESCRIPTION =
-  "Photos in, client-ready report out. Report Ready drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "Photos in. Client-ready reports out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "Report Ready",
+          name: "instructBrain",
           applicationCategory: "BusinessApplication",
           description: DESCRIPTION,
           offers: [
@@ -90,13 +90,14 @@ function Landing() {
 function Wordmark() {
   return (
     <span className="block min-w-0">
-      <span className="block text-[0.5625rem] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+      <span className="block text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
         An instructSite company
       </span>
       <span className="wordmark block truncate text-lg leading-tight">
-        <span className="text-brand-accent-light">Report</span>{" "}
-        <span className="text-foreground">Ready</span>
+        <span className="text-brand-accent-light">instruct</span>
+        <span className="text-foreground">Brain</span>
       </span>
+
     </span>
   );
 }
@@ -134,10 +135,21 @@ function Hero() {
   return (
     <section className="shell-container py-20 lg:py-28">
       <div className="max-w-3xl">
-        <p className="eyebrow">UK construction reporting</p>
+        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
+          An instructSite company
+        </p>
+        <p className="wordmark mt-2 text-4xl leading-none sm:text-5xl">
+          <span className="text-brand-accent-light">instruct</span>
+          <span className="text-foreground">Brain</span>
+        </p>
+        <p className="mt-4 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
+          Photos in. Client-ready reports out.
+        </p>
+        <p className="eyebrow mt-10">UK construction reporting</p>
         <h1 className="editorial-title mt-4 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
           Three days of writing up becomes minutes.
         </h1>
+
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
           Photos in, client-ready report out. Walk the site as you always have, then issue the
           document the same afternoon.
@@ -169,7 +181,7 @@ function RoiSection() {
         </h2>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground">
           The write-up is the expensive part of a survey, and it happens after hours. This is what
-          it costs you now, and what it costs with Report Ready.
+          it costs you now, and what it costs with instructBrain.
         </p>
         <div className="mt-12">
           <RoiRace />
@@ -239,7 +251,7 @@ function UseCases() {
                 <dd className="mt-1 text-muted-foreground">{item.now}</dd>
               </div>
               <div className="rule-top pt-3">
-                <dt className="eyebrow">With Report Ready</dt>
+                <dt className="eyebrow">With instructBrain</dt>
                 <dd className="mt-1 font-semibold text-foreground">{item.then}</dd>
               </div>
             </dl>
@@ -314,7 +326,7 @@ function PlainEnglish() {
           In plain English
         </h2>
         <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
-          You photograph the site as you always have. Report Ready looks at every photo, describes
+          You photograph the site as you always have. instructBrain looks at every photo, describes
           what it sees in the language you'd use, decides how serious it is, and says what to do
           about it.
         </p>
@@ -505,7 +517,7 @@ function LandingFooter() {
         </nav>
       </div>
       <p className="shell-container mt-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Report Ready. An instructSite company.
+        © {new Date().getFullYear()} instructBrain. An instructSite company.
       </p>
     </footer>
   );

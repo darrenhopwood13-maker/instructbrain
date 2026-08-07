@@ -24,9 +24,10 @@ export function AuthLayout({
           </span>
           <span>
             <span className="wordmark block text-base leading-tight">
-              <span className="text-brand-accent-light">Report</span>{" "}
-              <span className="text-foreground">Ready</span>
+              <span className="text-brand-accent-light">instruct</span>
+              <span className="text-foreground">Brain</span>
             </span>
+
           </span>
         </div>
 

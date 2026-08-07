@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
     return tab === "review" || tab === "output" || tab === "photos" ? { tab } : {};
   },
   head: () => {
-    const title = "Report workspace — Report Ready";
+    const title = "Report workspace — instructBrain";
     const description =
       "Photographs, AI-drafted findings review and the issued document for this report.";
     return {

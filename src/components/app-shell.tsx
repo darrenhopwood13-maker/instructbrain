@@ -71,9 +71,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="min-w-0">
               <span className="wordmark block truncate text-base leading-tight">
-                <span className="text-brand-accent-light">Report</span>{" "}
-                <span className="text-foreground">Ready</span>
+                <span className="text-brand-accent-light">instruct</span>
+                <span className="text-foreground">Brain</span>
               </span>
+
             </span>
 
           </Link>

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
     auto: search["auto"] === "1" || search["auto"] === true ? true : undefined,
   }),
   head: () => {
-    const title = "Report document — Report Ready";
+    const title = "Report document — instructBrain";
     const description = "Print-ready view of the assembled survey report.";
     return {
       meta: [
@@ -66,9 +66,14 @@ function PrintReport() {
   return (
     <div className="paper print-surface min-h-dvh">
       <div className="print-running-header" aria-hidden="true">
-        <span>{runningLine}</span>
+        <span>
+          <span className="font-semibold">instructBrain</span>
+          {" · "}
+          {runningLine}
+        </span>
         <span className="print-page-number" />
       </div>
+
 
       <div className="no-print mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 pt-6">
         <p className="text-sm text-muted-foreground">

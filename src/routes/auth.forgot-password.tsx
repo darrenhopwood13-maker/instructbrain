@@ -9,13 +9,13 @@ import { describeAuthError, requestPasswordReset } from "@/lib/auth";
 export const Route = createFileRoute("/auth/forgot-password")({
   head: () => ({
     meta: [
-      { title: "Reset your password — Report Ready" },
+      { title: "Reset your password — instructBrain" },
       {
         name: "description",
-        content: "Request a password reset link for your Report Ready account.",
+        content: "Request a password reset link for your instructBrain account.",
       },
-      { property: "og:title", content: "Reset your password — Report Ready" },
-      { property: "og:description", content: "Request a Report Ready password reset link." },
+      { property: "og:title", content: "Reset your password — instructBrain" },
+      { property: "og:description", content: "Request a instructBrain password reset link." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

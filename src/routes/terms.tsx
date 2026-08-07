@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const TITLE = "Terms — Report Ready";
+const TITLE = "Terms — instructBrain";
 const DESCRIPTION =
-  "The terms of use for Report Ready, including what a report is, professional responsibility and account use.";
+  "The terms of use for instructBrain, including what a report is, professional responsibility and account use.";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/terms")({
 function Terms() {
   return (
     <main className="shell-container py-20">
-      <p className="eyebrow">Report Ready</p>
+      <p className="eyebrow">instructBrain</p>
       <h1 className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">Terms</h1>
       <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-muted-foreground">
         <p>
@@ -31,7 +31,7 @@ function Terms() {
           reports; photographs beyond the allowance are charged as overage.
         </p>
         <p>
-          Report Ready drafts findings for review. It does not certify, sign off or take
+          instructBrain drafts findings for review. It does not certify, sign off or take
           professional responsibility for any assessment. The competent person issuing the document
           remains responsible for its content, and every finding must be reviewed before issue.
         </p>
@@ -54,7 +54,7 @@ function Terms() {
       </div>
       <p className="mt-10">
         <Link to="/" className="font-semibold text-brand-accent-ink">
-          Back to Report Ready
+          Back to instructBrain
         </Link>
       </p>
     </main>

@@ -10,14 +10,14 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth/accept-invite")({
   head: () => ({
     meta: [
-      { title: "Accept invitation — Report Ready" },
+      { title: "Accept invitation — instructBrain" },
       {
         name: "description",
         content:
-          "Accept your invitation to join a Report Ready organisation and start reviewing reports.",
+          "Accept your invitation to join a instructBrain organisation and start reviewing reports.",
       },
-      { property: "og:title", content: "Accept invitation — Report Ready" },
-      { property: "og:description", content: "Join your organisation on Report Ready." },
+      { property: "og:title", content: "Accept invitation — instructBrain" },
+      { property: "og:description", content: "Join your organisation on instructBrain." },
     ],
   }),
   component: AcceptInvite,

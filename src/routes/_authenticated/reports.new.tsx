@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/reports/new")({
     project: typeof search["project"] === "string" ? search["project"] : undefined,
   }),
   head: () => {
-    const title = "Start a report — Report Ready";
+    const title = "Start a report — instructBrain";
     const description =
       "Choose the survey type before uploading photographs. The survey type determines the statuses, capture fields and output the report will use.";
     return {

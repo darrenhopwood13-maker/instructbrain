@@ -3,7 +3,7 @@
 @import "tw-animate-css";
 
 /*
- * Report Ready — design system.
+ * instructBrain — design system.
  * Dark navy console (Instruct suite family) with a shiny orange accent.
  * The report document itself stays paper: see the `.paper` scope below.
  * Never hardcode colour values in components; use these tokens.

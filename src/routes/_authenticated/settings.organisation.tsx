@@ -14,13 +14,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/settings/organisation")({
   head: () => ({
     meta: [
-      { title: "Organisation settings — Report Ready" },
+      { title: "Organisation settings — instructBrain" },
       {
         name: "description",
         content:
           "Set your practice name, report logo and brand colour so every issued report carries your identity.",
       },
-      { property: "og:title", content: "Organisation settings — Report Ready" },
+      { property: "og:title", content: "Organisation settings — instructBrain" },
       {
         property: "og:description",
         content: "Set your practice name, report logo and brand colour for issued reports.",

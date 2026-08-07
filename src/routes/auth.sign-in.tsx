@@ -10,14 +10,14 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth/sign-in")({
   head: () => ({
     meta: [
-      { title: "Sign in — Report Ready" },
+      { title: "Sign in — instructBrain" },
       {
         name: "description",
         content:
-          "Sign in to Report Ready with your email and password, or request a one-time sign-in link.",
+          "Sign in to instructBrain with your email and password, or request a one-time sign-in link.",
       },
-      { property: "og:title", content: "Sign in — Report Ready" },
-      { property: "og:description", content: "Sign in to your Report Ready account." },
+      { property: "og:title", content: "Sign in — instructBrain" },
+      { property: "og:description", content: "Sign in to your instructBrain account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

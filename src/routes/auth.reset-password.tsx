@@ -16,13 +16,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth/reset-password")({
   head: () => ({
     meta: [
-      { title: "Set a new password — Report Ready" },
+      { title: "Set a new password — instructBrain" },
       {
         name: "description",
-        content: "Choose a new password for your Report Ready account and sign back in.",
+        content: "Choose a new password for your instructBrain account and sign back in.",
       },
-      { property: "og:title", content: "Set a new password — Report Ready" },
-      { property: "og:description", content: "Choose a new Report Ready password." },
+      { property: "og:title", content: "Set a new password — instructBrain" },
+      { property: "og:description", content: "Choose a new instructBrain password." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

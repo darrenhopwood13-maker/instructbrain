@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const TITLE = "Privacy — Report Ready";
+const TITLE = "Privacy — instructBrain";
 const DESCRIPTION =
-  "How Report Ready handles site photographs, report content and account data for UK construction reporting.";
+  "How instructBrain handles site photographs, report content and account data for UK construction reporting.";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -23,11 +23,11 @@ export const Route = createFileRoute("/privacy")({
 function Privacy() {
   return (
     <main className="shell-container py-20">
-      <p className="eyebrow">Report Ready</p>
+      <p className="eyebrow">instructBrain</p>
       <h1 className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">Privacy</h1>
       <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-muted-foreground">
         <p>
-          Report Ready stores the site photographs you upload, the findings drafted from them and
+          instructBrain stores the site photographs you upload, the findings drafted from them and
           the reports you issue. Photographs are held in private storage and are readable only by
           members of your organisation.
         </p>
@@ -51,7 +51,7 @@ function Privacy() {
       </div>
       <p className="mt-10">
         <Link to="/" className="font-semibold text-brand-accent-ink">
-          Back to Report Ready
+          Back to instructBrain
         </Link>
       </p>
     </main>

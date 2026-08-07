@@ -13,13 +13,13 @@ import { useOrganisations } from "@/lib/use-organisations";
 export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
     meta: [
-      { title: "Projects — Report Ready" },
+      { title: "Projects — instructBrain" },
       {
         name: "description",
         content:
           "Site photographs in, client-ready construction reports out. Manage every project, survey and issued report in one place.",
       },
-      { property: "og:title", content: "Projects — Report Ready" },
+      { property: "og:title", content: "Projects — instructBrain" },
       {
         property: "og:description",
         content:

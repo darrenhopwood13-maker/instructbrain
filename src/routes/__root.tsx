@@ -78,16 +78,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Report Ready — construction site reporting" },
+      { title: "instructBrain — construction site reporting" },
       {
         name: "description",
         content:
-          "Photos in, client-ready report out. Report Ready drafts, reviews and issues UK construction site reports.",
+          "Photos in. Client-ready reports out. instructBrain drafts, reviews and issues UK construction site reports.",
       },
-      { property: "og:title", content: "Report Ready — construction site reporting" },
+      { property: "og:title", content: "instructBrain — construction site reporting" },
       {
         property: "og:description",
-        content: "Photos in, client-ready report out. UK construction site reporting.",
+        content: "Photos in. Client-ready reports out. UK construction site reporting.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

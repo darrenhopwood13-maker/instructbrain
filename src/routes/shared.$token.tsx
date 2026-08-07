@@ -11,7 +11,7 @@ import { sharedDocument } from "@/lib/report/shared-document";
  */
 export const Route = createFileRoute("/shared/$token")({
   head: () => {
-    const title = "Shared survey report — Report Ready";
+    const title = "Shared survey report — instructBrain";
     const description = "A read-only copy of a construction survey report shared by its author.";
     return {
       meta: [
@@ -45,7 +45,7 @@ function SharedReport() {
     <div className="min-h-dvh bg-surface">
       <header className="no-print border-b border-border bg-surface-raised">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <p className="editorial-title text-base font-semibold">Report Ready</p>
+          <p className="editorial-title text-base font-semibold">instructBrain</p>
           <button
             type="button"
             onClick={() => window.print()}
