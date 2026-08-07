@@ -405,15 +405,34 @@ export function PhotosPanel({
         </p>
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
-          <Button variant="brand" onClick={() => filePickerRef.current?.click()} disabled={busy}>
+          <Button
+            variant="brand"
+            onClick={() => filePickerRef.current?.click()}
+            disabled={busy || atPhotoCap}
+          >
             <ImagePlus aria-hidden="true" />
             Add photographs
           </Button>
-          <Button variant="quiet" onClick={() => cameraRef.current?.click()} disabled={busy}>
+          <Button
+            variant="quiet"
+            onClick={() => cameraRef.current?.click()}
+            disabled={busy || atPhotoCap}
+          >
             <Camera aria-hidden="true" />
             Take a photograph
           </Button>
         </div>
+        {atPhotoCap ? (
+          <p className="mt-3 text-sm text-fail-soft">
+            This report holds the {photoCap} photographs included in your plan. Remove one, or move
+            the rest into a second report.
+          </p>
+        ) : remainingPhotos !== null ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {remainingPhotos} of {photoCap} photographs remaining on this report.
+          </p>
+        ) : null}
+
 
       </section>
 
