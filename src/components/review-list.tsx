@@ -27,12 +27,24 @@ import { toast } from "sonner";
  * Statuses come entirely from the report's survey type snapshot — no status id
  * is hardcoded here except `not_assessed`, which is an engine-level concept.
  */
+export type ConfirmPatch = {
+  status?: string;
+  confirmed_at?: string | null;
+  confirmed_by?: string | null;
+};
+
 export function ReviewList({
   snapshot,
   findings,
+  onConfirm,
+  onConfirmMany,
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
+  /** Persists one confirmation action. Rejects if the write failed. */
+  onConfirm?: (findingId: string, patch: ConfirmPatch) => Promise<void>;
+  /** Persists the same patch across many findings in one batch. */
+  onConfirmMany?: (findingIds: string[], patch: ConfirmPatch) => Promise<void>;
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -41,16 +53,35 @@ export function ReviewList({
     return map;
   }, [shortcuts]);
 
-  // Unresolved `not_assessed` items sort to the top of the queue.
-  const [items, setItems] = useState<Finding[]>(() =>
-    [...findings].sort((a, b) => {
-      const aBlocked = resolveStatus(snapshot, a.status).id === NOT_ASSESSED_ID ? 0 : 1;
-      const bBlocked = resolveStatus(snapshot, b.status).id === NOT_ASSESSED_ID ? 0 : 1;
-      return aBlocked - bBlocked;
-    }),
-  );
+  /**
+   * Local state holds only optimistic overlays and locally edited draft text.
+   * Everything the counters read comes from `findings`, which is the saved
+   * database state — a confirmation that failed to persist rolls its overlay
+   * back and can never be counted as confirmed.
+   */
+  const [overrides, setOverrides] = useState<Record<string, Partial<Finding>>>({});
   const [active, setActive] = useState(0);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
+  // Stable review order: unresolved `not_assessed` items sort to the top when
+  // first seen, and nothing reorders underneath the reviewer afterwards.
+  const orderRef = useRef<string[]>([]);
+
+  const items = useMemo(() => {
+    const merged = findings.map((finding) => ({ ...finding, ...(overrides[finding.id] ?? {}) }));
+    const known = new Set(orderRef.current);
+    const newcomers = merged
+      .filter((item) => !known.has(item.id))
+      .sort((a, b) => {
+        const aBlocked = resolveStatus(snapshot, a.status).id === NOT_ASSESSED_ID ? 0 : 1;
+        const bBlocked = resolveStatus(snapshot, b.status).id === NOT_ASSESSED_ID ? 0 : 1;
+        return aBlocked - bBlocked;
+      });
+    if (newcomers.length > 0) {
+      orderRef.current = [...orderRef.current, ...newcomers.map((item) => item.id)];
+    }
+    const position = new Map(orderRef.current.map((id, index) => [id, index]));
+    return [...merged].sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0));
+  }, [findings, overrides, snapshot]);
 
   const derivedFields = useMemo(() => derivedFieldsOf(snapshot), [snapshot]);
   const showCause = definesField(snapshot, "likely_cause");
@@ -59,32 +90,83 @@ export function ReviewList({
   const causeGuidance =
     derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
 
-  const updateItem = useCallback((index: number, patch: Partial<Finding>) => {
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const applyOverride = useCallback((id: string, patch: Partial<Finding>) => {
+    setOverrides((prev) => ({ ...prev, [id]: { ...(prev[id] ?? {}), ...patch } }));
   }, []);
+
+  const updateItem = useCallback(
+    (index: number, patch: Partial<Finding>) => {
+      const item = items[index];
+      if (item) applyOverride(item.id, patch);
+    },
+    [items, applyOverride],
+  );
+
+  /** Optimistic overlay, real write, rollback and a visible error on failure. */
+  const persist = useCallback(
+    async (id: string, optimistic: Partial<Finding>, patch: ConfirmPatch): Promise<boolean> => {
+      const previous = overrides[id];
+      applyOverride(id, optimistic);
+      if (!onConfirm) return true;
+      try {
+        await onConfirm(id, patch);
+        return true;
+      } catch (error) {
+        setOverrides((prev) => {
+          const next = { ...prev };
+          if (previous) next[id] = previous;
+          else delete next[id];
+          return next;
+        });
+        toast.error("That change could not be saved", {
+          description: error instanceof Error ? error.message : "Nothing was written to the report.",
+        });
+        return false;
+      }
+    },
+    [applyOverride, onConfirm, overrides],
+  );
 
   const setStatus = useCallback(
     (index: number, status: StatusDefinition) => {
-      setItems((prev) =>
-        prev.map((item, i) =>
-          i === index
-            ? {
-                ...item,
-                status: status.id,
-                confirmed: status.id !== NOT_ASSESSED_ID,
-              }
-            : item,
-        ),
-      );
-      toast.success(`Marked ${status.label}`, {
-        description:
-          status.id === NOT_ASSESSED_ID
+      const item = items[index];
+      if (!item) return;
+      const blocked = status.id === NOT_ASSESSED_ID;
+      const confirmedAt = blocked ? null : new Date().toISOString();
+      void persist(
+        item.id,
+        { status: status.id, confirmed: !blocked },
+        { status: status.id, confirmed_at: confirmedAt },
+      ).then((ok) => {
+        if (!ok) return;
+        toast.success(`Marked ${status.label}`, {
+          description: blocked
             ? "This finding still blocks export until it is resolved."
             : "Finding confirmed and added to the report.",
+        });
       });
     },
-    [],
+    [items, persist],
   );
+
+  const confirmActive = useCallback(() => {
+    const current = items[active];
+    if (!current) return;
+    if (resolveStatus(snapshot, current.status).id === NOT_ASSESSED_ID) {
+      toast.error("Not assessed items cannot be confirmed", {
+        description: "Choose a status from the survey type before confirming.",
+      });
+      return;
+    }
+    void persist(
+      current.id,
+      { confirmed: true },
+      { confirmed_at: new Date().toISOString() },
+    ).then((ok) => {
+      if (ok) toast.success("Finding confirmed");
+    });
+    setActive((i) => Math.min(i + 1, items.length - 1));
+  }, [active, items, persist, snapshot]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLUListElement>) => {
     // Never steal a keystroke from a field, and never fire while a pop-out
@@ -110,18 +192,7 @@ export function ReviewList({
       setActive((i) => Math.max(i - 1, 0));
     } else if (key === "enter") {
       event.preventDefault();
-      const current = items[active];
-      if (current && resolveStatus(snapshot, current.status).id === NOT_ASSESSED_ID) {
-        toast.error("Not assessed items cannot be confirmed", {
-          description: "Choose a status from the survey type before confirming.",
-        });
-        return;
-      }
-      setItems((prev) =>
-        prev.map((item, i) => (i === active ? { ...item, confirmed: true } : item)),
-      );
-      toast.success("Finding confirmed");
-      setActive((i) => Math.min(i + 1, items.length - 1));
+      confirmActive();
     } else {
       const mapped = keyToStatus.get(key);
       if (mapped) {
@@ -152,8 +223,36 @@ export function ReviewList({
       setActive(Math.max(firstNotAssessed, 0));
       return;
     }
-    setItems((prev) => prev.map((item) => ({ ...item, confirmed: true })));
-    toast.success("All findings confirmed");
+    const pending = items.filter(
+      (item, i) => !item.confirmed && resolved[i]?.id !== NOT_ASSESSED_ID,
+    );
+    if (pending.length === 0) return;
+
+    const confirmedAt = new Date().toISOString();
+    const snapshotOverrides = overrides;
+    setOverrides((prev) => {
+      const next = { ...prev };
+      for (const item of pending) next[item.id] = { ...(next[item.id] ?? {}), confirmed: true };
+      return next;
+    });
+
+    const ids = pending.map((item) => item.id);
+    const write = onConfirmMany
+      ? onConfirmMany(ids, { confirmed_at: confirmedAt })
+      : onConfirm
+        ? Promise.all(ids.map((id) => onConfirm(id, { confirmed_at: confirmedAt }))).then(() => {})
+        : Promise.resolve();
+
+    void write.then(
+      () => toast.success("All findings confirmed"),
+      (error: unknown) => {
+        setOverrides(snapshotOverrides);
+        toast.error("Those confirmations could not be saved", {
+          description:
+            error instanceof Error ? error.message : "Nothing was written to the report.",
+        });
+      },
+    );
   };
 
   return (
