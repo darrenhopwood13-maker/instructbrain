@@ -80,8 +80,14 @@ export function PhotosPanel({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lastToggledRef = useRef<string | null>(null);
 
+  const planQuery = useQuery(organisationPlanQuery(organisationId));
+  const photoCap = planQuery.data?.photo_cap_per_report ?? null;
+  const remainingPhotos = photoCap === null ? null : Math.max(0, photoCap - photos.length);
+  const atPhotoCap = remainingPhotos !== null && remainingPhotos === 0;
+
   const filePickerRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+
 
   const refresh = useCallback(async () => {
     const rows = await listPhotos(reportId);
