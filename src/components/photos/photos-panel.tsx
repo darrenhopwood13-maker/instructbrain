@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ImagePlus, Info, Loader2, Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { organisationPlanQuery } from "@/lib/plans";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
