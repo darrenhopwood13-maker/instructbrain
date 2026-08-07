@@ -131,7 +131,7 @@ function Hero() {
   return (
     <section className="shell-container py-16 lg:py-24">
       <div className="max-w-3xl">
-        <p className="wordmark text-6xl leading-none sm:text-7xl lg:text-8xl">
+        <p className="wordmark text-[3.25rem] leading-none sm:text-8xl lg:text-[8.5rem]">
           <span className="text-brand-accent">instruct</span>
           <span className="text-foreground">Brain</span>
         </p>
