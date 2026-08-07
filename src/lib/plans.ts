@@ -74,6 +74,7 @@ export function resetDateLabel(now: Date = new Date()): string {
   return nextStart.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
+    year: "numeric",
     timeZone: "UTC",
   });
 }
