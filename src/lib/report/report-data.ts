@@ -299,6 +299,9 @@ export type FindingPatch = Partial<{
   confirmed_by: string | null;
   human_edited: boolean;
   lifecycle_state: string;
+  due_date_overridden: boolean;
+  lifecycle_note: string | null;
+  lifecycle_updated_at: string | null;
 }>;
 
 export async function updateFinding(
