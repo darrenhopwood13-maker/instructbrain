@@ -82,4 +82,11 @@ export type OverdueItem = {
   title: string;
   trade: string;
   due: string;
+  /** Report the item belongs to, so the list can link straight to it. */
+  reportId?: string;
+  /** Severity id from that report's snapshot, for the worst-outstanding read. */
+  severityId?: string | null;
+  dueDate?: string;
+  daysOverdue?: number;
 };
+
