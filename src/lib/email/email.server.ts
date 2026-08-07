@@ -361,7 +361,7 @@ export async function sendReportSharedEmail(
 export async function buildTradeExtractItems(
   db: Db,
   reportId: string,
-  trade: string,
+  trade: string | null,
 ): Promise<{ items: ExtractItem[]; findingIds: string[]; snapshot: SurveyTypeSnapshot | null }> {
   const { data: report } = await db
     .from("reports")
@@ -371,15 +371,18 @@ export async function buildTradeExtractItems(
   const snapshot = ((report as { survey_type_snapshot?: unknown } | null)?.survey_type_snapshot ??
     null) as SurveyTypeSnapshot | null;
 
-  const { data, error } = await db
+  let query = db
     .from("findings")
     .select(
       "id, ref, severity, remedial_text, finding_text, due_date, is_confidential, capture_fields",
     )
     .eq("report_id", reportId)
-    .eq("assigned_trade", trade)
-    .eq("is_confidential", false)
-    .order("sequence", { ascending: true });
+    .eq("is_confidential", false);
+
+  // A null trade is the fallback set: everything nobody has been given yet.
+  query = trade === null ? query.is("assigned_trade", null) : query.eq("assigned_trade", trade);
+
+  const { data, error } = await query.order("sequence", { ascending: true });
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as Array<Record<string, any>>;
@@ -401,11 +404,33 @@ export async function buildTradeExtractItems(
   return { items, findingIds: rows.map((row) => row["id"] as string), snapshot };
 }
 
+/**
+ * Where the recipient can respond. A live trade link, scoped to their own
+ * items, when one exists — otherwise the report itself, which needs an
+ * account.
+ */
+async function itemListUrlFor(db: Db, reportId: string, trade: string | null): Promise<string> {
+  if (trade === null) return absoluteUrl(`/reports/${reportId}`);
+  const { data } = await db
+    .from("trade_access")
+    .select("token, revoked_at, expires_at")
+    .eq("report_id", reportId)
+    .eq("trade", trade)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const row = ((data ?? []) as Array<Record<string, any>>)[0];
+  const expires = row?.["expires_at"] as string | null | undefined;
+  const live = row && (!expires || new Date(expires).getTime() > Date.now());
+  return live ? absoluteUrl(`/trade/${row["token"] as string}`) : absoluteUrl(`/reports/${reportId}`);
+}
+
 export async function sendTradeExtractEmail(
   db: Db,
   input: {
     reportId: string;
-    trade: string;
+    /** Null sends the unassigned set to the project's fallback recipient. */
+    trade: string | null;
     email: string;
     name?: string | null;
     directoryId?: string | null;
@@ -423,18 +448,22 @@ export async function sendTradeExtractEmail(
   const { items, findingIds } = await buildTradeExtractItems(db, input.reportId, input.trade);
   if (items.length === 0) {
     throw new Error(
-      `There are no items assigned to ${input.trade} on this report, so nothing was sent.`,
+      input.trade === null
+        ? "Every item on this report is assigned to a trade, so there was nothing to send to the fallback recipient."
+        : `There are no items assigned to ${input.trade} on this report, so nothing was sent.`,
     );
   }
+
+  const tradeLabel = input.trade ?? "Unassigned items";
 
   const message: EmailMessage = {
     template: "TRADE_EXTRACT",
     data: {
       projectName: (row["projects"]?.["name"] as string) ?? "this project",
       reportReference: (row["reference"] as string | null) ?? null,
-      trade: input.trade,
+      trade: tradeLabel,
       items,
-      itemListUrl: absoluteUrl(`/reports/${input.reportId}`),
+      itemListUrl: await itemListUrlFor(db, input.reportId, input.trade),
       sentByName: actorName(actor.claims, "Your surveyor"),
       attachment: null,
     },
@@ -459,12 +488,13 @@ export async function sendTradeExtractEmail(
     {
       reportId: input.reportId,
       action: "email.trade_extract_sent",
-      after: { to: input.email, trade: input.trade, refs: items.map((item) => item.ref) },
+      after: { to: input.email, trade: tradeLabel, refs: items.map((item) => item.ref) },
     },
     actor.id,
   );
   return outcome;
 }
+
 
 export async function sendCloseOutRequestEmail(
   db: Db,

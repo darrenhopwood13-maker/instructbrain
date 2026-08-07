@@ -103,7 +103,11 @@ export const sendTradeExtract = createServerFn({ method: "POST" })
     const value = (input ?? {}) as Record<string, unknown>;
     return {
       reportId: requiredString(value["reportId"], "report id"),
-      trade: requiredString(value["trade"], "trade"),
+      // Null is the fallback set: the items nobody has been given yet.
+      trade:
+        value["trade"] === null || value["trade"] === undefined
+          ? null
+          : requiredString(value["trade"], "trade"),
       email: requiredEmail(value["email"]),
       name: typeof value["name"] === "string" ? value["name"] : null,
       directoryId: typeof value["directoryId"] === "string" ? value["directoryId"] : null,

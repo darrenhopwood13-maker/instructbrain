@@ -60,6 +60,17 @@ export type Finding = {
   description?: string;
   remedial?: string;
 
+  /** The human's decision. Null until someone assigns a trade. */
+  assignedTrade?: string | null;
+  /** The AI's suggestion, kept even after a human overrides it. */
+  aiSuggestedTrade?: string | null;
+  aiTradeConfidence?: number | null;
+  aiTradeReasoning?: string | null;
+  /** Derived from the severity's target window, then editable by a person. */
+  dueDate?: string | null;
+  dueDateOverridden?: boolean;
+  lifecycleState?: string;
+
   /** Only defined by disciplines whose definition asks for it. */
   likelyCause?: string | null;
   likelyCauseConfirmed?: boolean;
@@ -82,4 +93,11 @@ export type OverdueItem = {
   title: string;
   trade: string;
   due: string;
+  /** Report the item belongs to, so the list can link straight to it. */
+  reportId?: string;
+  /** Severity id from that report's snapshot, for the worst-outstanding read. */
+  severityId?: string | null;
+  dueDate?: string;
+  daysOverdue?: number;
 };
+
