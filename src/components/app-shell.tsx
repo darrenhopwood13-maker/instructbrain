@@ -63,12 +63,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
         <div className="shell-container flex items-center gap-4 py-5">
           <Link to="/projects" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
-            <span
-              aria-hidden="true"
-              className="gloss grid size-8 shrink-0 place-items-center rounded-md"
-            >
-              <FileText className="size-4" />
-            </span>
             <span className="min-w-0">
               <span className="wordmark block truncate text-base leading-tight">
                 <span className="text-brand-accent-light">instruct</span>
