@@ -135,6 +135,7 @@ function ProjectDirectory() {
       </header>
 
       <FallbackPanel
+        key={fallback.dataUpdatedAt}
         projectId={id}
         value={fallback.data ?? { name: null, email: null }}
         onSaved={refresh}
