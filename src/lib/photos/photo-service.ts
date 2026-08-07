@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { nextRef } from "@/lib/finding-refs";
+import { humanisePlanError } from "@/lib/plans";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
 import {
@@ -269,7 +270,7 @@ export async function uploadPhoto(
     })
     .select(photoColumns)
     .single();
-  if (error) throw error;
+  if (error) throw new Error(humanisePlanError((error as { message: string }).message));
   onProgress(1);
   return { photo: data as PhotoRow, provenance, skipped: false };
 }

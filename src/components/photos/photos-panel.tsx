@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ImagePlus, Info, Loader2, Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { organisationPlanQuery } from "@/lib/plans";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,8 +82,14 @@ export function PhotosPanel({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lastToggledRef = useRef<string | null>(null);
 
+  const planQuery = useQuery(organisationPlanQuery(organisationId));
+  const photoCap = planQuery.data?.photo_cap_per_report ?? null;
+  const remainingPhotos = photoCap === null ? null : Math.max(0, photoCap - photos.length);
+  const atPhotoCap = remainingPhotos !== null && remainingPhotos === 0;
+
   const filePickerRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+
 
   const refresh = useCallback(async () => {
     const rows = await listPhotos(reportId);
@@ -171,11 +179,24 @@ export function PhotosPanel({
   const addFiles = useCallback(
     (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
-      const items: Pending[] = Array.from(fileList).map((file, index) => ({
+      let selected = Array.from(fileList);
+      // The database enforces the cap too; this only avoids doomed uploads.
+      if (remainingPhotos !== null && selected.length > remainingPhotos) {
+        toast.error("Photograph limit reached", {
+          description:
+            remainingPhotos === 0
+              ? `This report already holds the ${photoCap} photographs included in your plan.`
+              : `Only ${remainingPhotos} more photograph${remainingPhotos === 1 ? "" : "s"} can be added to this report on your plan.`,
+        });
+        selected = selected.slice(0, remainingPhotos);
+        if (selected.length === 0) return;
+      }
+      const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
         captureFields: { ...zoneValues },
       }));
+
       for (const item of items) pendingRef.current.set(item.id, item);
       setUploads((current) => [
         ...current,
@@ -189,7 +210,7 @@ export function PhotosPanel({
       ]);
       void runQueue(items);
     },
-    [runQueue, zoneValues],
+    [runQueue, zoneValues, remainingPhotos, photoCap],
   );
 
   const retry = useCallback(
@@ -384,15 +405,34 @@ export function PhotosPanel({
         </p>
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
-          <Button variant="brand" onClick={() => filePickerRef.current?.click()} disabled={busy}>
+          <Button
+            variant="brand"
+            onClick={() => filePickerRef.current?.click()}
+            disabled={busy || atPhotoCap}
+          >
             <ImagePlus aria-hidden="true" />
             Add photographs
           </Button>
-          <Button variant="quiet" onClick={() => cameraRef.current?.click()} disabled={busy}>
+          <Button
+            variant="quiet"
+            onClick={() => cameraRef.current?.click()}
+            disabled={busy || atPhotoCap}
+          >
             <Camera aria-hidden="true" />
             Take a photograph
           </Button>
         </div>
+        {atPhotoCap ? (
+          <p className="mt-3 text-sm text-fail-soft">
+            This report holds the {photoCap} photographs included in your plan. Remove one, or move
+            the rest into a second report.
+          </p>
+        ) : remainingPhotos !== null ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {remainingPhotos} of {photoCap} photographs remaining on this report.
+          </p>
+        ) : null}
+
 
       </section>
 
@@ -474,25 +514,32 @@ export function PhotosPanel({
 
       {/* One-handed controls: primary actions in the lower third on a phone. */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
-        <div className="flex gap-2">
-          <Button
-            variant="brand"
-            className="h-14 flex-1 text-base"
-            onClick={() => cameraRef.current?.click()}
-          >
-            <Camera aria-hidden="true" className="size-5" />
-            Take photo
-          </Button>
-          <Button
-            variant="quiet"
-            className="h-14 flex-1 text-base"
-            onClick={() => filePickerRef.current?.click()}
-          >
-            <ImagePlus aria-hidden="true" className="size-5" />
-            Add photos
-          </Button>
-        </div>
+        {atPhotoCap ? (
+          <p className="text-center text-sm text-fail-soft">
+            Photograph limit reached for this report ({photoCap} on your plan).
+          </p>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              variant="brand"
+              className="h-14 flex-1 text-base"
+              onClick={() => cameraRef.current?.click()}
+            >
+              <Camera aria-hidden="true" className="size-5" />
+              Take photo
+            </Button>
+            <Button
+              variant="quiet"
+              className="h-14 flex-1 text-base"
+              onClick={() => filePickerRef.current?.click()}
+            >
+              <ImagePlus aria-hidden="true" className="size-5" />
+              Add photos
+            </Button>
+          </div>
+        )}
       </div>
+
 
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent>
