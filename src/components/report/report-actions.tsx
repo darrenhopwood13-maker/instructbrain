@@ -29,11 +29,12 @@ import { issueBlockers, type ReportDocument } from "@/lib/report/document";
 import {
   createShareLink,
   issueReport,
+  logShareSent,
   reopenReport,
   reportSharesQuery,
   revokeShareLink,
 } from "@/lib/report/report-data";
-import { isShareLinkLive, shareUrlForToken } from "@/lib/report/share-url";
+import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 
 /**
@@ -177,6 +178,7 @@ export function ReportActions({
         reportId={document.report.id}
         reportTitle={document.report.title}
         organisationId={orgId}
+        issued={issued}
       />
     </>
   );
