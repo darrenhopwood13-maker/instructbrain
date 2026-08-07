@@ -63,6 +63,8 @@ export type SurveyDefinition = {
   hazardCategories?: CategoryDefinition[];
   snagCategories?: CategoryDefinition[];
   regulatoryReferences?: ReferenceDefinition[];
+  /** Shared house voice, placed before the type-specific persona. Data, not code. */
+  houseVoice?: string;
   aiGuidance?: AiGuidance;
   defaultRemedial?: string;
   outputSections?: string[];
@@ -321,6 +323,13 @@ export function aiGuidanceOf(
   return Object.entries(guidance)
     .filter(([, text]) => typeof text === "string" && text.trim() !== "")
     .map(([key, text]) => ({ key, label: humaniseKey(key), text: text as string }));
+}
+
+/** The definition's own house voice text, or null. Never invented here. */
+export function houseVoiceOf(snapshot: SurveyTypeSnapshot | null | undefined): string | null {
+  return typeof snapshot?.houseVoice === "string" && snapshot.houseVoice.trim() !== ""
+    ? snapshot.houseVoice
+    : null;
 }
 
 export function defaultRemedialOf(
