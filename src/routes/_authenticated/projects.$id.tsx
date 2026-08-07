@@ -237,3 +237,62 @@ function ProjectDashboard() {
     </AppShell>
   );
 }
+
+/**
+ * The directory is where distribution comes from, so it gets a visible home on
+ * the project rather than a link people have to hunt for. The fallback
+ * recipient is called out because distribution is blocked without one.
+ */
+function DirectoryCard({ projectId }: { projectId: string }) {
+  const directory = useQuery(projectDirectoryQuery(projectId));
+  const fallback = useQuery(fallbackRecipientQuery(projectId));
+
+  const entries = directory.data ?? [];
+  const contacts = entries.reduce((total, entry) => total + entry.contacts.length, 0);
+  const hasFallback = fallbackIsSet(fallback.data);
+
+  return (
+    <section
+      aria-labelledby="directory-heading"
+      className="mt-8 rounded-xl border border-border bg-surface-raised p-5 shadow-raised"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 id="directory-heading" className="editorial-title text-lg font-semibold">
+            Project directory
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {directory.isPending
+              ? "Loading trades and contacts…"
+              : entries.length === 0
+                ? "No trades recorded yet — add the subcontractors working on this job."
+                : `${entries.length} ${entries.length === 1 ? "trade" : "trades"} · ${contacts} ${
+                    contacts === 1 ? "contact" : "contacts"
+                  }`}
+          </p>
+          <p className="mt-2 text-sm">
+            {fallback.isPending ? (
+              <span className="text-muted-foreground">Checking the fallback recipient…</span>
+            ) : hasFallback ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-pass">
+                <Check aria-hidden="true" className="size-4" />
+                Fallback recipient set
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 font-medium text-fail">
+                <AlertTriangle aria-hidden="true" className="size-4" />
+                No fallback recipient — distribution is blocked until one is set
+              </span>
+            )}
+          </p>
+        </div>
+        <Button variant="quiet" className="min-h-11 shrink-0" asChild>
+          <Link to="/projects/$id/directory" params={{ id: projectId }}>
+            <Users aria-hidden="true" />
+            {entries.length === 0 ? "Set up directory" : "Manage directory"}
+          </Link>
+        </Button>
+      </div>
+    </section>
+  );
+}
