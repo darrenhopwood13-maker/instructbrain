@@ -105,11 +105,23 @@
   --brand-accent-ink: oklch(0.895 0.08 70.2);
 
   --gloss-highlight: oklch(1 0 0 / 35%);
+  /* Deepened so white button text clears WCAG AA (4.5:1) on the fill. */
   --gradient-gloss: linear-gradient(
     180deg,
-    oklch(0.686 0.21 41.1 / 95%) 0%,
-    oklch(0.626 0.2 38.2 / 86%) 100%
+    oklch(0.578 0.198 39.5) 0%,
+    oklch(0.523 0.181 37.5) 100%
   );
+
+  /* Frosted glass — secondary controls */
+  --glass-surface: oklch(1 0 0 / 9%);
+  --glass-surface-hover: oklch(1 0 0 / 15%);
+  --glass-border: oklch(1 0 0 / 22%);
+  --glass-border-hover: oklch(1 0 0 / 38%);
+  --glass-highlight: oklch(1 0 0 / 22%);
+  --glass-accent-surface: oklch(0.686 0.21 41.1 / 16%);
+  --glass-accent-surface-hover: oklch(0.686 0.21 41.1 / 26%);
+  --glass-accent-border: oklch(0.686 0.21 41.1 / 55%);
+  --glass-accent-border-hover: oklch(0.686 0.21 41.1 / 85%);
   --gradient-panel: linear-gradient(
     180deg,
     oklch(0.342 0.091 262.9 / 90%) 0%,
@@ -117,7 +129,7 @@
   );
 
   --primary: oklch(0.686 0.21 41.1);
-  --primary-foreground: oklch(0.198 0.037 264.2);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.323 0.059 262.7);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.417 0.06 263.1);
