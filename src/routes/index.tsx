@@ -130,11 +130,11 @@ function LandingHeader() {
 function Hero() {
   return (
     <section className="shell-container py-16 lg:py-24">
+      <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
+        <span className="text-brand-accent">instruct</span>
+        <span className="text-foreground">Brain</span>
+      </p>
       <div className="max-w-3xl">
-        <p className="wordmark text-[3.25rem] leading-none sm:text-8xl lg:text-[8.5rem]">
-          <span className="text-brand-accent">instruct</span>
-          <span className="text-foreground">Brain</span>
-        </p>
         <p className="mt-5 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
           Photos in. Client-ready reports out.
         </p>
