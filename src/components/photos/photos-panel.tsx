@@ -514,25 +514,32 @@ export function PhotosPanel({
 
       {/* One-handed controls: primary actions in the lower third on a phone. */}
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
-        <div className="flex gap-2">
-          <Button
-            variant="brand"
-            className="h-14 flex-1 text-base"
-            onClick={() => cameraRef.current?.click()}
-          >
-            <Camera aria-hidden="true" className="size-5" />
-            Take photo
-          </Button>
-          <Button
-            variant="quiet"
-            className="h-14 flex-1 text-base"
-            onClick={() => filePickerRef.current?.click()}
-          >
-            <ImagePlus aria-hidden="true" className="size-5" />
-            Add photos
-          </Button>
-        </div>
+        {atPhotoCap ? (
+          <p className="text-center text-sm text-fail-soft">
+            Photograph limit reached for this report ({photoCap} on your plan).
+          </p>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              variant="brand"
+              className="h-14 flex-1 text-base"
+              onClick={() => cameraRef.current?.click()}
+            >
+              <Camera aria-hidden="true" className="size-5" />
+              Take photo
+            </Button>
+            <Button
+              variant="quiet"
+              className="h-14 flex-1 text-base"
+              onClick={() => filePickerRef.current?.click()}
+            >
+              <ImagePlus aria-hidden="true" className="size-5" />
+              Add photos
+            </Button>
+          </div>
+        )}
       </div>
+
 
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent>
