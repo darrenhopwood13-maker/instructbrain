@@ -241,13 +241,13 @@ describe("the subcontractor trade link", () => {
 
   it("explains an expired or revoked link instead of failing", async () => {
     const { GET } = await tradeHandlers();
-    tables["trade_access"]![0]!.revoked_at = "2026-01-01T00:00:00Z";
+    tables["trade_access"]![0]!["revoked_at"] = "2026-01-01T00:00:00Z";
     const revoked = await GET({ params: { token: TOKEN } });
     expect(revoked.status).toBe(404);
     expect((await revoked.json()).reason).toBe("revoked");
 
-    tables["trade_access"]![0]!.revoked_at = null;
-    tables["trade_access"]![0]!.expires_at = "2020-01-01T00:00:00Z";
+    tables["trade_access"]![0]!["revoked_at"] = null;
+    tables["trade_access"]![0]!["expires_at"] = "2020-01-01T00:00:00Z";
     const expired = await GET({ params: { token: TOKEN } });
     expect((await expired.json()).reason).toBe("expired");
   });
@@ -263,7 +263,7 @@ describe("the subcontractor trade link", () => {
       }),
     });
     expect(ok.status).toBe(200);
-    expect(tables["findings"]![0]!.lifecycle_state).toBe("in_progress");
+    expect(tables["findings"]![0]!["lifecycle_state"]).toBe("in_progress");
     expect(tables["audit_log"]!).toHaveLength(1);
     expect((tables["audit_log"]![0] as any).after.trade_access_id).toBe("ta1");
 
