@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
@@ -18,6 +20,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-passw
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as SharedTokenRouteImport } from './routes/shared.$token'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
@@ -27,14 +30,24 @@ import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthAcceptInviteRoute = AuthAcceptInviteRouteImport.update({
   id: '/auth/accept-invite',
@@ -71,6 +84,12 @@ const SharedTokenRoute = SharedTokenRouteImport.update({
   path: '/shared/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -118,7 +137,9 @@ const ApiPublicSharedReportTokenRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -132,10 +153,14 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -143,19 +168,22 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
-  '/': typeof AuthenticatedIndexRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/projects': typeof AuthenticatedProjectsIndexRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -163,13 +191,13 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
+  '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
 }
@@ -177,6 +205,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/privacy'
+    | '/terms'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -190,10 +220,14 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/projects/'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
+    | '/privacy'
+    | '/terms'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -201,18 +235,21 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/shared/$token'
-    | '/'
     | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
+    | '/projects'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
+    | '/privacy'
+    | '/terms'
     | '/auth/accept-invite'
     | '/auth/callback'
     | '/auth/forgot-password'
@@ -220,19 +257,22 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/shared/$token'
-    | '/_authenticated/'
     | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/directory'
     | '/_authenticated/settings/organisation'
+    | '/_authenticated/projects/'
     | '/_authenticated/reports/$id/print'
     | '/api/public/shared-report/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   AuthAcceptInviteRoute: typeof AuthAcceptInviteRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
@@ -245,6 +285,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -252,12 +299,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/accept-invite': {
       id: '/auth/accept-invite'
@@ -307,6 +361,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shared/$token'
       preLoaderRoute: typeof SharedTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
@@ -382,17 +443,16 @@ const AuthenticatedReportsIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
+  AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
@@ -400,13 +460,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsDirectoryRoute: AuthenticatedSettingsDirectoryRoute,
   AuthenticatedSettingsOrganisationRoute:
     AuthenticatedSettingsOrganisationRoute,
+  AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   AuthAcceptInviteRoute: AuthAcceptInviteRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,

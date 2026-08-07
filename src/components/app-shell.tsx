@@ -44,7 +44,7 @@ function AccountAffordance() {
 
 
 const nav = [
-  { to: "/", label: "Projects", icon: FolderOpen, exact: true },
+  { to: "/projects", label: "Projects", icon: FolderOpen, exact: true },
   { to: "/settings/organisation", label: "Organisation", icon: Building2, exact: false },
   { to: "/settings/directory", label: "Directory", icon: Users, exact: false },
   { to: "/settings/account", label: "Account", icon: UserCog, exact: false },
@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
         <div className="shell-container flex items-center gap-4 py-5">
-          <Link to="/" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
+          <Link to="/projects" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span
               aria-hidden="true"
               className="gloss grid size-8 shrink-0 place-items-center rounded-md"

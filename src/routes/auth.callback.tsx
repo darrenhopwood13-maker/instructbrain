@@ -38,7 +38,7 @@ function AuthCallback() {
       .then((memberships) => {
         if (cancelled) return;
         if (memberships.length === 0) setNeedsOrganisation(true);
-        else navigate({ to: "/", replace: true });
+        else navigate({ to: "/projects", replace: true });
       })
       .catch(() => {
         if (!cancelled) setNeedsOrganisation(true);
@@ -56,7 +56,7 @@ function AuthCallback() {
       toast.success("Organisation created", {
         description: "You are the owner and can invite colleagues from Settings.",
       });
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/projects", replace: true });
     } catch (error) {
       toast.error("Could not create the organisation", {
         description: error instanceof Error ? error.message : "Please try again.",

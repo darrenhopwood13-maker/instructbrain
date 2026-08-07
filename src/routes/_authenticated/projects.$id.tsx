@@ -61,7 +61,7 @@ function ProjectDashboard() {
           description="It may have been removed, or it belongs to an organisation you are not a member of."
           action={
             <Button variant="quiet" asChild>
-              <Link to="/">Back to projects</Link>
+              <Link to="/projects">Back to projects</Link>
             </Button>
           }
         />
@@ -76,7 +76,7 @@ function ProjectDashboard() {
   return (
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
-        <Link to="/" className="font-medium text-muted-foreground hover:text-foreground">
+        <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           Projects
         </Link>
         <ChevronRight aria-hidden="true" className="mx-1 inline size-3.5 text-muted-foreground" />

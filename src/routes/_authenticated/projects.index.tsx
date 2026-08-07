@@ -10,7 +10,7 @@ import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { projectsQuery } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
     meta: [
       { title: "Projects — Report Ready" },
