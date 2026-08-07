@@ -137,26 +137,28 @@ function LandingHeader() {
 
 function Hero() {
   return (
-    <section className="shell-container py-20 lg:py-28">
+    <section className="shell-container py-16 lg:py-24">
       <div className="max-w-3xl">
         <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
           An instructSite company
         </p>
-        <p className="wordmark mt-2 text-4xl leading-none sm:text-5xl">
+        <p className="wordmark mt-3 text-6xl leading-none sm:text-7xl lg:text-8xl">
           <span className="text-brand-accent-light">instruct</span>
           <span className="text-foreground">Brain</span>
         </p>
-        <p className="mt-4 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
+        <p className="mt-5 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
           Photos in. Client-ready reports out.
         </p>
-        <p className="eyebrow mt-10">UK construction reporting</p>
-        <h1 className="editorial-title mt-4 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
-          Three days of writing up becomes minutes.
+        <h1 className="editorial-title mt-10 text-4xl font-bold leading-[1.05] sm:text-5xl">
+          Walk the site. Issue the same afternoon.
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Walk the site as you always have, then issue the document the same afternoon.
+          Upload the photographs from the walk. Every one is read against your chosen survey
+          type, drafted into referenced findings for you to confirm, and assembled into a
+          signed-off PDF with per-trade extracts.
         </p>
+
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button variant="brand" size="lg" asChild>
             <Link to="/auth/sign-up">
