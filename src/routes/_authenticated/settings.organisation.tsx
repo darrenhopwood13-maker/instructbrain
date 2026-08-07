@@ -79,6 +79,10 @@ function OrganisationSettings() {
         </p>
       </header>
 
+      <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
+
+
+
       {role === "owner" || role === "admin" ? (
         <EmailSettingsPanel
           organisationId={organisationId}
