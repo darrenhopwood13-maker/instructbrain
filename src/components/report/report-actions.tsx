@@ -271,16 +271,21 @@ function ShareDialog({
   reportId,
   reportTitle,
   organisationId,
+  issued,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reportId: string;
   reportTitle: string;
   organisationId: string | null;
+  issued: boolean;
 }) {
   const queryClient = useQueryClient();
   const shares = useQuery({ ...reportSharesQuery(reportId), enabled: open });
-  const [days, setDays] = useState(14);
+  // "never" is only offered once the report is issued: an unfinished document
+  // should never be permanently public.
+  const [expiry, setExpiry] = useState<string>("14");
+  const days = expiry === "never" ? null : Number(expiry);
   const [copied, setCopied] = useState<string | null>(null);
 
   const create = useMutation({
@@ -295,7 +300,10 @@ function ShareDialog({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["report-shares", reportId] });
       toast.success("Share link created", {
-        description: "Anyone with the link can read the report until it expires. Nothing is sent.",
+        description:
+          days === null
+            ? "The link stays live until you revoke it. Nothing is sent."
+            : "Anyone with the link can read the report until it expires. Nothing is sent.",
       });
     },
     onError: (error) =>
@@ -315,8 +323,10 @@ function ShareDialog({
   const urlFor = shareUrlForToken;
   const live = (shares.data ?? []).filter(isShareLinkLive);
 
-  const sendNative = async (token: string) => {
-    const url = urlFor(token);
+  const sendNative = async (share: { id: string; token: string }) => {
+    const url = urlFor(share.token);
+    // Sending is a human act, and it is recorded.
+    void logShareSent(reportId, share.id);
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: reportTitle, url });
@@ -336,8 +346,8 @@ function ShareDialog({
         <DialogHeader>
           <DialogTitle>Share a read-only link</DialogTitle>
           <DialogDescription>
-            The link opens the report without an account and expires on the date you choose.
-            Confidential findings are never included. Nothing is emailed by creating a link.
+            The link opens the report without an account. Confidential findings are never included.
+            Nothing is emailed by creating a link.
           </DialogDescription>
         </DialogHeader>
 
@@ -355,45 +365,61 @@ function ShareDialog({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="eyebrow block">
-            Expires after
-            <select
-              className="mt-1 h-10 rounded-md border border-border bg-surface-raised px-2 text-sm"
-              value={days}
-              onChange={(event) => setDays(Number(event.target.value))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="eyebrow block">
+              Expires after
+              <select
+                className="mt-1 h-10 rounded-md border border-border bg-surface-raised px-2 text-sm"
+                value={expiry}
+                onChange={(event) => setExpiry(event.target.value)}
+              >
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="30">30 days</option>
+                <option value="90">90 days</option>
+                <option value="never" disabled={!issued}>
+                  Never expires{issued ? "" : " (issue the report first)"}
+                </option>
+              </select>
+            </label>
+            <Button
+              variant="brand"
+              size="sm"
+              disabled={!organisationId || create.isPending}
+              onClick={() => create.mutate()}
             >
-              <option value={7}>7 days</option>
-              <option value={14}>14 days</option>
-              <option value={30}>30 days</option>
-              <option value={90}>90 days</option>
-            </select>
-          </label>
-          <Button
-            variant="brand"
-            size="sm"
-            disabled={!organisationId || create.isPending}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? (
-              <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
-            ) : (
-              <Link2 aria-hidden="true" className="mr-1.5 size-4" />
-            )}
-            Create link
-          </Button>
-          <Button
-            variant="quiet"
-            size="sm"
-            disabled={live.length === 0}
-            onClick={() => {
-              const first = live[0];
-              if (first) void sendNative(first.token);
-            }}
-          >
-            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
-            Send link
-          </Button>
+              {create.isPending ? (
+                <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+              ) : (
+                <Link2 aria-hidden="true" className="mr-1.5 size-4" />
+              )}
+              Create link
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={live.length === 0}
+              onClick={() => {
+                const first = live[0];
+                if (first) void sendNative(first);
+              }}
+            >
+              <Share2 aria-hidden="true" className="mr-1.5 size-4" />
+              Send link
+            </Button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            {days === null
+              ? "The link stays live until you revoke it. Anyone who has it can open the report."
+              : "The recipient loses access on this date. If this report is the deliverable, choose no expiry or tell them to save a copy."}
+          </p>
+          {!issued ? (
+            <p className="text-xs text-muted-foreground">
+              A link with no expiry becomes available once the report is issued.
+            </p>
+          ) : null}
         </div>
 
         {live.length === 0 && organisationId ? (
@@ -405,8 +431,8 @@ function ShareDialog({
 
         <ul className="max-h-56 space-y-2 overflow-y-auto text-sm">
           {(shares.data ?? []).map((share) => {
-            const expired = new Date(share.expires_at).getTime() < Date.now();
-            const dead = expired || !!share.revoked_at;
+            const state = shareLinkState(share);
+            const dead = state.kind === "expired" || state.kind === "revoked";
             return (
               <li
                 key={share.id}
@@ -414,13 +440,7 @@ function ShareDialog({
               >
                 <div className="min-w-0">
                   <p className="truncate font-mono text-xs">{urlFor(share.token)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {share.revoked_at
-                      ? "Revoked"
-                      : expired
-                        ? "Expired"
-                        : `Expires ${new Date(share.expires_at).toLocaleDateString("en-GB")}`}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{state.label}</p>
                 </div>
                 <div className="flex gap-1.5">
                   <Button
@@ -444,7 +464,7 @@ function ShareDialog({
                     variant="quiet"
                     size="sm"
                     disabled={dead}
-                    onClick={() => void sendNative(share.token)}
+                    onClick={() => void sendNative(share)}
                   >
                     <Share2 aria-hidden="true" className="size-4" />
                     <span className="sr-only">Send link</span>
@@ -471,3 +491,4 @@ function ShareDialog({
     </Dialog>
   );
 }
+
