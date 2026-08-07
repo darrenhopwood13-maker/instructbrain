@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isShareLinkLive, shareUrlForToken } from "@/lib/report/share-url";
+import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 
 describe("share links", () => {
   it("always shares the public token route, never the authenticated report route", () => {
@@ -22,5 +22,26 @@ describe("share links", () => {
     expect(isShareLinkLive({ expires_at: future, revoked_at: null })).toBe(true);
     expect(isShareLinkLive({ expires_at: past, revoked_at: null })).toBe(false);
     expect(isShareLinkLive({ expires_at: future, revoked_at: past })).toBe(false);
+  });
+});
+
+describe("no-expiry share links", () => {
+  it("treats a null expiry as live until revoked", () => {
+    expect(isShareLinkLive({ expires_at: null, revoked_at: null })).toBe(true);
+    expect(
+      isShareLinkLive({ expires_at: null, revoked_at: new Date().toISOString() }),
+    ).toBe(false);
+  });
+
+  it("labels each link state in plain English", () => {
+    const past = new Date(Date.now() - 86_400_000).toISOString();
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect(shareLinkState({ expires_at: null, revoked_at: null })).toEqual({
+      kind: "no-expiry",
+      label: "No expiry — revoke to withdraw",
+    });
+    expect(shareLinkState({ expires_at: past, revoked_at: null }).kind).toBe("expired");
+    expect(shareLinkState({ expires_at: future, revoked_at: past }).kind).toBe("revoked");
+    expect(shareLinkState({ expires_at: future, revoked_at: null }).kind).toBe("dated");
   });
 });

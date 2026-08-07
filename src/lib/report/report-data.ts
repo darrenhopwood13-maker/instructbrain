@@ -391,7 +391,7 @@ export type ShareLink = {
   id: string;
   token: string;
   label: string | null;
-  expires_at: string;
+  expires_at: string | null;
   revoked_at: string | null;
 };
 
@@ -416,11 +416,13 @@ function shareToken(): string {
 export async function createShareLink(input: {
   reportId: string;
   organisationId: string;
-  days: number;
+  /** Days until expiry, or null for a link that never expires. */
+  days: number | null;
   label?: string;
 }): Promise<ShareLink> {
   const { data: userData } = await supabase.auth.getUser();
-  const expires = new Date(Date.now() + input.days * 86_400_000).toISOString();
+  const expires =
+    input.days === null ? null : new Date(Date.now() + input.days * 86_400_000).toISOString();
   const { data, error } = await from("report_shares")
     .insert({
       report_id: input.reportId,
@@ -433,13 +435,24 @@ export async function createShareLink(input: {
     .select("id, token, label, expires_at, revoked_at")
     .single();
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+  const share = data as ShareLink;
   await writeAudit({
     reportId: input.reportId,
     action: "report.share_created",
     before: null,
-    after: { expires_at: expires },
+    after: { share_id: share.id, expires_at: expires },
   });
-  return data as ShareLink;
+  return share;
+}
+
+/** Records that a link was handed to someone. Sending is always a human act. */
+export async function logShareSent(reportId: string, shareId: string): Promise<void> {
+  await writeAudit({
+    reportId,
+    action: "report.share_sent",
+    before: null,
+    after: { share_id: shareId },
+  });
 }
 
 export async function revokeShareLink(reportId: string, shareId: string): Promise<void> {
