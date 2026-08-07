@@ -79,6 +79,32 @@ function ReportWorkspace() {
     await refresh();
   };
 
+  /** Review-tab confirmations, persisted through the same audited path. */
+  const writeConfirmations = async (findingIds: string[], patch: ConfirmPatch) => {
+    const { data: user } = await supabase.auth.getUser();
+    const actor = user.user?.id ?? null;
+    const full: FindingPatch = {
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.confirmed_at !== undefined
+        ? { confirmed_at: patch.confirmed_at, confirmed_by: patch.confirmed_at ? actor : null }
+        : {}),
+    };
+    await Promise.all(
+      findingIds.map((findingId) => {
+        const before = (findings.data ?? []).find((item) => item.id === findingId);
+        return updateFinding(id, findingId, full, {
+          status: before?.status ?? null,
+          confirmed: before?.confirmed ?? false,
+        });
+      }),
+    );
+    await refresh();
+  };
+
+  const onConfirm = (findingId: string, patch: ConfirmPatch) =>
+    writeConfirmations([findingId], patch);
+
+
   if (query.isPending) {
     return (
       <AppShell>
