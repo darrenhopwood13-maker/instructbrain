@@ -28,6 +28,7 @@ import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
 import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
 import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/resend-webhook'
+import { Route as AuthenticatedReportsIdDistributeRouteImport } from './routes/_authenticated/reports.$id.distribute'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 import { Route as AuthenticatedReportsIdExtractGroupRouteImport } from './routes/_authenticated/reports.$id.extract.$group'
@@ -130,6 +131,12 @@ const ApiPublicResendWebhookRoute = ApiPublicResendWebhookRouteImport.update({
   path: '/api/public/resend-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReportsIdDistributeRoute =
+  AuthenticatedReportsIdDistributeRouteImport.update({
+    id: '/distribute',
+    path: '/distribute',
+    getParentRoute: () => AuthenticatedReportsIdRoute,
+  } as any)
 const AuthenticatedReportsIdPrintRoute =
   AuthenticatedReportsIdPrintRouteImport.update({
     id: '/print',
@@ -168,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
@@ -191,6 +199,7 @@ export interface FileRoutesByTo {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
@@ -216,6 +225,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/settings/organisation'
     | '/api/public/resend-webhook'
     | '/projects/'
+    | '/reports/$id/distribute'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
     | '/reports/$id/extract/$group'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/settings/organisation'
     | '/api/public/resend-webhook'
     | '/projects'
+    | '/reports/$id/distribute'
     | '/reports/$id/print'
     | '/api/public/shared-report/$token'
     | '/reports/$id/extract/$group'
@@ -288,6 +300,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/organisation'
     | '/api/public/resend-webhook'
     | '/_authenticated/projects/'
+    | '/_authenticated/reports/$id/distribute'
     | '/_authenticated/reports/$id/print'
     | '/api/public/shared-report/$token'
     | '/_authenticated/reports/$id/extract/$group'
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicResendWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/reports/$id/distribute': {
+      id: '/_authenticated/reports/$id/distribute'
+      path: '/distribute'
+      fullPath: '/reports/$id/distribute'
+      preLoaderRoute: typeof AuthenticatedReportsIdDistributeRouteImport
+      parentRoute: typeof AuthenticatedReportsIdRoute
+    }
     '/_authenticated/reports/$id/print': {
       id: '/_authenticated/reports/$id/print'
       path: '/print'
@@ -469,12 +489,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedReportsIdRouteChildren {
+  AuthenticatedReportsIdDistributeRoute: typeof AuthenticatedReportsIdDistributeRoute
   AuthenticatedReportsIdPrintRoute: typeof AuthenticatedReportsIdPrintRoute
   AuthenticatedReportsIdExtractGroupRoute: typeof AuthenticatedReportsIdExtractGroupRoute
 }
 
 const AuthenticatedReportsIdRouteChildren: AuthenticatedReportsIdRouteChildren =
   {
+    AuthenticatedReportsIdDistributeRoute:
+      AuthenticatedReportsIdDistributeRoute,
     AuthenticatedReportsIdPrintRoute: AuthenticatedReportsIdPrintRoute,
     AuthenticatedReportsIdExtractGroupRoute:
       AuthenticatedReportsIdExtractGroupRoute,
