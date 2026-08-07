@@ -388,10 +388,15 @@ type FindingRow = {
   likely_cause: string | null;
   regulatory_reference: string | null;
   sequence: number;
+  ai_trade_confidence: number | null;
+  ai_trade_reasoning: string | null;
+  due_date: string | null;
+  due_date_overridden: boolean | null;
+  lifecycle_state: string | null;
 };
 
 const findingColumns =
-  "id, ref, status, severity, hazard_category, finding_text, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence";
+  "id, ref, status, severity, hazard_category, finding_text, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
 
 function locationOf(captureFields: Record<string, string> | null): string {
   if (!captureFields) return "Location not recorded";
@@ -419,6 +424,15 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     note: row.remedial_text ?? row.finding_text ?? "",
     description: row.finding_text ?? "",
     remedial: row.remedial_text ?? "",
+
+    // The suggestion and the human decision are stored, and read, separately.
+    assignedTrade: row.assigned_trade,
+    aiSuggestedTrade: row.ai_suggested_trade,
+    aiTradeConfidence: row.ai_trade_confidence,
+    aiTradeReasoning: row.ai_trade_reasoning,
+    dueDate: row.due_date,
+    dueDateOverridden: row.due_date_overridden === true,
+    lifecycleState: row.lifecycle_state ?? "open",
 
     likelyCause: row.likely_cause,
     likelyCauseConfirmed: row.human_edited,
