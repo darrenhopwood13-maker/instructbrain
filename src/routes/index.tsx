@@ -135,10 +135,21 @@ function Hero() {
   return (
     <section className="shell-container py-20 lg:py-28">
       <div className="max-w-3xl">
-        <p className="eyebrow">UK construction reporting</p>
+        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
+          An instructSite company
+        </p>
+        <p className="wordmark mt-2 text-4xl leading-none sm:text-5xl">
+          <span className="text-brand-accent-light">instruct</span>
+          <span className="text-foreground">Brain</span>
+        </p>
+        <p className="mt-4 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
+          Photos in. Client-ready reports out.
+        </p>
+        <p className="eyebrow mt-10">UK construction reporting</p>
         <h1 className="editorial-title mt-4 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
           Three days of writing up becomes minutes.
         </h1>
+
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
           Photos in, client-ready report out. Walk the site as you always have, then issue the
           document the same afternoon.
