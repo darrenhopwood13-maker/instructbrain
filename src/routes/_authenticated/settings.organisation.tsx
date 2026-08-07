@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { organisationQuery, updateOrganisation } from "@/lib/data";
+import { PlanUsageMeter } from "@/components/plan-usage-meter";
+import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { toast } from "sonner";
 
@@ -39,6 +41,7 @@ const swatches = [
 
 function OrganisationSettings() {
   const { organisationId, role } = useOrganisations();
+  const usage = usePlanUsage(organisationId);
   const query = useQuery(organisationQuery(organisationId));
   const queryClient = useQueryClient();
 

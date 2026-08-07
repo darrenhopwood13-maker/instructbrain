@@ -10,6 +10,8 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { EmptyState } from "@/components/empty-state";
 import { FolderOpen } from "lucide-react";
 import { createReport, projectsQuery } from "@/lib/data";
+import { usePlanUsage } from "@/lib/plans";
+import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
@@ -54,6 +56,7 @@ function NewReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organisationIds, organisationId, userId } = useOrganisations();
+  const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
 
   const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
@@ -136,6 +139,8 @@ function NewReport() {
           it is frozen into this report.
         </p>
       </header>
+
+      <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
 
       <section aria-labelledby="report-details" className="mt-6 max-w-2xl space-y-4">
         <h2 id="report-details" className="editorial-title text-lg font-semibold">
@@ -332,17 +337,36 @@ function NewReport() {
         <Button
           variant="brand"
           onClick={() => mutation.mutate()}
-          disabled={!selected || !effectiveProjectId || titleInvalid || mutation.isPending}
+          disabled={
+            !selected ||
+            !effectiveProjectId ||
+            titleInvalid ||
+            mutation.isPending ||
+            usage.exhausted
+          }
         >
           <Camera aria-hidden="true" />
           {mutation.isPending ? "Creating…" : "Start report and upload photographs"}
           <ArrowRight aria-hidden="true" />
         </Button>
-        <p className="text-sm text-muted-foreground">
-          The definition is copied into the report, so a later change to the survey type never
-          alters an issued document.
-        </p>
+        {usage.exhausted ? (
+          <p className="text-sm text-fail-soft">
+            You have used all {usage.allowance} reports included in your {usage.planLabel} plan
+            this month, so a new one cannot be started. The allowance resets on {usage.resetDate}.{" "}
+            <Link to="/upgrade" className="font-semibold underline">
+              See plans
+            </Link>
+            .
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {usage.lastOne ? "This is your last report on this plan this month. " : ""}
+            The definition is copied into the report, so a later change to the survey type never
+            alters an issued document.
+          </p>
+        )}
       </div>
+
     </AppShell>
   );
 }

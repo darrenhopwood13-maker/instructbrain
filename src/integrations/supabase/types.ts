@@ -576,6 +576,9 @@ export type Database = {
           id: string
           logo_path: string | null
           name: string
+          photo_cap_per_report: number | null
+          plan: string
+          report_allowance: number | null
         }
         Insert: {
           address?: string | null
@@ -585,6 +588,9 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name: string
+          photo_cap_per_report?: number | null
+          plan?: string
+          report_allowance?: number | null
         }
         Update: {
           address?: string | null
@@ -594,8 +600,19 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name?: string
+          photo_cap_per_report?: number | null
+          plan?: string
+          report_allowance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organisations_plan_fkey"
+            columns: ["plan"]
+            isOneToOne: false
+            referencedRelation: "plan_limits"
+            referencedColumns: ["plan"]
+          },
+        ]
       }
       photos: {
         Row: {
@@ -664,6 +681,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_limits: {
+        Row: {
+          created_at: string
+          label: string
+          photo_cap_per_report: number | null
+          plan: string
+          price_gbp: number | null
+          report_allowance: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          label: string
+          photo_cap_per_report?: number | null
+          plan: string
+          price_gbp?: number | null
+          report_allowance?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          label?: string
+          photo_cap_per_report?: number | null
+          plan?: string
+          price_gbp?: number | null
+          report_allowance?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       project_directory: {
         Row: {
@@ -749,6 +799,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "projects_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_creation_events: {
+        Row: {
+          created_at: string
+          id: string
+          organisation_id: string
+          report_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organisation_id: string
+          report_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organisation_id?: string
+          report_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_creation_events_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"

@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { humanisePlanError } from "@/lib/plans";
 import type { SurveyDefinition } from "@/lib/survey-types";
 import {
   coerceReportStatus,
@@ -363,7 +364,9 @@ export async function createReport(input: NewReport): Promise<string> {
     })
     .select("id")
     .single();
-  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+  // A plan limit raised in the database must read like a sentence, not SQL.
+  if (error)
+    throw new DataError(humanisePlanError(error.message), error.code, error.hint, error.details);
   return (data as { id: string }).id;
 }
 

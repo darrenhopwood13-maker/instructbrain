@@ -7,6 +7,8 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
 import { overdueItemsQuery, projectQuery, projectReportsQuery } from "@/lib/data";
+import { usePlanUsage } from "@/lib/plans";
+import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/projects/$id")({
 
 function ProjectDashboard() {
   const { id } = Route.useParams();
+  const { organisationId } = useOrganisations();
+  const usage = usePlanUsage(organisationId);
   const project = useQuery(projectQuery(id));
   const reports = useQuery(projectReportsQuery(id));
   const overdue = useQuery(overdueItemsQuery(id));
@@ -97,16 +101,37 @@ function ProjectDashboard() {
               Directory
             </Link>
           </Button>
-          <Button variant="brand" className="min-h-11" asChild>
-            <Link to="/reports/new" search={{ project: current.id }}>
-              <Plus aria-hidden="true" />
-              <span className="hidden sm:inline">New report</span>
-              <span className="sr-only sm:hidden">New report</span>
-            </Link>
-          </Button>
+          {usage.exhausted ? (
+            <Button variant="brand" className="min-h-11" asChild>
+              <Link to="/upgrade">
+                <Plus aria-hidden="true" />
+                <span className="hidden sm:inline">See plans</span>
+                <span className="sr-only sm:hidden">See plans</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="brand" className="min-h-11" asChild>
+              <Link to="/reports/new" search={{ project: current.id }}>
+                <Plus aria-hidden="true" />
+                <span className="hidden sm:inline">New report</span>
+                <span className="sr-only sm:hidden">New report</span>
+              </Link>
+            </Button>
+          )}
         </div>
-
+        {usage.exhausted ? (
+          <p className="col-span-2 text-sm text-fail-soft">
+            You have used all {usage.allowance} reports included in your {usage.planLabel} plan
+            this month. The allowance resets on {usage.resetDate}.
+          </p>
+        ) : usage.lastOne ? (
+          <p className="col-span-2 text-sm text-muted-foreground">
+            One report left on your {usage.planLabel} plan this month — it resets on{" "}
+            {usage.resetDate}.
+          </p>
+        ) : null}
       </header>
+
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section aria-labelledby="reports-heading">
