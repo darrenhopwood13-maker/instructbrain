@@ -38,9 +38,22 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           .eq("token", token)
           .limit(1);
         const share = shares?.[0];
-        if (!share || share.revoked_at || new Date(share.expires_at).getTime() < Date.now()) {
+        if (!share) {
           return Response.json(
-            { error: "This link has expired or been revoked." },
+            { reason: "unknown", error: "This link is not recognised." },
+            { status: 404 },
+          );
+        }
+        if (share.revoked_at) {
+          return Response.json(
+            { reason: "revoked", error: "Access to this report has been withdrawn." },
+            { status: 404 },
+          );
+        }
+        // A null expires_at means the link never expires: it is live until revoked.
+        if (share.expires_at && new Date(share.expires_at).getTime() < Date.now()) {
+          return Response.json(
+            { reason: "expired", error: "This link has expired." },
             { status: 404 },
           );
         }
@@ -124,7 +137,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
             logoUrl: organisations?.[0]?.logo_path
               ? (urls.get(organisations[0].logo_path) ?? null)
               : null,
-            expiresAt: share.expires_at,
+            expiresAt: share.expires_at ?? null,
           },
           { headers: { "cache-control": "no-store" } },
         );
