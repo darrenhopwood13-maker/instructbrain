@@ -116,15 +116,18 @@ function LandingHeader() {
           </span>
           <Wordmark />
         </Link>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             to="/auth/sign-in"
-            className="hidden rounded-md px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-sunken sm:inline-flex"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-sunken"
           >
             Sign in
           </Link>
           <Button variant="brand" asChild>
-            <Link to="/auth/sign-up">Start free</Link>
+            <Link to="/auth/sign-up">
+              <span className="sm:hidden">Start</span>
+              <span className="hidden sm:inline">Start free</span>
+            </Link>
           </Button>
         </div>
       </div>
@@ -167,6 +170,15 @@ function Hero() {
           </Button>
         </div>
         <p className="mt-5 text-sm text-muted-foreground">No card required.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            to="/auth/sign-in"
+            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+          >
+            Sign in
+          </Link>
+        </p>
       </div>
     </section>
   );
@@ -488,6 +500,15 @@ function ClosingCta() {
               <Link to="/auth/sign-in">Sign in</Link>
             </Button>
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              to="/auth/sign-in"
+              className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </section>

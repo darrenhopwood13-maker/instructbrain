@@ -26,8 +26,25 @@ function AuthCallback() {
   const [needsOrganisation, setNeedsOrganisation] = useState(false);
   const [orgName, setOrgName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [linkProblem, setLinkProblem] = useState<string | null>(null);
 
   useEffect(() => {
+    // Supabase reports an unusable link in the URL fragment or query string.
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(window.location.search);
+    const code = hash.get("error_code") ?? query.get("error_code");
+    const err = hash.get("error") ?? query.get("error");
+    if (code || err) {
+      setLinkProblem(
+        code === "otp_expired" || `${err}`.includes("expired")
+          ? "That link has expired or has already been used."
+          : "That link is no longer valid.",
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (linkProblem) return;
     if (loading) return;
     if (!user) {
       navigate({ to: "/auth/sign-in", replace: true });
@@ -46,7 +63,7 @@ function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, linkProblem]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -65,6 +82,28 @@ function AuthCallback() {
       setBusy(false);
     }
   };
+
+  if (linkProblem) {
+    return (
+      <AuthLayout
+        title="This link cannot be used"
+        intro="Sign-in and reset links are one-time and short-lived."
+      >
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed" role="status">
+            {linkProblem} Request a fresh one and open it on this device.
+          </p>
+          <Button
+            variant="brand"
+            className="w-full"
+            onClick={() => navigate({ to: "/auth/sign-in", replace: true })}
+          >
+            Send me a new link
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   if (!needsOrganisation) {
     return (

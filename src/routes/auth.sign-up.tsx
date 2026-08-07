@@ -96,7 +96,7 @@ function SignUp() {
           Already have an account?{" "}
           <Link
             to="/auth/sign-in"
-            className="font-semibold text-brand-accent-ink underline underline-offset-2"
+            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-2"
           >
             Sign in
           </Link>

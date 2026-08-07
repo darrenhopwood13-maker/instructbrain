@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { absoluteUrl } from "@/lib/site-url";
 
 /**
  * Single source of session state for the UI. Two ways in: email + password,
@@ -113,7 +114,7 @@ export function describeAuthError(error: unknown): string {
 export async function sendMagicLink(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    options: { emailRedirectTo: absoluteUrl("/auth/callback") },
   });
   if (error) throw error;
 }
@@ -123,7 +124,7 @@ export async function signUpWithPassword(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    options: { emailRedirectTo: absoluteUrl("/auth/callback") },
   });
   if (error) throw error;
   return { needsConfirmation: data.session === null };
@@ -136,7 +137,7 @@ export async function signInWithPassword(email: string, password: string) {
 
 export async function requestPasswordReset(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
+    redirectTo: absoluteUrl("/auth/reset-password"),
   });
   if (error) throw error;
 }

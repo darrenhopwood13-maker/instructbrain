@@ -71,17 +71,17 @@ function SignIn() {
       intro="Access your projects, reviews and issued reports."
       footer={
         <span className="text-muted-foreground">
-          No account yet?{" "}
+          No account?{" "}
           <Link
             to="/auth/sign-up"
-            className="font-semibold text-brand-accent-ink underline underline-offset-2"
+            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-2"
           >
-            Create one
+            Start free
           </Link>{" "}
           ·{" "}
           <Link
             to="/auth/accept-invite"
-            className="font-semibold text-brand-accent-ink underline underline-offset-2"
+            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-2"
           >
             Accept an invitation
           </Link>
