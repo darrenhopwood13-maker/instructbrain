@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SITE_URL, absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "Terms — instructBrain";
 const DESCRIPTION =
@@ -12,10 +13,10 @@ export const Route = createFileRoute("/terms")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://instructbrain.lovable.app/terms" },
+      { property: "og:url", content: absoluteUrl("/terms") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://instructbrain.lovable.app/terms" }],
+    links: [{ rel: "canonical", href: absoluteUrl("/terms") }],
   }),
   component: Terms,
 });
