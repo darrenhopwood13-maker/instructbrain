@@ -90,13 +90,14 @@ function Landing() {
 function Wordmark() {
   return (
     <span className="block min-w-0">
-      <span className="block text-[0.5625rem] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+      <span className="block text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
         An instructSite company
       </span>
       <span className="wordmark block truncate text-lg leading-tight">
-        <span className="text-brand-accent-light">Report</span>{" "}
-        <span className="text-foreground">Ready</span>
+        <span className="text-brand-accent-light">instruct</span>
+        <span className="text-foreground">Brain</span>
       </span>
+
     </span>
   );
 }
