@@ -25,7 +25,12 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, type DocFinding } from "@/lib/report/document";
-import { definitionLabel } from "@/lib/survey-types";
+import { definitionLabel, requiresTradeAssignment, tradesOf } from "@/lib/survey-types";
+import { projectDirectoryQuery } from "@/lib/directory/directory-data";
+import { deriveDueDate } from "@/lib/findings/due-date";
+import { stateAfterAssignment } from "@/lib/lifecycle";
+import type { TradeAssignment } from "@/components/review/trade-assignment-card";
+import { Send } from "lucide-react";
 import { useOrganisations } from "@/lib/use-organisations";
 
 type ReportSearch = { tab?: "photos" | "review" | "output" };
@@ -60,6 +65,8 @@ function ReportWorkspace() {
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
   const versions = useQuery(reportVersionsQuery(id));
+  const projectId = query.data?.project?.id ?? null;
+  const directory = useQuery(projectDirectoryQuery(projectId));
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["report-document", id] });
@@ -104,6 +111,48 @@ function ReportWorkspace() {
 
   const onConfirm = (findingId: string, patch: ConfirmPatch) =>
     writeConfirmations([findingId], patch);
+
+  /**
+   * A human's trade decision. The AI suggestion is never overwritten, and the
+   * target date derives from the severity's target window in the snapshot.
+   */
+  const onAssignTrade = async (findingId: string, assignment: TradeAssignment) => {
+    const before = (findings.data ?? []).find((item) => item.id === findingId);
+    const { data: user } = await supabase.auth.getUser();
+    const confirmedAt = new Date();
+    const snapshot = query.data?.report.surveyTypeSnapshot ?? null;
+    const derived = deriveDueDate(snapshot, before?.severity ?? null, confirmedAt);
+    const dueDate = assignment.dueDateOverridden ? assignment.dueDate : derived.dueDate;
+
+    await updateFinding(
+      id,
+      findingId,
+      {
+        assigned_trade: assignment.trade,
+        due_date: dueDate,
+        due_date_overridden:
+          assignment.dueDateOverridden && dueDate !== derived.dueDate,
+        confirmed_at: confirmedAt.toISOString(),
+        confirmed_by: user.user?.id ?? null,
+        lifecycle_state: assignment.trade
+          ? stateAfterAssignment(before?.lifecycleState)
+          : "open",
+      },
+      {
+        assigned_trade: before?.assignedTrade ?? null,
+        ai_suggested_trade: before?.aiSuggestedTrade ?? null,
+        due_date: before?.dueDate ?? null,
+      },
+    );
+    await refresh();
+  };
+
+  const tradeOptions = Array.from(
+    new Set([
+      ...(directory.data ?? []).filter((entry) => entry.isActive).map((entry) => entry.trade),
+      ...tradesOf(query.data?.report.surveyTypeSnapshot ?? null),
+    ]),
+  ).sort((a, b) => a.localeCompare(b));
 
 
   if (query.isPending) {
@@ -190,8 +239,16 @@ function ReportWorkspace() {
         <p className="mt-2 text-sm text-muted-foreground">Updated {report.updated}</p>
 
         {doc ? (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <ReportActions document={doc} organisationId={organisationId} />
+            {requiresTradeAssignment(report.surveyTypeSnapshot) ? (
+              <Button variant="quiet" asChild>
+                <Link to="/reports/$id/distribute" params={{ id: report.id }}>
+                  <Send aria-hidden="true" className="size-4" />
+                  Review distribution
+                </Link>
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -233,6 +290,8 @@ function ReportWorkspace() {
               findings={findings.data ?? []}
               onConfirm={onConfirm}
               onConfirmMany={writeConfirmations}
+              tradeOptions={tradeOptions}
+              onAssignTrade={onAssignTrade}
             />
           )}
         </TabsContent>
