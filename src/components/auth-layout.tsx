@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { FileText } from "lucide-react";
 
 export function AuthLayout({
   title,
@@ -16,12 +15,6 @@ export function AuthLayout({
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="gloss grid size-9 place-items-center rounded-md"
-          >
-            <FileText className="size-4" />
-          </span>
           <span>
             <span className="wordmark block text-base leading-tight">
               <span className="text-brand-accent-light">instruct</span>

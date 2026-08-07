@@ -2,10 +2,8 @@ import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Camera,
   CheckCircle2,
   ClipboardList,
-  FileText,
   HardHat,
   ScanLine,
   ShieldCheck,
@@ -16,9 +14,9 @@ import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
 
-const TITLE = "instructBrain — three days of writing up becomes minutes";
+const TITLE = "instructBrain — walk the site, issue the same afternoon";
 const DESCRIPTION =
-  "Photos in. Client-ready reports out. instructBrain drafts, reviews and issues UK construction condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "instructBrain reads your site photographs, drafts referenced findings against your survey type and issues UK condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -108,12 +106,6 @@ function LandingHeader() {
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
       <div className="shell-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4">
         <Link to="/" className="flex min-w-0 items-center gap-3 rounded-md">
-          <span
-            aria-hidden="true"
-            className="gloss hidden size-9 shrink-0 place-items-center rounded-md sm:grid"
-          >
-            <FileText className="size-4" />
-          </span>
           <Wordmark />
         </Link>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -137,26 +129,25 @@ function LandingHeader() {
 
 function Hero() {
   return (
-    <section className="shell-container py-20 lg:py-28">
+    <section className="shell-container py-16 lg:py-24">
       <div className="max-w-3xl">
-        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
-          An instructSite company
-        </p>
-        <p className="wordmark mt-2 text-4xl leading-none sm:text-5xl">
+        <p className="wordmark text-6xl leading-none sm:text-7xl lg:text-8xl">
           <span className="text-brand-accent-light">instruct</span>
           <span className="text-foreground">Brain</span>
         </p>
-        <p className="mt-4 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
+        <p className="mt-5 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
           Photos in. Client-ready reports out.
         </p>
-        <p className="eyebrow mt-10">UK construction reporting</p>
-        <h1 className="editorial-title mt-4 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
-          Three days of writing up becomes minutes.
+        <h1 className="editorial-title mt-10 text-4xl font-bold leading-[1.05] sm:text-5xl">
+          Walk the site. Issue the same afternoon.
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Walk the site as you always have, then issue the document the same afternoon.
+          Upload the photographs from the walk. Every one is read against your chosen survey
+          type, drafted into referenced findings for you to confirm, and assembled into a
+          signed-off PDF with per-trade extracts.
         </p>
+
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button variant="brand" size="lg" asChild>
             <Link to="/auth/sign-up">
@@ -209,7 +200,7 @@ const useCases = [
     who: "Site manager",
     when: "Daily or weekly",
     now: "An hour walking the site, then an evening splitting observations by trade and writing eight separate emails.",
-    then: "Photos in, per-trade extracts out.",
+    then: "One walk, split into per-trade extracts automatically.",
   },
   {
     icon: ClipboardList,
@@ -234,10 +225,7 @@ function UseCases() {
             key={item.title}
             className="console-panel flex flex-col rounded-xl p-6 sm:p-7"
           >
-            <span aria-hidden="true" className="gloss grid size-10 place-items-center rounded-md">
-              <item.icon className="size-5" />
-            </span>
-            <h3 className="editorial-title mt-5 text-xl font-semibold leading-snug">
+            <h3 className="editorial-title text-xl font-semibold leading-snug">
               {item.title}
             </h3>
             <dl className="mt-5 space-y-3 text-sm">
@@ -301,15 +289,7 @@ function HowItWorks() {
               key={step.title}
               className="rounded-xl border border-border bg-surface-raised p-6 shadow-raised sm:p-7"
             >
-              <div className="flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="gloss grid size-9 place-items-center rounded-md"
-                >
-                  <step.icon className="size-4" />
-                </span>
-                <span className="eyebrow">Step {index + 1}</span>
-              </div>
+              <span className="eyebrow">Step {index + 1}</span>
               <h3 className="editorial-title mt-4 text-xl font-semibold">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </li>
@@ -467,17 +447,14 @@ function ClosingCta() {
     <section className="shell-container py-24 lg:py-32" aria-labelledby="closing-heading">
       <div className="console-panel rounded-2xl p-8 sm:p-12">
         <div className="max-w-2xl">
-          <span aria-hidden="true" className="gloss grid size-11 place-items-center rounded-md">
-            <Camera className="size-5" />
-          </span>
           <h2
             id="closing-heading"
-            className="editorial-title mt-6 text-3xl font-bold sm:text-4xl"
+            className="editorial-title text-3xl font-bold sm:text-4xl"
           >
-            Your next survey could be issued the same day.
+            Your next survey can be off your desk before the drive home.
           </h2>
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Three reports free. No card required. Bring the photos you already have.
+            Three reports free. No card required. Bring the photographs you already have.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button variant="brand" size="lg" asChild>
