@@ -105,11 +105,12 @@
   --brand-accent-ink: oklch(0.895 0.08 70.2);
 
   --gloss-highlight: oklch(1 0 0 / 35%);
-  /* Deepened so white button text clears WCAG AA (4.5:1) on the fill. */
+  /* instructSite orange (#FF5E00) at the top, deepened toward the base so the
+     button reads as the same brand orange while white label text stays legible. */
   --gradient-gloss: linear-gradient(
     180deg,
-    oklch(0.578 0.198 39.5) 0%,
-    oklch(0.523 0.181 37.5) 100%
+    oklch(0.686 0.21 41.1) 0%,
+    oklch(0.575 0.196 38.5) 100%
   );
 
   /* Frosted glass — secondary controls */
