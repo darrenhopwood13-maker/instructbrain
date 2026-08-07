@@ -116,15 +116,18 @@ function LandingHeader() {
           </span>
           <Wordmark />
         </Link>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             to="/auth/sign-in"
-            className="hidden rounded-md px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-sunken sm:inline-flex"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-sunken"
           >
             Sign in
           </Link>
           <Button variant="brand" asChild>
-            <Link to="/auth/sign-up">Start free</Link>
+            <Link to="/auth/sign-up">
+              <span className="sm:hidden">Start</span>
+              <span className="hidden sm:inline">Start free</span>
+            </Link>
           </Button>
         </div>
       </div>
