@@ -269,11 +269,13 @@ function ShareDialog({
   open,
   onOpenChange,
   reportId,
+  reportTitle,
   organisationId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reportId: string;
+  reportTitle: string;
   organisationId: string | null;
 }) {
   const queryClient = useQueryClient();
@@ -282,8 +284,14 @@ function ShareDialog({
   const [copied, setCopied] = useState<string | null>(null);
 
   const create = useMutation({
-    mutationFn: () =>
-      createShareLink({ reportId, organisationId: organisationId ?? "", days }),
+    mutationFn: () => {
+      if (!organisationId) {
+        throw new Error(
+          "This report is not linked to an organisation, so a share link cannot be created.",
+        );
+      }
+      return createShareLink({ reportId, organisationId, days });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["report-shares", reportId] });
       toast.success("Share link created", {
@@ -304,8 +312,23 @@ function ShareDialog({
     },
   });
 
-  const urlFor = (token: string) =>
-    typeof window === "undefined" ? `/shared/${token}` : `${window.location.origin}/shared/${token}`;
+  const urlFor = shareUrlForToken;
+  const live = (shares.data ?? []).filter(isShareLinkLive);
+
+  const sendNative = async (token: string) => {
+    const url = urlFor(token);
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: reportTitle, url });
+        return;
+      } catch {
+        /* the user dismissed the share sheet */
+        return;
+      }
+    }
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copied", { description: "Paste it into your email or message." });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -317,6 +340,20 @@ function ShareDialog({
             Confidential findings are never included. Nothing is emailed by creating a link.
           </DialogDescription>
         </DialogHeader>
+
+        {!organisationId ? (
+          <div className="rounded-lg border border-flag/40 bg-flag-soft p-3 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-flag">
+              <AlertTriangle aria-hidden="true" className="size-4" />
+              No organisation for this report
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              A share link belongs to the organisation that owns the report, and this one could not
+              be resolved. Reload the page, and if it persists check the report is still listed
+              under your organisation in Settings.
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="eyebrow block">
@@ -338,10 +375,33 @@ function ShareDialog({
             disabled={!organisationId || create.isPending}
             onClick={() => create.mutate()}
           >
-            <Link2 aria-hidden="true" className="mr-1.5 size-4" />
+            {create.isPending ? (
+              <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+            ) : (
+              <Link2 aria-hidden="true" className="mr-1.5 size-4" />
+            )}
             Create link
           </Button>
+          <Button
+            variant="quiet"
+            size="sm"
+            disabled={live.length === 0}
+            onClick={() => {
+              const first = live[0];
+              if (first) void sendNative(first.token);
+            }}
+          >
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
+            Send link
+          </Button>
         </div>
+
+        {live.length === 0 && organisationId ? (
+          <p className="text-sm text-muted-foreground">
+            There is no active link yet. Create one before sharing — the report cannot be opened
+            without it.
+          </p>
+        ) : null}
 
         <ul className="max-h-56 space-y-2 overflow-y-auto text-sm">
           {(shares.data ?? []).map((share) => {
@@ -383,6 +443,15 @@ function ShareDialog({
                   <Button
                     variant="quiet"
                     size="sm"
+                    disabled={dead}
+                    onClick={() => void sendNative(share.token)}
+                  >
+                    <Share2 aria-hidden="true" className="size-4" />
+                    <span className="sr-only">Send link</span>
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    size="sm"
                     disabled={dead || revoke.isPending}
                     onClick={() => revoke.mutate(share.id)}
                   >
@@ -393,6 +462,7 @@ function ShareDialog({
               </li>
             );
           })}
+
           {shares.data && shares.data.length === 0 ? (
             <li className="text-sm text-muted-foreground">No links have been created yet.</li>
           ) : null}
