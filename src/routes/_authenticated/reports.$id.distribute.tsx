@@ -308,6 +308,7 @@ function DistributionReview() {
                         <Link
                           to="/reports/$id/extract/$group"
                           params={{ id, group: encodeURIComponent(row.key) }}
+                          search={{ auto: undefined }}
                           target="_blank"
                         >
                           <ExternalLink aria-hidden="true" className="size-4" />
