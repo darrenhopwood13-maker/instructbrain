@@ -28,11 +28,24 @@ Walk the site. Issue the same afternoon.
 **"Walk the site. Issue the same afternoon."**
 
 It becomes the `<h1>` directly under the wordmark, at a size that supports the
-wordmark rather than fighting it. The existing supporting sentence is reworded so
-it doesn't repeat the same claim twice.
+wordmark rather than fighting it.
 
 The page title and social description are updated to match, since the old ones
 lead on "three days of writing up becomes minutes".
+
+### No repeated taglines
+
+Each line earns its place and says something the others don't. I will sweep the
+whole landing page — hero, section intros, pricing, closing call to action, plus
+the page title and social description — and make sure:
+
+- "Walk the site. Issue the same afternoon." appears exactly once, as the `<h1>`.
+- "Photos in. Client-ready reports out." appears exactly once, as the strapline
+  under the wordmark, and is removed from anywhere else it currently repeats.
+- The hero's supporting sentence is rewritten so it adds detail (what the AI drafts,
+  what you get) rather than restating the headline in different words.
+- The closing call to action gets its own distinct line, not a rerun of the hero.
+
 
 ## 3. Remove the orange document marks
 
