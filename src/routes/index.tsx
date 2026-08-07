@@ -500,6 +500,15 @@ function ClosingCta() {
               <Link to="/auth/sign-in">Sign in</Link>
             </Button>
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              to="/auth/sign-in"
+              className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </section>
