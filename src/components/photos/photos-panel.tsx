@@ -210,7 +210,7 @@ export function PhotosPanel({
       ]);
       void runQueue(items);
     },
-    [runQueue, zoneValues],
+    [runQueue, zoneValues, remainingPhotos, photoCap],
   );
 
   const retry = useCallback(
