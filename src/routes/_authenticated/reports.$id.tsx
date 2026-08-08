@@ -59,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 
 function ReportWorkspace() {
   const { id } = Route.useParams();
+  const translation = useReportTranslation(id, null);
   const { tab } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId } = useOrganisations();
@@ -196,7 +197,6 @@ function ReportWorkspace() {
 
   const { report, project } = query.data;
   const doc = document.data ?? null;
-  const translation = useReportTranslation(report.id, doc);
   const locked = doc?.report.status === "issued";
 
   return (
