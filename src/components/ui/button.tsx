@@ -17,13 +17,16 @@ const buttonVariants = cva(
         link: "text-brand-accent-ink underline-offset-4 hover:underline",
         brand: "gloss font-bold focus-visible:ring-brand-accent",
         quiet: "glass font-medium",
+        "glass-orange": "glass-orange focus-visible:ring-brand-accent",
       },
       size: {
         default: "h-11 px-5 py-2",
         sm: "h-9 rounded-md px-3 text-xs sm:h-8",
         lg: "h-12 rounded-xl px-8",
+        xl: "h-16 rounded-2xl px-8 text-base sm:h-[4.5rem] sm:px-10 sm:text-lg [&_svg]:size-5",
         icon: "size-11 sm:size-10",
       },
+
 
     },
 
