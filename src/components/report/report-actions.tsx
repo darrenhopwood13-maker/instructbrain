@@ -37,6 +37,7 @@ import {
 import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
+import type { ResultView } from "@/lib/report/grouping";
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
@@ -45,9 +46,11 @@ import { itemLabels } from "@/lib/item-label";
 export function ReportActions({
   document,
   organisationId,
+  resultView = "severity",
 }: {
   document: ReportDocument;
   organisationId: string | null;
+  resultView?: ResultView;
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);

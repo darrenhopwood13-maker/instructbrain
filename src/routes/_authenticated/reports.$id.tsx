@@ -33,13 +33,15 @@ import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
 import { Send } from "lucide-react";
 import { useOrganisations } from "@/lib/use-organisations";
+import { safeResultView, type ResultView } from "@/lib/report/grouping";
 
-type ReportSearch = { tab?: "photos" | "review" | "output" };
+type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView };
 
 export const Route = createFileRoute("/_authenticated/reports/$id")({
   validateSearch: (search: Record<string, unknown>): ReportSearch => {
     const tab = search["tab"];
-    return tab === "review" || tab === "output" || tab === "photos" ? { tab } : {};
+    const view = safeResultView(search["view"]);
+    return tab === "review" || tab === "output" || tab === "photos" ? { tab, view } : { view };
   },
   head: () => {
     const title = "Report workspace — instructBrain";
@@ -59,7 +61,9 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 
 function ReportWorkspace() {
   const { id } = Route.useParams();
-  const { tab } = Route.useSearch();
+  const { tab, view } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const resultView = safeResultView(view);
   const queryClient = useQueryClient();
   const { organisationId } = useOrganisations();
   const query = useQuery(reportQuery(id));
@@ -242,7 +246,7 @@ function ReportWorkspace() {
 
         {doc ? (
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <ReportActions document={doc} organisationId={organisationId} />
+            <ReportActions document={doc} organisationId={organisationId} resultView={resultView} />
             {requiresTradeAssignment(report.surveyTypeSnapshot) ? (
               <Button variant="quiet" asChild>
                 <Link to="/reports/$id/distribute" params={{ id: report.id }}>
@@ -375,6 +379,10 @@ function ReportWorkspace() {
                 <ReportDocumentView
                   document={translation.document ?? doc}
                   editable={!locked && !translation.isTranslatedView}
+                  view={resultView}
+                  onViewChange={(next) =>
+                    navigate({ search: (prev) => ({ ...prev, view: next }), replace: true })
+                  }
                   onReportPatch={onReportPatch}
                   onFindingPatch={onFindingPatch}
                 />
