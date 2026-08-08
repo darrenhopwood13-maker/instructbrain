@@ -207,7 +207,7 @@ function ReportWorkspace() {
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          Projects
+          {project ? "Projects" : "Quick reports"}
         </Link>
         {project ? (
           <>
@@ -225,8 +225,9 @@ function ReportWorkspace() {
           </>
         ) : null}
         <ChevronRight aria-hidden="true" className="mx-1 inline size-3.5 text-muted-foreground" />
-        <span className="text-foreground">{report.reference}</span>
+        <span className="text-foreground">{report.reference || report.title}</span>
       </nav>
+
 
       <header className="border-b border-border pb-6">
         <div className="flex flex-wrap items-center gap-3">
