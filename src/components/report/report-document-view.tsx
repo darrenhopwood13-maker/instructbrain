@@ -178,16 +178,9 @@ function Section({
     );
   }
 
-  if (section.startsWith("schedule")) {
-    return (
-      <Schedule
-        section={section}
-        document={document}
-        readOnly={readOnly}
-        {...(onFindingPatch ? { onFindingPatch } : {})}
-      />
-    );
-  }
+  // Schedules are rendered once, by the parent, as a single set of results.
+  if (section.startsWith("schedule")) return null;
+
 
   if (section === "appendix") return <Appendix document={document} print={print} />;
 
@@ -356,29 +349,73 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
 
 /* ------------------------------------------------------------------ */
 
-function Schedule({
-  section,
+function Results({
   document,
   readOnly,
+  print,
+  view,
+  onViewChange,
   onFindingPatch,
-}: { section: string; document: ReportDocument; readOnly: boolean } & Handlers) {
-  const groups = groupFindings(document.findings, groupingForSection(section));
+}: {
+  document: ReportDocument;
+  readOnly: boolean;
+  print: boolean;
+  view: ResultView;
+  onViewChange: (next: ResultView) => void;
+} & Handlers) {
+  const groups = groupResults(document, view);
 
   return (
-    <section aria-labelledby={`section-${section}`}>
-      <h2 id={`section-${section}`} className="editorial-title text-xl font-semibold">
-        {sectionLabel(section)}
-      </h2>
-      {document.findings.length === 0 ? (
+    <section aria-labelledby="section-results">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 id="section-results" className="editorial-title text-xl font-semibold">
+          Results
+        </h2>
+        {print ? (
+          <p className="text-xs text-muted-foreground">
+            Ordered {RESULT_VIEW_LABELS[view].toLowerCase()}
+          </p>
+        ) : (
+          <div
+            role="radiogroup"
+            aria-label="Order the results"
+            className="inline-flex rounded-lg border border-border bg-surface-sunken p-1"
+          >
+            {RESULT_VIEWS.map((option) => {
+              const active = option === view;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => onViewChange(option)}
+                  className={
+                    "min-h-9 rounded-md px-3 text-sm font-semibold transition-colors " +
+                    (active
+                      ? "bg-brand-accent text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  {RESULT_VIEW_LABELS[option]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          No findings have been recorded on this report yet.
+          No items have been recorded on this report yet.
         </p>
       ) : (
         groups.map((group) => (
           <div key={group.key} className="mt-5">
-            {groups.length > 1 || group.key !== "all" ? (
-              <h3 className="eyebrow border-b border-border pb-1.5">{group.label}</h3>
-            ) : null}
+            <h3 className="eyebrow border-b border-border pb-1.5">
+              {group.label} · {group.findings.length} item
+              {group.findings.length === 1 ? "" : "s"}
+            </h3>
             <ul className="mt-3 space-y-4">
               {group.findings.map((finding) => (
                 <li key={finding.id}>
