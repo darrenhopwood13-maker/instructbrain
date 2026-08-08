@@ -249,7 +249,7 @@ function UseCases() {
         {useCases.map((item) => (
           <li
             key={item.title}
-            className="console-panel flex flex-col rounded-xl p-6 sm:p-7"
+            className="glass-panel flex flex-col rounded-2xl p-6 sm:p-7"
           >
             <h3 className="editorial-title text-xl font-semibold leading-snug">
               {item.title}
@@ -301,7 +301,7 @@ function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="paper border-y border-border py-20 lg:py-28"
+      className="py-20 lg:py-28"
       aria-labelledby="how-heading"
     >
       <div className="shell-container">
@@ -313,7 +313,7 @@ function HowItWorks() {
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className="rounded-xl border border-border bg-surface-raised p-6 shadow-raised sm:p-7"
+              className="glass-panel rounded-2xl p-6 sm:p-7"
             >
               <span className="eyebrow">Step {index + 1}</span>
               <h3 className="editorial-title mt-4 text-xl font-semibold">{step.title}</h3>
@@ -339,7 +339,7 @@ function PlainEnglish() {
           what it sees in the language you'd use, decides how serious it is, and says what to do
           about it.
         </p>
-        <p className="console-panel editorial-title mt-8 rounded-xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
+        <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
           When it can't tell — bad light, awkward angle — it says so rather than guessing. You
           review, correct anything wrong, and issue.
         </p>
@@ -391,7 +391,7 @@ function Pricing() {
   return (
     <section
       id="pricing"
-      className="paper border-y border-border py-20 lg:py-28"
+      className="py-20 lg:py-28"
       aria-labelledby="pricing-heading"
     >
       <div className="shell-container">
@@ -410,8 +410,8 @@ function Pricing() {
               key={tier.name}
               className={
                 tier.featured
-                  ? "flex flex-col rounded-xl border-2 border-brand-accent bg-surface-raised p-6 shadow-raised"
-                  : "flex flex-col rounded-xl border border-border bg-surface-raised p-6 shadow-raised"
+                  ? "glass-panel flex flex-col rounded-2xl border-2 border-brand-accent p-6"
+                  : "glass-panel flex flex-col rounded-2xl p-6"
               }
             >
               <div className="flex items-center justify-between gap-2">
@@ -447,7 +447,7 @@ function Pricing() {
                   </Button>
                 ) : (
                   <Button
-                    variant={tier.featured ? "brand" : "outline"}
+                    variant={tier.featured ? "glass-orange" : "outline"}
                     className="w-full"
                     asChild
                   >
@@ -471,7 +471,7 @@ function Pricing() {
 function ClosingCta() {
   return (
     <section className="shell-container py-24 lg:py-32" aria-labelledby="closing-heading">
-      <div className="console-panel rounded-2xl p-8 sm:p-12">
+      <div className="glass-panel rounded-2xl p-8 sm:p-12">
         <div className="max-w-2xl">
           <h2
             id="closing-heading"
@@ -510,7 +510,7 @@ function ClosingCta() {
 
 function LandingFooter() {
   return (
-    <footer className="border-t border-border py-12">
+    <footer className="glass-panel mt-8 border-x-0 border-b-0 py-12">
       <div className="shell-container flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <Wordmark />
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
