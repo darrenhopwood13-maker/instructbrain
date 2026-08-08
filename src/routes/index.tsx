@@ -72,7 +72,7 @@ function Landing() {
       <LandingHeader />
 
       <main id="main" className="flex-1">
-        <Hero />
+        <Hero signedIn={!!user} />
         <RoiSection />
         <UseCases />
         <HowItWorks />
@@ -103,7 +103,7 @@ function Wordmark() {
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
+    <header className="glass-panel sticky top-0 z-30 border-x-0 border-t-0">
       <div className="shell-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4">
         <Link to="/" className="flex min-w-0 items-center gap-3 rounded-md">
           <Wordmark />
@@ -127,7 +127,7 @@ function LandingHeader() {
   );
 }
 
-function Hero() {
+function Hero({ signedIn }: { signedIn: boolean }) {
   return (
     <section className="shell-container py-16 lg:py-24">
       <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
@@ -148,18 +148,43 @@ function Hero() {
           signed-off PDF with per-trade extracts.
         </p>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button variant="brand" size="lg" asChild>
-            <Link to="/auth/sign-up">
-              Start free — 3 reports
-              <ArrowRight aria-hidden="true" />
-            </Link>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <Button variant="glass-orange" size="xl" className="w-full" asChild>
+            {signedIn ? (
+              <Link to="/reports/new">
+                Create project report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link to="/auth/sign-up" search={{ next: "/reports/new" as const }}>
+                Create project report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
           </Button>
-          <Button variant="outline" size="lg" asChild>
-            <a href="#how-it-works">See how it works</a>
+          <Button variant="glass-orange" size="xl" className="w-full" asChild>
+            {signedIn ? (
+              <Link to="/reports/quick">
+                Create quick report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link to="/auth/sign-up" search={{ next: "/reports/quick" as const }}>
+                Create quick report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
           </Button>
         </div>
-        <p className="mt-5 text-sm text-muted-foreground">No card required.</p>
+        <p className="mt-6 text-sm text-muted-foreground">
+          Free for your first 3 reports. No card required.{" "}
+          <a
+            href="#how-it-works"
+            className="font-semibold text-brand-accent-ink underline underline-offset-4"
+          >
+            See how it works
+          </a>
+        </p>
       </div>
     </section>
   );
@@ -167,7 +192,7 @@ function Hero() {
 
 function RoiSection() {
   return (
-    <section className="paper border-y border-border py-20 lg:py-28" aria-labelledby="roi-heading">
+    <section className="py-20 lg:py-28" aria-labelledby="roi-heading">
       <div className="shell-container">
         <p className="eyebrow">What it gives you back</p>
         <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
@@ -177,13 +202,14 @@ function RoiSection() {
           The write-up is the expensive part of a survey, and it happens after hours. This is what
           it costs you now, and what it costs with instructBrain.
         </p>
-        <div className="mt-12">
+        <div className="glass-panel mt-12 rounded-2xl p-6 sm:p-8">
           <RoiRace />
         </div>
       </div>
     </section>
   );
 }
+
 
 const useCases = [
   {
@@ -223,7 +249,7 @@ function UseCases() {
         {useCases.map((item) => (
           <li
             key={item.title}
-            className="console-panel flex flex-col rounded-xl p-6 sm:p-7"
+            className="glass-panel flex flex-col rounded-2xl p-6 sm:p-7"
           >
             <h3 className="editorial-title text-xl font-semibold leading-snug">
               {item.title}
@@ -275,7 +301,7 @@ function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="paper border-y border-border py-20 lg:py-28"
+      className="py-20 lg:py-28"
       aria-labelledby="how-heading"
     >
       <div className="shell-container">
@@ -287,7 +313,7 @@ function HowItWorks() {
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className="rounded-xl border border-border bg-surface-raised p-6 shadow-raised sm:p-7"
+              className="glass-panel rounded-2xl p-6 sm:p-7"
             >
               <span className="eyebrow">Step {index + 1}</span>
               <h3 className="editorial-title mt-4 text-xl font-semibold">{step.title}</h3>
@@ -313,7 +339,7 @@ function PlainEnglish() {
           what it sees in the language you'd use, decides how serious it is, and says what to do
           about it.
         </p>
-        <p className="console-panel editorial-title mt-8 rounded-xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
+        <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
           When it can't tell — bad light, awkward angle — it says so rather than guessing. You
           review, correct anything wrong, and issue.
         </p>
@@ -365,7 +391,7 @@ function Pricing() {
   return (
     <section
       id="pricing"
-      className="paper border-y border-border py-20 lg:py-28"
+      className="py-20 lg:py-28"
       aria-labelledby="pricing-heading"
     >
       <div className="shell-container">
@@ -384,8 +410,8 @@ function Pricing() {
               key={tier.name}
               className={
                 tier.featured
-                  ? "flex flex-col rounded-xl border-2 border-brand-accent bg-surface-raised p-6 shadow-raised"
-                  : "flex flex-col rounded-xl border border-border bg-surface-raised p-6 shadow-raised"
+                  ? "glass-panel flex flex-col rounded-2xl border-2 border-brand-accent p-6"
+                  : "glass-panel flex flex-col rounded-2xl p-6"
               }
             >
               <div className="flex items-center justify-between gap-2">
@@ -421,7 +447,7 @@ function Pricing() {
                   </Button>
                 ) : (
                   <Button
-                    variant={tier.featured ? "brand" : "outline"}
+                    variant={tier.featured ? "glass-orange" : "outline"}
                     className="w-full"
                     asChild
                   >
@@ -445,7 +471,7 @@ function Pricing() {
 function ClosingCta() {
   return (
     <section className="shell-container py-24 lg:py-32" aria-labelledby="closing-heading">
-      <div className="console-panel rounded-2xl p-8 sm:p-12">
+      <div className="glass-panel rounded-2xl p-8 sm:p-12">
         <div className="max-w-2xl">
           <h2
             id="closing-heading"
@@ -484,7 +510,7 @@ function ClosingCta() {
 
 function LandingFooter() {
   return (
-    <footer className="border-t border-border py-12">
+    <footer className="glass-panel mt-8 border-x-0 border-b-0 py-12">
       <div className="shell-container flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <Wordmark />
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">

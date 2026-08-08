@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganisation, fetchMemberships, useSession } from "@/lib/auth";
+import { safeNext } from "@/lib/next-destination";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/callback")({
+  validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search["next"]) }),
   head: () => ({
     meta: [
       { title: "Completing sign in — instructBrain" },
@@ -18,11 +20,15 @@ export const Route = createFileRoute("/auth/callback")({
   }),
   ssr: false,
   component: AuthCallback,
+
 });
 
 function AuthCallback() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const destination = next ?? "/projects";
   const { user, loading } = useSession();
+
   const [needsOrganisation, setNeedsOrganisation] = useState(false);
   const [orgName, setOrgName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,7 +61,7 @@ function AuthCallback() {
       .then((memberships) => {
         if (cancelled) return;
         if (memberships.length === 0) setNeedsOrganisation(true);
-        else navigate({ to: "/projects", replace: true });
+        else navigate({ to: destination, replace: true });
       })
       .catch(() => {
         if (!cancelled) setNeedsOrganisation(true);
@@ -63,7 +69,8 @@ function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, navigate, linkProblem]);
+  }, [loading, user, navigate, linkProblem, destination]);
+
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -73,7 +80,7 @@ function AuthCallback() {
       toast.success("Organisation created", {
         description: "You are the owner and can invite colleagues from Settings.",
       });
-      navigate({ to: "/projects", replace: true });
+      navigate({ to: destination, replace: true });
     } catch (error) {
       toast.error("Could not create the organisation", {
         description: error instanceof Error ? error.message : "Please try again.",

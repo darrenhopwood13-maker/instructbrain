@@ -10,8 +10,12 @@ import {
   signUpWithPassword,
   validatePassword,
 } from "@/lib/auth";
+import { safeNext } from "@/lib/next-destination";
+
 
 export const Route = createFileRoute("/auth/sign-up")({
+  validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search["next"]) }),
+
   head: () => ({
     meta: [
       { title: "Create an account — instructBrain" },
@@ -34,6 +38,8 @@ export const Route = createFileRoute("/auth/sign-up")({
 
 function SignUp() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -55,7 +61,7 @@ function SignUp() {
     try {
       const { needsConfirmation } = await signUpWithPassword(email.trim(), password);
       if (needsConfirmation) setCheckEmail(true);
-      else navigate({ to: "/auth/callback", replace: true });
+      else navigate({ to: "/auth/callback", search: { next }, replace: true });
     } catch (error) {
       setFormError(describeAuthError(error));
     } finally {
