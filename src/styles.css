@@ -477,6 +477,64 @@
   }
 }
 
+/* Orange mesomorphic glass — translucent orange fill, navy label, 3D navy edge.
+   Matches instructSite's hero control. */
+@utility glass-orange {
+  position: relative;
+  background-image: var(--gradient-glass-orange);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 2px solid oklch(0.26 0.072 263 / 90%);
+  border-radius: 14px;
+  color: var(--glass-orange-ink);
+  font-weight: 700;
+  text-shadow: 0 1px 0 oklch(1 0 0 / 25%);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 35%) inset,
+    0 -1px 0 oklch(0 0 0 / 25%) inset,
+    0 4px 0 0 oklch(0.26 0.072 263 / 95%),
+    0 10px 22px -8px oklch(0.686 0.21 41.1 / 50%);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+
+  & svg {
+    color: var(--glass-orange-ink);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(1px);
+    background-image: var(--gradient-glass-orange-hover);
+    border-color: oklch(0.26 0.072 263);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 45%) inset,
+      0 -1px 0 oklch(0 0 0 / 30%) inset,
+      0 3px 0 0 oklch(0.26 0.072 263),
+      0 8px 18px -6px oklch(0.26 0.072 263 / 50%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 35%) inset,
+      0 1px 0 0 oklch(0.26 0.072 263 / 95%),
+      0 4px 10px -4px oklch(0.686 0.21 41.1 / 50%);
+  }
+}
+
+/* Frosted console panel — the instructSite section surface. */
+@utility glass-panel {
+  background-color: var(--glass-surface);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 1px 0 var(--glass-highlight) inset,
+    0 -1px 0 oklch(0 0 0 / 28%) inset,
+    0 24px 60px -30px oklch(0 0 0 / 80%);
+}
+
+
 /* Raised console panel — the instructSite surface treatment. */
 @utility console-panel {
   background-image: var(--gradient-panel);
