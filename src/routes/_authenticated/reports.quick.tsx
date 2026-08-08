@@ -1,24 +1,23 @@
-import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PhotosPanel } from "@/components/photos/photos-panel";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { createReport } from "@/lib/data";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
-import { definitionLabel } from "@/lib/survey-types";
+import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export const Route = createFileRoute("/_authenticated/reports/quick")({
   head: () => {
     const title = "Quick report — instructBrain";
     const description =
-      "Pick a survey type, upload photographs, draft with AI or type it yourself, then send the link to any email address. No project set-up.";
+      "Pick a survey type and start shooting. Photographs upload as you take them, AI drafts the findings, and the link goes to any email address.";
     return {
       meta: [
         { title },
@@ -42,105 +41,110 @@ function todayLabel(): string {
 }
 
 function QuickReport() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
   const usage = usePlanUsage(organisationId);
 
   const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
+  const [reportId, setReportId] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<SurveyTypeSnapshot | null>(null);
+  const [initialFiles, setInitialFiles] = useState<File[]>([]);
+
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const pickerRef = useRef<HTMLInputElement>(null);
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
 
-  const mutation = useMutation({
-    mutationFn: async () => {
+  // The report row is created on the first photograph, never on arrival, so an
+  // abandoned visit costs nothing against the monthly allowance.
+  const start = useMutation({
+    mutationFn: async (files: File[]) => {
       if (!selected) throw new Error("Choose a survey type first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      return createReport({
+      const frozen = snapshotOf(selected);
+      const id = await createReport({
         organisationId,
         projectId: null,
         isQuick: true,
-        title: `${definitionLabel(snapshotOf(selected))} — ${todayLabel()}`,
+        title: `${definitionLabel(frozen)} — ${todayLabel()}`,
         reference: "",
-        definition: snapshotOf(selected),
+        definition: frozen,
         authorId: userId,
       });
+      return { id, frozen, files };
     },
-    onSuccess: async (reportId) => {
+    onSuccess: async ({ id, frozen, files }) => {
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
-      toast.success("Quick report started", {
-        description: "Upload photographs next. You can draft with AI or write the findings yourself.",
-      });
-      void navigate({ to: "/reports/$id", params: { id: reportId }, search: { tab: "photos" } });
+      setSnapshot(frozen);
+      setInitialFiles(files);
+      setReportId(id);
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  const receive = (list: FileList | null) => {
+    const files = list ? Array.from(list) : [];
+    if (files.length === 0) return;
+    if (reportId) return;
+    start.mutate(files);
+  };
+
+  const capturing = reportId !== null && snapshot !== null;
 
   return (
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          Projects
+          Quick reports
         </Link>
       </nav>
 
-      <header className="border-b border-border pb-6">
+      <header className="border-b border-border pb-5">
         <p className="eyebrow">Quick report</p>
         <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
-          Straight to the photographs
+          Pick a type, then shoot
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          No project, no client details, no directory. Choose the survey type, upload the
-          photographs, draft with AI or write the findings yourself, then send the link to any
-          email address. You can attach it to a project later.
+          No project, no client details. The report starts itself with your first photograph.
         </p>
       </header>
 
-      {organisationId ? <PlanUsageMeter usage={usage} className="mt-6" /> : null}
+      {organisationId ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
 
-      <section aria-labelledby="type-heading" className="mt-8">
-        <h2 id="type-heading" className="text-lg font-semibold">
+      <section aria-labelledby="type-heading" className="mt-6">
+        <h2 id="type-heading" className="text-sm font-semibold">
           Survey type
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          This is frozen into the report at creation and decides its statuses, capture fields and
-          output.
+          {capturing
+            ? "Frozen into this report — start a new quick report to change it."
+            : "Frozen into the report when it starts. It decides the statuses, capture fields and output."}
         </p>
 
-        <fieldset className="mt-4">
+        <fieldset className="mt-3" disabled={capturing || start.isPending}>
           <legend className="sr-only">Choose a survey type</legend>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-3">
             {systemDefinitions.map((definition) => {
               const active = definition.id === selectedId;
               return (
                 <label
                   key={definition.id}
-                  className={`flex min-h-14 cursor-pointer flex-col justify-center rounded-xl border p-4 shadow-raised transition-colors ${
+                  className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
                     active
                       ? "border-brand-accent bg-surface-raised"
                       : "border-border bg-surface-raised hover:bg-surface-sunken"
-                  }`}
+                  } ${capturing && !active ? "opacity-50" : ""}`}
                 >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="survey-type"
-                      value={definition.id}
-                      checked={active}
-                      onChange={() => setSelectedId(definition.id)}
-                      className="size-4 accent-[var(--brand-accent)]"
-                    />
-                    <span className="text-sm font-semibold">
-                      {definitionLabel(snapshotOf(definition))}
-                    </span>
-                    {active ? (
-                      <span className="ml-auto text-xs font-semibold text-brand-accent">
-                        Selected
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="mt-2 text-sm text-muted-foreground">
-                    {definition.statuses.length} statuses ·{" "}
-                    {definition.captureFields?.length ?? 0} capture fields
+                  <input
+                    type="radio"
+                    name="survey-type"
+                    value={definition.id}
+                    checked={active}
+                    onChange={() => setSelectedId(definition.id)}
+                    className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                  />
+                  <span className="text-sm font-semibold leading-tight">
+                    {definitionLabel(snapshotOf(definition))}
                   </span>
                 </label>
               );
@@ -149,19 +153,83 @@ function QuickReport() {
         </fieldset>
       </section>
 
-      <div className="sticky bottom-20 z-20 mt-10 sm:bottom-4">
-        <Button
-          type="button"
-          size="lg"
-          className="w-full sm:w-auto"
-          disabled={mutation.isPending || !organisationId}
-          onClick={() => mutation.mutate()}
-        >
-          <Zap aria-hidden="true" className="size-4" />
-          {mutation.isPending ? "Starting…" : "Start quick report"}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Button>
-      </div>
+      {capturing ? (
+        <>
+          <section className="mt-8">
+            <PhotosPanel reportId={reportId} snapshot={snapshot} initialFiles={initialFiles} />
+          </section>
+
+          <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <Link to="/reports/$id" params={{ id: reportId }} search={{ tab: "review" }}>
+                Draft the findings
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        </>
+      ) : (
+        <section aria-labelledby="capture-heading" className="mt-6">
+          <h2 id="capture-heading" className="sr-only">
+            Capture photographs
+          </h2>
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <input
+            ref={pickerRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button
+              type="button"
+              size="lg"
+              className="min-h-14 w-full"
+              disabled={start.isPending || !organisationId}
+              onClick={() => cameraRef.current?.click()}
+            >
+              {start.isPending ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <Camera aria-hidden="true" className="size-4" />
+              )}
+              Take photo
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              variant="secondary"
+              className="min-h-14 w-full"
+              disabled={start.isPending || !organisationId}
+              onClick={() => pickerRef.current?.click()}
+            >
+              <ImagePlus aria-hidden="true" className="size-4" />
+              Add photos
+            </Button>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Originals are stored untouched and are what the analysis reads. Location and other
+            capture details are asked once, on the next screen, and carry to every photograph
+            after them.
+          </p>
+        </section>
+      )}
     </AppShell>
   );
 }
