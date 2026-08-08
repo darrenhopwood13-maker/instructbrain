@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Camera,
   CheckCircle2,
   ClipboardList,
+  FolderOpen,
   HardHat,
   ScanLine,
   ShieldCheck,
@@ -12,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
+import type { NextDestination } from "@/lib/next-destination";
 import { absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "instructBrain — walk the site, issue the same afternoon";
