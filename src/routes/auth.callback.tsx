@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganisation, fetchMemberships, useSession } from "@/lib/auth";
-import { safeNext } from "@/lib/next-destination";
+import { type NextDestination, safeNext } from "@/lib/next-destination";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/callback")({
-  validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search["next"]) }),
+  validateSearch: (search: Record<string, unknown>): { next?: NextDestination } => {
+    const next = safeNext(search["next"]);
+    return next ? { next } : {};
+  },
   head: () => ({
     meta: [
       { title: "Completing sign in — instructBrain" },

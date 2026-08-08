@@ -10,11 +10,14 @@ import {
   signUpWithPassword,
   validatePassword,
 } from "@/lib/auth";
-import { safeNext } from "@/lib/next-destination";
+import { type NextDestination, safeNext } from "@/lib/next-destination";
 
 
 export const Route = createFileRoute("/auth/sign-up")({
-  validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search["next"]) }),
+  validateSearch: (search: Record<string, unknown>): { next?: NextDestination } => {
+    const next = safeNext(search["next"]);
+    return next ? { next } : {};
+  },
 
   head: () => ({
     meta: [
