@@ -128,11 +128,14 @@ export function useAnalysisRun(reportId: string) {
                 data: { reportId, photoId: item.photoId, force },
               });
               if (!mounted.current) return;
+              // A run that still recorded observations is not a failure: the
+              // items exist and any problem is carried as Not assessed.
+              const lost = Boolean(result.error) && result.findingsCreated === 0;
               patch(item.photoId, {
-                state: result.error ? "failed" : "done",
+                state: lost ? "failed" : "done",
                 analysed: true,
-                message: result.error
-                  ? result.error
+                message: lost
+                  ? "Not assessed — this photograph could not be saved. Try again."
                   : `${result.findingsCreated} draft${result.findingsCreated === 1 ? "" : "s"}${result.cached ? " · from cache" : ""}${result.notAssessed > 0 ? ` · ${result.notAssessed} not assessed` : ""}`,
               });
               setTotals((current) => ({
@@ -140,9 +143,10 @@ export function useAnalysisRun(reportId: string) {
                 completed: current.completed + 1,
                 findings: current.findings + result.findingsCreated,
                 notAssessed: current.notAssessed + result.notAssessed,
-                failed: current.failed + (result.error ? 1 : 0),
+                failed: current.failed + (lost ? 1 : 0),
                 costUsd: current.costUsd + result.costUsd,
               }));
+
               // Results stream into the review list as they complete.
               await invalidate();
             } catch (error) {
