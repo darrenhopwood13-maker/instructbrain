@@ -381,7 +381,7 @@ function ReportWorkspace() {
                   editable={!locked && !translation.isTranslatedView}
                   view={resultView}
                   onViewChange={(next) =>
-                    navigate({ search: (prev) => ({ ...prev, view: next }), replace: true })
+                    navigate({ search: (prev: ReportSearch) => ({ ...prev, view: next }), replace: true })
                   }
                   onReportPatch={onReportPatch}
                   onFindingPatch={onFindingPatch}
