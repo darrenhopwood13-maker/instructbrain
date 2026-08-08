@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
 import { InlineField } from "@/components/report/inline-field";
@@ -6,12 +6,18 @@ import {
   documentSections,
   documentStatistics,
   formatDocumentDate,
-  groupFindings,
-  groupingForSection,
   sectionLabel,
   type DocFinding,
   type ReportDocument,
 } from "@/lib/report/document";
+import {
+  RESULT_VIEWS,
+  RESULT_VIEW_LABELS,
+  groupResults,
+  safeResultView,
+  type ResultView,
+} from "@/lib/report/grouping";
+import { itemLabel } from "@/lib/item-label";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
@@ -32,6 +38,10 @@ import { AlertTriangle, Lock } from "lucide-react";
 /**
  * The assembled document, on screen and in print. Section order comes from the
  * snapshot's outputSections — never from a list in this file.
+ *
+ * The findings are one set of results, read three ways (trade, severity,
+ * deadline). Every item appears exactly once in whichever view is selected,
+ * and the selected view is the order the PDF and the share link use.
  */
 
 type Handlers = {
@@ -47,11 +57,28 @@ export function ReportDocumentView({
   document,
   editable = false,
   print = false,
+  view,
+  onViewChange,
   onReportPatch,
   onFindingPatch,
-}: { document: ReportDocument; editable?: boolean; print?: boolean } & Handlers) {
+}: {
+  document: ReportDocument;
+  editable?: boolean;
+  print?: boolean;
+  view?: ResultView;
+  onViewChange?: (next: ResultView) => void;
+} & Handlers) {
   const sections = documentSections(document.snapshot);
   const readOnly = !editable || !onReportPatch;
+  const [localView, setLocalView] = useState<ResultView>(safeResultView(view));
+  const activeView = safeResultView(view ?? localView);
+  const setView = (next: ResultView) => {
+    setLocalView(next);
+    onViewChange?.(next);
+  };
+
+  // Several schedule sections collapse into one set of results.
+  let resultsRendered = false;
 
   return (
     <article
@@ -62,18 +89,36 @@ export function ReportDocumentView({
           : undefined
       }
     >
-      {sections.map((section) => (
-        <Fragment key={section}>
-          <Section
-            section={section}
-            document={document}
-            readOnly={readOnly}
-            print={print}
-            {...(onReportPatch ? { onReportPatch } : {})}
-            {...(onFindingPatch ? { onFindingPatch } : {})}
-          />
-        </Fragment>
-      ))}
+      {sections.map((section) => {
+        if (section.startsWith("schedule")) {
+          if (resultsRendered) return null;
+          resultsRendered = true;
+          return (
+            <Fragment key={section}>
+              <Results
+                document={document}
+                readOnly={readOnly}
+                print={print}
+                view={activeView}
+                onViewChange={setView}
+                {...(onFindingPatch ? { onFindingPatch } : {})}
+              />
+            </Fragment>
+          );
+        }
+        return (
+          <Fragment key={section}>
+            <Section
+              section={section}
+              document={document}
+              readOnly={readOnly}
+              print={print}
+              {...(onReportPatch ? { onReportPatch } : {})}
+              {...(onFindingPatch ? { onFindingPatch } : {})}
+            />
+          </Fragment>
+        );
+      })}
     </article>
   );
 }
