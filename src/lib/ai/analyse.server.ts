@@ -26,6 +26,36 @@ import {
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
 import { nextRef } from "@/lib/finding-refs";
+
+/**
+ * Allocate the next item reference for a report. The database serialises this
+ * per report, so two photographs analysed at the same moment can never be
+ * handed the same number. Falls back to the read-then-derive path only if the
+ * helper is unavailable.
+ */
+async function allocateRef(
+  client: AnyClient,
+  reportId: string,
+): Promise<{ ref: string; sequence: number } | null> {
+  const { data, error } = await (client as any).rpc("next_finding_ref", {
+    _report_id: reportId,
+  });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!error && row?.ref) {
+    return { ref: row.ref as string, sequence: Number(row.sequence ?? 0) };
+  }
+
+  const { data: existingRows } = await table(client, "findings")
+    .select("ref, sequence")
+    .eq("report_id", reportId);
+  const existing = (existingRows ?? []) as Array<{ ref: string; sequence: number | null }>;
+  if (!existing) return null;
+  return {
+    ref: nextRef(existing.map((row) => row.ref)),
+    sequence: existing.reduce((max, row) => Math.max(max, row.sequence ?? 0), 0) + 1,
+  };
+}
+
 import { PHOTO_BUCKET, analysisSourcePath } from "@/lib/photos/storage-paths";
 import { NOT_ASSESSED_ID, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
