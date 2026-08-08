@@ -607,33 +607,41 @@ function FindingRow({
 /* ------------------------------------------------------------------ */
 
 function Appendix({ document, print }: { document: ReportDocument; print: boolean }) {
+  // A photograph is printed once. Anything already shown beside its finding —
+  // or used as the cover plate — is not repeated here; the appendix carries
+  // only the photographs the body of the report never shows.
+  const coverId =
+    (document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
+      document.photos[0])?.id ?? null;
+  const shown = new Set<string>();
+  if (coverId) shown.add(coverId);
+  for (const finding of document.findings) {
+    for (const item of finding.photos) shown.add(item.photo.id);
+  }
+  const remaining = document.photos.filter((photo) => !shown.has(photo.id));
+
+  if (remaining.length === 0) return null;
+
   return (
     <section aria-labelledby="section-appendix" className="break-before-page">
       <h2 id="section-appendix" className="editorial-title text-xl font-semibold">
         {sectionLabel("appendix")}
       </h2>
-      {document.photos.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No photographs on this report.</p>
-      ) : (
-        <ul className="mt-4 grid gap-5 sm:grid-cols-2">
-          {document.photos.map((photo) => {
-            const refs = document.findings
-              .filter((finding) => finding.photos.some((item) => item.photo.id === photo.id))
-              .map((finding) => finding.ref);
-            return (
-              <li key={photo.id} className="break-inside-avoid">
-                <PhotoFigure
-                  attachment={{ photo, role: "primary", region: null }}
-                  useFullResolution={print}
-                  caption={`Photograph ${photo.sequence} · ${formatDocumentDate(photo.capturedAt)}${
-                    refs.length > 0 ? ` · ${refs.join(", ")}` : " · not linked to a finding"
-                  }`}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <p className="mt-1 text-sm text-muted-foreground">
+        Photographs not shown elsewhere in this report.
+      </p>
+      <ul className="mt-4 grid gap-5 sm:grid-cols-2">
+        {remaining.map((photo) => (
+          <li key={photo.id} className="break-inside-avoid">
+            <PhotoFigure
+              attachment={{ photo, role: "primary", region: null }}
+              useFullResolution={print}
+              caption={`Photograph ${photo.sequence} · ${formatDocumentDate(photo.capturedAt)} · not linked to a finding`}
+            />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
+
