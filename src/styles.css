@@ -123,6 +123,20 @@
   --glass-accent-surface-hover: oklch(0.686 0.21 41.1 / 26%);
   --glass-accent-border: oklch(0.686 0.21 41.1 / 55%);
   --glass-accent-border-hover: oklch(0.686 0.21 41.1 / 85%);
+
+  /* Orange mesomorphic glass — the instructSite hero control */
+  --glass-orange-ink: oklch(0.26 0.072 263);
+  --gradient-glass-orange: linear-gradient(
+    180deg,
+    oklch(0.686 0.21 41.1 / 95%) 0%,
+    oklch(0.626 0.2 38.2 / 82%) 100%
+  );
+  --gradient-glass-orange-hover: linear-gradient(
+    180deg,
+    oklch(0.741 0.165 50.6 / 100%) 0%,
+    oklch(0.626 0.2 38.2 / 92%) 100%
+  );
+
   --gradient-panel: linear-gradient(
     180deg,
     oklch(0.342 0.091 262.9 / 90%) 0%,
