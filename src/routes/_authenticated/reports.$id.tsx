@@ -11,6 +11,7 @@ import { ReviewList, type ConfirmPatch } from "@/components/review-list";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { AnalysisPanel } from "@/components/ai/analysis-panel";
 import { ReportDocumentView } from "@/components/report/report-document-view";
+import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { ReportActions } from "@/components/report/report-actions";
 import { InlineField } from "@/components/report/inline-field";
 
@@ -195,6 +196,7 @@ function ReportWorkspace() {
 
   const { report, project } = query.data;
   const doc = document.data ?? null;
+  const translation = useReportTranslation(report.id, doc);
   const locked = doc?.report.status === "issued";
 
   return (
