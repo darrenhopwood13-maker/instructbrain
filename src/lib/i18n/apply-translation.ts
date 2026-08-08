@@ -24,13 +24,14 @@ export function applyTranslation(
     },
     findings: document.findings.map((finding) => ({
       ...finding,
-      findingText: pick(`${finding.id}.finding_text`, finding.findingText),
-      remedialText: pick(`${finding.id}.remedial_text`, finding.remedialText),
+      findingText: strings[`${finding.id}.finding_text`] ?? finding.findingText,
+      remedialText: strings[`${finding.id}.remedial_text`] ?? finding.remedialText,
       likelyCause: pick(`${finding.id}.likely_cause`, finding.likelyCause),
       regulatoryReference: pick(
         `${finding.id}.regulatory_reference`,
         finding.regulatoryReference,
       ),
     })),
+
   };
 }
