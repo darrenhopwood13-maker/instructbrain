@@ -61,7 +61,6 @@ function NewReport() {
 
   const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
-  const [title, setTitle] = useState("");
   const [reference, setReference] = useState("");
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
@@ -71,7 +70,6 @@ function NewReport() {
     [projectList, projectId, projectParam],
   );
   const effectiveProjectId = projectId || projectParam || "";
-  const titleInvalid = title.trim().length === 0;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -83,7 +81,9 @@ function NewReport() {
       return createReport({
         organisationId,
         projectId: effectiveProjectId,
-        title,
+        title: selected
+          ? `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`
+          : "Report",
         reference,
         definition: snapshotOf(selected),
         authorId: userId,
@@ -185,24 +185,6 @@ function NewReport() {
             </select>
           </div>
         )}
-
-        <div className="space-y-2">
-          <Label htmlFor="report-title">Report title</Label>
-          <Input
-            id="report-title"
-            name="report-title-new"
-            autoComplete="off"
-            data-form-type="other"
-            required
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            aria-invalid={titleInvalid || undefined}
-            aria-describedby="report-title-help"
-          />
-          <p id="report-title-help" className="text-xs text-muted-foreground">
-            Required. For example, the level, block or area this survey covers.
-          </p>
-        </div>
 
         <div className="space-y-2">
           <Label htmlFor="report-reference">Report reference</Label>
@@ -340,7 +322,6 @@ function NewReport() {
           disabled={
             !selected ||
             !effectiveProjectId ||
-            titleInvalid ||
             mutation.isPending ||
             usage.exhausted
           }

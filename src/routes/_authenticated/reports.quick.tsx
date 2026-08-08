@@ -48,7 +48,6 @@ function QuickReport() {
   const usage = usePlanUsage(organisationId);
 
   const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
-  const [title, setTitle] = useState("");
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
 
@@ -60,7 +59,7 @@ function QuickReport() {
         organisationId,
         projectId: null,
         isQuick: true,
-        title: title.trim() || `${definitionLabel(snapshotOf(selected))} — ${todayLabel()}`,
+        title: `${definitionLabel(snapshotOf(selected))} — ${todayLabel()}`,
         reference: "",
         definition: snapshotOf(selected),
         authorId: userId,
@@ -148,29 +147,6 @@ function QuickReport() {
             })}
           </div>
         </fieldset>
-      </section>
-
-      <section aria-labelledby="title-heading" className="mt-10 max-w-xl">
-        <h2 id="title-heading" className="text-lg font-semibold">
-          Title
-        </h2>
-        <div className="mt-3">
-          <Label htmlFor="quick-title">Report title (optional)</Label>
-          <Input
-            id="quick-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder={
-              selected
-                ? `${definitionLabel(snapshotOf(selected))} — ${todayLabel()}`
-                : "Site walk"
-            }
-            className="mt-1.5 h-12"
-          />
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Leave it blank and today's date is used.
-          </p>
-        </div>
       </section>
 
       <div className="sticky bottom-20 z-20 mt-10 sm:bottom-4">
