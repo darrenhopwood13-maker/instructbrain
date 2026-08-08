@@ -72,7 +72,7 @@ function Landing() {
       <LandingHeader />
 
       <main id="main" className="flex-1">
-        <Hero />
+        <Hero signedIn={!!user} />
         <RoiSection />
         <UseCases />
         <HowItWorks />
@@ -103,7 +103,7 @@ function Wordmark() {
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
+    <header className="glass-panel sticky top-0 z-30 border-x-0 border-t-0">
       <div className="shell-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4">
         <Link to="/" className="flex min-w-0 items-center gap-3 rounded-md">
           <Wordmark />
