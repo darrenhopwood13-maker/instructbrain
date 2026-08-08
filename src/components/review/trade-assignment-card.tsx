@@ -44,7 +44,10 @@ export function TradeAssignmentCard({
   const assigned = finding.assignedTrade ?? null;
   const suggested = finding.aiSuggestedTrade ?? null;
 
-  const [draft, setDraft] = useState<string>(assigned ?? "");
+  // The suggestion is pre-selected so confirming it is one tap. It is only a
+  // draft in the picker: nothing is stored until a person saves (Invariant 6).
+  const [draft, setDraft] = useState<string>(assigned ?? suggested ?? "");
+
   const [freeText, setFreeText] = useState("");
   const [dueDraft, setDueDraft] = useState<string>(finding.dueDate ?? "");
   const [saving, setSaving] = useState(false);
