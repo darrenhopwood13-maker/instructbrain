@@ -118,7 +118,8 @@ function AdminConsole() {
           <LoadingState label="Loading organisations" />
         ) : organisations.error ? (
           <ErrorState
-            error={organisations.error as Error}
+            title="Organisations could not be loaded"
+            error={organisations.error}
             onRetry={() => void organisations.refetch()}
           />
         ) : (organisations.data ?? []).length === 0 ? (
@@ -127,10 +128,11 @@ function AdminConsole() {
           <ul className="mt-4 space-y-3">
             {(organisations.data ?? []).map((org) => (
               <li key={org.id}>
-                <FieldCard
-                  title={org.name}
-                  description={`${org.members} member${org.members === 1 ? "" : "s"} · ${org.projects} project${org.projects === 1 ? "" : "s"} · ${org.reports} report${org.reports === 1 ? "" : "s"} · created ${formatDate(org.createdAt)}`}
-                >
+                <FieldCard label={org.name}>
+                  <p className="text-sm text-muted-foreground">
+                    {`${org.members} member${org.members === 1 ? "" : "s"} · ${org.projects} project${org.projects === 1 ? "" : "s"} · ${org.reports} report${org.reports === 1 ? "" : "s"} · created ${formatDate(org.createdAt)}`}
+                  </p>
+                  <div className="mt-3" />
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm text-muted-foreground">Plan</span>
                     <Select
@@ -169,7 +171,11 @@ function AdminConsole() {
         {signUps.isPending ? (
           <LoadingState label="Loading sign-ups" />
         ) : signUps.error ? (
-          <ErrorState error={signUps.error as Error} onRetry={() => void signUps.refetch()} />
+          <ErrorState
+            title="Sign-ups could not be loaded"
+            error={signUps.error}
+            onRetry={() => void signUps.refetch()}
+          />
         ) : (
           <ul className="mt-4 space-y-3">
             {(signUps.data ?? []).map((user) => (
