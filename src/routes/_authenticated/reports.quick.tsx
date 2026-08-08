@@ -140,7 +140,8 @@ function QuickReport() {
                     ) : null}
                   </span>
                   <span className="mt-2 text-sm text-muted-foreground">
-                    {definition.description ?? "Survey type"}
+                    {definition.statuses.length} statuses ·{" "}
+                    {definition.captureFields?.length ?? 0} capture fields
                   </span>
                 </label>
               );

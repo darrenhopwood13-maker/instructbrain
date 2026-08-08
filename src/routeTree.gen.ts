@@ -27,6 +27,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
+import { Route as AuthenticatedReportsQuickRouteImport } from './routes/_authenticated/reports.quick'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings.account'
 import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
 import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
@@ -129,6 +130,12 @@ const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   path: '/reports/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsQuickRoute =
+  AuthenticatedReportsQuickRouteImport.update({
+    id: '/reports/quick',
+    path: '/reports/quick',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsAccountRoute =
   AuthenticatedSettingsAccountRouteImport.update({
     id: '/settings/account',
@@ -212,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -241,6 +249,7 @@ export interface FileRoutesByTo {
   '/trade/$token': typeof TradeTokenRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
+    | '/reports/quick'
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/trade/$token'
     | '/reports/$id'
     | '/reports/new'
+    | '/reports/quick'
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
+    | '/_authenticated/reports/quick'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/directory'
     | '/_authenticated/settings/organisation'
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/quick': {
+      id: '/_authenticated/reports/quick'
+      path: '/reports/quick'
+      fullPath: '/reports/quick'
+      preLoaderRoute: typeof AuthenticatedReportsQuickRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/account': {
       id: '/_authenticated/settings/account'
       path: '/settings/account'
@@ -648,6 +668,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRouteWithChildren
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedReportsQuickRoute: typeof AuthenticatedReportsQuickRoute
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
@@ -660,6 +681,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRouteWithChildren,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedReportsQuickRoute: AuthenticatedReportsQuickRoute,
   AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
   AuthenticatedSettingsDirectoryRoute: AuthenticatedSettingsDirectoryRoute,
   AuthenticatedSettingsOrganisationRoute:
