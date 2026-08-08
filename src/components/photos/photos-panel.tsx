@@ -57,10 +57,14 @@ type Pending = { id: string; file: File; captureFields: Record<string, string> }
 export function PhotosPanel({
   reportId,
   snapshot,
+  initialFiles,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
+  /** Files already chosen before the report existed (quick capture). */
+  initialFiles?: File[];
 }) {
+
   const { session, loading: sessionLoading } = useSession();
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
@@ -212,6 +216,20 @@ export function PhotosPanel({
     },
     [runQueue, zoneValues, remainingPhotos, photoCap],
   );
+
+  // Quick capture picks the photographs before the report exists; they are
+  // enqueued once, as soon as this panel is able to upload.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current) return;
+    if (ready !== "ready" || !organisationId) return;
+    if (!initialFiles || initialFiles.length === 0) return;
+    seededRef.current = true;
+    const transfer = new DataTransfer();
+    for (const file of initialFiles) transfer.items.add(file);
+    addFiles(transfer.files);
+  }, [ready, organisationId, initialFiles, addFiles]);
+
 
   const retry = useCallback(
     (ids: string[]) => {
