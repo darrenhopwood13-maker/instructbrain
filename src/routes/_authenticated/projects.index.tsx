@@ -54,11 +54,20 @@ function ProjectsIndex() {
               : "Open a project to review its reports and outstanding items."}
           </p>
         </div>
-        <Button variant="brand" className="shrink-0" onClick={() => setCreating(true)}>
-          <Plus aria-hidden="true" />
-          <span className="hidden sm:inline">New project</span>
-          <span className="sr-only sm:hidden">New project</span>
-        </Button>
+        <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          <Button variant="quiet" asChild>
+            <Link to="/reports/quick">
+              <Zap aria-hidden="true" />
+              Quick report
+            </Link>
+          </Button>
+          <Button variant="brand" onClick={() => setCreating(true)}>
+            <Plus aria-hidden="true" />
+            <span className="hidden sm:inline">New project</span>
+            <span className="sr-only sm:hidden">New project</span>
+          </Button>
+        </div>
+
       </header>
 
       <PlanUsageMeter usage={usage} className="mb-8 max-w-xl" />
