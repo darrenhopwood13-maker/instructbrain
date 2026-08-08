@@ -94,10 +94,13 @@ export const reportDocumentQuery = (reportId: string) =>
       if (!report) return null;
 
       const [projects, organisations, findingRows, photoRows] = await Promise.all([
-        from("projects")
-          .select("id, name, reference, client_name, address, principal_contractor")
-          .eq("id", report.project_id)
-          .limit(1),
+        report.project_id
+          ? from("projects")
+              .select("id, name, reference, client_name, address, principal_contractor")
+              .eq("id", report.project_id)
+              .limit(1)
+          : Promise.resolve({ data: [], error: null }),
+
         from("organisations")
           .select("id, name, brand_colour, logo_path, address")
           .eq("id", report.organisation_id)

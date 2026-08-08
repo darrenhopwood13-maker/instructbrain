@@ -322,12 +322,18 @@ export const reportQuery = (reportId: string) =>
       const row = rows[0];
       if (!row) return null;
       const counts = await countsFor([row.id]);
-      const projects = unwrap(
-        await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor")
-          .eq("id", row.project_id)
-          .limit(1),
-      ) as ProjectRow[];
+      // A quick report has no project behind it: skip the lookup entirely.
+      const projects = row.project_id
+        ? ((unwrap(
+            await from("projects")
+              .select(
+                "id, organisation_id, name, reference, client_name, address, principal_contractor",
+              )
+              .eq("id", row.project_id)
+              .limit(1),
+          ) as ProjectRow[]) ?? [])
+        : [];
+
       return {
         report: toReport(row, counts.photos.get(row.id) ?? 0, counts.findings.get(row.id) ?? 0),
         project: projects[0] ? toProject(projects[0], 0, 0) : null,
