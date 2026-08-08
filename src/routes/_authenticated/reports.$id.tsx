@@ -351,10 +351,28 @@ function ReportWorkspace() {
                 />
               </section>
 
+              {translation.loading ? (
+                <p role="status" aria-live="polite" className="mt-4 text-sm text-muted-foreground">
+                  Translating this report…
+                </p>
+              ) : null}
+              {translation.error ? (
+                <p role="alert" className="mt-4 text-sm text-fail">
+                  This report could not be translated: {translation.error.message} The English
+                  version is shown.
+                </p>
+              ) : null}
+              {translation.isTranslatedView ? (
+                <p className="mt-4 rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
+                  You are reading a translation into {translation.language}. English remains the
+                  record copy, so editing is off until you revert to English.
+                </p>
+              ) : null}
+
               <div className="paper paper-sheet px-5 py-8 sm:px-10 sm:py-12">
                 <ReportDocumentView
-                  document={doc}
-                  editable={!locked}
+                  document={translation.document ?? doc}
+                  editable={!locked && !translation.isTranslatedView}
                   onReportPatch={onReportPatch}
                   onFindingPatch={onFindingPatch}
                 />
