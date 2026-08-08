@@ -80,7 +80,7 @@ function AuthCallback() {
       toast.success("Organisation created", {
         description: "You are the owner and can invite colleagues from Settings.",
       });
-      navigate({ to: "/projects", replace: true });
+      navigate({ to: destination, replace: true });
     } catch (error) {
       toast.error("Could not create the organisation", {
         description: error instanceof Error ? error.message : "Please try again.",
