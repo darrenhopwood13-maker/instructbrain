@@ -25,7 +25,10 @@ export const Route = createFileRoute("/auth/callback")({
 
 function AuthCallback() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const destination = next ?? "/projects";
   const { user, loading } = useSession();
+
   const [needsOrganisation, setNeedsOrganisation] = useState(false);
   const [orgName, setOrgName] = useState("");
   const [busy, setBusy] = useState(false);
