@@ -23,6 +23,7 @@ import {
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel } from "@/lib/survey-types";
+import { itemLabel } from "@/lib/item-label";
 
 
 export const Route = createFileRoute("/_authenticated/projects/$id/")({
@@ -229,7 +230,7 @@ function ProjectDashboard() {
                     className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="eyebrow">{item.ref}</p>
+                      <p className="eyebrow">{itemLabel(item.ref)}</p>
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-fail/25 bg-fail-soft px-2.5 py-0.5 text-xs font-semibold text-fail">
                         <span aria-hidden="true" className="text-[0.7em] leading-none">
                           !

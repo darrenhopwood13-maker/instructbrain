@@ -36,6 +36,7 @@ import {
 } from "@/lib/report/report-data";
 import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
+import { itemLabels } from "@/lib/item-label";
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
@@ -224,21 +225,21 @@ function IssueDialog({
                 <li>
                   {blockers.notAssessed.length} finding
                   {blockers.notAssessed.length === 1 ? " is" : "s are"} still not assessed:{" "}
-                  {blockers.notAssessed.map((finding) => finding.ref).join(", ")}
+                  {itemLabels(blockers.notAssessed.map((finding) => finding.ref))}
                 </li>
               ) : null}
               {blockers.tradeMissing.length > 0 ? (
                 <li>
                   {blockers.tradeMissing.length} finding
                   {blockers.tradeMissing.length === 1 ? " has" : "s have"} no confirmed responsible
-                  trade: {blockers.tradeMissing.map((finding) => finding.ref).join(", ")}
+                  trade: {itemLabels(blockers.tradeMissing.map((finding) => finding.ref))}
                 </li>
               ) : null}
               {blockers.unconfirmed.length > 0 ? (
                 <li>
                   {blockers.unconfirmed.length} finding
                   {blockers.unconfirmed.length === 1 ? " has" : "s have"} not been confirmed by a
-                  person: {blockers.unconfirmed.map((finding) => finding.ref).join(", ")}
+                  person: {itemLabels(blockers.unconfirmed.map((finding) => finding.ref))}
                 </li>
               ) : null}
             </ul>
