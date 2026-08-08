@@ -322,12 +322,18 @@ export const reportQuery = (reportId: string) =>
       const row = rows[0];
       if (!row) return null;
       const counts = await countsFor([row.id]);
-      const projects = unwrap(
-        await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor")
-          .eq("id", row.project_id)
-          .limit(1),
-      ) as ProjectRow[];
+      // A quick report has no project behind it: skip the lookup entirely.
+      const projects = row.project_id
+        ? ((unwrap(
+            await from("projects")
+              .select(
+                "id, organisation_id, name, reference, client_name, address, principal_contractor",
+              )
+              .eq("id", row.project_id)
+              .limit(1),
+          ) as ProjectRow[]) ?? [])
+        : [];
+
       return {
         report: toReport(row, counts.photos.get(row.id) ?? 0, counts.findings.get(row.id) ?? 0),
         project: projects[0] ? toProject(projects[0], 0, 0) : null,
@@ -337,12 +343,14 @@ export const reportQuery = (reportId: string) =>
 
 export type NewReport = {
   organisationId: string;
-  projectId: string;
+  /** Null for a quick report: it stands alone, with no project behind it. */
+  projectId: string | null;
   title: string;
   reference: string;
   definition: SurveyDefinition;
   surveyTypeId?: string | null;
   authorId: string | null;
+  isQuick?: boolean;
 };
 
 /**
@@ -359,9 +367,11 @@ export async function createReport(input: NewReport): Promise<string> {
       status: "draft",
       report_date: today(),
       author_id: input.authorId,
+      is_quick: input.isQuick ?? false,
       survey_type_snapshot: JSON.parse(JSON.stringify(input.definition)),
       ...(input.surveyTypeId ? { survey_type_id: input.surveyTypeId } : {}),
     })
+
     .select("id")
     .single();
   // A plan limit raised in the database must read like a sentence, not SQL.

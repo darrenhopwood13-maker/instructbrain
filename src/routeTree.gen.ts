@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -26,6 +27,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
+import { Route as AuthenticatedReportsQuickRouteImport } from './routes/_authenticated/reports.quick'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings.account'
 import { Route as AuthenticatedSettingsDirectoryRouteImport } from './routes/_authenticated/settings.directory'
 import { Route as AuthenticatedSettingsOrganisationRouteImport } from './routes/_authenticated/settings.organisation'
@@ -56,6 +58,11 @@ const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
   id: '/upgrade',
@@ -123,6 +130,12 @@ const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   path: '/reports/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsQuickRoute =
+  AuthenticatedReportsQuickRouteImport.update({
+    id: '/reports/quick',
+    path: '/reports/quick',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsAccountRoute =
   AuthenticatedSettingsAccountRouteImport.update({
     id: '/settings/account',
@@ -193,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -205,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -222,6 +237,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -233,6 +249,7 @@ export interface FileRoutesByTo {
   '/trade/$token': typeof TradeTokenRoute
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
+  '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -252,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -264,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
+  '/_authenticated/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/directory': typeof AuthenticatedSettingsDirectoryRoute
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
@@ -283,6 +302,7 @@ export interface FileRouteTypes {
     | '/'
     | '/privacy'
     | '/terms'
+    | '/admin'
     | '/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -295,6 +315,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/reports/$id'
     | '/reports/new'
+    | '/reports/quick'
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
@@ -312,6 +333,7 @@ export interface FileRouteTypes {
     | '/'
     | '/privacy'
     | '/terms'
+    | '/admin'
     | '/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -323,6 +345,7 @@ export interface FileRouteTypes {
     | '/trade/$token'
     | '/reports/$id'
     | '/reports/new'
+    | '/reports/quick'
     | '/settings/account'
     | '/settings/directory'
     | '/settings/organisation'
@@ -341,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/privacy'
     | '/terms'
+    | '/_authenticated/admin'
     | '/_authenticated/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -353,6 +377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
     | '/_authenticated/reports/new'
+    | '/_authenticated/reports/quick'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/directory'
     | '/_authenticated/settings/organisation'
@@ -414,6 +439,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/upgrade': {
       id: '/_authenticated/upgrade'
@@ -504,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/reports/new'
       fullPath: '/reports/new'
       preLoaderRoute: typeof AuthenticatedReportsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/quick': {
+      id: '/_authenticated/reports/quick'
+      path: '/reports/quick'
+      fullPath: '/reports/quick'
+      preLoaderRoute: typeof AuthenticatedReportsQuickRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/account': {
@@ -624,10 +663,12 @@ const AuthenticatedReportsIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRouteWithChildren
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
+  AuthenticatedReportsQuickRoute: typeof AuthenticatedReportsQuickRoute
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
@@ -635,10 +676,12 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRouteWithChildren,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
+  AuthenticatedReportsQuickRoute: AuthenticatedReportsQuickRoute,
   AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
   AuthenticatedSettingsDirectoryRoute: AuthenticatedSettingsDirectoryRoute,
   AuthenticatedSettingsOrganisationRoute:
@@ -669,13 +712,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

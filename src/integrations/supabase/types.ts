@@ -410,6 +410,54 @@ export type Database = {
           },
         ]
       }
+      finding_translations: {
+        Row: {
+          created_at: string
+          document: Json
+          id: string
+          language: string
+          organisation_id: string
+          report_id: string
+          source_checksum: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document: Json
+          id?: string
+          language: string
+          organisation_id: string
+          report_id: string
+          source_checksum: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document?: Json
+          id?: string
+          language?: string
+          organisation_id?: string
+          report_id?: string
+          source_checksum?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finding_translations_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finding_translations_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       findings: {
         Row: {
           ai_abstain_reason: string | null
@@ -715,6 +763,21 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          granted_at: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_directory: {
         Row: {
           company_name: string
@@ -945,10 +1008,11 @@ export type Database = {
           current_version: number
           executive_summary: string | null
           id: string
+          is_quick: boolean
           issued_at: string | null
           methodology_text: string | null
           organisation_id: string
-          project_id: string
+          project_id: string | null
           reference: string | null
           report_date: string
           scope_text: string | null
@@ -968,10 +1032,11 @@ export type Database = {
           current_version?: number
           executive_summary?: string | null
           id?: string
+          is_quick?: boolean
           issued_at?: string | null
           methodology_text?: string | null
           organisation_id: string
-          project_id: string
+          project_id?: string | null
           reference?: string | null
           report_date?: string
           scope_text?: string | null
@@ -991,10 +1056,11 @@ export type Database = {
           current_version?: number
           executive_summary?: string | null
           id?: string
+          is_quick?: boolean
           issued_at?: string | null
           methodology_text?: string | null
           organisation_id?: string
-          project_id?: string
+          project_id?: string | null
           reference?: string | null
           report_date?: string
           scope_text?: string | null
@@ -1157,6 +1223,7 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
       project_org: { Args: { _project_id: string }; Returns: string }
       report_org: { Args: { _report_id: string }; Returns: string }
       safe_uuid: { Args: { _t: string }; Returns: string }

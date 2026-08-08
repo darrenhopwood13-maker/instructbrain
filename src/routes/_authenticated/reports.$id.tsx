@@ -11,6 +11,7 @@ import { ReviewList, type ConfirmPatch } from "@/components/review-list";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { AnalysisPanel } from "@/components/ai/analysis-panel";
 import { ReportDocumentView } from "@/components/report/report-document-view";
+import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { ReportActions } from "@/components/report/report-actions";
 import { InlineField } from "@/components/report/inline-field";
 
@@ -65,6 +66,7 @@ function ReportWorkspace() {
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
   const versions = useQuery(reportVersionsQuery(id));
+  const translation = useReportTranslation(id, document.data ?? null);
   const projectId = query.data?.project?.id ?? null;
   const directory = useQuery(projectDirectoryQuery(projectId));
 
@@ -351,10 +353,28 @@ function ReportWorkspace() {
                 />
               </section>
 
+              {translation.loading ? (
+                <p role="status" aria-live="polite" className="mt-4 text-sm text-muted-foreground">
+                  Translating this report…
+                </p>
+              ) : null}
+              {translation.error ? (
+                <p role="alert" className="mt-4 text-sm text-fail">
+                  This report could not be translated: {translation.error.message} The English
+                  version is shown.
+                </p>
+              ) : null}
+              {translation.isTranslatedView ? (
+                <p className="mt-4 rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
+                  You are reading a translation into {translation.language}. English remains the
+                  record copy, so editing is off until you revert to English.
+                </p>
+              ) : null}
+
               <div className="paper paper-sheet px-5 py-8 sm:px-10 sm:py-12">
                 <ReportDocumentView
-                  document={doc}
-                  editable={!locked}
+                  document={translation.document ?? doc}
+                  editable={!locked && !translation.isTranslatedView}
                   onReportPatch={onReportPatch}
                   onFindingPatch={onFindingPatch}
                 />

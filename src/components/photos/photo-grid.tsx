@@ -71,17 +71,20 @@ export function PhotoGrid({
                   </div>
                 )}
               </button>
-              <div className="absolute left-2 top-2 rounded-md bg-background/90 p-1.5">
+              {/* Compact chip: the visible control stays small so it never
+                  covers the photograph, while the tap area stays at 44px. */}
+              <div className="absolute left-1 top-1 rounded-full bg-background/85 p-0.5 shadow-sm">
                 <Checkbox
                   checked={isSelected}
                   onClick={(event) => onToggle(photo.id, (event as React.MouseEvent).shiftKey)}
                   aria-label={`Select photograph ${photo.sequence}`}
-                  className="size-5"
+                  className="size-4 rounded-full after:absolute after:-inset-2.5 after:content-['']"
                 />
               </div>
-              <span className="absolute right-2 top-2 rounded-md bg-background/90 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+              <span className="absolute right-1 top-1 rounded-md bg-background/85 px-1 py-0.5 text-[0.6875rem] font-semibold tabular-nums">
                 #{photo.sequence}
               </span>
+
             </div>
 
             <div className="p-2.5">
