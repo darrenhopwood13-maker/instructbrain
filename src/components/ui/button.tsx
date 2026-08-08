@@ -9,16 +9,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "gloss font-bold",
+        default: "glass-orange focus-visible:ring-brand-accent",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline: "glass-accent font-bold",
-        secondary: "glass font-semibold",
+        outline: "glass-navy focus-visible:ring-brand-accent",
+        secondary: "glass-navy focus-visible:ring-brand-accent",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-brand-accent-ink underline-offset-4 hover:underline",
-        brand: "gloss font-bold focus-visible:ring-brand-accent",
+        brand: "glass-orange focus-visible:ring-brand-accent",
         quiet: "glass font-medium",
         "glass-orange": "glass-orange focus-visible:ring-brand-accent",
       },
+
       size: {
         default: "h-11 px-5 py-2",
         sm: "h-9 rounded-md px-3 text-xs sm:h-8",

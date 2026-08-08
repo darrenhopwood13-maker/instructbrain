@@ -478,9 +478,11 @@
 }
 
 /* Orange mesomorphic glass — translucent orange fill, navy label, 3D navy edge.
-   Matches instructSite's hero control. */
+   Ported from instructSite's `glass-orange`, plus its glossy top sheen. */
 @utility glass-orange {
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background-image: var(--gradient-glass-orange);
   backdrop-filter: blur(12px) saturate(160%);
   border: 2px solid oklch(0.26 0.072 263 / 90%);
@@ -497,7 +499,20 @@
     transform 0.18s ease,
     box-shadow 0.18s ease,
     background 0.18s ease,
+    color 0.18s ease,
     border-color 0.18s ease;
+
+  /* The glossy sheen the instructSite tiles carry. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 46%;
+    border-radius: inherit;
+    background: linear-gradient(180deg, oklch(1 0 0 / 42%), transparent);
+    pointer-events: none;
+    z-index: -1;
+  }
 
   & svg {
     color: var(--glass-orange-ink);
@@ -521,7 +536,85 @@
       0 1px 0 0 oklch(0.26 0.072 263 / 95%),
       0 4px 10px -4px oklch(0.686 0.21 41.1 / 50%);
   }
+
+  &:disabled {
+    color: oklch(0.26 0.072 263 / 75%);
+    border-color: oklch(0.26 0.072 263 / 55%);
+    box-shadow:
+      0 3px 0 0 oklch(0.26 0.072 263 / 55%),
+      0 6px 14px -6px oklch(0.686 0.21 41.1 / 40%);
+  }
 }
+
+/* Navy counterpart — translucent navy fill, white label, 3D orange edge. */
+@utility glass-navy {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image: linear-gradient(
+    180deg,
+    oklch(0.323 0.059 262.7 / 88%) 0%,
+    oklch(0.323 0.059 262.7 / 72%) 100%
+  );
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 2px solid oklch(0.686 0.21 41.1 / 85%);
+  border-radius: 14px;
+  color: var(--color-foreground);
+  font-weight: 700;
+  text-shadow: 0 1px 2px oklch(0 0 0 / 35%);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 18%) inset,
+    0 -1px 0 oklch(0 0 0 / 35%) inset,
+    0 4px 0 0 oklch(0.686 0.21 41.1 / 90%),
+    0 10px 22px -8px oklch(0 0 0 / 55%);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 46%;
+    border-radius: inherit;
+    background: linear-gradient(180deg, oklch(1 0 0 / 18%), transparent);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  & svg {
+    color: var(--brand-accent);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(1px);
+    border-color: var(--brand-accent);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 25%) inset,
+      0 -1px 0 oklch(0 0 0 / 40%) inset,
+      0 3px 0 0 var(--brand-accent),
+      0 8px 18px -6px oklch(0.686 0.21 41.1 / 55%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 15%) inset,
+      0 1px 0 0 oklch(0.686 0.21 41.1 / 90%),
+      0 4px 10px -4px oklch(0 0 0 / 55%);
+  }
+
+  &:disabled {
+    border-color: oklch(0.686 0.21 41.1 / 55%);
+    box-shadow:
+      0 3px 0 0 oklch(0.686 0.21 41.1 / 55%),
+      0 6px 14px -6px oklch(0 0 0 / 40%);
+  }
+}
+
 
 /* Frosted console panel — the instructSite section surface. */
 @utility glass-panel {
