@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { distributionPlanQuery, findPlanRow } from "@/lib/distribution/distribution-data";
 import { formatDocumentDate } from "@/lib/report/document";
 import { formatTarget } from "@/lib/findings/due-date";
+import { itemLabel } from "@/lib/item-label";
 
 /**
  * A per-trade extract, print-styled exactly like the main report so the two
@@ -126,7 +127,7 @@ function PrintExtract() {
           {doc.items.map((item) => (
             <article key={item.ref} className="rule-top break-inside-avoid pt-4">
               <div className="flex flex-wrap items-baseline gap-3">
-                <span className="eyebrow">{item.ref}</span>
+                <span className="eyebrow">{itemLabel(item.ref)}</span>
                 <span className="text-sm font-semibold">
                   {item.severityLabel || "Severity not recorded"}
                 </span>

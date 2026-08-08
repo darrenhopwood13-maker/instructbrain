@@ -112,7 +112,7 @@ export const SECTION_LABELS: Record<string, string> = {
   cover: "Cover",
   scope: "Scope and limitations",
   methodology: "Methodology",
-  summary: "Executive summary",
+  summary: "Report summary",
   schedule: "Schedule of findings",
   schedule_by_trade: "Schedule of findings by trade",
   schedule_by_area: "Schedule of findings by area",

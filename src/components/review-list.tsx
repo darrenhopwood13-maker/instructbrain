@@ -24,6 +24,7 @@ import {
 } from "@/components/review/trade-assignment-card";
 import { AlertTriangle, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { itemLabel } from "@/lib/item-label";
 
 /**
  * Keyboard-first review list. j/k move, per-status shortcut keys set status,
@@ -350,7 +351,7 @@ export function ReviewList({
               )}
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="eyebrow">{item.ref}</span>
+                <span className="eyebrow">{itemLabel(item.ref)}</span>
                 {item.aiDrafted ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-brand-accent/25 bg-brand-accent-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
                     <Sparkles aria-hidden="true" className="size-3" />

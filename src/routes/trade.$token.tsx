@@ -9,6 +9,7 @@ import { allowedTransitions, lifecycleLabels, type LifecycleState } from "@/lib/
 import { formatTarget } from "@/lib/findings/due-date";
 import { resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
+import { itemLabel } from "@/lib/item-label";
 
 /**
  * The subcontractor's front door. No account, one trade, one report.
@@ -240,7 +241,7 @@ function ItemCard({
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-surface-raised">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border px-4 py-3">
-        <span className="eyebrow">{item.ref}</span>
+        <span className="eyebrow">{itemLabel(item.ref)}</span>
         <span className="text-sm font-semibold">{severityLabel ?? "Severity not recorded"}</span>
         <span className="ml-auto text-sm text-muted-foreground">
           Target: {formatTarget(snapshot, item.severity, item.dueDate)}
@@ -259,7 +260,7 @@ function ItemCard({
                 <img
                   key={photo.id}
                   src={photo.url}
-                  alt={`Photograph of item ${item.ref}`}
+                  alt={`Photograph of ${itemLabel(item.ref)}`}
                   loading="lazy"
                   className="h-32 w-32 shrink-0 rounded-lg object-cover"
                 />
@@ -293,7 +294,7 @@ function ItemCard({
                 <img
                   key={photo.id}
                   src={photo.url}
-                  alt={`Close-out photograph for item ${item.ref}`}
+                  alt={`Close-out photograph for ${itemLabel(item.ref)}`}
                   loading="lazy"
                   className="h-24 w-24 shrink-0 rounded-lg object-cover"
                 />

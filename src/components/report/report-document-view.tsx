@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
 import { InlineField } from "@/components/report/inline-field";
@@ -6,12 +6,18 @@ import {
   documentSections,
   documentStatistics,
   formatDocumentDate,
-  groupFindings,
-  groupingForSection,
   sectionLabel,
   type DocFinding,
   type ReportDocument,
 } from "@/lib/report/document";
+import {
+  RESULT_VIEWS,
+  RESULT_VIEW_LABELS,
+  groupResults,
+  safeResultView,
+  type ResultView,
+} from "@/lib/report/grouping";
+import { itemLabel, itemLabels } from "@/lib/item-label";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
@@ -32,6 +38,10 @@ import { AlertTriangle, Lock } from "lucide-react";
 /**
  * The assembled document, on screen and in print. Section order comes from the
  * snapshot's outputSections — never from a list in this file.
+ *
+ * The findings are one set of results, read three ways (trade, severity,
+ * deadline). Every item appears exactly once in whichever view is selected,
+ * and the selected view is the order the PDF and the share link use.
  */
 
 type Handlers = {
@@ -47,11 +57,28 @@ export function ReportDocumentView({
   document,
   editable = false,
   print = false,
+  view,
+  onViewChange,
   onReportPatch,
   onFindingPatch,
-}: { document: ReportDocument; editable?: boolean; print?: boolean } & Handlers) {
+}: {
+  document: ReportDocument;
+  editable?: boolean;
+  print?: boolean;
+  view?: ResultView;
+  onViewChange?: (next: ResultView) => void;
+} & Handlers) {
   const sections = documentSections(document.snapshot);
   const readOnly = !editable || !onReportPatch;
+  const [localView, setLocalView] = useState<ResultView>(safeResultView(view));
+  const activeView = safeResultView(view ?? localView);
+  const setView = (next: ResultView) => {
+    setLocalView(next);
+    onViewChange?.(next);
+  };
+
+  // Several schedule sections collapse into one set of results.
+  let resultsRendered = false;
 
   return (
     <article
@@ -62,18 +89,36 @@ export function ReportDocumentView({
           : undefined
       }
     >
-      {sections.map((section) => (
-        <Fragment key={section}>
-          <Section
-            section={section}
-            document={document}
-            readOnly={readOnly}
-            print={print}
-            {...(onReportPatch ? { onReportPatch } : {})}
-            {...(onFindingPatch ? { onFindingPatch } : {})}
-          />
-        </Fragment>
-      ))}
+      {sections.map((section) => {
+        if (section.startsWith("schedule")) {
+          if (resultsRendered) return null;
+          resultsRendered = true;
+          return (
+            <Fragment key={section}>
+              <Results
+                document={document}
+                readOnly={readOnly}
+                print={print}
+                view={activeView}
+                onViewChange={setView}
+                {...(onFindingPatch ? { onFindingPatch } : {})}
+              />
+            </Fragment>
+          );
+        }
+        return (
+          <Fragment key={section}>
+            <Section
+              section={section}
+              document={document}
+              readOnly={readOnly}
+              print={print}
+              {...(onReportPatch ? { onReportPatch } : {})}
+              {...(onFindingPatch ? { onFindingPatch } : {})}
+            />
+          </Fragment>
+        );
+      })}
     </article>
   );
 }
@@ -133,16 +178,9 @@ function Section({
     );
   }
 
-  if (section.startsWith("schedule")) {
-    return (
-      <Schedule
-        section={section}
-        document={document}
-        readOnly={readOnly}
-        {...(onFindingPatch ? { onFindingPatch } : {})}
-      />
-    );
-  }
+  // Schedules are rendered once, by the parent, as a single set of results.
+  if (section.startsWith("schedule")) return null;
+
 
   if (section === "appendix") return <Appendix document={document} print={print} />;
 
@@ -256,7 +294,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
         ) : null}
       </div>
 
-      {synthesis && (synthesis.actions.length > 0 || synthesis.patterns.length > 0) ? (
+      {synthesis && synthesis.patterns.length > 0 ? (
         <div
           className={
             document.report.synthesisConfirmed
@@ -269,22 +307,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
               AI-generated — not yet confirmed by a person
             </p>
           ) : null}
-          {synthesis.actions.length > 0 ? (
-            <>
-              <h3 className="editorial-title mt-2 text-base font-semibold">Prioritised actions</h3>
-              <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
-                {synthesis.actions.map((action, index) => (
-                  <li key={`${action.ref ?? "action"}-${index}`}>
-                    {action.ref ? <strong>{action.ref} — </strong> : null}
-                    {action.action}
-                    {action.priority ? (
-                      <span className="text-muted-foreground"> ({action.priority})</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ol>
-            </>
-          ) : null}
+
           {synthesis.patterns.length > 0 ? (
             <>
               <h3 className="editorial-title mt-4 text-base font-semibold">Patterns identified</h3>
@@ -295,7 +318,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
                     <span className="block text-muted-foreground">{pattern.detail}</span>
                     {pattern.refs.length > 0 ? (
                       <span className="block text-xs text-muted-foreground">
-                        Refs: {pattern.refs.join(", ")}
+                        Items: {itemLabels(pattern.refs)}
                       </span>
                     ) : null}
                   </li>
@@ -311,29 +334,73 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
 
 /* ------------------------------------------------------------------ */
 
-function Schedule({
-  section,
+function Results({
   document,
   readOnly,
+  print,
+  view,
+  onViewChange,
   onFindingPatch,
-}: { section: string; document: ReportDocument; readOnly: boolean } & Handlers) {
-  const groups = groupFindings(document.findings, groupingForSection(section));
+}: {
+  document: ReportDocument;
+  readOnly: boolean;
+  print: boolean;
+  view: ResultView;
+  onViewChange: (next: ResultView) => void;
+} & Handlers) {
+  const groups = groupResults(document, view);
 
   return (
-    <section aria-labelledby={`section-${section}`}>
-      <h2 id={`section-${section}`} className="editorial-title text-xl font-semibold">
-        {sectionLabel(section)}
-      </h2>
-      {document.findings.length === 0 ? (
+    <section aria-labelledby="section-results">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 id="section-results" className="editorial-title text-xl font-semibold">
+          Results
+        </h2>
+        {print ? (
+          <p className="text-xs text-muted-foreground">
+            Ordered {RESULT_VIEW_LABELS[view].toLowerCase()}
+          </p>
+        ) : (
+          <div
+            role="radiogroup"
+            aria-label="Order the results"
+            className="inline-flex rounded-lg border border-border bg-surface-sunken p-1"
+          >
+            {RESULT_VIEWS.map((option) => {
+              const active = option === view;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => onViewChange(option)}
+                  className={
+                    "min-h-9 rounded-md px-3 text-sm font-semibold transition-colors " +
+                    (active
+                      ? "bg-brand-accent text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  {RESULT_VIEW_LABELS[option]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          No findings have been recorded on this report yet.
+          No items have been recorded on this report yet.
         </p>
       ) : (
         groups.map((group) => (
           <div key={group.key} className="mt-5">
-            {groups.length > 1 || group.key !== "all" ? (
-              <h3 className="eyebrow border-b border-border pb-1.5">{group.label}</h3>
-            ) : null}
+            <h3 className="eyebrow border-b border-border pb-1.5">
+              {group.label} · {group.findings.length} item
+              {group.findings.length === 1 ? "" : "s"}
+            </h3>
             <ul className="mt-3 space-y-4">
               {group.findings.map((finding) => (
                 <li key={finding.id}>
@@ -401,8 +468,8 @@ function FindingRow({
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-surface-sunken px-2 py-0.5 font-mono text-xs font-semibold">
-              {finding.ref}
+            <span className="rounded-md bg-surface-sunken px-2 py-0.5 text-xs font-semibold">
+              {itemLabel(finding.ref)}
             </span>
             <StatusPill status={status} />
             {severity ? (

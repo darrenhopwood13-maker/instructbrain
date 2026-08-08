@@ -9,6 +9,8 @@
  * makes the confidentiality assertion below testable.
  */
 
+import { itemLabel } from "@/lib/item-label";
+
 export type EmailTemplateName =
   | "INVITE"
   | "REPORT_SHARED"
@@ -192,7 +194,7 @@ function definitions(rows: Array<[string, string]>): string {
 }
 
 function itemTable(items: ExtractItem[]): string {
-  const head = `<tr>${["Ref", "Location", "Required action", "Severity", "Target"]
+  const head = `<tr>${["Item", "Location", "Required action", "Severity", "Target"]
     .map(
       (label) =>
         `<th align="left" style="padding:6px 10px 6px 0;font-size:12px;color:${MUTED};border-bottom:1px solid ${RULE};font-weight:600;">${label}</th>`,
@@ -203,7 +205,7 @@ function itemTable(items: ExtractItem[]): string {
       (item) =>
         `<tr>` +
         [
-          item.ref,
+          itemLabel(item.ref),
           item.location || "—",
           item.action || "—",
           item.severityLabel || "Unclassified",
@@ -343,7 +345,7 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
     "",
     ...data.items.map(
       (item) =>
-        `${item.ref} — ${item.location || "location not recorded"} — ${item.action || "action not recorded"} — ${item.severityLabel || "Unclassified"} — target ${item.dueDate ?? "not set"}`,
+        `${itemLabel(item.ref)} — ${item.location || "location not recorded"} — ${item.action || "action not recorded"} — ${item.severityLabel || "Unclassified"} — target ${item.dueDate ?? "not set"}`,
     ),
     "",
     `Open the live item list: ${data.itemListUrl}`,
@@ -362,13 +364,13 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
 }
 
 function renderCloseOut(data: CloseOutPayload): RenderedEmail {
-  const subject = `Overdue: ${data.ref} — ${data.projectName}`;
+  const subject = `Overdue: ${itemLabel(data.ref)} — ${data.projectName}`;
   const html = shell(subject, [
-    h1(`${data.ref} is overdue`),
+    h1(`${itemLabel(data.ref)} is overdue`),
     p(`${data.sentByName} is asking for an update on the item below.`),
     definitions([
       ["Project", data.projectName],
-      ["Reference", data.ref],
+      ["Item", itemLabel(data.ref)],
       ["Location", data.location],
       ["Required action", data.requiredAction],
       ["Target date", data.targetDate ?? "Not set"],
@@ -377,12 +379,12 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
     small("Recording the close-out keeps the report complete and defensible."),
   ].join(""));
   const text = textShell([
-    `${data.ref} is overdue`,
+    `${itemLabel(data.ref)} is overdue`,
     "",
     `${data.sentByName} is asking for an update on the item below.`,
     "",
     `Project: ${data.projectName}`,
-    `Reference: ${data.ref}`,
+    `Item: ${itemLabel(data.ref)}`,
     `Location: ${data.location}`,
     `Required action: ${data.requiredAction}`,
     `Target date: ${data.targetDate ?? "Not set"}`,
