@@ -217,6 +217,20 @@ export function PhotosPanel({
     [runQueue, zoneValues, remainingPhotos, photoCap],
   );
 
+  // Quick capture picks the photographs before the report exists; they are
+  // enqueued once, as soon as this panel is able to upload.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current) return;
+    if (ready !== "ready" || !organisationId) return;
+    if (!initialFiles || initialFiles.length === 0) return;
+    seededRef.current = true;
+    const transfer = new DataTransfer();
+    for (const file of initialFiles) transfer.items.add(file);
+    addFiles(transfer.files);
+  }, [ready, organisationId, initialFiles, addFiles]);
+
+
   const retry = useCallback(
     (ids: string[]) => {
       const items = ids
