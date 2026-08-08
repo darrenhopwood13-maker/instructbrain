@@ -129,11 +129,15 @@ export function TradeAssignmentCard({
             className="mt-2 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
           >
             <option value="">No trade assigned</option>
+            {suggested && !inDirectory.has(suggested.toLowerCase()) ? (
+              <option value={suggested}>{suggested} (suggested, not in directory)</option>
+            ) : null}
             {tradeOptions.map((trade) => (
               <option key={trade} value={trade}>
                 {trade}
               </option>
             ))}
+
             <option value="__other__">Another trade…</option>
           </select>
 
