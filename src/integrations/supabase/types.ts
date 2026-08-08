@@ -1224,6 +1224,13 @@ export type Database = {
       }
       is_org_member: { Args: { _org: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      next_finding_ref: {
+        Args: { _prefix?: string; _report_id: string }
+        Returns: {
+          ref: string
+          sequence: number
+        }[]
+      }
       project_org: { Args: { _project_id: string }; Returns: string }
       report_org: { Args: { _report_id: string }; Returns: string }
       safe_uuid: { Args: { _t: string }; Returns: string }
