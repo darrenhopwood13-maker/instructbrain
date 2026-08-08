@@ -38,6 +38,8 @@ export const Route = createFileRoute("/auth/sign-up")({
 
 function SignUp() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
