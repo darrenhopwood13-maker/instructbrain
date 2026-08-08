@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { reportDocumentQuery } from "@/lib/report/report-data";
 import { formatDocumentDate } from "@/lib/report/document";
+import { safeResultView } from "@/lib/report/grouping";
 
 /**
  * The print surface. The browser's own print engine paginates and writes the
@@ -16,6 +17,7 @@ import { formatDocumentDate } from "@/lib/report/document";
 export const Route = createFileRoute("/_authenticated/reports/$id/print")({
   validateSearch: (search: Record<string, unknown>) => ({
     auto: search["auto"] === "1" || search["auto"] === true ? true : undefined,
+    view: safeResultView(search["view"]),
   }),
   head: () => {
     const title = "Report document — instructBrain";
@@ -35,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
 
 function PrintReport() {
   const { id } = Route.useParams();
-  const { auto } = Route.useSearch();
+  const { auto, view } = Route.useSearch();
   const query = useQuery(reportDocumentQuery(id));
   const document = query.data ?? null;
 
@@ -90,7 +92,7 @@ function PrintReport() {
       </div>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        <ReportDocumentView document={document} print />
+        <ReportDocumentView document={document} print view={view} />
       </main>
     </div>
 

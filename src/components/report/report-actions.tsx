@@ -54,14 +54,14 @@ export function ReportActions({
   const [shareOpen, setShareOpen] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
 
-  const printUrl = `/reports/${document.report.id}/print`;
+  const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
   const blockers = issueBlockers(document);
   const issued = document.report.status === "issued";
   // The report itself is the authority on which organisation owns it.
   const orgId = document.organisation?.id ?? organisationId ?? null;
 
   const openPrint = (auto: boolean) => {
-    const url = auto ? `${printUrl}?auto=1` : printUrl;
+    const url = auto ? `${printUrl}&auto=1` : printUrl;
     const opened = window.open(url, "_blank", "noopener");
     if (!opened) {
       // Popup blocked, or a mobile browser refused the new tab: go there in
