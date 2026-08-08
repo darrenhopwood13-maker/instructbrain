@@ -294,7 +294,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
         ) : null}
       </div>
 
-      {synthesis && (synthesis.actions.length > 0 || synthesis.patterns.length > 0) ? (
+      {synthesis && synthesis.patterns.length > 0 ? (
         <div
           className={
             document.report.synthesisConfirmed
@@ -307,22 +307,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
               AI-generated — not yet confirmed by a person
             </p>
           ) : null}
-          {synthesis.actions.length > 0 ? (
-            <>
-              <h3 className="editorial-title mt-2 text-base font-semibold">Prioritised actions</h3>
-              <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
-                {synthesis.actions.map((action, index) => (
-                  <li key={`${action.ref ?? "action"}-${index}`}>
-                    {action.ref ? <strong>{action.ref} — </strong> : null}
-                    {action.action}
-                    {action.priority ? (
-                      <span className="text-muted-foreground"> ({action.priority})</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ol>
-            </>
-          ) : null}
+
           {synthesis.patterns.length > 0 ? (
             <>
               <h3 className="editorial-title mt-4 text-base font-semibold">Patterns identified</h3>
