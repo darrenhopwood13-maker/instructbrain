@@ -352,47 +352,65 @@ export async function analysePhotoForReport(
 
   if (drafts.length === 0) return result;
 
-  // Invariant 4: refs continue from the highest ever issued, never from a count.
-  const { data: existingRows } = await table(client, "findings")
-    .select("ref, sequence")
-    .eq("report_id", input.reportId);
-  const existing = (existingRows ?? []) as Array<{ ref: string; sequence: number | null }>;
-  const refs = existing.map((row) => row.ref);
-  let sequence = existing.reduce((max, row) => Math.max(max, row.sequence ?? 0), 0);
-
   for (const draft of drafts) {
-    const ref = nextRef(refs);
-    refs.push(ref);
-    sequence += 1;
-
-    const { data: inserted, error } = await table(client, "findings")
-      .insert({
-        report_id: input.reportId,
-        ref,
-        sequence,
-        capture_fields: photo.capture_fields ?? {},
-        ai_raw_output: (raw ?? null) as never,
-        ...draft,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      result.error = `${ref}: ${error.message}`;
+    // Invariant 4: the database hands out the next ref under a per-report lock,
+    // so photographs analysed concurrently can never claim the same number.
+    const allocated = await allocateRef(client, input.reportId);
+    if (!allocated) {
+      result.error = "the item number could not be allocated.";
       continue;
     }
+    const { ref, sequence } = allocated;
 
-    result.findingsCreated += 1;
-    if (draft.status === NOT_ASSESSED_ID) result.notAssessed += 1;
-    if (draft.is_confidential) result.confidential += 1;
+    const insertDraft = async (payload: DraftFinding) =>
+      (await table(client, "findings")
+        .insert({
+          report_id: input.reportId,
+          ref,
+          sequence,
+          capture_fields: photo.capture_fields ?? {},
+          ai_raw_output: (raw ?? null) as never,
+          ...payload,
+        })
+        .select("id")
+        .single()) as { data: { id: string } | null; error: { message: string } | null };
+
+    let { data: inserted, error } = await insertDraft(draft);
+
+    if (error) {
+      // Invariant 1: a save failure must never lose the observation. It is
+      // written as not_assessed for a person to resolve, never discarded.
+      const fallback = notAssessedDraft(
+        `the observation could not be saved (${error.message}).`,
+        result.tier,
+        null,
+      );
+      const retry = await insertDraft(fallback);
+      if (retry.error) {
+        result.error = "the observation could not be saved. Try analysing this photograph again.";
+        continue;
+      }
+      inserted = retry.data;
+      error = null;
+      result.error = "one observation could not be saved and is marked Not assessed.";
+      result.findingsCreated += 1;
+      result.notAssessed += 1;
+    } else {
+      result.findingsCreated += 1;
+      if (draft.status === NOT_ASSESSED_ID) result.notAssessed += 1;
+      if (draft.is_confidential) result.confidential += 1;
+    }
+
+    if (!inserted) continue;
 
     const { error: linkError } = await table(client, "finding_photos").insert({
-      finding_id: (inserted as { id: string }).id,
+      finding_id: inserted.id,
       photo_id: photo.id,
       role: "primary",
     });
-    if (linkError) result.error = `${ref}: ${linkError.message}`;
+    if (linkError) result.error = "the photograph could not be linked to its item.";
   }
+
 
   return result;
 }
