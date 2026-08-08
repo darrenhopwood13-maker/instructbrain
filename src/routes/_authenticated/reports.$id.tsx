@@ -59,7 +59,6 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 
 function ReportWorkspace() {
   const { id } = Route.useParams();
-  const translation = useReportTranslation(id, null);
   const { tab } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId } = useOrganisations();
@@ -67,6 +66,7 @@ function ReportWorkspace() {
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
   const versions = useQuery(reportVersionsQuery(id));
+  const translation = useReportTranslation(id, document.data ?? null);
   const projectId = query.data?.project?.id ?? null;
   const directory = useQuery(projectDirectoryQuery(projectId));
 
