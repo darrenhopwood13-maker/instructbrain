@@ -61,7 +61,7 @@ function SignUp() {
     try {
       const { needsConfirmation } = await signUpWithPassword(email.trim(), password);
       if (needsConfirmation) setCheckEmail(true);
-      else navigate({ to: "/auth/callback", replace: true });
+      else navigate({ to: "/auth/callback", search: { next }, replace: true });
     } catch (error) {
       setFormError(describeAuthError(error));
     } finally {
