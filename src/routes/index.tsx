@@ -127,7 +127,7 @@ function LandingHeader() {
   );
 }
 
-function Hero() {
+function Hero({ signedIn }: { signedIn: boolean }) {
   return (
     <section className="shell-container py-16 lg:py-24">
       <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
@@ -148,18 +148,43 @@ function Hero() {
           signed-off PDF with per-trade extracts.
         </p>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button variant="brand" size="lg" asChild>
-            <Link to="/auth/sign-up">
-              Start free — 3 reports
-              <ArrowRight aria-hidden="true" />
-            </Link>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <Button variant="glass-orange" size="xl" className="w-full" asChild>
+            {signedIn ? (
+              <Link to="/reports/new">
+                Create project report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link to="/auth/sign-up" search={{ next: "/reports/new" as const }}>
+                Create project report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
           </Button>
-          <Button variant="outline" size="lg" asChild>
-            <a href="#how-it-works">See how it works</a>
+          <Button variant="glass-orange" size="xl" className="w-full" asChild>
+            {signedIn ? (
+              <Link to="/reports/quick">
+                Create quick report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link to="/auth/sign-up" search={{ next: "/reports/quick" as const }}>
+                Create quick report
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
           </Button>
         </div>
-        <p className="mt-5 text-sm text-muted-foreground">No card required.</p>
+        <p className="mt-6 text-sm text-muted-foreground">
+          Free for your first 3 reports. No card required.{" "}
+          <a
+            href="#how-it-works"
+            className="font-semibold text-brand-accent-ink underline underline-offset-4"
+          >
+            See how it works
+          </a>
+        </p>
       </div>
     </section>
   );
@@ -167,7 +192,7 @@ function Hero() {
 
 function RoiSection() {
   return (
-    <section className="paper border-y border-border py-20 lg:py-28" aria-labelledby="roi-heading">
+    <section className="py-20 lg:py-28" aria-labelledby="roi-heading">
       <div className="shell-container">
         <p className="eyebrow">What it gives you back</p>
         <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
@@ -177,13 +202,14 @@ function RoiSection() {
           The write-up is the expensive part of a survey, and it happens after hours. This is what
           it costs you now, and what it costs with instructBrain.
         </p>
-        <div className="mt-12">
+        <div className="glass-panel mt-12 rounded-2xl p-6 sm:p-8">
           <RoiRace />
         </div>
       </div>
     </section>
   );
 }
+
 
 const useCases = [
   {
