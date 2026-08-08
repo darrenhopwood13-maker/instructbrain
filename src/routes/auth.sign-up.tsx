@@ -12,6 +12,8 @@ import {
 } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/sign-up")({
+  validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search["next"]) }),
+
   head: () => ({
     meta: [
       { title: "Create an account — instructBrain" },
