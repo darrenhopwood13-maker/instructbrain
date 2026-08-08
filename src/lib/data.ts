@@ -337,12 +337,14 @@ export const reportQuery = (reportId: string) =>
 
 export type NewReport = {
   organisationId: string;
-  projectId: string;
+  /** Null for a quick report: it stands alone, with no project behind it. */
+  projectId: string | null;
   title: string;
   reference: string;
   definition: SurveyDefinition;
   surveyTypeId?: string | null;
   authorId: string | null;
+  isQuick?: boolean;
 };
 
 /**
@@ -359,9 +361,11 @@ export async function createReport(input: NewReport): Promise<string> {
       status: "draft",
       report_date: today(),
       author_id: input.authorId,
+      is_quick: input.isQuick ?? false,
       survey_type_snapshot: JSON.parse(JSON.stringify(input.definition)),
       ...(input.surveyTypeId ? { survey_type_id: input.surveyTypeId } : {}),
     })
+
     .select("id")
     .single();
   // A plan limit raised in the database must read like a sentence, not SQL.
