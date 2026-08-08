@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FolderOpen, ArrowRight, Plus } from "lucide-react";
+import { FolderOpen, ArrowRight, Plus, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
