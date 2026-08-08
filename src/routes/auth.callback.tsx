@@ -61,7 +61,7 @@ function AuthCallback() {
       .then((memberships) => {
         if (cancelled) return;
         if (memberships.length === 0) setNeedsOrganisation(true);
-        else navigate({ to: "/projects", replace: true });
+        else navigate({ to: destination, replace: true });
       })
       .catch(() => {
         if (!cancelled) setNeedsOrganisation(true);
@@ -69,7 +69,8 @@ function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, navigate, linkProblem]);
+  }, [loading, user, navigate, linkProblem, destination]);
+
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
