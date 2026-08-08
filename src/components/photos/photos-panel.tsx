@@ -57,10 +57,14 @@ type Pending = { id: string; file: File; captureFields: Record<string, string> }
 export function PhotosPanel({
   reportId,
   snapshot,
+  initialFiles,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
+  /** Files already chosen before the report existed (quick capture). */
+  initialFiles?: File[];
 }) {
+
   const { session, loading: sessionLoading } = useSession();
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
