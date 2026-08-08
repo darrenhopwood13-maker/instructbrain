@@ -127,57 +127,88 @@ function LandingHeader() {
   );
 }
 
-function Hero({ signedIn }: { signedIn: boolean }) {
+function ActionTile({
+  label,
+  sub,
+  icon: Icon,
+  to,
+  search,
+}: {
+  label: string;
+  sub: string;
+  icon: typeof ClipboardList;
+  to: string;
+  search?: { next: NextDestination };
+}) {
   return (
-    <section className="shell-container py-16 lg:py-24">
+    <div className="flex flex-col items-center gap-2 text-center">
+      <Link
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        to={to as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        search={search as any}
+        aria-label={label}
+        className="orb-tile group flex h-32 w-full items-center justify-center outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:h-40"
+      >
+        <Icon
+          aria-hidden="true"
+          className="relative size-10 text-primary-foreground drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110 sm:size-14"
+        />
+      </Link>
+      <span className="text-xs font-bold leading-tight tracking-wide text-foreground sm:text-sm">
+        {label}
+      </span>
+      <span className="sr-only">{sub}</span>
+    </div>
+  );
+}
+
+function Hero({ signedIn }: { signedIn: boolean }) {
+  const tile = (next: NextDestination) =>
+    signedIn ? { to: next } : { to: "/auth/sign-up", search: { next } };
+
+  return (
+    <section className="shell-container pb-12 pt-8 lg:pb-20 lg:pt-12">
       <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
         <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
       </p>
-      <div className="max-w-3xl">
-        <p className="mt-5 text-xl font-light leading-snug text-foreground/90 sm:text-2xl">
-          Photos in. Client-ready reports out.
-        </p>
-        <h1 className="editorial-title mt-10 text-4xl font-bold leading-[1.05] sm:text-5xl">
+      <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
+        Photos in. Client-ready reports out.
+      </p>
+
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-6">
+        <ActionTile
+          label="Project report"
+          sub="Create a full project report"
+          icon={ClipboardList}
+          {...tile("/reports/new")}
+        />
+        <ActionTile
+          label="Quick report"
+          sub="Create a quick report from photos"
+          icon={Camera}
+          {...tile("/reports/quick")}
+        />
+        <ActionTile
+          label="My reports"
+          sub="Open your existing reports"
+          icon={FolderOpen}
+          {...(signedIn ? { to: "/projects" } : { to: "/auth/sign-in" })}
+        />
+      </div>
+
+      <p className="mt-6 text-sm text-muted-foreground">
+        Free for your first 3 reports. No card required.
+      </p>
+
+      <div className="rule-top mt-8 max-w-3xl pt-8">
+        <h1 className="editorial-title text-2xl font-bold leading-tight sm:text-3xl">
           Walk the site. Issue the same afternoon.
         </h1>
-
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Upload the photographs from the walk. Every one is read against your chosen survey
-          type, drafted into referenced findings for you to confirm, and assembled into a
-          signed-off PDF with per-trade extracts.
-        </p>
-
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          <Button variant="glass-orange" size="xl" className="w-full" asChild>
-            {signedIn ? (
-              <Link to="/reports/new">
-                Create project report
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            ) : (
-              <Link to="/auth/sign-up" search={{ next: "/reports/new" as const }}>
-                Create project report
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            )}
-          </Button>
-          <Button variant="glass-orange" size="xl" className="w-full" asChild>
-            {signedIn ? (
-              <Link to="/reports/quick">
-                Create quick report
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            ) : (
-              <Link to="/auth/sign-up" search={{ next: "/reports/quick" as const }}>
-                Create quick report
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            )}
-          </Button>
-        </div>
-        <p className="mt-6 text-sm text-muted-foreground">
-          Free for your first 3 reports. No card required.{" "}
+        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+          Every photograph is read against your survey type and drafted into referenced
+          findings. Confirm them and issue a signed-off PDF with per-trade extracts.{" "}
           <a
             href="#how-it-works"
             className="font-semibold text-brand-accent-ink underline underline-offset-4"
@@ -189,6 +220,7 @@ function Hero({ signedIn }: { signedIn: boolean }) {
     </section>
   );
 }
+
 
 function RoiSection() {
   return (
