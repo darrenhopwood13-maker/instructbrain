@@ -17,7 +17,7 @@ import {
   safeResultView,
   type ResultView,
 } from "@/lib/report/grouping";
-import { itemLabel } from "@/lib/item-label";
+import { itemLabel, itemLabels } from "@/lib/item-label";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
@@ -318,7 +318,7 @@ function SummaryExtras({ document }: { document: ReportDocument }) {
                     <span className="block text-muted-foreground">{pattern.detail}</span>
                     {pattern.refs.length > 0 ? (
                       <span className="block text-xs text-muted-foreground">
-                        Refs: {pattern.refs.join(", ")}
+                        Items: {itemLabels(pattern.refs)}
                       </span>
                     ) : null}
                   </li>
@@ -468,8 +468,8 @@ function FindingRow({
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-surface-sunken px-2 py-0.5 font-mono text-xs font-semibold">
-              {finding.ref}
+            <span className="rounded-md bg-surface-sunken px-2 py-0.5 text-xs font-semibold">
+              {itemLabel(finding.ref)}
             </span>
             <StatusPill status={status} />
             {severity ? (
