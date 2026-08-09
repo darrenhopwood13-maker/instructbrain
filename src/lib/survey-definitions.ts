@@ -247,9 +247,9 @@ Select regulatory references only from the supplied list, at document level. Nev
 
 export const siteWalkDefinition: SurveyDefinition = {
   id: "site_walk",
-  version: 2,
+  version: 3,
   houseVoice: HOUSE_VOICE,
-  label: "Site walk — housekeeping & safety",
+  label: "Site condition",
   category: "site_walk",
   findingsPerPhoto: "multiple",
   statuses: [

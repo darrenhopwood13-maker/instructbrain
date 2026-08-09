@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FolderOpen, ArrowRight, Plus, Zap } from "lucide-react";
+import { FolderOpen, ArrowRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -55,12 +55,6 @@ function ProjectsIndex() {
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <Button variant="quiet" asChild>
-            <Link to="/reports/quick">
-              <Zap aria-hidden="true" />
-              Quick report
-            </Link>
-          </Button>
           <Button variant="brand" onClick={() => setCreating(true)}>
             <Plus aria-hidden="true" />
             <span className="hidden sm:inline">New project</span>

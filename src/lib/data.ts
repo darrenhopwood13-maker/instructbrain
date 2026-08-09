@@ -8,6 +8,7 @@ import {
   type Finding,
   type OverdueItem,
   type Project,
+  type RecentReport,
   type Report,
 } from "@/lib/types";
 
@@ -380,6 +381,16 @@ export async function createReport(input: NewReport): Promise<string> {
   return (data as { id: string }).id;
 }
 
+/**
+ * A quick report stands alone until someone chooses to attach it to a
+ * project. Once attached, the existing project-scoped distribution and
+ * directory machinery picks it up automatically — nothing else changes.
+ */
+export async function attachReportToProject(reportId: string, projectId: string): Promise<void> {
+  const { error } = await from("reports").update({ project_id: projectId }).eq("id", reportId);
+  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+}
+
 /* ------------------------------------------------------------------ */
 /* Findings                                                             */
 /* ------------------------------------------------------------------ */
@@ -491,6 +502,34 @@ function overdueLabel(dueDate: string): string {
   return `Overdue by ${days} day${days === 1 ? "" : "s"}`;
 }
 
+type OverdueFindingRow = {
+  id: string;
+  ref: string;
+  finding_text: string | null;
+  assigned_trade: string | null;
+  ai_suggested_trade: string | null;
+  severity: string | null;
+  due_date: string;
+  report_id: string;
+};
+
+function toOverdueItem(row: OverdueFindingRow): OverdueItem {
+  return {
+    id: row.id,
+    ref: row.ref,
+    title: row.finding_text?.split("\n")[0]?.trim() || "Finding awaiting description",
+    trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
+    due: overdueLabel(row.due_date),
+    reportId: row.report_id,
+    severityId: row.severity,
+    dueDate: row.due_date,
+    daysOverdue: daysPastDue(row.due_date),
+  };
+}
+
+const overdueFindingColumns =
+  "id, ref, finding_text, assigned_trade, ai_suggested_trade, severity, due_date, report_id";
+
 /**
  * Real overdue items: still open, with a target date already passed. Sorted by
  * how far past due, worst first — the thing a site manager needs to see is the
@@ -502,33 +541,66 @@ export const overdueItemsQuery = (projectId: string) =>
     queryFn: async (): Promise<OverdueItem[]> => {
       const rows = unwrap(
         await from("findings")
-          .select(
-            "id, ref, finding_text, assigned_trade, ai_suggested_trade, severity, due_date, report_id, reports!inner(project_id)",
-          )
+          .select(`${overdueFindingColumns}, reports!inner(project_id)`)
           .eq("reports.project_id", projectId)
           .in("lifecycle_state", ["open", "assigned", "in_progress", "fixed", "rejected"])
           .lt("due_date", today())
           .order("due_date", { ascending: true }),
+      ) as OverdueFindingRow[];
+      return rows.map(toOverdueItem);
+    },
+  });
+
+/** Same as overdueItemsQuery, but across every project AND every quick report
+ * in the organisation — the dashboard has no single project to scope to. */
+export const orgOverdueItemsQuery = (organisationIds: string[]) =>
+  queryOptions({
+    queryKey: ["overdue", "org", [...organisationIds].sort()],
+    enabled: organisationIds.length > 0,
+    queryFn: async (): Promise<OverdueItem[]> => {
+      const rows = unwrap(
+        await from("findings")
+          .select(`${overdueFindingColumns}, reports!inner(organisation_id)`)
+          .in("reports.organisation_id", organisationIds)
+          .in("lifecycle_state", ["open", "assigned", "in_progress", "fixed", "rejected"])
+          .lt("due_date", today())
+          .order("due_date", { ascending: true })
+          .limit(10),
+      ) as OverdueFindingRow[];
+      return rows.map(toOverdueItem);
+    },
+  });
+
+/** The most recently touched reports across the organisation, project-based
+ * and quick alike — the dashboard's "recent reports" list. */
+export const recentReportsQuery = (organisationIds: string[]) =>
+  queryOptions({
+    queryKey: ["reports", "recent", [...organisationIds].sort()],
+    enabled: organisationIds.length > 0,
+    queryFn: async (): Promise<RecentReport[]> => {
+      const rows = unwrap(
+        await from("reports")
+          .select("id, title, reference, status, updated_at, project_id, is_quick")
+          .in("organisation_id", organisationIds)
+          .order("updated_at", { ascending: false })
+          .limit(8),
       ) as Array<{
         id: string;
-        ref: string;
-        finding_text: string | null;
-        assigned_trade: string | null;
-        ai_suggested_trade: string | null;
-        severity: string | null;
-        due_date: string;
-        report_id: string;
+        title: string;
+        reference: string | null;
+        status: string;
+        updated_at: string;
+        project_id: string | null;
+        is_quick: boolean | null;
       }>;
       return rows.map((row) => ({
         id: row.id,
-        ref: row.ref,
-        title: row.finding_text?.split("\n")[0]?.trim() || "Finding awaiting description",
-        trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
-        due: overdueLabel(row.due_date),
-        reportId: row.report_id,
-        severityId: row.severity,
-        dueDate: row.due_date,
-        daysOverdue: daysPastDue(row.due_date),
+        title: row.title,
+        reference: row.reference ?? "No reference",
+        status: coerceReportStatus(row.status),
+        updated: dateFormatter.format(new Date(row.updated_at)),
+        projectId: row.project_id,
+        isQuick: row.is_quick === true,
       }));
     },
   });

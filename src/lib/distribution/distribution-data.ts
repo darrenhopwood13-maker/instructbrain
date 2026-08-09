@@ -5,8 +5,10 @@ import {
   buildExtractDocument,
   groupForDistribution,
   resolveGrouping,
+  toExtractItem,
   UNASSIGNED_GROUP,
   type ExtractDocument,
+  type ExtractSource,
   type GroupableFinding,
   type GroupingKey,
 } from "@/lib/distribution";
@@ -67,7 +69,8 @@ export type PlanRow = {
 
 export type DistributionPlan = {
   reportId: string;
-  projectId: string;
+  /** Null for a quick report: there is no project directory behind it. */
+  projectId: string | null;
   organisationId: string;
   reportTitle: string;
   reportReference: string | null;
@@ -78,6 +81,9 @@ export type DistributionPlan = {
   rows: PlanRow[];
   /** Confidential findings, counted only. They are never distributed. */
   withheldCount: number;
+  /** True when there is no project directory to route recipients from — the
+   * caller must collect a recipient by hand instead of picking one from rows. */
+  isQuick: boolean;
 };
 
 function toDelivery(row: Record<string, any>): DeliveryState {
@@ -89,6 +95,66 @@ function toDelivery(row: Record<string, any>): DeliveryState {
     openedAt: (row["opened_at"] as string | null) ?? null,
     error: (row["error"] as string | null) ?? null,
     recipientEmail: typeof snapshot["email"] === "string" ? (snapshot["email"] as string) : null,
+  };
+}
+
+/**
+ * A quick report has no project directory to route recipients from — one row
+ * covering every non-confidential finding, with no recipient prefilled. The
+ * caller (the distribution screen) collects an email address by hand.
+ */
+function buildQuickPlan(
+  reportId: string,
+  report: Record<string, any>,
+  findings: GroupableFinding[],
+  distributionRows: Array<Record<string, any>>,
+  snapshot: SurveyTypeSnapshot | null,
+  source: ExtractSource,
+): DistributionPlan {
+  const grouping = resolveGrouping(distributionGrouping(snapshot));
+  const included = findings.filter((finding) => !finding.isConfidential);
+  const group = {
+    key: "__report__",
+    label: "Whole report",
+    findings: included,
+    items: included.map((finding) => toExtractItem(finding, snapshot)),
+  };
+  const history = distributionRows.filter((candidate) => candidate["trade"] === null).map(toDelivery);
+
+  const rows: PlanRow[] =
+    included.length === 0
+      ? []
+      : [
+          {
+            key: group.key,
+            label: group.label,
+            unassigned: false,
+            itemCount: group.items.length,
+            severities: severityBreakdown(group.items),
+            earliestTarget: earliestTargetDate(group.items),
+            recipientName: null,
+            recipientEmail: null,
+            directoryId: null,
+            blockedReason: null,
+            document: buildExtractDocument(group, grouping, source),
+            latestDelivery: history[0] ?? null,
+            history,
+          },
+        ];
+
+  return {
+    reportId,
+    projectId: null,
+    organisationId: report["organisation_id"] as string,
+    reportTitle: source.reportTitle,
+    reportReference: source.reportReference,
+    reportStatus: (report["status"] as string) ?? "draft",
+    grouping,
+    snapshot,
+    fallback: { name: null, email: null },
+    rows,
+    withheldCount: findings.filter((finding) => finding.isConfidential).length,
+    isQuick: true,
   };
 }
 
@@ -108,7 +174,6 @@ export const distributionPlanQuery = (reportId: string) =>
       if (!report) throw new DataError("That report could not be found.");
 
       const snapshot = (report["survey_type_snapshot"] ?? null) as SurveyTypeSnapshot | null;
-      const grouping = resolveGrouping(distributionGrouping(snapshot));
       const project = (report["projects"] ?? {}) as Record<string, any>;
 
       const findingRows = unwrap(
@@ -133,24 +198,12 @@ export const distributionPlanQuery = (reportId: string) =>
         dueDate: (row["due_date"] as string | null) ?? null,
       }));
 
-      const directoryRows = unwrap(
-        await table("project_directory")
-          .select("id, trade, company_name, is_active, directory_contacts(name, email, is_primary)")
-          .eq("project_id", report["project_id"])
-          .eq("is_active", true),
-      ) as Array<Record<string, any>>;
-
       const distributionRows = unwrap(
         await table("distributions")
           .select("id, trade, status, sent_at, opened_at, error, recipient_snapshot, created_at")
           .eq("report_id", reportId)
           .order("created_at", { ascending: false }),
       ) as Array<Record<string, any>>;
-
-      const fallback = {
-        name: (project["fallback_recipient_name"] as string | null) ?? null,
-        email: (project["fallback_recipient_email"] as string | null) ?? null,
-      };
 
       const source = {
         projectName: (project["name"] as string) ?? "This project",
@@ -160,6 +213,24 @@ export const distributionPlanQuery = (reportId: string) =>
         reportDate: (report["report_date"] as string) ?? "",
         organisationName:
           ((report["organisations"] ?? {}) as Record<string, any>)["name"] ?? null,
+      };
+
+      if (!report["project_id"]) {
+        return buildQuickPlan(reportId, report, findings, distributionRows, snapshot, source);
+      }
+
+      const grouping = resolveGrouping(distributionGrouping(snapshot));
+
+      const directoryRows = unwrap(
+        await table("project_directory")
+          .select("id, trade, company_name, is_active, directory_contacts(name, email, is_primary)")
+          .eq("project_id", report["project_id"])
+          .eq("is_active", true),
+      ) as Array<Record<string, any>>;
+
+      const fallback = {
+        name: (project["fallback_recipient_name"] as string | null) ?? null,
+        email: (project["fallback_recipient_email"] as string | null) ?? null,
       };
 
       const rows: PlanRow[] = groupForDistribution(findings, grouping, snapshot).map((group) => {
@@ -220,6 +291,7 @@ export const distributionPlanQuery = (reportId: string) =>
         fallback,
         rows,
         withheldCount: findings.filter((finding) => finding.isConfidential).length,
+        isQuick: false,
       };
     },
   });

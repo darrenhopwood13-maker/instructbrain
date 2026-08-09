@@ -3,7 +3,12 @@
  * internal screens is accepted, so the parameter can never bounce someone
  * off-site.
  */
-export const NEXT_DESTINATIONS = ["/reports/new", "/reports/quick", "/projects"] as const;
+export const NEXT_DESTINATIONS = [
+  "/reports/new",
+  "/reports/quick",
+  "/projects",
+  "/dashboard",
+] as const;
 
 export type NextDestination = (typeof NEXT_DESTINATIONS)[number];
 

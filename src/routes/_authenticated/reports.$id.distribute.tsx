@@ -6,12 +6,18 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { EmptyState } from "@/components/empty-state";
 import { distributionPlanQuery, type PlanRow } from "@/lib/distribution/distribution-data";
 import { sendTradeExtract, retrySend } from "@/lib/email/email.functions";
 import { ensureTradeLink } from "@/lib/trade-access/trade-access";
 import { formatTarget } from "@/lib/findings/due-date";
+
+function isLikelyEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
 
 /**
  * The distribution review screen. NOTHING SENDS AUTOMATICALLY, EVER.
@@ -64,21 +70,32 @@ function DistributionReview() {
   const plan = useQuery(distributionPlanQuery(id));
   const [excluded, setExcluded] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  // Only used when the plan has no project directory to source a recipient from.
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
 
   const rows = useMemo(() => plan.data?.rows ?? [], [plan.data]);
+  const isQuick = plan.data?.isQuick === true;
   const sendable = rows.filter((row) => !excluded[row.key] && !row.blockedReason);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["distribution-plan", id] });
 
   const sendRow = async (row: PlanRow): Promise<boolean> => {
-    if (row.blockedReason || !row.recipientEmail) {
+    const email = isQuick ? manualEmail.trim() : row.recipientEmail;
+    const name = isQuick ? manualName.trim() || null : row.recipientName;
+
+    if (isQuick && !isLikelyEmail(manualEmail)) {
+      toast.error("Enter a recipient email address first");
+      return false;
+    }
+    if (row.blockedReason || !email) {
       toast.error("That row cannot be sent yet", { description: row.blockedReason ?? "" });
       return false;
     }
     setBusy(row.key);
     try {
       // A live, trade-scoped link so the recipient can respond without an account.
-      if (!row.unassigned && plan.data) {
+      if (!row.unassigned && !isQuick && plan.data) {
         await ensureTradeLink({
           reportId: id,
           organisationId: plan.data.organisationId,
@@ -88,9 +105,9 @@ function DistributionReview() {
       const outcome = await sendTradeExtract({
         data: {
           reportId: id,
-          trade: row.unassigned ? null : row.key,
-          email: row.recipientEmail,
-          name: row.recipientName,
+          trade: row.unassigned || isQuick ? null : row.key,
+          email,
+          name,
           directoryId: row.directoryId,
         },
       });
@@ -98,7 +115,7 @@ function DistributionReview() {
         toast.error(`${row.label} was not sent`, { description: outcome.error ?? "" });
         return false;
       }
-      toast.success(`Sent to ${row.recipientEmail}`, {
+      toast.success(`Sent to ${email}`, {
         description: `${row.itemCount} item${row.itemCount === 1 ? "" : "s"} for ${row.label}.`,
       });
       return true;
@@ -183,7 +200,7 @@ function DistributionReview() {
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          Projects
+          {data?.projectId ? "Projects" : "Quick reports"}
         </Link>
         <ChevronRight aria-hidden="true" className="mx-1 inline size-3.5 text-muted-foreground" />
         <Link
@@ -203,9 +220,10 @@ function DistributionReview() {
           Review distribution
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Grouped by {data?.grouping === "trade" ? "responsible trade" : data?.grouping}. Nothing
-          leaves instructBrain until you press send. Check the recipient and the items on every
-          row.
+          {isQuick
+            ? "A quick report has no project directory, so the whole report goes to one recipient you enter below."
+            : `Grouped by ${data?.grouping === "trade" ? "responsible trade" : data?.grouping}.`}{" "}
+          Nothing leaves instructBrain until you press send.
         </p>
         {data && data.withheldCount > 0 ? (
           <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface-sunken px-3 py-2 text-sm">
@@ -239,7 +257,9 @@ function DistributionReview() {
             <Button
               variant="brand"
               className="shrink-0"
-              disabled={sendable.length === 0 || busy !== null}
+              disabled={
+                sendable.length === 0 || busy !== null || (isQuick && !isLikelyEmail(manualEmail))
+              }
               onClick={() => void sendAll()}
             >
               <Send aria-hidden="true" className="size-4" />
@@ -274,16 +294,46 @@ function DistributionReview() {
                           {delivery.text}
                         </span>
                       </div>
-                      <p className="mt-1 break-words text-sm text-muted-foreground">
-                        {row.recipientEmail ? (
-                          <>
-                            {row.recipientName ?? "Recipient"} · {row.recipientEmail}
-                            {row.unassigned ? " (fallback recipient)" : ""}
-                          </>
-                        ) : (
-                          <span className="font-semibold text-fail">{row.blockedReason}</span>
-                        )}
-                      </p>
+                      {isQuick ? (
+                        <div className="mt-2 grid gap-2 sm:max-w-sm sm:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="quick-recipient-name" className="text-xs">
+                              Recipient name
+                            </Label>
+                            <Input
+                              id="quick-recipient-name"
+                              value={manualName}
+                              onChange={(event) => setManualName(event.target.value)}
+                              autoComplete="off"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="quick-recipient-email" className="text-xs">
+                              Recipient email
+                            </Label>
+                            <Input
+                              id="quick-recipient-email"
+                              type="email"
+                              required
+                              value={manualEmail}
+                              onChange={(event) => setManualEmail(event.target.value)}
+                              autoComplete="off"
+                              aria-invalid={manualEmail.length > 0 && !isLikelyEmail(manualEmail)}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-1 break-words text-sm text-muted-foreground">
+                          {row.recipientEmail ? (
+                            <>
+                              {row.recipientName ?? "Recipient"} · {row.recipientEmail}
+                              {row.unassigned ? " (fallback recipient)" : ""}
+                            </>
+                          ) : (
+                            <span className="font-semibold text-fail">{row.blockedReason}</span>
+                          )}
+                        </p>
+                      )}
                       <p className="mt-2 text-sm">
                         {row.itemCount} item{row.itemCount === 1 ? "" : "s"}
                         {row.severities.length > 0
@@ -315,7 +365,7 @@ function DistributionReview() {
                           Preview extract
                         </Link>
                       </Button>
-                      {!row.unassigned ? (
+                      {!row.unassigned && !isQuick ? (
                         <Button
                           variant="quiet"
                           className="min-h-11"
@@ -328,7 +378,12 @@ function DistributionReview() {
                       <Button
                         variant="brand"
                         className="min-h-11"
-                        disabled={busy !== null || isExcluded || !!row.blockedReason}
+                        disabled={
+                          busy !== null ||
+                          isExcluded ||
+                          !!row.blockedReason ||
+                          (isQuick && !isLikelyEmail(manualEmail))
+                        }
                         onClick={() => void sendRow(row)}
                       >
                         <Send aria-hidden="true" className="size-4" />
@@ -363,7 +418,7 @@ function DistributionReview() {
             })}
           </ul>
 
-          {data && !data.fallback.email ? (
+          {data && !isQuick && data.projectId && !data.fallback.email ? (
             <p className="mt-6 rounded-xl border border-warn/50 bg-warn-soft px-4 py-3 text-sm">
               This project has no fallback recipient. Set one on the{" "}
               <Link

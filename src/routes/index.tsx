@@ -2,10 +2,8 @@ import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Camera,
   CheckCircle2,
   ClipboardList,
-  FolderOpen,
   HardHat,
   ScanLine,
   ShieldCheck,
@@ -14,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
 import { useSession } from "@/lib/auth";
-import type { NextDestination } from "@/lib/next-destination";
 import { absoluteUrl } from "@/lib/site-url";
 
 const TITLE = "instructBrain — walk the site, issue the same afternoon";
@@ -60,7 +57,7 @@ function Landing() {
 
   // A signed-in visitor never needs the sales page.
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/projects", replace: true });
+    if (!loading && user) navigate({ to: "/dashboard", replace: true });
   }, [loading, user, navigate]);
 
   return (
@@ -75,7 +72,7 @@ function Landing() {
       <LandingHeader />
 
       <main id="main" className="flex-1">
-        <Hero signedIn={!!user} />
+        <Hero />
         <RoiSection />
         <UseCases />
         <HowItWorks />
@@ -130,46 +127,7 @@ function LandingHeader() {
   );
 }
 
-function ActionTile({
-  label,
-  sub,
-  icon: Icon,
-  to,
-  search,
-}: {
-  label: string;
-  sub: string;
-  icon: typeof ClipboardList;
-  to: string;
-  search?: { next: NextDestination };
-}) {
-  return (
-    <div className="flex flex-col items-center gap-2 text-center">
-      <Link
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        to={to as any}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        search={search as any}
-        aria-label={label}
-        className="orb-tile group flex h-32 w-full items-center justify-center outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:h-40"
-      >
-        <Icon
-          aria-hidden="true"
-          className="relative size-10 text-primary-foreground drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110 sm:size-14"
-        />
-      </Link>
-      <span className="text-xs font-bold leading-tight tracking-wide text-foreground sm:text-sm">
-        {label}
-      </span>
-      <span className="sr-only">{sub}</span>
-    </div>
-  );
-}
-
-function Hero({ signedIn }: { signedIn: boolean }) {
-  const tile = (next: NextDestination) =>
-    signedIn ? { to: next } : { to: "/auth/sign-up", search: { next } };
-
+function Hero() {
   return (
     <section className="shell-container pb-12 pt-8 lg:pb-20 lg:pt-12">
       <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
@@ -179,28 +137,6 @@ function Hero({ signedIn }: { signedIn: boolean }) {
       <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
         Photos in. Client-ready reports out.
       </p>
-
-      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-6">
-        <ActionTile
-          label="Project report"
-          sub="Create a full project report"
-          icon={ClipboardList}
-          {...tile("/reports/new")}
-        />
-        <ActionTile
-          label="Quick report"
-          sub="Create a quick report from photos"
-          icon={Camera}
-          {...tile("/reports/quick")}
-        />
-        <ActionTile
-          label="My reports"
-          sub="Open your existing reports"
-          icon={FolderOpen}
-          {...(signedIn ? { to: "/projects" } : { to: "/auth/sign-in" })}
-        />
-      </div>
-
       <p className="mt-6 text-sm text-muted-foreground">
         Free for your first 3 reports. No card required.
       </p>
@@ -257,7 +193,7 @@ const useCases = [
   },
   {
     icon: HardHat,
-    title: "Site walk",
+    title: "Site condition",
     who: "Site manager",
     when: "Daily or weekly",
     now: "An hour walking the site, then an evening splitting observations by trade and writing eight separate emails.",

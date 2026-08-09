@@ -13,7 +13,12 @@ import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
+type QuickReportSearch = { type?: string | undefined };
+
 export const Route = createFileRoute("/_authenticated/reports/quick")({
+  validateSearch: (search: Record<string, unknown>): QuickReportSearch => ({
+    type: typeof search["type"] === "string" ? search["type"] : undefined,
+  }),
   head: () => {
     const title = "Quick report — instructBrain";
     const description =
@@ -41,11 +46,16 @@ function todayLabel(): string {
 }
 
 function QuickReport() {
+  const { type: typeParam } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
   const usage = usePlanUsage(organisationId);
 
-  const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(
+    systemDefinitions.some((definition) => definition.id === typeParam)
+      ? (typeParam as string)
+      : (systemDefinitions[0]?.id ?? ""),
+  );
   const [reportId, setReportId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SurveyTypeSnapshot | null>(null);
   const [initialFiles, setInitialFiles] = useState<File[]>([]);
@@ -115,11 +125,11 @@ function QuickReport() {
         <h2 id="type-heading" className="text-sm font-semibold">
           Survey type
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {capturing
-            ? "Frozen into this report — start a new quick report to change it."
-            : "Frozen into the report when it starts. It decides the statuses, capture fields and output."}
-        </p>
+        {capturing ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Locked — start a new quick report to change it.
+          </p>
+        ) : null}
 
         <fieldset className="mt-3" disabled={capturing || start.isPending}>
           <legend className="sr-only">Choose a survey type</legend>
@@ -223,11 +233,6 @@ function QuickReport() {
               Add photos
             </Button>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Originals are stored untouched and are what the analysis reads. Location and other
-            capture details are asked once, on the next screen, and carry to every photograph
-            after them.
-          </p>
         </section>
       )}
     </AppShell>

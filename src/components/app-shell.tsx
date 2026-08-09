@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { FolderOpen, Building2, Users, UserCog, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Building2, Users, UserCog, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession, signOut } from "@/lib/auth";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
+import { HelpSheet } from "@/components/help-sheet";
 
 /** Reflects the live session: signed-out users get a sign-in link, signed-in users get sign-out. */
 function AccountAffordance() {
@@ -47,7 +48,8 @@ function AccountAffordance() {
 }
 
 const baseNav = [
-  { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: true },
+  { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
   { to: "/settings/organisation", key: "nav.organisation", icon: Building2, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
   { to: "/settings/account", key: "nav.account", icon: UserCog, exact: false },
@@ -76,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
         <div className="shell-container flex items-center gap-4 py-5">
-          <Link to="/projects" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
+          <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
               <span className="wordmark block truncate text-base leading-tight">
                 <span className="text-brand-accent">instruct</span>
@@ -111,7 +113,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Primary mobile"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
-        <ul className={nav.length === 5 ? "grid grid-cols-5" : "grid grid-cols-4"}>
+        <ul
+          className="grid"
+          style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
+        >
           {nav.map((item) => (
             <li key={item.to}>
               <Link
@@ -126,6 +131,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </ul>
       </nav>
+
+      <HelpSheet />
     </div>
   );
 }

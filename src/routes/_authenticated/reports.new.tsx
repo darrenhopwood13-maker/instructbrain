@@ -27,11 +27,12 @@ import {
 import { StatusPill } from "@/components/status-pill";
 import { toast } from "sonner";
 
-type NewReportSearch = { project?: string | undefined };
+type NewReportSearch = { project?: string | undefined; type?: string | undefined };
 
 export const Route = createFileRoute("/_authenticated/reports/new")({
   validateSearch: (search: Record<string, unknown>): NewReportSearch => ({
     project: typeof search["project"] === "string" ? search["project"] : undefined,
+    type: typeof search["type"] === "string" ? search["type"] : undefined,
   }),
   head: () => {
     const title = "Start a report — instructBrain";
@@ -52,14 +53,18 @@ export const Route = createFileRoute("/_authenticated/reports/new")({
 });
 
 function NewReport() {
-  const { project: projectParam } = Route.useSearch();
+  const { project: projectParam, type: typeParam } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organisationIds, organisationId, userId } = useOrganisations();
   const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
 
-  const [selectedId, setSelectedId] = useState<string>(systemDefinitions[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(
+    systemDefinitions.some((definition) => definition.id === typeParam)
+      ? (typeParam as string)
+      : (systemDefinitions[0]?.id ?? ""),
+  );
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
   const [reference, setReference] = useState("");
 
@@ -133,11 +138,6 @@ function NewReport() {
         <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
           Choose the survey type
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          The survey type determines what the app asks for — the statuses, the capture fields, the
-          severity scale and the sections of the issued document. Choose it before uploading, and
-          it is frozen into this report.
-        </p>
       </header>
 
       <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
@@ -339,13 +339,11 @@ function NewReport() {
             </Link>
             .
           </p>
-        ) : (
+        ) : usage.lastOne ? (
           <p className="text-sm text-muted-foreground">
-            {usage.lastOne ? "This is your last report on this plan this month. " : ""}
-            The definition is copied into the report, so a later change to the survey type never
-            alters an issued document.
+            This is your last report on this plan this month.
           </p>
-        )}
+        ) : null}
       </div>
 
     </AppShell>

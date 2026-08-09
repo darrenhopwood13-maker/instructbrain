@@ -4,6 +4,7 @@
  * layer over them.
  */
 export const STRINGS = {
+  "nav.dashboard": "Dashboard",
   "nav.projects": "Projects",
   "nav.organisation": "Organisation",
   "nav.directory": "Directory",

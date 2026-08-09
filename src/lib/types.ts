@@ -24,6 +24,18 @@ export type Project = {
   overdueItems: number;
 };
 
+/** A lightweight row for dashboard listings — not the full report record. */
+export type RecentReport = {
+  id: string;
+  title: string;
+  reference: string;
+  status: ReportStatus;
+  updated: string;
+  /** Null for a quick report that has never been attached to a project. */
+  projectId: string | null;
+  isQuick: boolean;
+};
+
 export type Report = {
   id: string;
   projectId: string;

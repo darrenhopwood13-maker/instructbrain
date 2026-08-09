@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, ChevronRight, History } from "lucide-react";
+import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
+import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
@@ -60,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id")({
 });
 
 function ReportWorkspace() {
+  const [attaching, setAttaching] = useState(false);
   const { id } = Route.useParams();
   const { tab, view } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -256,8 +259,16 @@ function ReportWorkspace() {
                 </Link>
               </Button>
             ) : null}
+            {!project ? (
+              <Button variant="quiet" onClick={() => setAttaching(true)}>
+                <FolderInput aria-hidden="true" className="size-4" />
+                Attach to project
+              </Button>
+            ) : null}
           </div>
         ) : null}
+
+        <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 
       <Tabs defaultValue={tab ?? "photos"} className="mt-10">
