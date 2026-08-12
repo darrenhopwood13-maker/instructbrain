@@ -193,7 +193,53 @@ function NewReport() {
           />
         </div>
 
+        {asksForHeader ? (
+          <div className="space-y-4 rounded-xl border border-border bg-surface-raised p-4">
+            <p className="eyebrow">Document header</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-title">Main title</Label>
+              <Input
+                id="report-title"
+                autoComplete="off"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Property inventory"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-subtitle">Subtitle</Label>
+              <Input
+                id="report-subtitle"
+                autoComplete="off"
+                value={subtitle}
+                onChange={(event) => setSubtitle(event.target.value)}
+                placeholder="Address or occupancy detail"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-date">Report date</Label>
+              <Input
+                id="report-date"
+                type="date"
+                value={reportDate}
+                onChange={(event) => setReportDate(event.target.value)}
+                className="h-11"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Author</p>
+              <p className="text-sm text-muted-foreground">
+                {user?.email ?? "The signed-in account"} — recorded automatically on the report.
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
+
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <fieldset>
