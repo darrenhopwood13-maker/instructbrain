@@ -348,6 +348,9 @@ export type NewReport = {
   projectId: string | null;
   title: string;
   reference: string;
+  /** Optional header details, entered by hand where the survey type asks for them. */
+  subtitle?: string;
+  reportDate?: string;
   definition: SurveyDefinition;
   surveyTypeId?: string | null;
   authorId: string | null;
@@ -365,13 +368,15 @@ export async function createReport(input: NewReport): Promise<string> {
       project_id: input.projectId,
       title: input.title.trim(),
       reference: input.reference.trim() || null,
+      subtitle: input.subtitle?.trim() || null,
       status: "draft",
-      report_date: today(),
+      report_date: input.reportDate?.trim() || today(),
       author_id: input.authorId,
       is_quick: input.isQuick ?? false,
       survey_type_snapshot: JSON.parse(JSON.stringify(input.definition)),
       ...(input.surveyTypeId ? { survey_type_id: input.surveyTypeId } : {}),
     })
+
 
     .select("id")
     .single();

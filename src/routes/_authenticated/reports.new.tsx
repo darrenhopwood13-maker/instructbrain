@@ -13,6 +13,7 @@ import { createReport, projectsQuery } from "@/lib/data";
 import { usePlanUsage } from "@/lib/plans";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { useOrganisations } from "@/lib/use-organisations";
+import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
   captureFieldsOf,
@@ -57,6 +58,7 @@ function NewReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organisationIds, organisationId, userId } = useOrganisations();
+  const { user } = useSession();
   const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
 
@@ -67,8 +69,14 @@ function NewReport() {
   );
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
   const [reference, setReference] = useState("");
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
+  // Only the inventory type asks for its own document header; the others stay
+  // on the fast, auto-titled path.
+  const asksForHeader = selected?.id === "property_inventory";
   const projectList = projects.data ?? [];
   const project = useMemo(
     () => projectList.find((item) => item.id === (projectId || projectParam)),
@@ -81,31 +89,20 @@ function NewReport() {
       if (!selected) throw new Error("Choose a survey type first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       if (!effectiveProjectId) throw new Error("Choose the project this report belongs to.");
+      const autoTitle = `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`;
       // The definition is COPIED into the report at creation; the report never
       // reads a live definition again.
       return createReport({
         organisationId,
         projectId: effectiveProjectId,
-        title: selected
-          ? `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`
-          : "Report",
+        title: asksForHeader && title.trim() !== "" ? title : autoTitle,
         reference,
+        ...(asksForHeader ? { subtitle, reportDate } : {}),
         definition: snapshotOf(selected),
         authorId: userId,
       });
     },
-    onSuccess: async (reportId) => {
-      await queryClient.invalidateQueries({ queryKey: ["reports", "project", effectiveProjectId] });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Report started", {
-        description: "The survey type is frozen into this report. Upload photographs next.",
-      });
-      void navigate({
-        to: "/reports/$id",
-        params: { id: reportId },
-        search: { tab: "photos" },
-      });
-    },
+
   });
 
   return (
@@ -198,7 +195,53 @@ function NewReport() {
           />
         </div>
 
+        {asksForHeader ? (
+          <div className="space-y-4 rounded-xl border border-border bg-surface-raised p-4">
+            <p className="eyebrow">Document header</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-title">Main title</Label>
+              <Input
+                id="report-title"
+                autoComplete="off"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Property inventory"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-subtitle">Subtitle</Label>
+              <Input
+                id="report-subtitle"
+                autoComplete="off"
+                value={subtitle}
+                onChange={(event) => setSubtitle(event.target.value)}
+                placeholder="Address or occupancy detail"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-date">Report date</Label>
+              <Input
+                id="report-date"
+                type="date"
+                value={reportDate}
+                onChange={(event) => setReportDate(event.target.value)}
+                className="h-11"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Author</p>
+              <p className="text-sm text-muted-foreground">
+                {user?.email ?? "The signed-in account"} — recorded automatically on the report.
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
+
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <fieldset>
