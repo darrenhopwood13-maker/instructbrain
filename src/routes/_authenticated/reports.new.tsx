@@ -67,8 +67,14 @@ function NewReport() {
   );
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
   const [reference, setReference] = useState("");
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
+  // Only the inventory type asks for its own document header; the others stay
+  // on the fast, auto-titled path.
+  const asksForHeader = selected?.id === "property_inventory";
   const projectList = projects.data ?? [];
   const project = useMemo(
     () => projectList.find((item) => item.id === (projectId || projectParam)),
@@ -81,31 +87,20 @@ function NewReport() {
       if (!selected) throw new Error("Choose a survey type first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       if (!effectiveProjectId) throw new Error("Choose the project this report belongs to.");
+      const autoTitle = `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`;
       // The definition is COPIED into the report at creation; the report never
       // reads a live definition again.
       return createReport({
         organisationId,
         projectId: effectiveProjectId,
-        title: selected
-          ? `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`
-          : "Report",
+        title: asksForHeader && title.trim() !== "" ? title : autoTitle,
         reference,
+        ...(asksForHeader ? { subtitle, reportDate } : {}),
         definition: snapshotOf(selected),
         authorId: userId,
       });
     },
-    onSuccess: async (reportId) => {
-      await queryClient.invalidateQueries({ queryKey: ["reports", "project", effectiveProjectId] });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Report started", {
-        description: "The survey type is frozen into this report. Upload photographs next.",
-      });
-      void navigate({
-        to: "/reports/$id",
-        params: { id: reportId },
-        search: { tab: "photos" },
-      });
-    },
+
   });
 
   return (
