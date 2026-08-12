@@ -13,6 +13,7 @@ import { createReport, projectsQuery } from "@/lib/data";
 import { usePlanUsage } from "@/lib/plans";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { useOrganisations } from "@/lib/use-organisations";
+import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
   captureFieldsOf,
@@ -57,6 +58,7 @@ function NewReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { organisationIds, organisationId, userId } = useOrganisations();
+  const { user } = useSession();
   const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
 
