@@ -80,6 +80,19 @@ export function describeAuthError(error: unknown): string {
   const status = (error as { status?: number } | null)?.status;
   const text = `${code} ${raw}`.toLowerCase();
 
+  // A dead or unreachable auth host surfaces as a bare "Failed to fetch" in the
+  // browser. That tells a site manager nothing, so name the real situation.
+  if (
+    text.includes("failed to fetch") ||
+    text.includes("networkerror") ||
+    text.includes("network request failed") ||
+    text.includes("load failed") ||
+    code === "network_error"
+  ) {
+    return "We could not reach the sign-in service. Check your connection and try again — if you are online, the service is temporarily unavailable and we are on it.";
+  }
+
+
   if (text.includes("invalid login credentials") || code === "invalid_credentials") {
     return "That email and password do not match. Check the password, or use a sign-in link instead.";
   }
