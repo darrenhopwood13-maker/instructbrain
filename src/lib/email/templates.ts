@@ -386,7 +386,11 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
       ["Target date", data.targetDate ?? "Not set"],
     ]),
     button("Update this item", data.itemListUrl),
-    small("Recording the close-out keeps the report complete and defensible."),
+    small(
+      data.attachment
+        ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
+        : "Recording the close-out keeps the report complete and defensible.",
+    ),
   ].join(""));
   const text = textShell([
     `${itemLabel(data.ref)} is overdue`,
@@ -400,6 +404,8 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
     `Target date: ${data.targetDate ?? "Not set"}`,
     "",
     `Update this item: ${data.itemListUrl}`,
+    ...(data.attachment ? ["", "A PDF of this item is attached."] : []),
   ]);
-  return { subject, html, text, attachments: [] };
+  return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
+
 }
