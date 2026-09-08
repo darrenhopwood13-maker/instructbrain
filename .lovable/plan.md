@@ -10,7 +10,7 @@ It appears under **Project report only**. Quick report keeps exactly its existin
 
 ### What the user does
 
-1. On a project, start a Weekly Compliance Register and pick a check type. Fire is complete; Excavation, Scaffold and Welfare appear in the picker as named but empty check types, ready to be filled in later without a rebuild.
+1. On a project, start a Weekly Compliance Register and pick a check type. All six agreed types are listed in the picker — Fire, Excavation, Scaffold, Welfare, Lifting and plant, Housekeeping. Fire is live and complete; the other five are named and empty, filled in later as data with no rebuild.
 2. Fill the run header: site / reference, check date, check type, performed by (named, signed), report number. Scaffold and excavation also carry a named competent person.
 3. Work through the points. On the very first run for a site you add them; every run after that arrives **pre-populated with last week's points**, and you confirm or amend rather than re-typing.
 4. Each fire point is one row: location, unit ID, type, present?, service in date?, tag/pin secured?, and a pressure check that changes with the type — water and foam ask "gauge full?", CO2 and wet chemical ask "seal intact?" because CO2 has no gauge. A photo of every unit is required each week; a missing photo blocks issuing.
