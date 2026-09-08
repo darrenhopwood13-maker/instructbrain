@@ -25,7 +25,6 @@ import {
 import { AlertTriangle, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { itemLabel } from "@/lib/item-label";
-import { useQuery } from "@tanstack/react-query";
 import { listPhotos, signedThumbnailUrls } from "@/lib/photos/photo-service";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -107,21 +106,24 @@ export function ReviewList({
    * One photograph at a time. The reviewer sees the picture, clears the
    * findings on it, and moves on — rather than scrolling a wall of cards.
    */
-  const photos = useQuery({
-    queryKey: ["review-photos", reportId],
-    enabled: !!reportId,
-    queryFn: async () => {
-      const rows = await listPhotos(reportId!);
-      const urls = await signedThumbnailUrls(rows);
-      return rows.map((row) => ({ id: row.id, url: urls[row.id] ?? null }));
-    },
-  });
+  const [photoUrl, setPhotoUrl] = useState<Map<string, string>>(new Map());
 
-  const photoUrl = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const photo of photos.data ?? []) map.set(photo.id, photo.url);
-    return map;
-  }, [photos.data]);
+  useEffect(() => {
+    if (!reportId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const rows = await listPhotos(reportId);
+        const urls = await signedThumbnailUrls(rows);
+        if (!cancelled) setPhotoUrl(new Map(Object.entries(urls)));
+      } catch {
+        // A missing photograph must never block the review itself.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reportId]);
 
   /** Review order grouped by photograph, keeping the stable finding order. */
   const groups = useMemo(() => {
