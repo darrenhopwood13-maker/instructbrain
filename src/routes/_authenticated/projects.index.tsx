@@ -7,9 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { projectsQuery } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
@@ -35,7 +33,6 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 function ProjectsIndex() {
   const navigate = useNavigate();
   const { organisationIds, organisationId } = useOrganisations();
-  const usage = usePlanUsage(organisationId);
   const query = useQuery(projectsQuery(organisationIds));
   const [creating, setCreating] = useState(false);
   const projects = query.data ?? [];
@@ -64,7 +61,7 @@ function ProjectsIndex() {
 
       </header>
 
-      <PlanUsageMeter usage={usage} className="mb-8 max-w-xl" />
+      
 
 
 

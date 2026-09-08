@@ -610,6 +610,41 @@ export const recentReportsQuery = (organisationIds: string[]) =>
     },
   });
 
+/** Every report the signed-in account can see, newest first — the "All
+ * reports" page. Quick reports with no project belong here too. */
+export const allReportsQuery = (organisationIds: string[]) =>
+  queryOptions({
+    queryKey: ["reports", "all", [...organisationIds].sort()],
+    enabled: organisationIds.length > 0,
+    queryFn: async (): Promise<RecentReport[]> => {
+      const rows = unwrap(
+        await from("reports")
+          .select("id, title, reference, status, updated_at, project_id, is_quick")
+          .in("organisation_id", organisationIds)
+          .order("updated_at", { ascending: false }),
+      ) as Array<{
+        id: string;
+        title: string;
+        reference: string | null;
+        status: string;
+        updated_at: string;
+        project_id: string | null;
+        is_quick: boolean | null;
+      }>;
+      return rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        reference: row.reference ?? "No reference",
+        status: coerceReportStatus(row.status),
+        updated: dateFormatter.format(new Date(row.updated_at)),
+        projectId: row.project_id,
+        isQuick: row.is_quick === true,
+      }));
+    },
+  });
+
+
+
 
 /* ------------------------------------------------------------------ */
 /* Directory                                                            */
