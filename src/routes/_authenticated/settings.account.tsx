@@ -13,6 +13,9 @@ import {
   validatePassword,
 } from "@/lib/auth";
 import { toast } from "sonner";
+import { PlanUsageMeter } from "@/components/plan-usage-meter";
+import { usePlanUsage } from "@/lib/plans";
+import { useOrganisations } from "@/lib/use-organisations";
 
 export const Route = createFileRoute("/_authenticated/settings/account")({
   head: () => ({
@@ -71,6 +74,8 @@ function AccountSettings() {
         Signed in as <span className="font-semibold text-foreground">{user?.email ?? "—"}</span>. Only
         you can set your password — no administrator can see it or set one for you.
       </p>
+
+      <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
 
       <form className="mt-8 max-w-md space-y-6" onSubmit={submit} noValidate>
         <div className="space-y-2">
