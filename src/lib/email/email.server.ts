@@ -56,7 +56,14 @@ type DistributionSeed = {
   sentBy: string;
 };
 
+/** The stored payload never carries the PDF: it would bloat every row. */
+function withoutAttachment(data: EmailMessage["data"]): Record<string, unknown> {
+  const { attachment: _attachment, ...rest } = data as Record<string, unknown>;
+  return rest;
+}
+
 async function openDistribution(db: Db, seed: DistributionSeed): Promise<string | null> {
+
   const { data, error } = await db
     .from("distributions")
     .insert({
