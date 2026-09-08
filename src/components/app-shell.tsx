@@ -122,13 +122,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <LanguageToggle className="hidden md:block" />
-          <AccountAffordance />
+          <LanguageToggle compact />
+          <AccountMenu />
         </div>
       </header>
 
       <main id="main" className="shell-container flex-1 pb-28 pt-10 sm:pb-20 lg:pt-12">
-        <LanguageToggle className="mb-6 md:hidden" />
         {children}
       </main>
 
