@@ -1338,6 +1338,7 @@ export type Database = {
           issued_at: string | null
           methodology_text: string | null
           organisation_id: string
+          output_language: string
           project_id: string | null
           reference: string | null
           report_date: string
@@ -1362,6 +1363,7 @@ export type Database = {
           issued_at?: string | null
           methodology_text?: string | null
           organisation_id: string
+          output_language?: string
           project_id?: string | null
           reference?: string | null
           report_date?: string
@@ -1386,6 +1388,7 @@ export type Database = {
           issued_at?: string | null
           methodology_text?: string | null
           organisation_id?: string
+          output_language?: string
           project_id?: string | null
           reference?: string | null
           report_date?: string
