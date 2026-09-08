@@ -39,7 +39,9 @@ import {
 import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
+import { downloadReportPdf } from "@/lib/report/pdf.functions";
 import type { ResultView } from "@/lib/report/grouping";
+
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
@@ -58,6 +60,8 @@ export function ReportActions({
   const [issueOpen, setIssueOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
+  const buildPdf = useServerFn(downloadReportPdf);
+
 
   const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
   const blockers = issueBlockers(document);
