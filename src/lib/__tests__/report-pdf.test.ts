@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildReportPdf, pdfFilename } from "@/lib/report/pdf.server";
+import { buildReportPdf, pdfFilename, selectFindings } from "@/lib/report/pdf.server";
 import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { NOT_ASSESSED_ID } from "@/lib/survey-types";
 
