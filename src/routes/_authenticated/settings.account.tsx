@@ -37,6 +37,8 @@ export const Route = createFileRoute("/_authenticated/settings/account")({
 function AccountSettings() {
   const navigate = useNavigate();
   const { user } = useSession();
+  const { organisationId } = useOrganisations();
+  const usage = usePlanUsage(organisationId);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
