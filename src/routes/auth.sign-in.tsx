@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { describeAuthError, sendMagicLink, signInWithPassword } from "@/lib/auth";
-import { toast } from "sonner";
+import { describeAuthError, signInWithPassword } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/sign-in")({
   head: () => ({
@@ -13,8 +13,7 @@ export const Route = createFileRoute("/auth/sign-in")({
       { title: "Sign in — instructBrain" },
       {
         name: "description",
-        content:
-          "Sign in to instructBrain with your email and password, or request a one-time sign-in link.",
+        content: "Sign in to instructBrain with your email and password.",
       },
       { property: "og:title", content: "Sign in — instructBrain" },
       { property: "og:description", content: "Sign in to your instructBrain account." },
@@ -27,37 +26,19 @@ export const Route = createFileRoute("/auth/sign-in")({
 
 function SignIn() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"password" | "link">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const submitPassword = async (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setFormError(null);
     try {
       await signInWithPassword(email.trim(), password);
       navigate({ to: "/auth/callback", replace: true });
-    } catch (error) {
-      setFormError(describeAuthError(error));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitLink = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    setFormError(null);
-    try {
-      await sendMagicLink(email.trim());
-      setSent(true);
-      toast.success("Check your email", {
-        description: "We have sent a one-time sign-in link to that address.",
-      });
     } catch (error) {
       setFormError(describeAuthError(error));
     } finally {
@@ -76,105 +57,72 @@ function SignIn() {
             to="/auth/sign-up"
             className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-2"
           >
-            Start free
-          </Link>{" "}
-          ·{" "}
-          <Link
-            to="/auth/accept-invite"
-            className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-2"
-          >
-            Accept an invitation
+            Sign up
           </Link>
         </span>
       }
     >
-      {sent ? (
-        <div className="space-y-4" role="status">
-          <p className="text-sm leading-relaxed">
-            A sign-in link is on its way to <span className="font-semibold">{email}</span>. Open it
-            on this device to continue.
-          </p>
-          <Button variant="quiet" className="w-full" onClick={() => setSent(false)}>
-            Use a different email
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => navigate({ to: "/auth/callback" })}
-          >
-            I have already signed in
-          </Button>
+      <form className="space-y-5" onSubmit={submit}>
+        <div className="space-y-2">
+          <Label htmlFor="email">Work email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@practice.co.uk"
+          />
         </div>
-      ) : (
-        <form className="space-y-5" onSubmit={mode === "password" ? submitPassword : submitLink}>
-          <div className="space-y-2">
-            <Label htmlFor="email">Work email</Label>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
             <Input
-              id="email"
-              type="email"
-              autoComplete="email"
+              id="password"
+              type={reveal ? "text" : "password"}
+              autoComplete="current-password"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@practice.co.uk"
+              className="pr-12"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setReveal(!reveal)}
+              aria-pressed={reveal}
+              aria-label={reveal ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 flex size-11 items-center justify-center text-muted-foreground hover:text-foreground"
+            >
+              {reveal ? (
+                <EyeOff aria-hidden="true" className="size-4" />
+              ) : (
+                <Eye aria-hidden="true" className="size-4" />
+              )}
+            </button>
           </div>
+        </div>
 
-          {mode === "password" ? (
-            <div className="space-y-2">
-              <div className="flex items-baseline justify-between gap-3">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/auth/forgot-password"
-                  className="text-xs font-semibold text-brand-accent-ink underline underline-offset-2"
-                >
-                  Forgotten it?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          ) : null}
-
-          {formError ? (
-            <p role="alert" className="text-sm font-medium text-fail">
-              {formError}
-            </p>
-          ) : null}
-
-          <Button type="submit" variant="brand" className="w-full" disabled={busy}>
-            {busy
-              ? mode === "password"
-                ? "Signing in…"
-                : "Sending link…"
-              : mode === "password"
-                ? "Sign in"
-                : "Email me a sign-in link"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="quiet"
-            className="w-full"
-            onClick={() => {
-              setFormError(null);
-              setMode(mode === "password" ? "link" : "password");
-            }}
-          >
-            {mode === "password" ? "Email me a link instead" : "Use my password instead"}
-          </Button>
-
-          <p className="text-center text-xs text-muted-foreground">
-            A one-time link is easier on site. Nobody but you ever sets your password.
+        {formError ? (
+          <p role="alert" className="text-sm font-medium text-fail">
+            {formError}
           </p>
-        </form>
-      )}
+        ) : null}
+
+        <Button type="submit" variant="brand" className="w-full" disabled={busy}>
+          {busy ? "Signing in…" : "Sign in"}
+        </Button>
+
+        <p className="text-center text-sm">
+          <Link
+            to="/auth/forgot-password"
+            className="font-semibold text-brand-accent-ink underline underline-offset-2"
+          >
+            Forgot password or username?
+          </Link>
+        </p>
+      </form>
     </AuthLayout>
   );
 }

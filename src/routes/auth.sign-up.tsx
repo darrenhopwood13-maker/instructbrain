@@ -86,7 +86,7 @@ function SignUp() {
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Nothing arrived after a few minutes? The default email sender is rate-limited — wait and
-            request a sign-in link from the sign-in screen.
+            request the confirmation email again.
           </p>
           <Button variant="brand" className="w-full" onClick={() => navigate({ to: "/auth/sign-in" })}>
             Go to sign in
@@ -98,8 +98,8 @@ function SignUp() {
 
   return (
     <AuthLayout
-      title="Create your account"
-      intro="Email and a password you choose. You can also sign in with a one-time link at any time."
+      title="3 free reports — no card needed"
+      intro="Turn site photographs into a client-ready report in minutes. Email and a password you choose — that is the whole sign-up."
       footer={
         <span className="text-muted-foreground">
           Already have an account?{" "}

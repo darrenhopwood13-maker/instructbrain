@@ -305,6 +305,7 @@ function ReportWorkspace() {
           ) : (
             <ReviewList
               snapshot={report.surveyTypeSnapshot}
+              reportId={report.id}
               findings={findings.data ?? []}
               onConfirm={onConfirm}
               onConfirmMany={writeConfirmations}

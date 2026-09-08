@@ -15,6 +15,7 @@ import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { useOrganisations } from "@/lib/use-organisations";
 import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
+import { CHECK_TYPES } from "@/lib/compliance/checks";
 import {
   captureFieldsOf,
   categoryGroupsOf,
@@ -284,6 +285,53 @@ function NewReport() {
             })}
           </div>
         </fieldset>
+
+          {/*
+            The weekly compliance register keeps its own record rather than a
+            findings list, so it is entered from here but not created as one of
+            the survey types above. It is a project report only — Quick report
+            keeps its existing types.
+          */}
+          <section
+            aria-labelledby="register-heading"
+            className="rounded-xl border border-border bg-surface-raised p-5 shadow-raised lg:col-span-2"
+          >
+            <p className="eyebrow">Recurring check</p>
+            <h2 id="register-heading" className="editorial-title mt-1 text-lg font-semibold">
+              Weekly compliance register
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              One dated, photo-evidenced register per week, rolled into a six-week window with every
+              action carried until it is closed. Fire is live; the other check types are named and
+              reserved.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {CHECK_TYPES.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="outline"
+                  disabled={!effectiveProjectId}
+                  onClick={() =>
+                    navigate({
+                      to: "/projects/$id/compliance",
+                      params: { id: effectiveProjectId },
+                      search: { type: item.id },
+                    })
+                  }
+                >
+                  {item.label}
+                  {!item.live ? (
+                    <span className="ml-1.5 text-xs text-muted-foreground">Reserved</span>
+                  ) : null}
+                </Button>
+              ))}
+            </div>
+            {!effectiveProjectId ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Choose the project above to open its register.
+              </p>
+            ) : null}
+          </section>
 
         {selected ? (
           <section

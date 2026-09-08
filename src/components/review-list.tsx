@@ -25,6 +25,8 @@ import {
 import { AlertTriangle, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { itemLabel } from "@/lib/item-label";
+import { listPhotos, signedThumbnailUrls } from "@/lib/photos/photo-service";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * Keyboard-first review list. j/k move, per-status shortcut keys set status,
@@ -42,6 +44,7 @@ export type ConfirmPatch = {
 export function ReviewList({
   snapshot,
   findings,
+  reportId,
   onConfirm,
   onConfirmMany,
   tradeOptions = [],
@@ -50,6 +53,8 @@ export function ReviewList({
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
+  /** Enables the photograph shown above the finding being reviewed. */
+  reportId?: string;
   /** Persists one confirmation action. Rejects if the write failed. */
   onConfirm?: (findingId: string, patch: ConfirmPatch) => Promise<void>;
   /** Persists the same patch across many findings in one batch. */
@@ -96,6 +101,61 @@ export function ReviewList({
     const position = new Map(orderRef.current.map((id, index) => [id, index]));
     return [...merged].sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0));
   }, [findings, overrides, snapshot]);
+
+  /**
+   * One photograph at a time. The reviewer sees the picture, clears the
+   * findings on it, and moves on — rather than scrolling a wall of cards.
+   */
+  const [photoUrl, setPhotoUrl] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!reportId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const rows = await listPhotos(reportId);
+        const urls = await signedThumbnailUrls(rows);
+        if (!cancelled) setPhotoUrl(new Map(Object.entries(urls)));
+      } catch {
+        // A missing photograph must never block the review itself.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reportId]);
+
+  /** Review order grouped by photograph, keeping the stable finding order. */
+  const groups = useMemo(() => {
+    const order: string[] = [];
+    const byPhoto = new Map<string, string[]>();
+    for (const item of items) {
+      const key = item.photoIds?.[0] ?? "none";
+      if (!byPhoto.has(key)) {
+        byPhoto.set(key, []);
+        order.push(key);
+      }
+      byPhoto.get(key)!.push(item.id);
+    }
+    return order.map((key) => ({ photoId: key, findingIds: byPhoto.get(key) ?? [] }));
+  }, [items]);
+
+  const position = useMemo(() => {
+    const activeItem = items[active];
+    if (!activeItem) return null;
+    const groupIndex = groups.findIndex((group) => group.findingIds.includes(activeItem.id));
+    const group = groups[groupIndex];
+    if (!group) return null;
+    return {
+      photoId: group.photoId,
+      photoIndex: groupIndex + 1,
+      photoTotal: groups.length,
+      findingIndex: group.findingIds.indexOf(activeItem.id) + 1,
+      findingTotal: group.findingIds.length,
+    };
+  }, [items, active, groups]);
+
+  const touchStart = useRef<number | null>(null);
 
   const derivedFields = useMemo(() => derivedFieldsOf(snapshot), [snapshot]);
   const showCause = definesField(snapshot, "likely_cause");
@@ -328,8 +388,68 @@ export function ReviewList({
         </span>
       </div>
 
-      <ul aria-label="Findings for review" className="mt-4 space-y-2" onKeyDown={onKeyDown}>
+      {position ? (
+        <div className="mt-4 rounded-xl border border-border bg-surface-raised p-3">
+          {photoUrl.get(position.photoId) ? (
+            <img
+              src={photoUrl.get(position.photoId) ?? ""}
+              alt={`Photograph ${position.photoIndex} of ${position.photoTotal} under review`}
+              className="mx-auto max-h-[42vh] w-auto rounded-lg object-contain"
+            />
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No photograph is attached to this finding.
+            </p>
+          )}
+          <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Finding {position.findingIndex} of {position.findingTotal} · Photo{" "}
+            {position.photoIndex} of {position.photoTotal}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <Button
+          variant="quiet"
+          className="min-h-11"
+          disabled={active === 0}
+          onClick={() => setActive((i) => Math.max(i - 1, 0))}
+        >
+          <ChevronLeft aria-hidden="true" className="size-4" />
+          Previous
+        </Button>
+        <Button
+          variant="quiet"
+          className="min-h-11"
+          disabled={active >= items.length - 1}
+          onClick={() => setActive((i) => Math.min(i + 1, items.length - 1))}
+        >
+          Next
+          <ChevronRight aria-hidden="true" className="size-4" />
+        </Button>
+      </div>
+
+      <ul
+        aria-label="Findings for review"
+        className="mt-4 space-y-2"
+        onKeyDown={onKeyDown}
+        onTouchStart={(event) => {
+          touchStart.current = event.touches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(event) => {
+          const start = touchStart.current;
+          const end = event.changedTouches[0]?.clientX ?? null;
+          touchStart.current = null;
+          if (start === null || end === null) return;
+          const delta = end - start;
+          if (Math.abs(delta) < 60) return;
+          setActive((i) =>
+            delta < 0 ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0),
+          );
+        }}
+      >
         {items.map((item, index) => {
+          if (index !== active) return null;
           const status = resolved[index] ?? resolveStatus(snapshot, item.status);
           const blocked = status.id === NOT_ASSESSED_ID;
           return (
