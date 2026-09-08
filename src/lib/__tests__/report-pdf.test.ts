@@ -59,7 +59,7 @@ const document: ReportDocument = {
   },
   project: null,
   organisation: null,
-  snapshot: null,
+  snapshot,
   findings: [
     finding({ id: "a", ref: "1", assignedTrade: "Roofing" }),
     finding({
