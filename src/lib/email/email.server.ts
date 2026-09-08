@@ -533,6 +533,12 @@ export async function sendCloseOutRequestEmail(
     .single();
   const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
 
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, {
+    variant: "item",
+    findingIds: [input.findingId],
+  });
+
   const message: EmailMessage = {
     template: "CLOSE_OUT_REQUEST",
     data: {
@@ -543,8 +549,10 @@ export async function sendCloseOutRequestEmail(
       projectName: ((report as Record<string, any>)?.["projects"]?.["name"] as string) ?? "this project",
       itemListUrl: absoluteUrl(`/reports/${input.reportId}`),
       sentByName: actorName(actor.claims, "Your surveyor"),
+      attachment,
     },
   };
+
 
   const outcome = await dispatch(
     db,
