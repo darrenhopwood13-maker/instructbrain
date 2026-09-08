@@ -66,7 +66,7 @@ export async function loadReportDocument(
   const { data: reportRow } = await db
     .from("reports")
     .select(
-      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, survey_type_snapshot",
+      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -190,6 +190,8 @@ export async function loadReportDocument(
       executiveSummary: (report["executive_summary"] as string | null) ?? null,
       synthesisConfirmed: report["synthesis_confirmed"] === true,
       coverPhotoId: (report["cover_photo_id"] as string | null) ?? null,
+      outputLanguage: (report["output_language"] as string | null) ?? "en",
+
     },
     project: project
       ? {
