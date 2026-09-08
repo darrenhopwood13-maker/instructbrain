@@ -279,6 +279,9 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
   const expiry = data.expiresOn
     ? `This link expires on ${data.expiresOn}. Save your own copy before then.`
     : "This link stays live until it is withdrawn. Save your own copy for your records.";
+  const pdfLine = data.attachment
+    ? "A PDF of the full report is attached."
+    : "The report was too large to attach as a PDF, so please use the link above.";
   const html = shell(subject, [
     h1(data.reportTitle),
     p(`${data.sentByName} has shared a read-only copy of this report with you.`),
@@ -288,7 +291,7 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
       ["Issue date", data.issueDate ?? ""],
     ]),
     button("Open the report", data.shareUrl),
-    small(expiry),
+    small(`${pdfLine} ${expiry}`),
   ].join(""));
   const text = textShell([
     data.reportTitle,
@@ -301,10 +304,12 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
     "",
     `Open the report: ${data.shareUrl}`,
     "",
+    pdfLine,
     expiry,
   ]);
-  return { subject, html, text, attachments: [] };
+  return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
 }
+
 
 function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   // Second line of defence: refuse to render rather than send.
