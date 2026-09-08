@@ -34,8 +34,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 
 function ProjectsIndex() {
   const navigate = useNavigate();
-  const { organisationIds, organisationId } = useOrganisations();
-  const usage = usePlanUsage(organisationId);
+  const { organisationIds } = useOrganisations();
   const query = useQuery(projectsQuery(organisationIds));
   const [creating, setCreating] = useState(false);
   const projects = query.data ?? [];
@@ -64,7 +63,7 @@ function ProjectsIndex() {
 
       </header>
 
-      <PlanUsageMeter usage={usage} className="mb-8 max-w-xl" />
+      
 
 
 
