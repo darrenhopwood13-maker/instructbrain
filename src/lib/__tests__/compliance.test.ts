@@ -8,7 +8,7 @@ import {
 } from "@/lib/compliance/checks";
 import { runBlockers } from "@/lib/compliance/compliance-data";
 import { complianceDefinition } from "@/lib/compliance/definition";
-import { snagCategoriesOf, severitiesOf } from "@/lib/survey-types";
+import { categoriesOf, severitiesOf } from "@/lib/survey-types";
 
 const fire = checkType("fire");
 
@@ -46,7 +46,7 @@ describe("compliance vocabulary", () => {
     ]);
     const definition = complianceDefinition("fire");
     expect(severitiesOf(definition)).toHaveLength(0);
-    expect(snagCategoriesOf(definition)).toHaveLength(0);
+    expect(categoriesOf(definition)).toHaveLength(0);
   });
 
   it("names all six check types in the agreed order, with fire live", () => {
