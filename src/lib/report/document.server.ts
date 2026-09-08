@@ -6,7 +6,7 @@
  * so the PDF the server produces cannot disagree with the screen.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { coerceSnapshot } from "@/lib/data";
+import { coerceSnapshot } from "@/lib/report/snapshot";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import type {
