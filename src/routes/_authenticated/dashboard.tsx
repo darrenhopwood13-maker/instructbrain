@@ -83,7 +83,7 @@ function CollapsibleSection({
 }: {
   id: string;
   title: string;
-  count?: number;
+  count?: number | undefined;
   tone?: "fail";
   action?: React.ReactNode;
   children: React.ReactNode;
@@ -321,6 +321,7 @@ function Dashboard() {
                   <Link
                     to="/projects/$id/compliance"
                     params={{ id: project.id }}
+                    search={{ type: "fire" }}
                     onClick={() => setPickProject(false)}
                     className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border bg-surface-raised px-4 py-3 text-sm font-semibold transition-colors hover:border-brand-accent"
                   >
