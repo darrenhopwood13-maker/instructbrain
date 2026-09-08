@@ -26,6 +26,7 @@ import { Route as SharedTokenRouteImport } from './routes/shared.$token'
 import { Route as TradeTokenRouteImport } from './routes/trade.$token'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsQuickRouteImport } from './routes/_authenticated/reports.quick'
@@ -129,6 +130,12 @@ const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/reports/': typeof AuthenticatedReportsIndexRoute
   '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRouteWithChildren
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
@@ -287,6 +295,7 @@ export interface FileRoutesByTo {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/reports': typeof AuthenticatedReportsIndexRoute
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
@@ -323,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRouteWithChildren
   '/_authenticated/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/_authenticated/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/settings/organisation'
     | '/api/public/resend-webhook'
     | '/projects/'
+    | '/reports/'
     | '/projects/$id/compliance'
     | '/projects/$id/directory'
     | '/reports/$id/distribute'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/settings/organisation'
     | '/api/public/resend-webhook'
     | '/projects'
+    | '/reports'
     | '/projects/$id/directory'
     | '/reports/$id/distribute'
     | '/reports/$id/print'
@@ -429,6 +441,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/organisation'
     | '/api/public/resend-webhook'
     | '/_authenticated/projects/'
+    | '/_authenticated/reports/'
     | '/_authenticated/projects/$id/compliance'
     | '/_authenticated/projects/$id/directory'
     | '/_authenticated/reports/$id/distribute'
@@ -578,6 +591,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/$id': {
@@ -772,6 +792,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsDirectoryRoute: typeof AuthenticatedSettingsDirectoryRoute
   AuthenticatedSettingsOrganisationRoute: typeof AuthenticatedSettingsOrganisationRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -787,6 +808,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsOrganisationRoute:
     AuthenticatedSettingsOrganisationRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
