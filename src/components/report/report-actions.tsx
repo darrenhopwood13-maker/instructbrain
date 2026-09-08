@@ -124,6 +124,29 @@ export function ReportActions({
       }),
   });
 
+  /** The same file the emails carry, saved straight to the device. */
+  const pdf = useMutation({
+    mutationFn: () => buildPdf({ data: { reportId: document.report.id, view: resultView } }),
+    onSuccess: (result) => {
+      const binary = atob(result.content);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const anchor = window.document.createElement("a");
+      anchor.href = url;
+      anchor.download = result.filename;
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success("PDF downloaded", { description: result.filename });
+    },
+    onError: (error) =>
+      toast.error("The PDF could not be built", {
+        description: error instanceof Error ? error.message : "Unknown error.",
+      }),
+  });
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -131,9 +154,24 @@ export function ReportActions({
           <Eye aria-hidden="true" className="mr-1.5 size-4" />
           Preview
         </Button>
+        <Button
+          type="button"
+          variant="quiet"
+          size="sm"
+          disabled={pdf.isPending}
+          onClick={() => pdf.mutate()}
+        >
+          {pdf.isPending ? (
+            <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+          ) : (
+            <Download aria-hidden="true" className="mr-1.5 size-4" />
+          )}
+          Download PDF
+        </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
           <Printer aria-hidden="true" className="mr-1.5 size-4" />
-          Print / Save as PDF
+          Print
+
         </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => setShareOpen(true)}>
           <Share2 aria-hidden="true" className="mr-1.5 size-4" />
