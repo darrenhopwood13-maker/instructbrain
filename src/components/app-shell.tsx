@@ -1,17 +1,30 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FolderOpen, Building2, Users, UserCog, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Building2, Users, UserCog } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession, signOut } from "@/lib/auth";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { HelpSheet } from "@/components/help-sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-/** Reflects the live session: signed-out users get a sign-in link, signed-in users get sign-out. */
-function AccountAffordance() {
+/**
+ * Reflects the live session: signed-out users get a sign-in link, signed-in
+ * users get one Account menu holding settings, admin (founder only) and sign
+ * out — so the top bar stays to two controls on a phone.
+ */
+function AccountMenu() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const { t } = useI18n();
+  const { isPlatformAdmin } = useIsPlatformAdmin();
 
   if (loading) {
     return <span className="text-sm text-muted-foreground">…</span>;
@@ -21,7 +34,7 @@ function AccountAffordance() {
     return (
       <Link
         to="/auth/sign-in"
-        className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+        className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
       >
         {t("action.signIn")}
       </Link>
@@ -29,43 +42,53 @@ function AccountAffordance() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:block">
-        {user.email}
-      </span>
-      <button
-        type="button"
-        onClick={async () => {
-          await signOut();
-          navigate({ to: "/auth/sign-in", replace: true });
-        }}
-        className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Account — ${user.email ?? "signed in"}`}
+        className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
       >
-        {t("action.signOut")}
-      </button>
-    </div>
+        <UserCog aria-hidden="true" className="size-4 shrink-0" />
+        <span className="hidden sm:inline">{t("nav.account")}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
+          {user.email}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/settings/account">{t("nav.account")}</Link>
+        </DropdownMenuItem>
+        {isPlatformAdmin ? (
+          <DropdownMenuItem asChild>
+            <Link to="/admin">{t("nav.admin")}</Link>
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={async () => {
+            await signOut();
+            navigate({ to: "/auth/sign-in", replace: true });
+          }}
+        >
+          {t("action.signOut")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
+/** Four evenly sized destinations — Account and Admin live in the top bar menu. */
 const baseNav = [
   { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
   { to: "/settings/organisation", key: "nav.organisation", icon: Building2, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
-  { to: "/settings/account", key: "nav.account", icon: UserCog, exact: false },
 ] as const;
-
-const adminNav = {
-  to: "/admin",
-  key: "nav.admin",
-  icon: ShieldCheck,
-  exact: false,
-} as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const { isPlatformAdmin } = useIsPlatformAdmin();
-  const nav = isPlatformAdmin ? [...baseNav, adminNav] : [...baseNav];
+  const nav = [...baseNav];
+
 
   return (
     <div className="flex min-h-dvh flex-col">
