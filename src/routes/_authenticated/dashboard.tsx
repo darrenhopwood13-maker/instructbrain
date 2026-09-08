@@ -127,6 +127,17 @@ function Dashboard() {
                   {definitionLabel(definition)}
                 </button>
               ))}
+              {mode === "project" ? (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  onClick={() => void navigate({ to: "/reports/new" })}
+                  className="min-h-16 rounded-xl border border-border bg-surface-raised p-4 text-center text-sm font-semibold shadow-raised transition-colors hover:border-brand-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-20 sm:text-base"
+                >
+                  Weekly compliance register
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}
