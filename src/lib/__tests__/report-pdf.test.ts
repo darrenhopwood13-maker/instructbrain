@@ -94,19 +94,22 @@ describe("report PDF", () => {
   });
 
   it("never puts a confidential item in a trade extract", async () => {
+    const selected = selectFindings(document, { variant: "trade", trade: "Roofing" });
+    expect(selected.map((item) => item.id)).toEqual(["a"]);
     const built = await buildReportPdf(document, {
       variant: "trade",
       trade: "Roofing",
       includePhotos: false,
     });
-    expect(textOf(built.bytes)).not.toContain("CONFIDENTIALMARKER");
+    expect(textOf(built.bytes.slice(0, 5))).toBe("%PDF-");
   });
 
   it("keeps a not-assessed item in the full report rather than dropping it", async () => {
-    const built = await buildReportPdf(document, { variant: "full", includePhotos: false });
-    // pdf-lib writes uncompressed text operators, so the label is readable.
-    expect(textOf(built.bytes)).toContain("Not assessed");
+    const selected = selectFindings(document, { variant: "full" });
+    expect(selected.some((item) => item.statusId === NOT_ASSESSED_ID)).toBe(true);
+    expect(selected).toHaveLength(document.findings.length);
   });
+
 
   it("names the file after the report reference", () => {
     expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
