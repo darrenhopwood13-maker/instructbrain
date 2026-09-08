@@ -146,7 +146,11 @@ function Dashboard() {
     setMode(null);
     const projectId = complianceProjectId(recent.data ?? []);
     if (projectId) {
-      void navigate({ to: "/projects/$id/compliance", params: { id: projectId } });
+      void navigate({
+        to: "/projects/$id/compliance",
+        params: { id: projectId },
+        search: { type: "fire" },
+      });
       return;
     }
     setPickProject(true);
