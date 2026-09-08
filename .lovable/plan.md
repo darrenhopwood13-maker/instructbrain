@@ -6,6 +6,8 @@ Two pieces of work in one pass: a new fourth report type with a real compliance 
 
 A new report type sitting alongside Weatherproofing, Snagging, Site condition and Property inventory. Snagging is untouched — no shared vocabulary, no shared engine.
 
+It appears under **Project report only**. Quick report keeps exactly its existing types; the register needs a site to belong to, so it is deliberately not offered there.
+
 ### What the user does
 
 1. On a project, start a Weekly Compliance Register and pick a check type. Fire is complete; Excavation, Scaffold and Welfare appear in the picker as named but empty check types, ready to be filled in later without a rebuild.
