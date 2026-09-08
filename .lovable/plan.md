@@ -6,9 +6,11 @@ Two pieces of work in one pass: a new fourth report type with a real compliance 
 
 A new report type sitting alongside Weatherproofing, Snagging, Site condition and Property inventory. Snagging is untouched — no shared vocabulary, no shared engine.
 
+It appears under **Project report only**. Quick report keeps exactly its existing types; the register needs a site to belong to, so it is deliberately not offered there.
+
 ### What the user does
 
-1. On a project, start a Weekly Compliance Register and pick a check type. Fire is complete; Excavation, Scaffold and Welfare appear in the picker as named but empty check types, ready to be filled in later without a rebuild.
+1. On a project, start a Weekly Compliance Register and pick a check type. All six agreed types are listed in the picker — Fire, Excavation, Scaffold, Welfare, Lifting and plant, Housekeeping. Fire is live and complete; the other five are named and empty, filled in later as data with no rebuild.
 2. Fill the run header: site / reference, check date, check type, performed by (named, signed), report number. Scaffold and excavation also carry a named competent person.
 3. Work through the points. On the very first run for a site you add them; every run after that arrives **pre-populated with last week's points**, and you confirm or amend rather than re-typing.
 4. Each fire point is one row: location, unit ID, type, present?, service in date?, tag/pin secured?, and a pressure check that changes with the type — water and foam ask "gauge full?", CO2 and wet chemical ask "seal intact?" because CO2 has no gauge. A photo of every unit is required each week; a missing photo blocks issuing.
@@ -32,6 +34,8 @@ Compliant / non-compliant / not applicable. No severity — severity stays in sn
 **QA-2 Sign-up.** Headline "3 free reports — no card needed", with a supporting line about turning site photos into client-ready reports in minutes. No card field is added.
 
 **QA-3 Review flow.** The stacked results boxes are replaced by a one-at-a-time flow: photo at the top, a single finding underneath, arrow keys or swipe to move between the findings on that photo and on to the next photo, and a thin progress line reading "Finding 2 of 4 · Photo 3 of 15". Keyboard-first is preserved: confirm, amend and move on without a mouse.
+
+Scope note, deliberate: QA-3 does change the live review screen that snagging reports use — it is a presentation change to how findings are shown and approved, and it applies to every existing report type. "Snagging untouched" in Part 1 means the compliance register does not reuse or alter snagging's engine, vocabulary, severity or data. No snagging logic, statuses or stored data change here.
 
 ## Technical notes
 
