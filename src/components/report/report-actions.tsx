@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Check,
   Copy,
+  Download,
   Eye,
   Link2,
   Loader2,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Unlock,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
