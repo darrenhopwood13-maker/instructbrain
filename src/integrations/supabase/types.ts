@@ -179,6 +179,332 @@ export type Database = {
           },
         ]
       }
+      compliance_actions: {
+        Row: {
+          closed_on: string | null
+          closeout_note: string | null
+          closeout_photo_id: string | null
+          created_at: string
+          description: string
+          id: string
+          opened_on: string
+          organisation_id: string
+          owner: string | null
+          point_id: string | null
+          project_id: string
+          raised_entry_id: string | null
+          raised_run_id: string | null
+          status: string
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          closed_on?: string | null
+          closeout_note?: string | null
+          closeout_photo_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          opened_on?: string
+          organisation_id: string
+          owner?: string | null
+          point_id?: string | null
+          project_id: string
+          raised_entry_id?: string | null
+          raised_run_id?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closed_on?: string | null
+          closeout_note?: string | null
+          closeout_photo_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          opened_on?: string
+          organisation_id?: string
+          owner?: string | null
+          point_id?: string | null
+          project_id?: string
+          raised_entry_id?: string | null
+          raised_run_id?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_actions_closeout_photo_id_fkey"
+            columns: ["closeout_photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_actions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_actions_point_id_fkey"
+            columns: ["point_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_actions_raised_entry_id_fkey"
+            columns: ["raised_entry_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_actions_raised_run_id_fkey"
+            columns: ["raised_run_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_entries: {
+        Row: {
+          answers: Json
+          confirmed: boolean
+          created_at: string
+          id: string
+          na_reason: string | null
+          note: string | null
+          organisation_id: string
+          photo_id: string | null
+          point_id: string
+          run_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          na_reason?: string | null
+          note?: string | null
+          organisation_id: string
+          photo_id?: string | null
+          point_id: string
+          run_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          na_reason?: string | null
+          note?: string | null
+          organisation_id?: string
+          photo_id?: string | null
+          point_id?: string
+          run_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_entries_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_entries_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_entries_point_id_fkey"
+            columns: ["point_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_entries_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_points: {
+        Row: {
+          check_type: string
+          created_at: string
+          decommission_note: string | null
+          decommission_photo_id: string | null
+          decommissioned_at: string | null
+          decommissioned_by: string | null
+          id: string
+          location: string
+          organisation_id: string
+          project_id: string
+          state: string
+          unit_ref: string
+          unit_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          check_type: string
+          created_at?: string
+          decommission_note?: string | null
+          decommission_photo_id?: string | null
+          decommissioned_at?: string | null
+          decommissioned_by?: string | null
+          id?: string
+          location: string
+          organisation_id: string
+          project_id: string
+          state?: string
+          unit_ref: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          check_type?: string
+          created_at?: string
+          decommission_note?: string | null
+          decommission_photo_id?: string | null
+          decommissioned_at?: string | null
+          decommissioned_by?: string | null
+          id?: string
+          location?: string
+          organisation_id?: string
+          project_id?: string
+          state?: string
+          unit_ref?: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_points_decommission_photo_id_fkey"
+            columns: ["decommission_photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_points_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_points_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_runs: {
+        Row: {
+          check_date: string
+          check_type: string
+          competent_person: string | null
+          created_at: string
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          organisation_id: string
+          performed_by_name: string | null
+          performed_by_user: string | null
+          project_id: string
+          report_id: string | null
+          report_number: string | null
+          signed_at: string | null
+          site_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          check_date?: string
+          check_type: string
+          competent_person?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id: string
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id: string
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          check_date?: string
+          check_type?: string
+          competent_person?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_runs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_runs_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       directory_contacts: {
         Row: {
           created_at: string
@@ -1204,6 +1530,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compliance_run_is_locked: { Args: { _run_id: string }; Returns: boolean }
       create_organisation: { Args: { _name: string }; Returns: string }
       directory_org: { Args: { _directory_id: string }; Returns: string }
       directory_template_org: {
