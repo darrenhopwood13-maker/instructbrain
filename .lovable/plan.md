@@ -73,6 +73,7 @@ every send is still a person pressing a button.
 2. Detach report content from the interface toggle.
 3. Report language control on the report and quick report screens.
 4. Carry the language into PDF, print view and every email send.
-5. Tests: interface language does not alter report content; a report set to a
-   language renders and exports in it; English source is never overwritten; the
+5. Tests: the screen language never alters review or report content; a report set to
+   a language renders and exports in it; English source is never overwritten; the
    record-copy notice is present on every translated output.
+
