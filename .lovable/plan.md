@@ -37,3 +37,17 @@
 - Run the existing test suite before and after the changes.
 - Add focused coverage for the combined reports query, compliance destination fallback and founder-only Admin menu item.
 - Check the dashboard and navigation at 375px/393px mobile widths and desktop: no horizontal overflow, all three orange controls fit, the footer labels stay on one line, menus are keyboard-operable, and both collapsed sections open correctly.
+
+## Sequencing
+
+1. Close out the compliance register first: the check-type picker shows all six named types in the agreed order with only Fire live, and the not-applicable blocked-blank case is covered by a test.
+2. Then apply this dashboard and navigation tidy-up, which depends on the register existing.
+
+## One entry point, stated once
+
+The Compliance reports control on the dashboard is the only way into the weekly register. Any wording that describes the register as a type inside the project report page is removed, so no screen or instruction points at a second door.
+
+## Names verified against the live app
+
+- Weekly check types, in order: Fire (live), Excavation, Scaffold, Welfare, Lifting and plant, Housekeeping — the last five named and reserved.
+- Survey types currently offered: Weatherproofing membrane survey, Snag identification & remedial schedule, Site condition, Property inventory. "Site condition" and "Property inventory" are the live labels today; if the brief calls them something else, say the preferred wording and it is a one-line change per label.
