@@ -15,6 +15,7 @@ import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { useOrganisations } from "@/lib/use-organisations";
 import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
+import { CHECK_TYPES } from "@/lib/compliance/checks";
 import {
   captureFieldsOf,
   categoryGroupsOf,
