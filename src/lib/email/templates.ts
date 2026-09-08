@@ -57,7 +57,10 @@ export type ReportSharedPayload = {
   shareUrl: string;
   /** Plain-English expiry, e.g. "12 May 2026" or null for no expiry. */
   expiresOn: string | null;
+  /** The report itself, as a PDF. Null when it was too large to attach. */
+  attachment?: EmailAttachment | null;
 };
+
 
 export type TradeExtractPayload = {
   projectName: string;
@@ -78,7 +81,9 @@ export type CloseOutPayload = {
   projectName: string;
   itemListUrl: string;
   sentByName: string;
+  attachment?: EmailAttachment | null;
 };
+
 
 export type EmailMessage =
   | { template: "INVITE"; data: InvitePayload }
