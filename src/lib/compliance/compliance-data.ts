@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DataError } from "@/lib/data";
+import { DataError, createReport } from "@/lib/data";
+import { complianceDefinition } from "@/lib/compliance/definition";
 import {
   REGISTER_WINDOW_WEEKS,
   checkType,
@@ -89,6 +90,7 @@ export type ComplianceRun = {
   signedAt: string | null;
   competentPerson: string | null;
   lockedAt: string | null;
+  reportId: string | null;
   createdAt: string;
 };
 
@@ -108,7 +110,7 @@ export type ComplianceAction = {
 };
 
 const runColumns =
-  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, created_at";
+  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, report_id, created_at";
 const pointColumns =
   "id, project_id, check_type, location, unit_ref, unit_type, state, decommissioned_at, decommission_note";
 const entryColumns =
@@ -129,6 +131,7 @@ function toRun(row: Record<string, any>): ComplianceRun {
     signedAt: row["signed_at"] ?? null,
     competentPerson: row["competent_person"] ?? null,
     lockedAt: row["locked_at"] ?? null,
+    reportId: row["report_id"] ?? null,
     createdAt: row["created_at"],
   };
 }
@@ -302,6 +305,7 @@ export async function startRun(input: {
   reportNumber: string | null;
   performedByName: string | null;
   competentPerson: string | null;
+  authorId: string | null;
 }): Promise<ComplianceRun> {
   const previous = unwrap<Record<string, any>[]>(
     await from("compliance_runs")
@@ -312,6 +316,18 @@ export async function startRun(input: {
       .limit(1),
   );
   const previousId = previous[0]?.["id"] as string | undefined;
+
+  // The register keeps its own record, but photographs and the issued document
+  // live on a report, so one is created alongside the run.
+  const reportId = await createReport({
+    organisationId: input.organisationId,
+    projectId: input.projectId,
+    title: `Weekly compliance register — ${checkType(input.checkType).label}`,
+    reference: input.reportNumber ?? "",
+    reportDate: input.checkDate,
+    definition: complianceDefinition(input.checkType),
+    authorId: input.authorId,
+  });
 
   const run = toRun(
     unwrap<Record<string, any>>(
@@ -325,6 +341,7 @@ export async function startRun(input: {
           report_number: input.reportNumber,
           performed_by_name: input.performedByName,
           competent_person: input.competentPerson,
+          report_id: reportId,
         })
         .select(runColumns)
         .single(),
