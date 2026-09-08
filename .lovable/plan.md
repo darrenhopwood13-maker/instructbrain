@@ -35,6 +35,8 @@ Compliant / non-compliant / not applicable. No severity — severity stays in sn
 
 **QA-3 Review flow.** The stacked results boxes are replaced by a one-at-a-time flow: photo at the top, a single finding underneath, arrow keys or swipe to move between the findings on that photo and on to the next photo, and a thin progress line reading "Finding 2 of 4 · Photo 3 of 15". Keyboard-first is preserved: confirm, amend and move on without a mouse.
 
+Scope note, deliberate: QA-3 does change the live review screen that snagging reports use — it is a presentation change to how findings are shown and approved, and it applies to every existing report type. "Snagging untouched" in Part 1 means the compliance register does not reuse or alter snagging's engine, vocabulary, severity or data. No snagging logic, statuses or stored data change here.
+
 ## Technical notes
 
 Database (one migration, RLS on everything, org-scoped like the rest):
