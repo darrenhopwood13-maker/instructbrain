@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/projects/")({
 
 function ProjectsIndex() {
   const navigate = useNavigate();
-  const { organisationIds } = useOrganisations();
+  const { organisationIds, organisationId } = useOrganisations();
   const query = useQuery(projectsQuery(organisationIds));
   const [creating, setCreating] = useState(false);
   const projects = query.data ?? [];
