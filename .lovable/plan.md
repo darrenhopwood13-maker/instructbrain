@@ -8,6 +8,7 @@
   2. **Quick report** — retains the existing quick-report choice.
   3. **Compliance reports** — opens Weekly Compliance for the project from the most recently updated project report. If there is no suitable recent project, show a compact project picker instead of sending the user to a dead end.
 - Make the three controls a stable responsive grid: three columns where space allows, compact icon/label treatment on narrow phones, no clipped labels, no horizontal overflow, and minimum 44px touch targets.
+- Remove the Weekly compliance register section from the project report setup page; the dashboard orange button becomes the only entry point.
 - Remove the plan allowance card from the dashboard.
 - Turn **Overdue items** into an accessible collapsed row showing its title and count; opening it reveals the existing linked items.
 - Turn **Recent reports** into the same one-line collapsed pattern; opening it reveals the existing report cards.
