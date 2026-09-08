@@ -461,6 +461,14 @@ export async function sendTradeExtractEmail(
 
   const tradeLabel = input.trade ?? "Unassigned items";
 
+  // Confidential items are already excluded above; the PDF builder excludes
+  // them again for the trade variant.
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, {
+    variant: "trade",
+    trade: input.trade,
+  });
+
   const message: EmailMessage = {
     template: "TRADE_EXTRACT",
     data: {
@@ -470,9 +478,10 @@ export async function sendTradeExtractEmail(
       items,
       itemListUrl: await itemListUrlFor(db, input.reportId, input.trade),
       sentByName: actorName(actor.claims, "Your surveyor"),
-      attachment: null,
+      attachment,
     },
   };
+
 
   const outcome = await dispatch(
     db,
