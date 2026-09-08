@@ -40,6 +40,7 @@ import { Route as AuthenticatedReportsIdDistributeRouteImport } from './routes/_
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 import { Route as ApiPublicTradeAccessTokenRouteImport } from './routes/api/public/trade-access.$token'
+import { Route as AuthenticatedProjectsIdComplianceIndexRouteImport } from './routes/_authenticated/projects.$id.compliance.index'
 import { Route as AuthenticatedReportsIdExtractGroupRouteImport } from './routes/_authenticated/reports.$id.extract.$group'
 
 const IndexRoute = IndexRouteImport.update({
@@ -208,6 +209,12 @@ const ApiPublicTradeAccessTokenRoute =
     path: '/api/public/trade-access/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedProjectsIdComplianceIndexRoute =
+  AuthenticatedProjectsIdComplianceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProjectsIdComplianceRoute,
+  } as any)
 const AuthenticatedReportsIdExtractGroupRoute =
   AuthenticatedReportsIdExtractGroupRouteImport.update({
     id: '/extract/$group',
@@ -239,7 +246,7 @@ export interface FileRoutesByFullPath {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
-  '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRoute
+  '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRouteWithChildren
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
+  '/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -271,7 +279,6 @@ export interface FileRoutesByTo {
   '/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
-  '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRoute
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdIndexRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
+  '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -306,7 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/organisation': typeof AuthenticatedSettingsOrganisationRoute
   '/api/public/resend-webhook': typeof ApiPublicResendWebhookRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
-  '/_authenticated/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRoute
+  '/_authenticated/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceRouteWithChildren
   '/_authenticated/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/_authenticated/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/_authenticated/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
   '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
+  '/_authenticated/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -349,6 +358,7 @@ export interface FileRouteTypes {
     | '/api/public/trade-access/$token'
     | '/projects/$id/'
     | '/reports/$id/extract/$group'
+    | '/projects/$id/compliance/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -373,7 +383,6 @@ export interface FileRouteTypes {
     | '/settings/organisation'
     | '/api/public/resend-webhook'
     | '/projects'
-    | '/projects/$id/compliance'
     | '/projects/$id/directory'
     | '/reports/$id/distribute'
     | '/reports/$id/print'
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/public/trade-access/$token'
     | '/projects/$id'
     | '/reports/$id/extract/$group'
+    | '/projects/$id/compliance'
   id:
     | '__root__'
     | '/'
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
     | '/api/public/trade-access/$token'
     | '/_authenticated/projects/$id/'
     | '/_authenticated/reports/$id/extract/$group'
+    | '/_authenticated/projects/$id/compliance/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -654,6 +665,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTradeAccessTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/projects/$id/compliance/': {
+      id: '/_authenticated/projects/$id/compliance/'
+      path: '/'
+      fullPath: '/projects/$id/compliance/'
+      preLoaderRoute: typeof AuthenticatedProjectsIdComplianceIndexRouteImport
+      parentRoute: typeof AuthenticatedProjectsIdComplianceRoute
+    }
     '/_authenticated/reports/$id/extract/$group': {
       id: '/_authenticated/reports/$id/extract/$group'
       path: '/extract/$group'
@@ -664,8 +682,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedProjectsIdComplianceRouteChildren {
+  AuthenticatedProjectsIdComplianceIndexRoute: typeof AuthenticatedProjectsIdComplianceIndexRoute
+}
+
+const AuthenticatedProjectsIdComplianceRouteChildren: AuthenticatedProjectsIdComplianceRouteChildren =
+  {
+    AuthenticatedProjectsIdComplianceIndexRoute:
+      AuthenticatedProjectsIdComplianceIndexRoute,
+  }
+
+const AuthenticatedProjectsIdComplianceRouteWithChildren =
+  AuthenticatedProjectsIdComplianceRoute._addFileChildren(
+    AuthenticatedProjectsIdComplianceRouteChildren,
+  )
+
 interface AuthenticatedProjectsIdRouteChildren {
-  AuthenticatedProjectsIdComplianceRoute: typeof AuthenticatedProjectsIdComplianceRoute
+  AuthenticatedProjectsIdComplianceRoute: typeof AuthenticatedProjectsIdComplianceRouteWithChildren
   AuthenticatedProjectsIdDirectoryRoute: typeof AuthenticatedProjectsIdDirectoryRoute
   AuthenticatedProjectsIdIndexRoute: typeof AuthenticatedProjectsIdIndexRoute
 }
@@ -673,7 +706,7 @@ interface AuthenticatedProjectsIdRouteChildren {
 const AuthenticatedProjectsIdRouteChildren: AuthenticatedProjectsIdRouteChildren =
   {
     AuthenticatedProjectsIdComplianceRoute:
-      AuthenticatedProjectsIdComplianceRoute,
+      AuthenticatedProjectsIdComplianceRouteWithChildren,
     AuthenticatedProjectsIdDirectoryRoute:
       AuthenticatedProjectsIdDirectoryRoute,
     AuthenticatedProjectsIdIndexRoute: AuthenticatedProjectsIdIndexRoute,
