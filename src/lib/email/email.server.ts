@@ -76,7 +76,8 @@ async function openDistribution(db: Db, seed: DistributionSeed): Promise<string 
         name: seed.recipient.name ?? null,
         // Kept so a failed send can be retried without rebuilding the payload.
         template: seed.message.template,
-        template_data: seed.message.data,
+        template_data: withoutAttachment(seed.message.data),
+
       },
       finding_ids: seed.findingIds,
       sent_by: seed.sentBy,
