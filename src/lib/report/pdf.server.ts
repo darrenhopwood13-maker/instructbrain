@@ -307,7 +307,7 @@ async function drawFinding(
 /* Build                                                                */
 /* ------------------------------------------------------------------ */
 
-function selectFindings(document: ReportDocument, options: BuildPdfOptions): DocFinding[] {
+export function selectFindings(document: ReportDocument, options: BuildPdfOptions): DocFinding[] {
   if (options.variant === "item") {
     const ids = new Set(options.findingIds ?? []);
     return document.findings.filter((finding) => ids.has(finding.id) && !finding.isConfidential);

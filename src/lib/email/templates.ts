@@ -57,7 +57,10 @@ export type ReportSharedPayload = {
   shareUrl: string;
   /** Plain-English expiry, e.g. "12 May 2026" or null for no expiry. */
   expiresOn: string | null;
+  /** The report itself, as a PDF. Null when it was too large to attach. */
+  attachment?: EmailAttachment | null;
 };
+
 
 export type TradeExtractPayload = {
   projectName: string;
@@ -78,7 +81,9 @@ export type CloseOutPayload = {
   projectName: string;
   itemListUrl: string;
   sentByName: string;
+  attachment?: EmailAttachment | null;
 };
+
 
 export type EmailMessage =
   | { template: "INVITE"; data: InvitePayload }
@@ -274,6 +279,9 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
   const expiry = data.expiresOn
     ? `This link expires on ${data.expiresOn}. Save your own copy before then.`
     : "This link stays live until it is withdrawn. Save your own copy for your records.";
+  const pdfLine = data.attachment
+    ? "A PDF of the full report is attached."
+    : "The report was too large to attach as a PDF, so please use the link above.";
   const html = shell(subject, [
     h1(data.reportTitle),
     p(`${data.sentByName} has shared a read-only copy of this report with you.`),
@@ -283,7 +291,7 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
       ["Issue date", data.issueDate ?? ""],
     ]),
     button("Open the report", data.shareUrl),
-    small(expiry),
+    small(`${pdfLine} ${expiry}`),
   ].join(""));
   const text = textShell([
     data.reportTitle,
@@ -296,10 +304,12 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
     "",
     `Open the report: ${data.shareUrl}`,
     "",
+    pdfLine,
     expiry,
   ]);
-  return { subject, html, text, attachments: [] };
+  return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
 }
+
 
 function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   // Second line of defence: refuse to render rather than send.
@@ -376,7 +386,11 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
       ["Target date", data.targetDate ?? "Not set"],
     ]),
     button("Update this item", data.itemListUrl),
-    small("Recording the close-out keeps the report complete and defensible."),
+    small(
+      data.attachment
+        ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
+        : "Recording the close-out keeps the report complete and defensible.",
+    ),
   ].join(""));
   const text = textShell([
     `${itemLabel(data.ref)} is overdue`,
@@ -390,6 +404,8 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
     `Target date: ${data.targetDate ?? "Not set"}`,
     "",
     `Update this item: ${data.itemListUrl}`,
+    ...(data.attachment ? ["", "A PDF of this item is attached."] : []),
   ]);
-  return { subject, html, text, attachments: [] };
+  return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
+
 }

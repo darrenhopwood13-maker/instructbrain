@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Check,
   Copy,
+  Download,
   Eye,
   Link2,
   Loader2,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Unlock,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,7 +39,9 @@ import {
 import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
+import { downloadReportPdf } from "@/lib/report/pdf.functions";
 import type { ResultView } from "@/lib/report/grouping";
+
 
 /**
  * The output actions live in the report header, visible, never behind a menu:
@@ -56,6 +60,8 @@ export function ReportActions({
   const [issueOpen, setIssueOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
+  const buildPdf = useServerFn(downloadReportPdf);
+
 
   const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
   const blockers = issueBlockers(document);
@@ -118,6 +124,29 @@ export function ReportActions({
       }),
   });
 
+  /** The same file the emails carry, saved straight to the device. */
+  const pdf = useMutation({
+    mutationFn: () => buildPdf({ data: { reportId: document.report.id, view: resultView } }),
+    onSuccess: (result) => {
+      const binary = atob(result.content);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const anchor = window.document.createElement("a");
+      anchor.href = url;
+      anchor.download = result.filename;
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success("PDF downloaded", { description: result.filename });
+    },
+    onError: (error) =>
+      toast.error("The PDF could not be built", {
+        description: error instanceof Error ? error.message : "Unknown error.",
+      }),
+  });
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -125,9 +154,24 @@ export function ReportActions({
           <Eye aria-hidden="true" className="mr-1.5 size-4" />
           Preview
         </Button>
+        <Button
+          type="button"
+          variant="quiet"
+          size="sm"
+          disabled={pdf.isPending}
+          onClick={() => pdf.mutate()}
+        >
+          {pdf.isPending ? (
+            <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+          ) : (
+            <Download aria-hidden="true" className="mr-1.5 size-4" />
+          )}
+          Download PDF
+        </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
           <Printer aria-hidden="true" className="mr-1.5 size-4" />
-          Print / Save as PDF
+          Print
+
         </Button>
         <Button type="button" variant="quiet" size="sm" onClick={() => setShareOpen(true)}>
           <Share2 aria-hidden="true" className="mr-1.5 size-4" />

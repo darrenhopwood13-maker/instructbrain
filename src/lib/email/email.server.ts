@@ -56,7 +56,14 @@ type DistributionSeed = {
   sentBy: string;
 };
 
+/** The stored payload never carries the PDF: it would bloat every row. */
+function withoutAttachment(data: EmailMessage["data"]): Record<string, unknown> {
+  const { attachment: _attachment, ...rest } = data as Record<string, unknown>;
+  return rest;
+}
+
 async function openDistribution(db: Db, seed: DistributionSeed): Promise<string | null> {
+
   const { data, error } = await db
     .from("distributions")
     .insert({
@@ -69,7 +76,8 @@ async function openDistribution(db: Db, seed: DistributionSeed): Promise<string 
         name: seed.recipient.name ?? null,
         // Kept so a failed send can be retried without rebuilding the payload.
         template: seed.message.template,
-        template_data: seed.message.data,
+        template_data: withoutAttachment(seed.message.data),
+
       },
       finding_ids: seed.findingIds,
       sent_by: seed.sentBy,
@@ -320,6 +328,9 @@ export async function sendReportSharedEmail(
     throw new Error("That share link has been revoked. Create a new link before sending.");
   }
 
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, { variant: "full" });
+
   const message: EmailMessage = {
     template: "REPORT_SHARED",
     data: {
@@ -330,8 +341,10 @@ export async function sendReportSharedEmail(
       sentByName: actorName(actor.claims, "Your surveyor"),
       shareUrl: shareUrlForToken(shareRow["token"] as string),
       expiresOn: gbDate(shareRow["expires_at"] as string | null),
+      attachment,
     },
   };
+
 
   const outcome = await dispatch(
     db,
@@ -456,6 +469,14 @@ export async function sendTradeExtractEmail(
 
   const tradeLabel = input.trade ?? "Unassigned items";
 
+  // Confidential items are already excluded above; the PDF builder excludes
+  // them again for the trade variant.
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, {
+    variant: "trade",
+    trade: input.trade,
+  });
+
   const message: EmailMessage = {
     template: "TRADE_EXTRACT",
     data: {
@@ -465,9 +486,10 @@ export async function sendTradeExtractEmail(
       items,
       itemListUrl: await itemListUrlFor(db, input.reportId, input.trade),
       sentByName: actorName(actor.claims, "Your surveyor"),
-      attachment: null,
+      attachment,
     },
   };
+
 
   const outcome = await dispatch(
     db,
@@ -519,6 +541,12 @@ export async function sendCloseOutRequestEmail(
     .single();
   const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
 
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, {
+    variant: "item",
+    findingIds: [input.findingId],
+  });
+
   const message: EmailMessage = {
     template: "CLOSE_OUT_REQUEST",
     data: {
@@ -529,8 +557,10 @@ export async function sendCloseOutRequestEmail(
       projectName: ((report as Record<string, any>)?.["projects"]?.["name"] as string) ?? "this project",
       itemListUrl: absoluteUrl(`/reports/${input.reportId}`),
       sentByName: actorName(actor.claims, "Your surveyor"),
+      attachment,
     },
   };
+
 
   const outcome = await dispatch(
     db,
