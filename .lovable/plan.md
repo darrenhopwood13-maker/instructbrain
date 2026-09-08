@@ -21,14 +21,20 @@ interface only.
 
 ## 2. Report language (new)
 
-A separate control lives on the report itself, next to the issue and send actions:
-**Report language — English (record copy)**.
+A separate control lives in the report header, directly beside **Issue report** and
+**Share/Send**, plainly labelled **Report language — English (record copy)**. It is a
+visible control at the point of issue, never inside a menu, so choosing the language
+is a deliberate act each time a report goes out.
 
 - Chosen per report, saved with the report, and shown wherever the report is.
-- Applies to the report preview, the print view, the PDF attached to any send,
-  and the covering email that carries it.
+- Applies to the OUTPUT only: report preview, print view, the PDF attached to any
+  send, and the covering email.
+- **The working screens stay in your own language.** Photos, Review, capture fields,
+  trade assignment and every button follow the top-bar screen language. Setting a
+  report to issue in Polish does not flip the review screen into Polish mid-approval.
 - Defaults to English. Changing it never rewrites the stored report.
 - One press returns to English.
+
 
 Two rules the document side must keep:
 
@@ -67,6 +73,7 @@ every send is still a person pressing a button.
 2. Detach report content from the interface toggle.
 3. Report language control on the report and quick report screens.
 4. Carry the language into PDF, print view and every email send.
-5. Tests: interface language does not alter report content; a report set to a
-   language renders and exports in it; English source is never overwritten; the
+5. Tests: the screen language never alters review or report content; a report set to
+   a language renders and exports in it; English source is never overwritten; the
    record-copy notice is present on every translated output.
+
