@@ -102,7 +102,8 @@ function ComplianceRegister() {
   });
 
   if (project.isPending || runs.isPending) return <LoadingState label="Loading the register" />;
-  if (project.error) return <ErrorState error={project.error} />;
+  if (project.error)
+    return <ErrorState title="Could not load the register" error={project.error} />;
 
   const pointById = new Map((points.data ?? []).map((point) => [point.id, point]));
 

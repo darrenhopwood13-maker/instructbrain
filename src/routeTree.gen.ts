@@ -41,6 +41,7 @@ import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authe
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 import { Route as ApiPublicTradeAccessTokenRouteImport } from './routes/api/public/trade-access.$token'
 import { Route as AuthenticatedProjectsIdComplianceIndexRouteImport } from './routes/_authenticated/projects.$id.compliance.index'
+import { Route as AuthenticatedProjectsIdComplianceRunIdRouteImport } from './routes/_authenticated/projects.$id.compliance.$runId'
 import { Route as AuthenticatedReportsIdExtractGroupRouteImport } from './routes/_authenticated/reports.$id.extract.$group'
 
 const IndexRoute = IndexRouteImport.update({
@@ -215,6 +216,12 @@ const AuthenticatedProjectsIdComplianceIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedProjectsIdComplianceRoute,
   } as any)
+const AuthenticatedProjectsIdComplianceRunIdRoute =
+  AuthenticatedProjectsIdComplianceRunIdRouteImport.update({
+    id: '/$runId',
+    path: '/$runId',
+    getParentRoute: () => AuthenticatedProjectsIdComplianceRoute,
+  } as any)
 const AuthenticatedReportsIdExtractGroupRoute =
   AuthenticatedReportsIdExtractGroupRouteImport.update({
     id: '/extract/$group',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
+  '/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
@@ -285,6 +293,7 @@ export interface FileRoutesByTo {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdIndexRoute
+  '/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/_authenticated/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
+  '/_authenticated/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/_authenticated/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id/'
+    | '/projects/$id/compliance/$runId'
     | '/reports/$id/extract/$group'
     | '/projects/$id/compliance/'
   fileRoutesByTo: FileRoutesByTo
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id'
+    | '/projects/$id/compliance/$runId'
     | '/reports/$id/extract/$group'
     | '/projects/$id/compliance'
   id:
@@ -424,6 +436,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/_authenticated/projects/$id/'
+    | '/_authenticated/projects/$id/compliance/$runId'
     | '/_authenticated/reports/$id/extract/$group'
     | '/_authenticated/projects/$id/compliance/'
   fileRoutesById: FileRoutesById
@@ -672,6 +685,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdComplianceIndexRouteImport
       parentRoute: typeof AuthenticatedProjectsIdComplianceRoute
     }
+    '/_authenticated/projects/$id/compliance/$runId': {
+      id: '/_authenticated/projects/$id/compliance/$runId'
+      path: '/$runId'
+      fullPath: '/projects/$id/compliance/$runId'
+      preLoaderRoute: typeof AuthenticatedProjectsIdComplianceRunIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsIdComplianceRoute
+    }
     '/_authenticated/reports/$id/extract/$group': {
       id: '/_authenticated/reports/$id/extract/$group'
       path: '/extract/$group'
@@ -683,11 +703,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedProjectsIdComplianceRouteChildren {
+  AuthenticatedProjectsIdComplianceRunIdRoute: typeof AuthenticatedProjectsIdComplianceRunIdRoute
   AuthenticatedProjectsIdComplianceIndexRoute: typeof AuthenticatedProjectsIdComplianceIndexRoute
 }
 
 const AuthenticatedProjectsIdComplianceRouteChildren: AuthenticatedProjectsIdComplianceRouteChildren =
   {
+    AuthenticatedProjectsIdComplianceRunIdRoute:
+      AuthenticatedProjectsIdComplianceRunIdRoute,
     AuthenticatedProjectsIdComplianceIndexRoute:
       AuthenticatedProjectsIdComplianceIndexRoute,
   }
