@@ -7,9 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { projectsQuery } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
