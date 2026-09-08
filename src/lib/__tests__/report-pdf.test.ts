@@ -29,7 +29,19 @@ function finding(overrides: Partial<DocFinding>): DocFinding {
   } as DocFinding;
 }
 
+const snapshot = {
+  id: "site_walk",
+  version: 1,
+  label: "Site condition",
+  statuses: [
+    { id: "fail", label: "Defect", tone: "fail" as const },
+    { id: NOT_ASSESSED_ID, label: "Not assessed", tone: "flag" as const },
+  ],
+  requiresTradeAssignment: true,
+};
+
 const document: ReportDocument = {
+
   report: {
     id: "r1",
     title: "Condition survey",
