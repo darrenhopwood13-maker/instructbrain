@@ -37,6 +37,7 @@ import { Route as ApiPublicResendWebhookRouteImport } from './routes/api/public/
 import { Route as AuthenticatedProjectsIdIndexRouteImport } from './routes/_authenticated/projects.$id.index'
 import { Route as AuthenticatedProjectsIdComplianceRouteImport } from './routes/_authenticated/projects.$id.compliance'
 import { Route as AuthenticatedProjectsIdDirectoryRouteImport } from './routes/_authenticated/projects.$id.directory'
+import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as AuthenticatedReportsIdDistributeRouteImport } from './routes/_authenticated/reports.$id.distribute'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
@@ -193,6 +194,12 @@ const AuthenticatedProjectsIdDirectoryRoute =
     path: '/directory',
     getParentRoute: () => AuthenticatedProjectsIdRoute,
   } as any)
+const AuthenticatedReportsIdIndexRoute =
+  AuthenticatedReportsIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedReportsIdRoute,
+  } as any)
 const AuthenticatedReportsIdDistributeRoute =
   AuthenticatedReportsIdDistributeRouteImport.update({
     id: '/distribute',
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
+  '/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
   '/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
@@ -287,7 +295,6 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/shared/$token': typeof SharedTokenRoute
   '/trade/$token': typeof TradeTokenRoute
-  '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdIndexRoute
+  '/reports/$id': typeof AuthenticatedReportsIdIndexRoute
   '/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/projects/$id/compliance': typeof AuthenticatedProjectsIdComplianceIndexRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/_authenticated/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
+  '/_authenticated/reports/$id/': typeof AuthenticatedReportsIdIndexRoute
   '/_authenticated/projects/$id/compliance/$runId': typeof AuthenticatedProjectsIdComplianceRunIdRoute
   '/_authenticated/reports/$id/extract/$group': typeof AuthenticatedReportsIdExtractGroupRoute
   '/_authenticated/projects/$id/compliance/': typeof AuthenticatedProjectsIdComplianceIndexRoute
@@ -378,6 +387,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id/'
+    | '/reports/$id/'
     | '/projects/$id/compliance/$runId'
     | '/reports/$id/extract/$group'
     | '/projects/$id/compliance/'
@@ -397,7 +407,6 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/shared/$token'
     | '/trade/$token'
-    | '/reports/$id'
     | '/reports/new'
     | '/reports/quick'
     | '/settings/account'
@@ -412,6 +421,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id'
+    | '/reports/$id'
     | '/projects/$id/compliance/$runId'
     | '/reports/$id/extract/$group'
     | '/projects/$id/compliance'
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/_authenticated/projects/$id/'
+    | '/_authenticated/reports/$id/'
     | '/_authenticated/projects/$id/compliance/$runId'
     | '/_authenticated/reports/$id/extract/$group'
     | '/_authenticated/projects/$id/compliance/'
@@ -670,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdDirectoryRouteImport
       parentRoute: typeof AuthenticatedProjectsIdRoute
     }
+    '/_authenticated/reports/$id/': {
+      id: '/_authenticated/reports/$id/'
+      path: '/'
+      fullPath: '/reports/$id/'
+      preLoaderRoute: typeof AuthenticatedReportsIdIndexRouteImport
+      parentRoute: typeof AuthenticatedReportsIdRoute
+    }
     '/_authenticated/reports/$id/distribute': {
       id: '/_authenticated/reports/$id/distribute'
       path: '/distribute'
@@ -763,6 +781,7 @@ const AuthenticatedProjectsIdRouteWithChildren =
 interface AuthenticatedReportsIdRouteChildren {
   AuthenticatedReportsIdDistributeRoute: typeof AuthenticatedReportsIdDistributeRoute
   AuthenticatedReportsIdPrintRoute: typeof AuthenticatedReportsIdPrintRoute
+  AuthenticatedReportsIdIndexRoute: typeof AuthenticatedReportsIdIndexRoute
   AuthenticatedReportsIdExtractGroupRoute: typeof AuthenticatedReportsIdExtractGroupRoute
 }
 
@@ -771,6 +790,7 @@ const AuthenticatedReportsIdRouteChildren: AuthenticatedReportsIdRouteChildren =
     AuthenticatedReportsIdDistributeRoute:
       AuthenticatedReportsIdDistributeRoute,
     AuthenticatedReportsIdPrintRoute: AuthenticatedReportsIdPrintRoute,
+    AuthenticatedReportsIdIndexRoute: AuthenticatedReportsIdIndexRoute,
     AuthenticatedReportsIdExtractGroupRoute:
       AuthenticatedReportsIdExtractGroupRoute,
   }
