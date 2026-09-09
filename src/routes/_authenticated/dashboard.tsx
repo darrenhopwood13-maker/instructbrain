@@ -160,10 +160,6 @@ function Dashboard() {
 
   return (
     <AppShell>
-      <header className="pb-5">
-        <p className="eyebrow">Start here</p>
-      </header>
-
       <section aria-labelledby="mode-heading">
         <h2 id="mode-heading" className="sr-only">
           Choose what you are making

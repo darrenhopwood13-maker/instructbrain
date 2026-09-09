@@ -21,16 +21,16 @@ export const Route = createFileRoute("/auth/sign-up")({
 
   head: () => ({
     meta: [
-      { title: "Create an account — instructBrain" },
+      { title: "3 free reports — instructBrain" },
       {
         name: "description",
         content:
-          "Create a instructBrain account to turn site photographs into client-ready construction reports.",
+          "Turn site photos into client-ready construction reports. Start with 3 free reports, no card needed.",
       },
-      { property: "og:title", content: "Create an account — instructBrain" },
+      { property: "og:title", content: "3 free reports — instructBrain" },
       {
         property: "og:description",
-        content: "Set up your instructBrain account with an email and your own password.",
+        content: "Turn site photos into client-ready construction reports. Start with 3 free reports, no card needed.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -99,7 +99,7 @@ function SignUp() {
   return (
     <AuthLayout
       title="3 free reports — no card needed"
-      intro="Turn site photographs into a client-ready report in minutes. Email and a password you choose — that is the whole sign-up."
+      intro="Turn your site photos into client-ready construction reports in minutes. Start now — your first three are on us."
       footer={
         <span className="text-muted-foreground">
           Already have an account?{" "}
@@ -173,7 +173,7 @@ function SignUp() {
         ) : null}
 
         <Button type="submit" variant="brand" className="w-full" disabled={busy}>
-          {busy ? "Creating account…" : "Create account"}
+          {busy ? "Creating account…" : "Start my 3 free reports"}
         </Button>
       </form>
     </AuthLayout>
