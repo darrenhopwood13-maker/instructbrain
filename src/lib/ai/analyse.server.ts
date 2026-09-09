@@ -25,6 +25,7 @@ import {
 } from "@/lib/ai/observation";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
 import { coerceBrief, toneById } from "@/lib/report/brief";
+import { applyToneRules } from "@/lib/report/tone-post-process";
 import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import { getDefinition } from "@/lib/survey-definitions";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
@@ -420,13 +421,30 @@ export async function analysePhotoForReport(
     }
   }
 
-  const drafts: DraftFinding[] = envelope
+  const rawDrafts: DraftFinding[] = envelope
     ? draftsFromEnvelope(envelope, snapshot, {
         confidenceThreshold: config.confidenceThreshold,
         tradeConfidenceThreshold: config.tradeConfidenceThreshold,
         tier: result.tier,
       })
     : [notAssessedDraft(failure ?? "the AI call failed.", result.tier, null)];
+
+  // Wording only. Status, severity id, ref and confidence are never touched
+  // here, so invariants 1 and 4 hold whatever the brief asks for.
+  const dropFix = brief ? brief.reportType === "identifier" || !brief.includeFix : false;
+  const dropSeverity = brief ? brief.reportType === "identifier" || !brief.includeSeverity : false;
+  const drafts: DraftFinding[] = rawDrafts.map((draft) => ({
+    ...draft,
+    ...(draft.finding_text
+      ? { finding_text: applyToneRules(draft.finding_text, tone.rules) }
+      : {}),
+    ...(dropFix
+      ? { remedial_text: "" }
+      : draft.remedial_text
+        ? { remedial_text: applyToneRules(draft.remedial_text, tone.rules) }
+        : {}),
+    ...(dropSeverity ? { severity: null, severity_rationale: null } : {}),
+  }));
 
   result.error = failure;
 

@@ -164,28 +164,42 @@ function Dashboard() {
         <h2 id="mode-heading" className="sr-only">
           Choose what you are making
         </h2>
-        <div className="mx-auto grid max-w-3xl grid-cols-3 gap-2 sm:gap-5">
-          <ActionTile
-            active={mode === "project"}
-            label="Project report"
-            sub="Belongs to a project, with a directory and close-out"
-            icon={ClipboardList}
-            onSelect={() => chooseMode("project")}
-          />
-          <ActionTile
-            active={mode === "quick"}
-            label="Custom report"
-            sub="A standalone report, no project setup"
-            icon={Camera}
-            onSelect={() => chooseMode("quick")}
-          />
-          <ActionTile
-            active={false}
-            label="Compliance reports"
-            sub="Weekly compliance register for a project"
-            icon={ClipboardCheck}
-            onSelect={openCompliance}
-          />
+        <div className="mx-auto max-w-3xl">
+          <button
+            type="button"
+            onClick={() => {
+              setMode(null);
+              void navigate({ to: "/reports/quick", search: {} });
+            }}
+            className="glass-orange flex min-h-24 w-full items-center gap-4 rounded-2xl px-5 py-5 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+          >
+            <Camera aria-hidden="true" className="size-8 shrink-0 sm:size-10" />
+            <span className="min-w-0">
+              <span className="editorial-title block text-xl font-semibold sm:text-2xl">
+                Custom report
+              </span>
+              <span className="block text-sm opacity-90">
+                Brief the AI — your photos, your wording, 160+ in a batch
+              </span>
+            </span>
+          </button>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-5">
+            <ActionTile
+              active={mode === "project"}
+              label="Project report"
+              sub="Belongs to a project, with a directory and close-out"
+              icon={ClipboardList}
+              onSelect={() => chooseMode("project")}
+            />
+            <ActionTile
+              active={false}
+              label="Compliance reports"
+              sub="Weekly compliance register for a project"
+              icon={ClipboardCheck}
+              onSelect={openCompliance}
+            />
+          </div>
         </div>
 
         {mode ? (

@@ -107,6 +107,8 @@ export type ReportDocument = {
    * document is then sectioned by them.
    */
   surveyTypes?: Array<{ id: string; label: string }>;
+  /** Advisory wording set on the report's brief, shown at the end of the document. */
+  advisoryFooter?: string | null;
   findings: DocFinding[];
   photos: DocPhoto[];
   synthesis: DocSynthesis | null;

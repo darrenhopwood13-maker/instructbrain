@@ -7,7 +7,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { coerceSnapshot } from "@/lib/report/snapshot";
-import { coerceBrief } from "@/lib/report/brief";
+import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import type {
@@ -219,6 +219,7 @@ export async function loadReportDocument(
     // A custom report may cover several survey types; the labels come from
     // the report's own brief, never from anything hardcoded here.
     surveyTypes: coerceBrief(report["brief"])?.surveyTypes ?? [],
+    advisoryFooter: coerceBrief(report["brief"])?.advisoryFooter ? ADVISORY_FOOTER_TEXT : null,
     findings: docFindings,
     photos: docPhotos,
     synthesis: synthesis(report["synthesis"]),
