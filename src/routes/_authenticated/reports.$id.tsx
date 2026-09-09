@@ -212,7 +212,7 @@ function ReportWorkspace() {
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          {project ? "Projects" : "Quick reports"}
+          {project ? "Projects" : "Custom reports"}
         </Link>
         {project ? (
           <>

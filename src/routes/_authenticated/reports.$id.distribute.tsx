@@ -200,7 +200,7 @@ function DistributionReview() {
     <AppShell>
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          {data?.projectId ? "Projects" : "Quick reports"}
+          {data?.projectId ? "Projects" : "Custom reports"}
         </Link>
         <ChevronRight aria-hidden="true" className="mx-1 inline size-3.5 text-muted-foreground" />
         <Link
@@ -221,7 +221,7 @@ function DistributionReview() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {isQuick
-            ? "A quick report has no project directory, so the whole report goes to one recipient you enter below."
+            ? "A custom report has no project directory, so the whole report goes to one recipient you enter below."
             : `Grouped by ${data?.grouping === "trade" ? "responsible trade" : data?.grouping}.`}{" "}
           Nothing leaves instructBrain until you press send.
         </p>

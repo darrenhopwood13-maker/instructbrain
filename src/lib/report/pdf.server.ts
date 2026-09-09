@@ -384,7 +384,7 @@ export async function buildReportPdf(
   drawRule(writer, 10, 12);
 
   const facts: Array<[string, string]> = [
-    ["Project", document.project?.name ?? "Quick report"],
+    ["Project", document.project?.name ?? "Custom report"],
     ["Client", document.project?.clientName ?? ""],
     ["Address", document.project?.address ?? ""],
     ["Reference", document.report.reference ?? ""],
@@ -449,6 +449,29 @@ export async function buildReportPdf(
     drawText(writer, document.report.methodologyText, { size: 10 });
   }
 
+  /* Contents — only where the report covers more than one survey type. */
+  const sections = sectionsFor(findings, document.surveyTypes ?? [], "Results");
+  const sectioned = options.variant === "full" && sections.length > 1;
+
+  if (sectioned) {
+    drawRule(writer, 14, 10);
+    eyebrow(writer, "Contents");
+    for (const section of sections) {
+      const refs = section.findings.map((finding) => finding.ref).filter(Boolean);
+      const range =
+        refs.length === 0
+          ? "no items"
+          : refs.length === 1
+            ? `item ${refs[0]}`
+            : `items ${refs[0]} to ${refs[refs.length - 1]}`;
+      ensure(writer, 16);
+      drawText(writer, `${section.label} — ${section.findings.length} (${range})`, {
+        size: 10,
+        gapAfter: 1,
+      });
+    }
+  }
+
   /* Results */
   drawRule(writer, 14, 10);
   eyebrow(writer, options.variant === "item" ? "Item" : "Results");
@@ -457,14 +480,20 @@ export async function buildReportPdf(
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
   } else if (options.variant === "full") {
     const view = safeResultView(options.view);
-    const groups = groupResults({ ...document, findings }, view);
-    for (const group of groups) {
-      ensure(writer, 60);
-      drawText(writer, group.label, { size: 12, bold: true, colour: ACCENT, gapAfter: 2 });
-      for (const finding of group.findings) {
-        await drawFinding(writer, document, finding, fetcher);
+    for (const section of sectioned ? sections : [{ id: "all", label: "", findings }]) {
+      if (sectioned) {
+        ensure(writer, 70);
+        drawText(writer, section.label, { size: 14, bold: true, gapAfter: 4 });
       }
-      writer.cursor.y -= 6;
+      const groups = groupResults({ ...document, findings: section.findings }, view);
+      for (const group of groups) {
+        ensure(writer, 60);
+        drawText(writer, group.label, { size: 12, bold: true, colour: ACCENT, gapAfter: 2 });
+        for (const finding of group.findings) {
+          await drawFinding(writer, document, finding, fetcher);
+        }
+        writer.cursor.y -= 6;
+      }
     }
   } else {
     for (const finding of findings) {

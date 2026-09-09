@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { humanisePlanError } from "@/lib/plans";
 import type { SurveyDefinition } from "@/lib/survey-types";
+import type { ReportBrief } from "@/lib/report/brief";
 import {
   coerceReportStatus,
   type DirectoryEntry,
@@ -355,6 +356,10 @@ export type NewReport = {
   surveyTypeId?: string | null;
   authorId: string | null;
   isQuick?: boolean;
+  /** Custom Reports only: preset, tone and special request. */
+  brief?: ReportBrief | null;
+  /** Every survey type this report covers, in document order. */
+  surveyTypeIds?: string[];
 };
 
 /**
@@ -375,6 +380,8 @@ export async function createReport(input: NewReport): Promise<string> {
       is_quick: input.isQuick ?? false,
       survey_type_snapshot: JSON.parse(JSON.stringify(input.definition)),
       ...(input.surveyTypeId ? { survey_type_id: input.surveyTypeId } : {}),
+      ...(input.brief ? { brief: JSON.parse(JSON.stringify(input.brief)) } : {}),
+      ...(input.surveyTypeIds?.length ? { survey_type_ids: input.surveyTypeIds } : {}),
     })
 
 

@@ -58,11 +58,14 @@ export function PhotosPanel({
   reportId,
   snapshot,
   initialFiles,
+  pinnedFields,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
   /** Files already chosen before the report existed (quick capture). */
   initialFiles?: File[];
+  /** Capture values stamped on every new photograph (e.g. its survey type). */
+  pinnedFields?: Record<string, string>;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
@@ -198,7 +201,7 @@ export function PhotosPanel({
       const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
-        captureFields: { ...zoneValues },
+        captureFields: { ...zoneValues, ...(pinnedFields ?? {}) },
       }));
 
       for (const item of items) pendingRef.current.set(item.id, item);
@@ -214,7 +217,7 @@ export function PhotosPanel({
       ]);
       void runQueue(items);
     },
-    [runQueue, zoneValues, remainingPhotos, photoCap],
+    [runQueue, zoneValues, pinnedFields, remainingPhotos, photoCap],
   );
 
   // Quick capture picks the photographs before the report exists; they are

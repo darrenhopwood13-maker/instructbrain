@@ -24,6 +24,9 @@ import {
   type Envelope,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
+import { coerceBrief, toneById } from "@/lib/report/brief";
+import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
+import { getDefinition } from "@/lib/survey-definitions";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
 import { nextRef } from "@/lib/finding-refs";
 
@@ -113,14 +116,38 @@ function coerceSnapshot(value: unknown): SurveyTypeSnapshot {
 }
 
 /** Cache identity: the same photograph under the same definition and models. */
-function snapshotKey(snapshot: SurveyTypeSnapshot, models: { triage: string; escalation: string }) {
-  return `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}`;
+/**
+ * Which survey type assesses this photograph. Defaults to the report's own
+ * snapshot; a per-photograph type is honoured only when the report's brief
+ * lists it, so one discipline's vocabulary can never reach another's items.
+ */
+function resolvePhotoSnapshot(
+  primary: SurveyTypeSnapshot,
+  brief: ReturnType<typeof coerceBrief>,
+  captureFields: Record<string, string> | null,
+): SurveyTypeSnapshot {
+  const wanted = captureFields?.[SURVEY_TYPE_FIELD];
+  if (!wanted || wanted === primary.id) return primary;
+  const listed = brief?.surveyTypes?.some((type) => type.id === wanted);
+  if (!listed) return primary;
+  const definition = getDefinition(wanted);
+  return definition ? coerceSnapshot(definition) : primary;
+}
+
+function snapshotKey(
+  snapshot: SurveyTypeSnapshot,
+  models: { triage: string; escalation: string },
+  briefKey = "",
+) {
+  // The brief changes the prompt, so a cached answer written under a different
+  // tone or special request must not be reused.
+  return `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}${briefKey ? `|${briefKey}` : ""}`;
 }
 
 async function loadReport(client: AnyClient, reportId: string) {
   const { data, error } = await table(client, "reports")
     .select(
-      "id, organisation_id, survey_type_snapshot, project:projects(name, client_name, address)",
+      "id, organisation_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -130,6 +157,7 @@ async function loadReport(client: AnyClient, reportId: string) {
     id: string;
     organisation_id: string;
     survey_type_snapshot: unknown;
+    brief: unknown;
     project: { name: string | null; client_name: string | null; address: string | null } | null;
   };
 }
@@ -255,12 +283,23 @@ export async function analysePhotoForReport(
   client: AnyClient,
   input: { reportId: string; photoId: string; force?: boolean },
 ): Promise<PhotoAnalysisResult> {
-  const config = aiConfig();
+  const baseConfig = aiConfig();
   const report = await loadReport(client, input.reportId);
   await assertWithinBudget(client, report.organisation_id);
 
-  const snapshot = coerceSnapshot(report.survey_type_snapshot);
-  const key = snapshotKey(snapshot, config.models);
+  const brief = coerceBrief(report.brief);
+  const tone = toneById(brief?.tone ?? null);
+  // Speed comes from a tighter answer and, on the fastest tone, from skipping
+  // the second-opinion pass. The photograph itself is never touched.
+  const config = brief
+    ? {
+        ...baseConfig,
+        maxOutputTokens: Math.min(baseConfig.maxOutputTokens, tone.maxOutputTokens),
+        escalationEnabled: baseConfig.escalationEnabled && tone.escalate,
+      }
+    : baseConfig;
+
+  const primarySnapshot = coerceSnapshot(report.survey_type_snapshot);
 
   const { data: photoRow, error: photoError } = await table(client, "photos")
     .select(
@@ -272,6 +311,17 @@ export async function analysePhotoForReport(
   if (photoError) throw new Error(photoError.message);
   if (!photoRow) throw new Error("That photograph could not be found on this report.");
   const photo = photoRow as PhotoRecord;
+
+  // A report may cover several survey types. The type recorded on the
+  // photograph decides which snapshot assesses it — and only a type the
+  // report itself lists is ever honoured, so vocabulary cannot leak in.
+  const snapshot = resolvePhotoSnapshot(primarySnapshot, brief, photo.capture_fields);
+
+  const key = snapshotKey(
+    snapshot,
+    config.models,
+    brief ? `${tone.id}:${brief.specialRequest}` : "",
+  );
 
   if (input.force) await clearPreviousDrafts(client, input.reportId, photo.id);
 
@@ -314,7 +364,7 @@ export async function analysePhotoForReport(
       const outcome = await analysePhotograph(
         {
           snapshot,
-          systemPrompt: buildSystemPrompt(snapshot),
+          systemPrompt: buildSystemPrompt(snapshot, brief),
           userPrompt: buildUserPrompt(
             {
               captureFields: photo.capture_fields ?? {},
@@ -398,7 +448,12 @@ export async function analysePhotoForReport(
           report_id: input.reportId,
           ref,
           sequence,
-          capture_fields: photo.capture_fields ?? {},
+          capture_fields: {
+            ...(photo.capture_fields ?? {}),
+            // Records which survey type assessed this item, so a report
+            // covering several types can be sectioned in the document.
+            [SURVEY_TYPE_FIELD]: String((snapshot as { id?: unknown }).id ?? ""),
+          },
           ai_raw_output: (raw ?? null) as never,
           ...payload,
         })

@@ -74,7 +74,7 @@ function AllReports() {
                     <ReportStatusPill status={report.status} />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {report.isQuick && !report.projectId ? "Quick report" : "Project report"} ·{" "}
+                    {report.isQuick && !report.projectId ? "Custom report" : "Project report"} ·{" "}
                     {report.reference} · Updated {report.updated}
                   </span>
                 </Link>
