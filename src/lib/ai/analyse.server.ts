@@ -281,7 +281,11 @@ export async function analysePhotoForReport(
     : baseConfig;
 
   const snapshot = coerceSnapshot(report.survey_type_snapshot);
-  const key = snapshotKey(snapshot, config.models);
+  const key = snapshotKey(
+    snapshot,
+    config.models,
+    brief ? `${tone.id}:${brief.specialRequest}` : "",
+  );
 
   const { data: photoRow, error: photoError } = await table(client, "photos")
     .select(

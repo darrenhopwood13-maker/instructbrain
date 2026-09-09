@@ -102,7 +102,9 @@ export function aiConfig(): AiConfig {
     models: { triage: profile.triageModel, escalation: profile.escalationModel },
     confidenceThreshold: envNumber("AI_CONFIDENCE_THRESHOLD", 0.6),
     tradeConfidenceThreshold: envNumber("AI_TRADE_CONFIDENCE_THRESHOLD", 0.6),
-    concurrency: Math.min(6, Math.max(4, envNumber("AI_CONCURRENCY", 4))),
+    // Raised from 6 to 12: parallelism is where the speed comes from. The
+    // photograph handed to the model is never reduced (invariant 3).
+    concurrency: Math.min(12, Math.max(4, envNumber("AI_CONCURRENCY", 12))),
     maxRetries: Math.max(0, envNumber("AI_MAX_RETRIES", 4)),
     baseRetryDelayMs: envNumber("AI_RETRY_BASE_MS", 800),
     requestTimeoutMs: envNumber("AI_REQUEST_TIMEOUT_MS", 120_000),
