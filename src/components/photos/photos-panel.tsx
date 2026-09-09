@@ -58,11 +58,14 @@ export function PhotosPanel({
   reportId,
   snapshot,
   initialFiles,
+  pinnedFields,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
   /** Files already chosen before the report existed (quick capture). */
   initialFiles?: File[];
+  /** Capture values stamped on every new photograph (e.g. its survey type). */
+  pinnedFields?: Record<string, string>;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
