@@ -219,6 +219,7 @@ export async function loadReportDocument(
     // A custom report may cover several survey types; the labels come from
     // the report's own brief, never from anything hardcoded here.
     surveyTypes: coerceBrief(report["brief"])?.surveyTypes ?? [],
+    advisoryFooter: coerceBrief(report["brief"])?.advisoryFooter ? ADVISORY_FOOTER_TEXT : null,
     findings: docFindings,
     photos: docPhotos,
     synthesis: synthesis(report["synthesis"]),
