@@ -103,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="shell-container flex items-center gap-4 py-5">
           <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
-              <span className="wordmark block truncate text-base leading-tight">
+              <span className="wordmark block truncate text-lg leading-tight sm:text-xl">
                 <span className="text-brand-accent">instruct</span>
                 <span className="text-foreground">Brain</span>
               </span>
