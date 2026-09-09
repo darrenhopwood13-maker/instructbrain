@@ -10,6 +10,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DeleteProjectButton } from "@/components/delete-buttons";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
@@ -142,6 +143,14 @@ function ProjectDashboard() {
           </p>
         ) : null}
       </header>
+
+      <div className="mt-3 flex justify-end">
+        <DeleteProjectButton
+          projectId={current.id}
+          name={current.name}
+          reportCount={reportList.length}
+        />
+      </div>
 
       <DirectoryCard projectId={current.id} />
 
