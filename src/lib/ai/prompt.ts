@@ -11,6 +11,7 @@ import {
   tradesOf,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import { briefPromptSection, type ReportBrief } from "@/lib/report/brief";
 
 /**
  * Invariant 5: every discipline-specific word in the prompt comes out of the
@@ -109,6 +110,9 @@ export function buildSystemPrompt(
     definesField(snapshot, "likely_cause")
       ? null
       : "Do not return a likely_cause for this survey type; omit it or return null.",
+    // The brief shapes style and emphasis only. It is placed AFTER the status
+    // rules so it can never be read as overriding them.
+    briefPromptSection(brief ?? null),
     "Return the envelope: assessable, abstain_reason and the observations array.",
   ];
 
