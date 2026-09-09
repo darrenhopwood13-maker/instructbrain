@@ -37,7 +37,7 @@ import {
   complianceActionsQuery,
   complianceEntriesQuery,
   compliancePointsQuery,
-  complianceRunsQuery,
+  complianceRunQuery,
   createPoint,
   lockRun,
   raiseAction,
@@ -254,7 +254,7 @@ function ComplianceRun() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [photoFor, setPhotoFor] = useState<ComplianceEntry | null>(null);
 
-  if (project.isPending || runsFire.isPending || entries.isPending) {
+  if (project.isPending || runQuery.isPending || entries.isPending) {
     return <LoadingState label="Loading the check" />;
   }
   if (project.error) return <ErrorState title="Could not load this check" error={project.error} />;
