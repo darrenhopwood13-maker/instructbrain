@@ -81,6 +81,9 @@ export type ReportDocument = {
     executiveSummary: string | null;
     synthesisConfirmed: boolean;
     coverPhotoId: string | null;
+    /** The language this report is ISSUED in. English is the record copy. */
+    outputLanguage: string;
+
   };
   project: {
     id: string;

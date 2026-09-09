@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { reportDocumentQuery } from "@/lib/report/report-data";
+import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { formatDocumentDate } from "@/lib/report/document";
 import { safeResultView } from "@/lib/report/grouping";
 
@@ -40,14 +41,16 @@ function PrintReport() {
   const { auto, view } = Route.useSearch();
   const query = useQuery(reportDocumentQuery(id));
   const document = query.data ?? null;
+  const translation = useReportTranslation(id, document);
+
 
   useEffect(() => {
-    if (auto && document) {
+    if (auto && document && !translation.loading) {
       const timer = setTimeout(() => window.print(), 800);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [auto, document]);
+  }, [auto, document, translation.loading]);
 
   if (query.isPending) return <LoadingState label="Assembling the document…" />;
   if (query.isError) {
@@ -92,7 +95,7 @@ function PrintReport() {
       </div>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        <ReportDocumentView document={document} print view={view} />
+        <ReportDocumentView document={translation.document ?? document} print view={view} />
       </main>
     </div>
 

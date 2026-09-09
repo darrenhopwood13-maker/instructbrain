@@ -14,6 +14,7 @@ import { PhotosPanel } from "@/components/photos/photos-panel";
 import { AnalysisPanel } from "@/components/ai/analysis-panel";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { useReportTranslation } from "@/lib/i18n/use-report-translation";
+import { languageLabel } from "@/i18n/languages";
 import { ReportActions } from "@/components/report/report-actions";
 import { InlineField } from "@/components/report/inline-field";
 
@@ -383,8 +384,9 @@ function ReportWorkspace() {
               ) : null}
               {translation.isTranslatedView ? (
                 <p className="mt-4 rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
-                  You are reading a translation into {translation.language}. English remains the
-                  record copy, so editing is off until you revert to English.
+                  This report will be issued in {languageLabel(translation.language)}. English
+                  remains the record copy, so editing is off until you set the report language back
+                  to English.
                 </p>
               ) : null}
 

@@ -14,6 +14,8 @@ import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
+import { recordCopyNotice } from "@/lib/i18n/record-copy";
+
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 
 export type PdfVariant = "full" | "trade" | "item";
@@ -397,6 +399,7 @@ export async function buildReportPdf(
     ],
     ["Items included", String(findings.length)],
   ];
+  const notice = recordCopyNotice(document.report.outputLanguage);
   for (const [label, value] of facts) {
     if (!value) continue;
     ensure(writer, 14);
@@ -419,6 +422,13 @@ export async function buildReportPdf(
     });
     writer.cursor.y -= 12 * lines.length + 2;
   }
+
+  if (notice) {
+    drawRule(writer, 10, 8);
+    drawText(writer, notice, { size: 9, colour: MUTED, gapAfter: 2 });
+  }
+
+
 
   /* Summary */
   const summary = document.report.executiveSummary ?? document.synthesis?.executiveSummary ?? "";

@@ -19,8 +19,10 @@ export const downloadReportPdf = createServerFn({ method: "POST" })
     const { buildReportPdf } = await import("@/lib/report/pdf.server");
     const { toBase64 } = await import("@/lib/report/pdf-attachment.server");
 
-    const document = await loadReportDocument(context.supabase as never, data.reportId);
-    if (!document) throw new Error("That report could not be read.");
+    const { documentForOutput } = await import("@/lib/i18n/report-translation.server");
+    const loaded = await loadReportDocument(context.supabase as never, data.reportId);
+    if (!loaded) throw new Error("That report could not be read.");
+    const document = await documentForOutput(context.supabase, loaded);
 
     const built = await buildReportPdf(document, { variant: "full", view: data.view });
     return { filename: built.filename, content: toBase64(built.bytes) };

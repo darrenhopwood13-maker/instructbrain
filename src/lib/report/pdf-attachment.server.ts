@@ -30,8 +30,11 @@ export async function buildEmailPdf(
   reportId: string,
   options: BuildPdfOptions,
 ): Promise<EmailAttachment | null> {
-  const document = await loadReportDocument(db, reportId);
-  if (!document) throw new Error("That report could not be read, so nothing was sent.");
+  const loaded = await loadReportDocument(db, reportId);
+  if (!loaded) throw new Error("That report could not be read, so nothing was sent.");
+  // Sent in the report's own issue language; English if that ever fails.
+  const { documentForOutput } = await import("@/lib/i18n/report-translation.server");
+  const document = await documentForOutput(db, loaded);
 
   let built = await buildReportPdf(document, options);
 

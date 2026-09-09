@@ -399,12 +399,37 @@ export async function buildTradeExtractItems(
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as Array<Record<string, any>>;
+
+  // The covering list is read by the subcontractor, so it follows the report's
+  // issue language. English is used unchanged if the translation is unavailable.
+  const { data: languageRow } = await db
+    .from("reports")
+    .select("output_language")
+    .eq("id", reportId)
+    .single();
+  const outputLanguage =
+    ((languageRow as { output_language?: string } | null)?.output_language ?? "en") || "en";
+  let translated: Record<string, string> = {};
+  if (outputLanguage !== "en") {
+    try {
+      const { reportTranslationStrings } = await import("@/lib/i18n/report-translation.server");
+      translated = (await reportTranslationStrings(db, reportId, outputLanguage)).strings;
+    } catch (translationError) {
+      console.error("Trade extract translation failed", translationError);
+    }
+  }
+
   const items: ExtractItem[] = rows.map((row) => {
     const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
     return {
       ref: row["ref"] as string,
       location: fields["location"] ?? fields["zone"] ?? fields["area"] ?? "",
-      action: (row["remedial_text"] as string) || (row["finding_text"] as string) || "",
+      action:
+        translated[`${row["id"] as string}.remedial_text`] ||
+        translated[`${row["id"] as string}.finding_text`] ||
+        (row["remedial_text"] as string) ||
+        (row["finding_text"] as string) ||
+        "",
       severityLabel: resolveSeverity(snapshot, row["severity"] as string | null)?.label ?? "",
       dueDate: (row["due_date"] as string | null) ?? null,
       isConfidential: row["is_confidential"] === true,

@@ -30,6 +30,7 @@ export function sharedDocument(payload: any): ReportDocument {
       executiveSummary: payload.report.executive_summary ?? null,
       synthesisConfirmed: !!payload.report.synthesis_confirmed,
       coverPhotoId: payload.report.cover_photo_id ?? null,
+      outputLanguage: payload.report.output_language ?? "en",
     },
     project: payload.project
       ? {

@@ -56,6 +56,7 @@ const document: ReportDocument = {
     executiveSummary: "Two defects recorded.",
     synthesisConfirmed: false,
     coverPhotoId: null,
+    outputLanguage: "en",
   },
   project: null,
   organisation: null,

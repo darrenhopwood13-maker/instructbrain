@@ -85,7 +85,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const reports = unwrap(
         await from("reports")
           .select(
-            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, survey_type_snapshot, author_id",
+            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot, author_id",
           )
           .eq("id", reportId)
           .limit(1),
@@ -208,6 +208,7 @@ export const reportDocumentQuery = (reportId: string) =>
           executiveSummary: report.executive_summary ?? null,
           synthesisConfirmed: !!report.synthesis_confirmed,
           coverPhotoId: report.cover_photo_id ?? null,
+          outputLanguage: report.output_language ?? "en",
         },
         project: project
           ? {
@@ -277,6 +278,8 @@ export type ReportPatch = Partial<{
   executive_summary: string | null;
   synthesis_confirmed: boolean;
   cover_photo_id: string | null;
+  /** The language the report is issued in. English stays the record copy. */
+  output_language: string;
 }>;
 
 export async function updateReportFields(
