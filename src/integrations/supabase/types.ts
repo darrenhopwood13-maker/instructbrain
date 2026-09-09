@@ -1280,36 +1280,48 @@ export type Database = {
       }
       report_templates: {
         Row: {
+          advisory_footer: boolean
           created_at: string
           created_by: string | null
           id: string
+          include_fix: boolean
+          include_severity: boolean
           name: string
           organisation_id: string
           preset_id: string | null
+          report_type: string
           special_request: string | null
           survey_type_ids: Json
           tone: string
           updated_at: string
         }
         Insert: {
+          advisory_footer?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
+          include_fix?: boolean
+          include_severity?: boolean
           name: string
           organisation_id: string
           preset_id?: string | null
+          report_type?: string
           special_request?: string | null
           survey_type_ids?: Json
           tone?: string
           updated_at?: string
         }
         Update: {
+          advisory_footer?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
+          include_fix?: boolean
+          include_severity?: boolean
           name?: string
           organisation_id?: string
           preset_id?: string | null
+          report_type?: string
           special_request?: string | null
           survey_type_ids?: Json
           tone?: string
