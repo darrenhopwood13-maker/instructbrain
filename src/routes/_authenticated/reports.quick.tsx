@@ -113,9 +113,15 @@ function CustomReport() {
     [selectedIds],
   );
 
+  const identifier = reportType === "identifier";
+
   const brief: ReportBrief = {
     presetId,
     tone,
+    reportType,
+    includeFix: identifier ? false : includeFix,
+    includeSeverity: identifier ? false : includeSeverity,
+    advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
     surveyTypes: chosen.map((definition) => ({
       id: definition.id,
@@ -128,6 +134,10 @@ function CustomReport() {
     const preset = presetById(id);
     if (!preset) return;
     setTone(preset.tone);
+    setReportType(preset.reportType);
+    setIncludeFix(preset.includeFix);
+    setIncludeSeverity(preset.includeSeverity);
+    setAdvisoryFooter(preset.advisoryFooter);
     if (preset.specialRequest) setSpecialRequest(preset.specialRequest);
   };
 
