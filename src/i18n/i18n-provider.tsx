@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { translateStrings } from "@/lib/i18n/translate.functions";
 import { STRINGS } from "@/i18n/strings";
 import { RTL_LANGS, langHtmlAttr } from "@/i18n/languages";
+import { InterfaceTranslator } from "@/i18n/interface-translator";
 
 type Dict = Record<string, string>;
 
@@ -120,7 +121,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [language, t, loading],
   );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  return (
+    <I18nContext.Provider value={value}>
+      {children}
+      <InterfaceTranslator language={language} />
+    </I18nContext.Provider>
+  );
 }
 
 export function useI18n(): I18nContextValue {
