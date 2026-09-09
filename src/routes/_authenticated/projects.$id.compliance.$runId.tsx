@@ -24,9 +24,12 @@ import { uploadPhoto, nextSequence } from "@/lib/photos/photo-service";
 import {
   checkType,
   complianceStatusLabel,
+  derivedDueDate,
   fieldsForUnitType,
+  isOverdue,
   type ComplianceStatus,
 } from "@/lib/compliance/checks";
+
 import {
   addPointToRun,
   complianceActionsQuery,
@@ -104,9 +107,16 @@ function ComplianceRun() {
       entry: ComplianceEntry;
       point: CompliancePoint | undefined;
       fieldId: string;
-      value: boolean;
+      value: boolean | string | number | null;
     }) => {
       const answers = { ...input.entry.answers, [input.fieldId]: input.value };
+      // A derived due date (scaffold: first use + 7 days) fills itself in as
+      // soon as the date it depends on is answered.
+      for (const field of definition.fields) {
+        if (!field.dueFromField) continue;
+        const due = derivedDueDate(field, answers);
+        if (due && !answers[field.id]) answers[field.id] = due;
+      }
       const next = { ...input.entry, answers };
       await saveEntry(input.entry.id, {
         answers,
@@ -116,6 +126,7 @@ function ComplianceRun() {
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const confirm = useMutation({
     mutationFn: async (entry: ComplianceEntry) => {
@@ -376,6 +387,12 @@ function ComplianceRun() {
                         {entry.confirmed ? "Confirmed this week" : "Not yet confirmed"}
                         {entry.photoId ? " · photographed" : " · no photograph"}
                       </p>
+                      {isOverdue(definition, entry.answers) ? (
+                        <p className="mt-1 text-sm font-semibold text-destructive">
+                          Critical — past its due date with no report.
+                        </p>
+                      ) : null}
+
                     </div>
                     <StatusTag status={status} />
                   </div>
@@ -396,26 +413,63 @@ function ComplianceRun() {
                               </span>
                             ) : null}
                           </span>
-                          <span className="flex gap-2">
-                            {[true, false].map((option) => (
-                              <Button
-                                key={String(option)}
-                                variant={value === option ? "default" : "outline"}
-                                aria-pressed={value === option}
-                                disabled={locked || answer.isPending}
-                                onClick={() =>
-                                  answer.mutate({
-                                    entry,
-                                    point,
-                                    fieldId: field.id,
-                                    value: option,
-                                  })
-                                }
-                              >
-                                {option ? "Yes" : "No"}
-                              </Button>
-                            ))}
-                          </span>
+                          {field.type === "yesno" ? (
+                            <span className="flex gap-2">
+                              {[true, false].map((option) => (
+                                <Button
+                                  key={String(option)}
+                                  variant={value === option ? "default" : "outline"}
+                                  aria-pressed={value === option}
+                                  aria-label={`${field.label} ${option ? "Yes" : "No"}`}
+                                  disabled={locked || answer.isPending}
+                                  onClick={() =>
+                                    answer.mutate({
+                                      entry,
+                                      point,
+                                      fieldId: field.id,
+                                      value: option,
+                                    })
+                                  }
+                                >
+                                  {option ? "Yes" : "No"}
+                                </Button>
+                              ))}
+                            </span>
+                          ) : (
+                            <Input
+                              type={
+                                field.type === "date"
+                                  ? "date"
+                                  : field.type === "number"
+                                    ? "number"
+                                    : "text"
+                              }
+                              className="h-11 w-44"
+                              aria-label={field.label}
+                              disabled={locked || (!!field.dueFromField && answer.isPending)}
+                              readOnly={!!field.dueFromField}
+                              defaultValue={
+                                typeof value === "string" || typeof value === "number"
+                                  ? String(value)
+                                  : (field.dueFromField
+                                      ? (derivedDueDate(field, entry.answers) ?? "")
+                                      : "")
+                              }
+                              onBlur={(event) => {
+                                if (field.dueFromField) return;
+                                const raw = event.currentTarget.value;
+                                const next =
+                                  field.type === "number"
+                                    ? raw === ""
+                                      ? null
+                                      : Number(raw)
+                                    : raw;
+                                if (next === (value ?? (field.type === "number" ? null : ""))) return;
+                                answer.mutate({ entry, point, fieldId: field.id, value: next });
+                              }}
+                            />
+                          )}
+
                         </li>
                       );
                     })}

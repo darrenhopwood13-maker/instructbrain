@@ -544,14 +544,19 @@ export function runBlockers(input: {
   }
 
   if (definition.photoRequired) {
-    const missing = input.entries.filter(
-      (entry) =>
-        !entry.photoId && statusForEntry(input.type, byId.get(entry.pointId), entry) !== "not_applicable",
-    );
+    const missing = input.entries.filter((entry) => {
+      if (entry.photoId) return false;
+      const status = statusForEntry(input.type, byId.get(entry.pointId), entry);
+      if (status === "not_applicable") return false;
+      // "on_fail" definitions only need evidence where the point failed.
+      if (definition.photoRequired === "on_fail") return status === "non_compliant";
+      return true;
+    });
     if (missing.length > 0) {
       blockers.push(`${missing.length} point(s) have no photograph this week.`);
     }
   }
+
 
   const failing = input.entries.filter(
     (entry) => statusForEntry(input.type, byId.get(entry.pointId), entry) === "non_compliant",

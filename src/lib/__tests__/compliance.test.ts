@@ -4,7 +4,10 @@ import {
   COMPLIANCE_STATUSES,
   checkType,
   deriveStatus,
+  derivedDueDate,
   fieldsForUnitType,
+  isOverdue,
+
 } from "@/lib/compliance/checks";
 import { runBlockers } from "@/lib/compliance/compliance-data";
 import { complianceDefinition } from "@/lib/compliance/definition";
@@ -49,7 +52,7 @@ describe("compliance vocabulary", () => {
     expect(categoriesOf(definition)).toHaveLength(0);
   });
 
-  it("names all six check types in the agreed order, with fire live", () => {
+  it("names all six check types in the agreed order, all live", () => {
     expect(CHECK_TYPES.map((type) => type.id)).toEqual([
       "fire",
       "excavation",
@@ -58,9 +61,55 @@ describe("compliance vocabulary", () => {
       "lifting_plant",
       "housekeeping",
     ]);
-    expect(CHECK_TYPES.filter((type) => type.live).map((type) => type.id)).toEqual(["fire"]);
+    expect(CHECK_TYPES.every((type) => type.live)).toBe(true);
+    expect(CHECK_TYPES.every((type) => type.fields.some((field) => field.compliance))).toBe(true);
   });
 });
+
+describe("templates two to six", () => {
+  const excavation = checkType("excavation");
+  const scaffold = checkType("scaffold");
+  const lifting = checkType("lifting_plant");
+  const housekeeping = checkType("housekeeping");
+
+  it("derives compliant only once every relevant check is answered yes", () => {
+    const answers: Record<string, unknown> = {};
+    for (const field of excavation.fields) {
+      if (field.compliance) answers[field.id] = true;
+    }
+    expect(deriveStatus(excavation, "Trench", answers, false)).toBe("compliant");
+    expect(
+      deriveStatus(excavation, "Trench", { ...answers, edge_protection: false }, false),
+    ).toBe("non_compliant");
+  });
+
+  it("fails an out-of-date thorough examination whatever else is answered", () => {
+    const answers: Record<string, unknown> = { thorough_exam_in_date: false };
+    for (const field of lifting.fields) {
+      if (field.compliance && field.id !== "thorough_exam_in_date") answers[field.id] = true;
+    }
+    expect(deriveStatus(lifting, "MEWP", answers, false)).toBe("non_compliant");
+    // Even marked not applicable, the statutory gate still reads non-compliant.
+    expect(deriveStatus(lifting, "MEWP", answers, true)).toBe("non_compliant");
+  });
+
+  it("works out the scaffold seven-day report date from first use", () => {
+    const due = scaffold.fields.find((field) => field.id === "report_due")!;
+    expect(derivedDueDate(due, { first_use: "2026-09-01" })).toBe("2026-09-08");
+    expect(derivedDueDate(due, {})).toBeNull();
+    expect(isOverdue(scaffold, { first_use: "2026-09-01" }, new Date("2026-09-20"))).toBe(true);
+    expect(isOverdue(scaffold, { first_use: "2026-09-01" }, new Date("2026-09-02"))).toBe(false);
+  });
+
+  it("keeps snagging vocabulary out of every register template", () => {
+    const words = JSON.stringify(CHECK_TYPES).toLowerCase();
+    for (const term of ["snag", "defect", "severity", "hazard category", "trade"]) {
+      expect(words).not.toContain(term);
+    }
+    expect(housekeeping.photoRequired).toBe("on_fail");
+  });
+});
+
 
 describe("per-type fire checks", () => {
   it("asks water units for a gauge and CO2 units for a seal, never the other way round", () => {
