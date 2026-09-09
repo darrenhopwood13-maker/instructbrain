@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
+import { DeleteReportButton } from "@/components/delete-buttons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
