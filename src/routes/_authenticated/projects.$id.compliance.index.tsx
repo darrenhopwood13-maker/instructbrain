@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, ChevronRight, Lock, Plus } from "lucide-react";
+import { CalendarCheck, ChevronDown, ChevronRight, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
+import { PackDownloadButton } from "@/components/compliance/pack-download";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +28,13 @@ import {
   compliancePointsQuery,
   complianceRunsQuery,
   startRun,
-  statusForEntry,
-  windowRuns,
 } from "@/lib/compliance/compliance-data";
+import {
+  buildRegister,
+  isActionOverdue,
+  registerWeeks,
+  type CellState,
+} from "@/lib/compliance/register";
 
 export const Route = createFileRoute("/_authenticated/projects/$id/compliance/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -51,6 +56,35 @@ export const Route = createFileRoute("/_authenticated/projects/$id/compliance/")
   component: ComplianceRegister,
 });
 
+const cellClass: Record<CellState, string> = {
+  compliant: "border-[hsl(var(--status-pass))] text-[hsl(var(--status-pass))]",
+  non_compliant: "border-[hsl(var(--status-fail))] text-[hsl(var(--status-fail))]",
+  not_applicable: "border-border text-muted-foreground",
+  not_checked: "border-dashed border-border text-muted-foreground",
+};
+
+const shortLabel: Record<CellState, string> = {
+  compliant: "Compliant",
+  non_compliant: "Non-compliant",
+  not_applicable: "N/A",
+  not_checked: "Not checked",
+};
+
+function weekLabel(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function fullDate(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 function ComplianceRegister() {
   const { id } = Route.useParams();
   const { type } = Route.useSearch();
@@ -63,12 +97,27 @@ function ComplianceRegister() {
   const points = useQuery(compliancePointsQuery(id, type));
   const actions = useQuery(complianceActionsQuery(id));
 
-  const shown = useMemo(() => windowRuns(runs.data ?? []), [runs.data]);
+  const shown = useMemo(() => registerWeeks(runs.data ?? []), [runs.data]);
   const entries = useQuery(complianceEntriesQuery(shown.map((run) => run.id)));
 
   const definition = checkType(type);
+
+  const model = useMemo(
+    () =>
+      buildRegister({
+        checkTypeId: type,
+        runs: runs.data ?? [],
+        points: points.data ?? [],
+        entries: entries.data ?? [],
+        actions: actions.data ?? [],
+      }),
+    [type, runs.data, points.data, entries.data, actions.data],
+  );
+
   const openActions = (actions.data ?? []).filter((action) => action.status !== "closed");
 
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [weeksOpen, setWeeksOpen] = useState(true);
   const [open, setOpen] = useState(false);
   const [checkDate, setCheckDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [performedBy, setPerformedBy] = useState("");
@@ -104,8 +153,6 @@ function ComplianceRegister() {
   if (project.isPending || runs.isPending) return <LoadingState label="Loading the register" />;
   if (project.error)
     return <ErrorState title="Could not load the register" error={project.error} />;
-
-  const pointById = new Map((points.data ?? []).map((point) => [point.id, point]));
 
   return (
     <AppShell>
@@ -170,21 +217,77 @@ function ComplianceRegister() {
         </div>
       ) : (
         <>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpen(true)}>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}>
               <Plus aria-hidden="true" className="size-4" />
               Start this week&rsquo;s check
             </Button>
-            <p className="text-sm text-muted-foreground">
-              A new check starts from last week&rsquo;s points, so nothing is retyped.
-            </p>
+            {shown.length > 0 ? (
+              <PackDownloadButton
+                projectId={id}
+                checkType={type}
+                label={`Download ${model.weeks.length}-week pack`}
+                className="w-full sm:w-auto"
+              />
+            ) : null}
           </div>
 
-          <section aria-labelledby="window-heading" className="mt-8">
-            <h2 id="window-heading" className="text-lg font-semibold">
-              Last {REGISTER_WINDOW_WEEKS} weeks
+          {/* Open items — one line until opened */}
+          <section aria-labelledby="actions-heading" className="mt-6">
+            <button
+              type="button"
+              onClick={() => setActionsOpen((value) => !value)}
+              aria-expanded={actionsOpen}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left"
+            >
+              <span id="actions-heading" className="text-sm font-semibold">
+                {model.actions.open} open action(s)
+                {model.actions.overdue > 0 ? ` · ${model.actions.overdue} overdue` : ""}
+                {model.actions.oldestOpenedOn
+                  ? ` · oldest opened ${fullDate(model.actions.oldestOpenedOn)}`
+                  : ""}
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={`size-4 shrink-0 transition-transform ${actionsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {actionsOpen ? (
+              openActions.length === 0 ? (
+                <p className="mt-2 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+                  Nothing open. Every action raised so far has been closed out.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {openActions.map((action) => (
+                    <li
+                      key={action.id}
+                      className="rounded-lg border border-border bg-card p-4 text-sm"
+                    >
+                      <p className="font-medium">{action.description}</p>
+                      <p className="mt-1 text-muted-foreground">
+                        Owner: {action.owner || "unassigned"} · Opened {fullDate(action.openedOn)}
+                        {action.targetDate ? ` · Due ${fullDate(action.targetDate)}` : ""} ·{" "}
+                        {action.status === "in_progress" ? "In progress" : "Open"}
+                        {isActionOverdue(action) ? (
+                          <span className="ml-2 font-semibold text-[hsl(var(--status-fail))]">
+                            Overdue
+                          </span>
+                        ) : null}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : null}
+          </section>
+
+          {/* The register */}
+          <section aria-labelledby="register-heading" className="mt-8">
+            <h2 id="register-heading" className="text-lg font-semibold">
+              The register — last {model.weeks.length || REGISTER_WINDOW_WEEKS} weeks
             </h2>
-            {shown.length === 0 ? (
+            {model.rows.length === 0 || model.weeks.length === 0 ? (
               <div className="mt-4">
                 <EmptyState
                   icon={CalendarCheck}
@@ -193,86 +296,157 @@ function ComplianceRegister() {
                 />
               </div>
             ) : (
-              <ul className="mt-4 space-y-3">
-                {shown.map((run) => {
-                  const runEntries = (entries.data ?? []).filter(
-                    (entry) => entry.runId === run.id,
-                  );
-                  const failing = runEntries.filter(
-                    (entry) =>
-                      statusForEntry(type, pointById.get(entry.pointId), entry) === "non_compliant",
-                  );
-                  return (
-                    <li key={run.id} className="rounded-lg border border-border bg-card p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">
-                            {new Date(run.checkDate).toLocaleDateString("en-GB", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {runEntries.length} point(s) checked · {failing.length} non-compliant ·{" "}
-                            {run.performedByName || "not yet signed"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {run.lockedAt ? (
-                            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Lock aria-hidden="true" className="size-3.5" />
-                              Completed
+              <>
+                {/* Wide screens: a real grid */}
+                <div className="mt-4 hidden overflow-hidden rounded-lg border border-border lg:block">
+                  <table className="w-full table-fixed text-left text-sm">
+                    <caption className="sr-only">
+                      Every point down the side, every week across the top.
+                    </caption>
+                    <thead className="bg-card">
+                      <tr>
+                        <th scope="col" className="w-56 p-3 font-semibold">
+                          Point
+                        </th>
+                        {model.weeks.map((week) => (
+                          <th key={week.run.id} scope="col" className="p-3 font-semibold">
+                            {weekLabel(week.run.checkDate)}
+                            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                              {week.checked} checked · {week.nonCompliant} non-compliant
+                              {week.photosMissing > 0
+                                ? ` · ${week.photosMissing} photo(s) missing`
+                                : ""}
+                              <br />
+                              {week.locked ? "Completed" : "In progress"}
                             </span>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">In progress</span>
-                          )}
-                          <Button asChild variant="outline">
-                            <Link
-                              to="/projects/$id/compliance/$runId"
-                              params={{ id, runId: run.id }}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {model.rows.map((row) => (
+                        <tr key={row.point.id} className="border-t border-border align-top">
+                          <th scope="row" className="p-3 font-medium">
+                            {row.point.location}
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              {row.point.unitRef}
+                              {row.point.unitType ? ` · ${row.point.unitType}` : ""}
+                              {row.point.state === "decommissioned" ? " · Decommissioned" : ""}
+                            </span>
+                          </th>
+                          {row.cells.map((cell, index) => (
+                            <td key={`${row.point.id}-${index}`} className="p-3">
+                              <span
+                                className={`inline-flex min-h-7 items-center rounded-full border px-2.5 text-xs font-semibold ${cellClass[cell.state]}`}
+                              >
+                                {shortLabel[cell.state]}
+                              </span>
+                              {cell.photoMissing ? (
+                                <span className="mt-1 block text-xs text-[hsl(var(--status-fail))]">
+                                  Photograph missing
+                                </span>
+                              ) : null}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Phones: one card per point, its weeks inside */}
+                <ul className="mt-4 space-y-3 lg:hidden">
+                  {model.rows.map((row) => (
+                    <li key={row.point.id} className="rounded-lg border border-border bg-card p-4">
+                      <p className="font-medium">{row.point.location}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {row.point.unitRef}
+                        {row.point.unitType ? ` · ${row.point.unitType}` : ""}
+                        {row.point.state === "decommissioned" ? " · Decommissioned" : ""}
+                      </p>
+                      <ul className="mt-3 space-y-1.5">
+                        {row.cells.map((cell, index) => (
+                          <li
+                            key={`${row.point.id}-m-${index}`}
+                            className="flex items-center justify-between gap-3 text-sm"
+                          >
+                            <span className="text-muted-foreground">
+                              {weekLabel(model.weeks[index]?.run.checkDate ?? "")}
+                            </span>
+                            <span
+                              className={`inline-flex min-h-7 items-center rounded-full border px-2.5 text-xs font-semibold ${cellClass[cell.state]}`}
                             >
-                              {run.lockedAt ? "View" : "Continue"}
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
+                              {shortLabel[cell.state]}
+                              {cell.photoMissing ? " · no photo" : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </li>
-                  );
-                })}
-              </ul>
+                  ))}
+                </ul>
+              </>
             )}
           </section>
 
-          <section aria-labelledby="actions-heading" className="mt-10">
-            <h2 id="actions-heading" className="text-lg font-semibold">
-              Open actions on this site
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              An action belongs to the site, not to the week it was raised. It stays visible until
-              someone closes it.
-            </p>
-            {openActions.length === 0 ? (
-              <p className="mt-4 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-                Nothing open. Every action raised so far has been closed out.
-              </p>
-            ) : (
-              <ul className="mt-4 space-y-2">
-                {openActions.map((action) => (
-                  <li
-                    key={action.id}
-                    className="rounded-lg border border-border bg-card p-4 text-sm"
-                  >
-                    <p className="font-medium">{action.description}</p>
-                    <p className="mt-1 text-muted-foreground">
-                      Owner: {action.owner || "unassigned"} · Opened {action.openedOn}
-                      {action.targetDate ? ` · Due ${action.targetDate}` : ""} ·{" "}
-                      {action.status === "in_progress" ? "In progress" : "Open"}
-                    </p>
+          {/* Weeks, collapsible */}
+          <section aria-labelledby="weeks-heading" className="mt-8">
+            <button
+              type="button"
+              onClick={() => setWeeksOpen((value) => !value)}
+              aria-expanded={weeksOpen}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left"
+            >
+              <span id="weeks-heading" className="text-sm font-semibold">
+                The weeks themselves ({model.weeks.length})
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={`size-4 shrink-0 transition-transform ${weeksOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {weeksOpen ? (
+              <ul className="mt-2 space-y-3">
+                {[...model.weeks].reverse().map((week) => (
+                  <li key={week.run.id} className="rounded-lg border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{fullDate(week.run.checkDate)}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {week.checked} point(s) checked · {week.nonCompliant} non-compliant ·{" "}
+                          {week.photosMissing} photograph(s) missing ·{" "}
+                          {week.run.performedByName || "not yet signed"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {week.locked ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Lock aria-hidden="true" className="size-3.5" />
+                            Completed
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">In progress</span>
+                        )}
+                        <PackDownloadButton
+                          projectId={id}
+                          checkType={type}
+                          runId={week.run.id}
+                          label="Download pack"
+                        />
+                        <Button asChild variant="outline">
+                          <Link
+                            to="/projects/$id/compliance/$runId"
+                            params={{ id, runId: week.run.id }}
+                          >
+                            {week.locked ? "View" : "Continue"}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
           </section>
         </>
       )}

@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorState, LoadingState } from "@/components/query-states";
+import { PackDownloadButton } from "@/components/compliance/pack-download";
+
 import {
   Dialog,
   DialogContent,
@@ -35,7 +37,7 @@ import {
   complianceActionsQuery,
   complianceEntriesQuery,
   compliancePointsQuery,
-  complianceRunsQuery,
+  complianceRunQuery,
   createPoint,
   lockRun,
   raiseAction,
@@ -86,9 +88,10 @@ function ComplianceRun() {
   const { organisationId } = useOrganisations();
 
   const project = useQuery(projectQuery(id));
-  const runsFire = useQuery(complianceRunsQuery(id, "fire"));
-  const run = (runsFire.data ?? []).find((item) => item.id === runId) ?? null;
+  const runQuery = useQuery(complianceRunQuery(runId));
+  const run = runQuery.data ?? null;
   const type = run?.checkType ?? "fire";
+
   const definition = checkType(type);
   const points = useQuery(compliancePointsQuery(id, type));
   const entries = useQuery(complianceEntriesQuery([runId]));
@@ -251,7 +254,7 @@ function ComplianceRun() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [photoFor, setPhotoFor] = useState<ComplianceEntry | null>(null);
 
-  if (project.isPending || runsFire.isPending || entries.isPending) {
+  if (project.isPending || runQuery.isPending || entries.isPending) {
     return <LoadingState label="Loading the check" />;
   }
   if (project.error) return <ErrorState title="Could not load this check" error={project.error} />;
@@ -546,28 +549,38 @@ function ComplianceRun() {
         }}
       />
 
-      {!locked ? (
-        <section className="mt-10 border-t border-border pt-6">
-          {blockers.length > 0 ? (
-            <div className="rounded-lg border border-border bg-card p-4">
-              <p className="text-sm font-semibold">This check cannot be completed yet</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-                {blockers.map((blocker) => (
-                  <li key={blocker}>{blocker}</li>
-                ))}
-              </ul>
-            </div>
+      <section className="mt-10 border-t border-border pt-6">
+        {!locked && blockers.length > 0 ? (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-sm font-semibold">This check cannot be completed yet</p>
+            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+              {blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {!locked ? (
+            <Button
+              className="w-full sm:w-auto"
+              onClick={() => complete.mutate()}
+              disabled={blockers.length > 0 || complete.isPending}
+            >
+              <Lock aria-hidden="true" className="size-4" />
+              Complete and lock this check
+            </Button>
           ) : null}
-          <Button
-            className="mt-4 w-full sm:w-auto"
-            onClick={() => complete.mutate()}
-            disabled={blockers.length > 0 || complete.isPending}
-          >
-            <Lock aria-hidden="true" className="size-4" />
-            Complete and lock this check
-          </Button>
-        </section>
-      ) : null}
+          <PackDownloadButton
+            projectId={id}
+            checkType={run?.checkType ?? "fire"}
+            runId={runId}
+            label="Download this week's pack"
+            className="w-full sm:w-auto"
+          />
+        </div>
+      </section>
+
 
       <Dialog open={pointOpen} onOpenChange={setPointOpen}>
         <DialogContent>
