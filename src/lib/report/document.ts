@@ -101,6 +101,12 @@ export type ReportDocument = {
     address: string | null;
   } | null;
   snapshot: SurveyTypeSnapshot;
+  /**
+   * Every survey type this report covers, in document order. A single-type
+   * report holds one entry; a custom report may hold several, and the
+   * document is sectioned by them.
+   */
+  surveyTypes: Array<{ id: string; label: string }>;
   findings: DocFinding[];
   photos: DocPhoto[];
   synthesis: DocSynthesis | null;
