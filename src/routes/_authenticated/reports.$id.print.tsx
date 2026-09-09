@@ -45,12 +45,12 @@ function PrintReport() {
 
 
   useEffect(() => {
-    if (auto && document) {
+    if (auto && document && !translation.loading) {
       const timer = setTimeout(() => window.print(), 800);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [auto, document]);
+  }, [auto, document, translation.loading]);
 
   if (query.isPending) return <LoadingState label="Assembling the document…" />;
   if (query.isError) {
