@@ -104,9 +104,16 @@ function ComplianceRun() {
       entry: ComplianceEntry;
       point: CompliancePoint | undefined;
       fieldId: string;
-      value: boolean;
+      value: boolean | string | number | null;
     }) => {
       const answers = { ...input.entry.answers, [input.fieldId]: input.value };
+      // A derived due date (scaffold: first use + 7 days) fills itself in as
+      // soon as the date it depends on is answered.
+      for (const field of definition.fields) {
+        if (!field.dueFromField) continue;
+        const due = derivedDueDate(field, answers);
+        if (due && !answers[field.id]) answers[field.id] = due;
+      }
       const next = { ...input.entry, answers };
       await saveEntry(input.entry.id, {
         answers,
@@ -116,6 +123,7 @@ function ComplianceRun() {
     onSuccess: refresh,
     onError: (error: Error) => toast.error(error.message),
   });
+
 
   const confirm = useMutation({
     mutationFn: async (entry: ComplianceEntry) => {
