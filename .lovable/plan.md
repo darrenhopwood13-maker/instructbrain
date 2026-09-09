@@ -1,50 +1,56 @@
-# Custom Reports and the full-resolution photograph rule
+# Custom Reports — standalone report engine (option A)
 
-## What I checked
+Quick Report becomes **Custom Reports**: a standalone way to produce a report without setting up a project, with presets, tone control, special requests, saved templates and faster analysis — on full-size photographs.
 
-I read the actual image-handling code before answering, so this is the app as it is today, not from memory.
+## What you'll be able to do
 
-## What "invariant 3" means, in plain terms
+1. Open **Custom Reports** from the dashboard.
+2. Pick a **preset** (the starting point for what the report is about) or start from one of your **saved templates**.
+3. Choose a **tone** — Factual, Client-facing, or Detailed technical.
+4. Add a **special request** in your own words ("focus on the roof edge detail", "flag anything affecting handover").
+5. Drop in photographs and let it analyse them.
+6. Review, then issue — the PDF gets a **contents page** and can cover **more than one survey type in a single report**.
+7. Save the whole setup as a **template** to reuse next time.
 
-It is one of your standing rules for this app: **the photograph the AI looks at is the full-size one you took.** Never a shrunk copy.
+## Speed
 
-How it is enforced today:
+Analysis gets faster without shrinking your photos:
 
-- There are two completely separate pieces of code. One makes the small preview pictures for the grid (deliberately shrinks them). The other prepares pictures for the AI and is written so it **cannot** shrink anything — no size limit, no quality limit.
-- The only time a photo is re-made for the AI is when the phone produced a format the AI cannot open (iPhone HEIC). Even then it is re-saved at the **identical pixel size** at 95% quality.
-- There is a safety catch: if any code ever tries to hand a small preview picture to the AI, it throws an error rather than proceed.
-- A test locks this in — the two pieces of code are not allowed to reference each other.
+- More photographs analysed at the same time (raising the current limit of 4).
+- Shorter, tighter AI answers — most of the wait is the AI writing, not looking.
+- The second-opinion pass is optional in Custom Reports, so a fast draft stays fast.
 
-The reason is commercial, not technical: a 2mm sealant gap, a hairline crack, a missing fire-extinguisher tag, a scaffold tie — these disappear when a photo is shrunk. A report that misses them is worse than no report, because it has been signed.
+Photographs still go to the AI at full size, exactly as in Project reports. Nothing about the existing photo handling changes.
 
-## Your question: can Custom Reports be standalone and do it differently?
+## The AI helper
 
-Technically, yes — Custom Reports could be given its own photo path. Structurally I would advise against it, for three reasons:
+A single, fixed assistant button beside the report controls opens the brief panel (preset, tone, special request). Restrained and static — in keeping with the rest of the app. No floating or animated character.
 
-1. **Same photos, same eyes.** The proposed shrink (640px, 60% quality) is roughly a 90% loss of detail. The AI would miss small defects in Custom Reports that it catches in a Project report — on the same photograph. That is the exact failure the rule exists to prevent.
-2. **The output looks identical to the client.** A Custom Report still leaves the building as an instructBrain PDF on your name. A recipient cannot tell which engine produced it.
-3. **Two photo paths become one photo path.** In practice someone later reuses the "fast" path "for consistency" and the whole app quietly degrades. That is what happened in the v1 prototype.
+## What stays exactly as it is
 
-## The real goal, and a better way to get it
+Project reports, Compliance registers, Snagging, the review screen, statuses, references, distribution and close-out are untouched.
 
-The point of the shrink was **speed**. There are faster levers that cost no accuracy:
+---
 
-- **Run more photos at once.** The app currently analyses 4 at a time, capped at 6. Raising this is the single biggest win and changes nothing about quality.
-- **Trim the output length.** The AI is currently allowed a very long answer (6000 tokens). Most of the wait is the AI writing, not looking. Tightening this per report type speeds every analysis.
-- **Skip the second-opinion pass** for Custom Reports where a fast draft is the point, rather than degrading the photograph.
+## Technical detail
 
-Together these get most of the speed the brief was chasing, on full-size photographs.
+**Database (one migration)**
+- `report_templates` — org-scoped, name, preset id, tone, special request, survey type ids, created_by. Full RLS with GRANTs, org-membership scoped, USING + WITH CHECK.
+- `reports` gains `brief` jsonb (preset, tone, special_request) and `survey_type_ids` jsonb array for multi-survey. Existing single-type reports keep working via the existing `survey_type_snapshot`; multi-survey stores one snapshot per type under a keyed object.
 
-## What I suggest we do
+**Presets and tones** — new data module `src/lib/report/brief.ts`: preset list, tone definitions and the post-processing rules. Tone text is appended to the prompt built from the survey type snapshot; no discipline vocabulary is added here, so invariant 5 holds.
 
-Build Custom Reports as its own standalone feature exactly as the brief describes — presets, tones, special requests, saved templates, batch analysis, multi-survey reports, contents-page PDFs, the rename from Quick Report — but keep it on the full-size photo path shared with the rest of the app, and get the speed from concurrency and shorter answers.
+**Prompting** — `src/lib/ai/prompt.ts` gains an optional `brief` argument (tone + special request). Special request text is passed as user guidance, never as a status instruction; low confidence still resolves to `not_assessed`.
 
-Two items in the brief also clash with your standing design rule against mascots and floating ornament: the draggable animated purple oracle with eyes. I would deliver that as a fixed, restrained assistant button instead.
+**Speed** — `RUN_CONCURRENCY` in `src/lib/ai/use-analysis-run.ts` and `concurrency` in `src/lib/ai/config.ts` raised to a configurable 12 (env-overridable, retaining backoff on 429/5xx). `maxOutputTokens` per-tone. Escalation pass skippable per report via `escalationEnabled` at call level. `analysis-derivative.ts`, `thumbnail.ts` and `analysis-source.ts` are not touched.
 
-## Your call
+**Multi-survey reports** — `src/lib/report/document.server.ts` groups findings by survey type into ordered sections; `pdf.server.ts` gains a contents page listing sections with page numbers. Item numbering stays continuous and stable across sections.
 
-Tell me which you want and I will write the build plan:
+**Templates** — `src/lib/report/templates.functions.ts` with list/create/delete server functions under existing auth middleware.
 
-- **A** — Custom Reports standalone, full-size photos, speed from concurrency and shorter answers, restrained assistant button. (Recommended.)
-- **B** — As above, but you want the shrunk-photo fast path for Custom Reports anyway, accepting that small defects will be missed there.
-- **C** — As A, but build the animated oracle as written in the brief.
+**UI**
+- `src/routes/_authenticated/reports.quick.tsx` renamed in copy to Custom Reports, with a brief panel (preset, tone, special request, template picker/save).
+- Dashboard tile and `src/i18n/strings.ts` relabelled; the compliance and project tiles unchanged.
+- Route path kept to avoid breaking existing links; a redirect is unnecessary.
+
+**Tests** — brief/tone composition, multi-survey section ordering and continuous item numbering, contents-page generation, template RLS scoping, and the existing invariant tests re-run unchanged.
