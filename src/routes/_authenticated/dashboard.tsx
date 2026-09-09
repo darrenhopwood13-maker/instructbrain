@@ -174,7 +174,7 @@ function Dashboard() {
           />
           <ActionTile
             active={mode === "quick"}
-            label="Quick report"
+            label="Custom report"
             sub="A standalone report, no project setup"
             icon={Camera}
             onSelect={() => chooseMode("quick")}
@@ -278,7 +278,7 @@ function Dashboard() {
                     <ReportStatusPill status={report.status} />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {report.isQuick && !report.projectId ? "Quick report" : "Project report"} ·
+                    {report.isQuick && !report.projectId ? "Custom report" : "Project report"} ·
                     Updated {report.updated}
                   </span>
                 </Link>

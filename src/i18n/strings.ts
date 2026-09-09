@@ -13,7 +13,7 @@ export const STRINGS = {
   "action.signIn": "Sign in",
   "action.signOut": "Sign out",
   "action.newReport": "New report",
-  "action.quickReport": "Quick report",
+  "action.quickReport": "Custom report",
   "action.cancel": "Cancel",
   "action.save": "Save",
   "action.revertToEnglish": "Revert to English",

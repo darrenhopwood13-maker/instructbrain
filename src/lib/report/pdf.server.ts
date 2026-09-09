@@ -384,7 +384,7 @@ export async function buildReportPdf(
   drawRule(writer, 10, 12);
 
   const facts: Array<[string, string]> = [
-    ["Project", document.project?.name ?? "Quick report"],
+    ["Project", document.project?.name ?? "Custom report"],
     ["Client", document.project?.clientName ?? ""],
     ["Address", document.project?.address ?? ""],
     ["Reference", document.report.reference ?? ""],
