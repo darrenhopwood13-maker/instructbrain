@@ -88,9 +88,10 @@ function ComplianceRun() {
   const { organisationId } = useOrganisations();
 
   const project = useQuery(projectQuery(id));
-  const runsFire = useQuery(complianceRunsQuery(id, "fire"));
-  const run = (runsFire.data ?? []).find((item) => item.id === runId) ?? null;
+  const runQuery = useQuery(complianceRunQuery(runId));
+  const run = runQuery.data ?? null;
   const type = run?.checkType ?? "fire";
+
   const definition = checkType(type);
   const points = useQuery(compliancePointsQuery(id, type));
   const entries = useQuery(complianceEntriesQuery([runId]));
