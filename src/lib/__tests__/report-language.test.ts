@@ -8,8 +8,8 @@ describe("report language", () => {
   });
 
   it("states the language and that English is the record copy", () => {
-    const notice = recordCopyNotice("pl");
-    expect(notice).toContain("Polish");
+    const notice = recordCopyNotice("Polish");
+    expect(notice).toContain("Polski");
     expect(notice).toContain("version of record");
   });
 });
