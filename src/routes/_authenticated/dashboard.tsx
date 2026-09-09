@@ -171,7 +171,7 @@ function Dashboard() {
               setMode(null);
               void navigate({ to: "/reports/quick", search: {} });
             }}
-            className="btn-gloss flex min-h-24 w-full items-center gap-4 rounded-2xl border border-brand-accent bg-brand-accent px-5 py-5 text-left text-brand-accent-foreground shadow-raised transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+            className="glass-orange flex min-h-24 w-full items-center gap-4 rounded-2xl px-5 py-5 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
           >
             <Camera aria-hidden="true" className="size-8 shrink-0 sm:size-10" />
             <span className="min-w-0">
