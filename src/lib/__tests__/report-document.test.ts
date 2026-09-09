@@ -53,7 +53,7 @@ function document(findings: DocFinding[], snapshot = snaggingDefinition): Report
       synthesisConfirmed: false,
       coverPhotoId: null,
       outputLanguage: "en",
-    outputLanguage: "en",
+
     },
     project: null,
     organisation: null,
