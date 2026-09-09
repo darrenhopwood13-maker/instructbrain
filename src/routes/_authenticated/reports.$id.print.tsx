@@ -41,6 +41,8 @@ function PrintReport() {
   const { auto, view } = Route.useSearch();
   const query = useQuery(reportDocumentQuery(id));
   const document = query.data ?? null;
+  const translation = useReportTranslation(id, document);
+
 
   useEffect(() => {
     if (auto && document) {
