@@ -15,6 +15,7 @@ import { formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
+import { sectionsFor } from "@/lib/report/sections";
 
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 
@@ -457,7 +458,7 @@ export async function buildReportPdf(
     drawRule(writer, 14, 10);
     eyebrow(writer, "Contents");
     for (const section of sections) {
-      const refs = section.findings.map((finding) => finding.ref).filter(Boolean);
+      const refs = section.findings.map((finding: DocFinding) => finding.ref).filter(Boolean);
       const range =
         refs.length === 0
           ? "no items"
