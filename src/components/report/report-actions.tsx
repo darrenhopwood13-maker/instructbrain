@@ -40,7 +40,9 @@ import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
+import { ReportLanguageControl } from "@/components/report/report-language";
 import type { ResultView } from "@/lib/report/grouping";
+
 
 
 /**
@@ -150,10 +152,15 @@ export function ReportActions({
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
+        <ReportLanguageControl
+          reportId={document.report.id}
+          value={document.report.outputLanguage}
+        />
         <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(false)}>
           <Eye aria-hidden="true" className="mr-1.5 size-4" />
           Preview
         </Button>
+
         <Button
           type="button"
           variant="quiet"
