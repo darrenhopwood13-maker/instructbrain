@@ -407,26 +407,63 @@ function ComplianceRun() {
                               </span>
                             ) : null}
                           </span>
-                          <span className="flex gap-2">
-                            {[true, false].map((option) => (
-                              <Button
-                                key={String(option)}
-                                variant={value === option ? "default" : "outline"}
-                                aria-pressed={value === option}
-                                disabled={locked || answer.isPending}
-                                onClick={() =>
-                                  answer.mutate({
-                                    entry,
-                                    point,
-                                    fieldId: field.id,
-                                    value: option,
-                                  })
-                                }
-                              >
-                                {option ? "Yes" : "No"}
-                              </Button>
-                            ))}
-                          </span>
+                          {field.type === "yesno" ? (
+                            <span className="flex gap-2">
+                              {[true, false].map((option) => (
+                                <Button
+                                  key={String(option)}
+                                  variant={value === option ? "default" : "outline"}
+                                  aria-pressed={value === option}
+                                  aria-label={`${field.label} ${option ? "Yes" : "No"}`}
+                                  disabled={locked || answer.isPending}
+                                  onClick={() =>
+                                    answer.mutate({
+                                      entry,
+                                      point,
+                                      fieldId: field.id,
+                                      value: option,
+                                    })
+                                  }
+                                >
+                                  {option ? "Yes" : "No"}
+                                </Button>
+                              ))}
+                            </span>
+                          ) : (
+                            <Input
+                              type={
+                                field.type === "date"
+                                  ? "date"
+                                  : field.type === "number"
+                                    ? "number"
+                                    : "text"
+                              }
+                              className="h-11 w-44"
+                              aria-label={field.label}
+                              disabled={locked || (!!field.dueFromField && answer.isPending)}
+                              readOnly={!!field.dueFromField}
+                              defaultValue={
+                                typeof value === "string" || typeof value === "number"
+                                  ? String(value)
+                                  : (field.dueFromField
+                                      ? (derivedDueDate(field, entry.answers) ?? "")
+                                      : "")
+                              }
+                              onBlur={(event) => {
+                                if (field.dueFromField) return;
+                                const raw = event.currentTarget.value;
+                                const next =
+                                  field.type === "number"
+                                    ? raw === ""
+                                      ? null
+                                      : Number(raw)
+                                    : raw;
+                                if (next === (value ?? (field.type === "number" ? null : ""))) return;
+                                answer.mutate({ entry, point, fieldId: field.id, value: next });
+                              }}
+                            />
+                          )}
+
                         </li>
                       );
                     })}
