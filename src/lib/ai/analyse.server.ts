@@ -413,7 +413,12 @@ export async function analysePhotoForReport(
           report_id: input.reportId,
           ref,
           sequence,
-          capture_fields: photo.capture_fields ?? {},
+          capture_fields: {
+            ...(photo.capture_fields ?? {}),
+            // Records which survey type assessed this item, so a report
+            // covering several types can be sectioned in the document.
+            [SURVEY_TYPE_FIELD]: String((snapshot as { id?: unknown }).id ?? ""),
+          },
           ai_raw_output: (raw ?? null) as never,
           ...payload,
         })
