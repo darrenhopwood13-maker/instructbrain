@@ -258,9 +258,21 @@ export async function analysePhotoForReport(
   client: AnyClient,
   input: { reportId: string; photoId: string; force?: boolean },
 ): Promise<PhotoAnalysisResult> {
-  const config = aiConfig();
+  const baseConfig = aiConfig();
   const report = await loadReport(client, input.reportId);
   await assertWithinBudget(client, report.organisation_id);
+
+  const brief = coerceBrief(report.brief);
+  const tone = toneById(brief?.tone ?? null);
+  // Speed comes from a tighter answer and, on the fastest tone, from skipping
+  // the second-opinion pass. The photograph itself is never touched.
+  const config = brief
+    ? {
+        ...baseConfig,
+        maxOutputTokens: Math.min(baseConfig.maxOutputTokens, tone.maxOutputTokens),
+        escalationEnabled: baseConfig.escalationEnabled && tone.escalate,
+      }
+    : baseConfig;
 
   const snapshot = coerceSnapshot(report.survey_type_snapshot);
   const key = snapshotKey(snapshot, config.models);
