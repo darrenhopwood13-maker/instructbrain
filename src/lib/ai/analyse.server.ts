@@ -115,8 +115,14 @@ function coerceSnapshot(value: unknown): SurveyTypeSnapshot {
 }
 
 /** Cache identity: the same photograph under the same definition and models. */
-function snapshotKey(snapshot: SurveyTypeSnapshot, models: { triage: string; escalation: string }) {
-  return `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}`;
+function snapshotKey(
+  snapshot: SurveyTypeSnapshot,
+  models: { triage: string; escalation: string },
+  briefKey = "",
+) {
+  // The brief changes the prompt, so a cached answer written under a different
+  // tone or special request must not be reused.
+  return `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}${briefKey ? `|${briefKey}` : ""}`;
 }
 
 async function loadReport(client: AnyClient, reportId: string) {
