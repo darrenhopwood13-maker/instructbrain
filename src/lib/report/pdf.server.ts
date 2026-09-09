@@ -421,6 +421,13 @@ export async function buildReportPdf(
     writer.cursor.y -= 12 * lines.length + 2;
   }
 
+  if (notice) {
+    drawRule(writer, 10, 8);
+    drawText(writer, notice, { size: 9, colour: MUTED, gapAfter: 2 });
+  }
+
+
+
   /* Summary */
   const summary = document.report.executiveSummary ?? document.synthesis?.executiveSummary ?? "";
   if (options.variant === "full" && summary.trim()) {
