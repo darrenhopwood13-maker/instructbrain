@@ -329,7 +329,7 @@ export async function analysePhotoForReport(
       const outcome = await analysePhotograph(
         {
           snapshot,
-          systemPrompt: buildSystemPrompt(snapshot),
+          systemPrompt: buildSystemPrompt(snapshot, brief),
           userPrompt: buildUserPrompt(
             {
               captureFields: photo.capture_fields ?? {},
