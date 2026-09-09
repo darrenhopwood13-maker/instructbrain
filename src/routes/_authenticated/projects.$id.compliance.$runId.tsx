@@ -24,9 +24,12 @@ import { uploadPhoto, nextSequence } from "@/lib/photos/photo-service";
 import {
   checkType,
   complianceStatusLabel,
+  derivedDueDate,
   fieldsForUnitType,
+  isOverdue,
   type ComplianceStatus,
 } from "@/lib/compliance/checks";
+
 import {
   addPointToRun,
   complianceActionsQuery,
