@@ -57,7 +57,10 @@ function orderedGuidance(snapshot: SurveyTypeSnapshot) {
   return [...entries].sort((a, b) => rank(a.key) - rank(b.key));
 }
 
-export function buildSystemPrompt(snapshot: SurveyTypeSnapshot): string {
+export function buildSystemPrompt(
+  snapshot: SurveyTypeSnapshot,
+  brief?: ReportBrief | null,
+): string {
   const multiple = allowsMultipleFindingsPerPhoto(snapshot);
 
   const statuses = statusesOf(snapshot);
