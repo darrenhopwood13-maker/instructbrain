@@ -240,10 +240,22 @@ function DistributionReview() {
             icon={Send}
             eyebrow="Nothing to distribute"
             title="No items are ready to send"
-            description="Confirm findings in the Review tab first. Confidential items are never distributed."
+            description={
+              data && data.withheldCount > 0
+                ? "Every item on this report is confidential, and confidential items are never distributed."
+                : "Add photographs and confirm findings in the Review tab first — then come back here to send."
+            }
           />
+          <div className="mt-4 flex justify-center">
+            <Button variant="quiet" asChild>
+              <Link to="/reports/$id" params={{ id }} search={{ tab: "review" }}>
+                Go to Review
+              </Link>
+            </Button>
+          </div>
         </div>
       ) : (
+
         <>
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-surface-raised p-4">
             <div className="min-w-0">

@@ -5,7 +5,7 @@ import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
 import { DeleteReportButton } from "@/components/delete-buttons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
@@ -30,7 +30,7 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, type DocFinding } from "@/lib/report/document";
-import { definitionLabel, requiresTradeAssignment, tradesOf } from "@/lib/survey-types";
+import { definitionLabel, tradesOf } from "@/lib/survey-types";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
@@ -253,14 +253,15 @@ function ReportWorkspace() {
         {doc ? (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <ReportActions document={doc} organisationId={organisationId} resultView={resultView} />
-            {requiresTradeAssignment(report.surveyTypeSnapshot) ? (
-              <Button variant="quiet" asChild>
-                <Link to="/reports/$id/distribute" params={{ id: report.id }}>
-                  <Send aria-hidden="true" className="size-4" />
-                  Review distribution
-                </Link>
-              </Button>
-            ) : null}
+            <Link
+              to="/reports/$id/distribute"
+              params={{ id: report.id }}
+              className={buttonVariants({ variant: "quiet" })}
+            >
+              <Send aria-hidden="true" className="size-4" />
+              Review distribution
+            </Link>
+
             {!project ? (
               <Button variant="quiet" onClick={() => setAttaching(true)}>
                 <FolderInput aria-hidden="true" className="size-4" />
