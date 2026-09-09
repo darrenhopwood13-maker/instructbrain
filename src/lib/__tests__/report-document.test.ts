@@ -52,6 +52,8 @@ function document(findings: DocFinding[], snapshot = snaggingDefinition): Report
       executiveSummary: null,
       synthesisConfirmed: false,
       coverPhotoId: null,
+      outputLanguage: "en",
+    outputLanguage: "en",
     },
     project: null,
     organisation: null,
