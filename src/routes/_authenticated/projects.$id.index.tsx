@@ -143,6 +143,14 @@ function ProjectDashboard() {
         ) : null}
       </header>
 
+      <div className="mt-3 flex justify-end">
+        <DeleteProjectButton
+          projectId={current.id}
+          name={current.name}
+          reportCount={reportList.length}
+        />
+      </div>
+
       <DirectoryCard projectId={current.id} />
 
 

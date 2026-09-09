@@ -266,6 +266,11 @@ function ReportWorkspace() {
                 Attach to project
               </Button>
             ) : null}
+            <DeleteReportButton
+              reportId={report.id}
+              title={report.title}
+              projectId={project?.id ?? null}
+            />
           </div>
         ) : null}
 
