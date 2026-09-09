@@ -380,6 +380,8 @@ export async function createReport(input: NewReport): Promise<string> {
       is_quick: input.isQuick ?? false,
       survey_type_snapshot: JSON.parse(JSON.stringify(input.definition)),
       ...(input.surveyTypeId ? { survey_type_id: input.surveyTypeId } : {}),
+      ...(input.brief ? { brief: JSON.parse(JSON.stringify(input.brief)) } : {}),
+      ...(input.surveyTypeIds?.length ? { survey_type_ids: input.surveyTypeIds } : {}),
     })
 
 
