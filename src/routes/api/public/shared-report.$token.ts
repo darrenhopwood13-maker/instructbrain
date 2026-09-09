@@ -58,11 +58,11 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           );
         }
 
-        const [{ data: reports }, { data: findings }, { data: photos }] = await Promise.all([
+        const [{ data: reports }, { data: rawFindings }, { data: photos }] = await Promise.all([
           admin
             .from("reports")
             .select(
-              "id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, survey_type_snapshot, project_id, organisation_id",
+              "id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, survey_type_snapshot, project_id, organisation_id, output_language",
             )
             .eq("id", share.report_id)
             .limit(1),
@@ -83,8 +83,18 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
             .order("sequence", { ascending: true }),
         ]);
 
-        const report = reports?.[0];
-        if (!report) return Response.json({ error: "Report not found." }, { status: 404 });
+        const rawReport = reports?.[0];
+        if (!rawReport) return Response.json({ error: "Report not found." }, { status: 404 });
+
+        // The report is presented in the language it was issued in. The English
+        // rows in the database are the record copy and are never overwritten;
+        // if the translation cannot be produced, English is shown.
+        const { overlayReportRow, overlayFindingRows, outputStrings } = await import(
+          "@/lib/i18n/overlay-rows.server"
+        );
+        const strings = await outputStrings(admin, rawReport.id, rawReport.output_language);
+        const report = overlayReportRow(rawReport, strings);
+        const findings = overlayFindingRows(rawFindings ?? [], strings);
 
         const [{ data: projects }, { data: organisations }] = await Promise.all([
           admin
