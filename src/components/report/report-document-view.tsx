@@ -1,3 +1,4 @@
+import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
@@ -240,6 +241,12 @@ function Cover({ document }: { document: ReportDocument }) {
           }
         />
       </dl>
+
+      {recordCopyNotice(document.report.outputLanguage) ? (
+        <p className="mt-6 rounded-md border border-border p-3 text-sm text-muted-foreground">
+          {recordCopyNotice(document.report.outputLanguage)}
+        </p>
+      ) : null}
 
       {cover ? (
         <img

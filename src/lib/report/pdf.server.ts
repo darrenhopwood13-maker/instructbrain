@@ -397,6 +397,7 @@ export async function buildReportPdf(
     ],
     ["Items included", String(findings.length)],
   ];
+  const notice = recordCopyNotice(document.report.outputLanguage);
   for (const [label, value] of facts) {
     if (!value) continue;
     ensure(writer, 14);
