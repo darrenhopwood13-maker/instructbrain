@@ -387,6 +387,12 @@ function ComplianceRun() {
                         {entry.confirmed ? "Confirmed this week" : "Not yet confirmed"}
                         {entry.photoId ? " · photographed" : " · no photograph"}
                       </p>
+                      {isOverdue(definition, entry.answers) ? (
+                        <p className="mt-1 text-sm font-semibold text-destructive">
+                          Critical — past its due date with no report.
+                        </p>
+                      ) : null}
+
                     </div>
                     <StatusTag status={status} />
                   </div>
