@@ -502,6 +502,13 @@ export async function buildReportPdf(
     }
   }
 
+  /* Advisory note, when the report's brief asks for one */
+  if (document.advisoryFooter) {
+    drawRule(writer, 14, 10);
+    eyebrow(writer, "Advisory");
+    drawText(writer, document.advisoryFooter, { size: 9, colour: MUTED });
+  }
+
   /* Footers */
   const pages = doc.getPages();
   pages.forEach((sheet, index) => {
