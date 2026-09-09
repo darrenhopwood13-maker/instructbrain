@@ -17,11 +17,15 @@ import {
   DEFAULT_TONE_ID,
   REPORT_PRESETS,
   REPORT_TONES,
+  REPORT_TYPES,
+  SPECIAL_REQUEST_LIMIT,
   presetById,
+  reportTypeById,
   sanitiseSpecialRequest,
   toneById,
   type ReportBrief,
   type ReportToneId,
+  type ReportTypeId,
 } from "@/lib/report/brief";
 import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import {
@@ -80,6 +84,10 @@ function CustomReport() {
   const [presetId, setPresetId] = useState<string>("record");
   const [tone, setTone] = useState<ReportToneId>(DEFAULT_TONE_ID);
   const [specialRequest, setSpecialRequest] = useState("");
+  const [reportType, setReportType] = useState<ReportTypeId>("assessment");
+  const [includeFix, setIncludeFix] = useState(true);
+  const [includeSeverity, setIncludeSeverity] = useState(true);
+  const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
 
