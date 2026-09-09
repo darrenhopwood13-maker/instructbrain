@@ -24,6 +24,8 @@ import {
   type Envelope,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
+import { coerceBrief, toneById } from "@/lib/report/brief";
+import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
 import { nextRef } from "@/lib/finding-refs";
 
@@ -120,7 +122,7 @@ function snapshotKey(snapshot: SurveyTypeSnapshot, models: { triage: string; esc
 async function loadReport(client: AnyClient, reportId: string) {
   const { data, error } = await table(client, "reports")
     .select(
-      "id, organisation_id, survey_type_snapshot, project:projects(name, client_name, address)",
+      "id, organisation_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -130,6 +132,7 @@ async function loadReport(client: AnyClient, reportId: string) {
     id: string;
     organisation_id: string;
     survey_type_snapshot: unknown;
+    brief: unknown;
     project: { name: string | null; client_name: string | null; address: string | null } | null;
   };
 }
