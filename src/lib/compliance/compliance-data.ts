@@ -202,7 +202,21 @@ export function complianceRunsQuery(projectId: string, type: string) {
   });
 }
 
+/** One run by id, whatever its check type. */
+export function complianceRunQuery(runId: string) {
+  return queryOptions({
+    queryKey: ["compliance", "run", runId],
+    queryFn: async (): Promise<ComplianceRun | null> => {
+      const rows = unwrap<Record<string, any>[]>(
+        await from("compliance_runs").select(runColumns).eq("id", runId).limit(1),
+      );
+      return rows[0] ? toRun(rows[0]) : null;
+    },
+  });
+}
+
 export function compliancePointsQuery(projectId: string, type: string) {
+
   return queryOptions({
     queryKey: ["compliance", "points", projectId, type],
     queryFn: async (): Promise<CompliancePoint[]> => {
