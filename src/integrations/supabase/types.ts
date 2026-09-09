@@ -1278,6 +1278,53 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organisation_id: string
+          preset_id: string | null
+          special_request: string | null
+          survey_type_ids: Json
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organisation_id: string
+          preset_id?: string | null
+          special_request?: string | null
+          survey_type_ids?: Json
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organisation_id?: string
+          preset_id?: string | null
+          special_request?: string | null
+          survey_type_ids?: Json
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_versions: {
         Row: {
           created_at: string
@@ -1329,6 +1376,7 @@ export type Database = {
       reports: {
         Row: {
           author_id: string | null
+          brief: Json | null
           cover_photo_id: string | null
           created_at: string
           current_version: number
@@ -1346,6 +1394,7 @@ export type Database = {
           status: string
           subtitle: string | null
           survey_type_id: string | null
+          survey_type_ids: Json
           survey_type_snapshot: Json
           synthesis: Json | null
           synthesis_confirmed: boolean
@@ -1354,6 +1403,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          brief?: Json | null
           cover_photo_id?: string | null
           created_at?: string
           current_version?: number
@@ -1371,6 +1421,7 @@ export type Database = {
           status?: string
           subtitle?: string | null
           survey_type_id?: string | null
+          survey_type_ids?: Json
           survey_type_snapshot: Json
           synthesis?: Json | null
           synthesis_confirmed?: boolean
@@ -1379,6 +1430,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          brief?: Json | null
           cover_photo_id?: string | null
           created_at?: string
           current_version?: number
@@ -1396,6 +1448,7 @@ export type Database = {
           status?: string
           subtitle?: string | null
           survey_type_id?: string | null
+          survey_type_ids?: Json
           survey_type_snapshot?: Json
           synthesis?: Json | null
           synthesis_confirmed?: boolean
