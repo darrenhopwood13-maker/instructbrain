@@ -278,6 +278,8 @@ export type ReportPatch = Partial<{
   executive_summary: string | null;
   synthesis_confirmed: boolean;
   cover_photo_id: string | null;
+  /** The language the report is issued in. English stays the record copy. */
+  output_language: string;
 }>;
 
 export async function updateReportFields(
