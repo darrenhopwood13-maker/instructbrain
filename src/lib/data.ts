@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { humanisePlanError } from "@/lib/plans";
 import type { SurveyDefinition } from "@/lib/survey-types";
+import type { ReportBrief } from "@/lib/report/brief";
 import {
   coerceReportStatus,
   type DirectoryEntry,
