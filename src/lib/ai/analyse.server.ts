@@ -25,6 +25,7 @@ import {
 } from "@/lib/ai/observation";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
 import { coerceBrief, toneById } from "@/lib/report/brief";
+import { applyToneRules } from "@/lib/report/tone-post-process";
 import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import { getDefinition } from "@/lib/survey-definitions";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
