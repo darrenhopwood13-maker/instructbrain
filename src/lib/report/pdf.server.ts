@@ -14,6 +14,8 @@ import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
+import { recordCopyNotice } from "@/lib/i18n/record-copy";
+
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 
 export type PdfVariant = "full" | "trade" | "item";
