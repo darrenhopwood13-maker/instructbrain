@@ -337,6 +337,10 @@ function CustomReport() {
                           onClick={() => {
                             setPresetId(template.presetId ?? "blank");
                             setTone(toneById(template.tone).id);
+                            setReportType(reportTypeById(template.reportType));
+                            setIncludeFix(template.includeFix);
+                            setIncludeSeverity(template.includeSeverity);
+                            setAdvisoryFooter(template.advisoryFooter);
                             setSpecialRequest(template.specialRequest);
                             if (template.surveyTypeIds.length > 0) {
                               setSelectedIds(template.surveyTypeIds);
