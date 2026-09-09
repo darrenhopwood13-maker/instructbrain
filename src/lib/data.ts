@@ -355,6 +355,10 @@ export type NewReport = {
   surveyTypeId?: string | null;
   authorId: string | null;
   isQuick?: boolean;
+  /** Custom Reports only: preset, tone and special request. */
+  brief?: ReportBrief | null;
+  /** Every survey type this report covers, in document order. */
+  surveyTypeIds?: string[];
 };
 
 /**
