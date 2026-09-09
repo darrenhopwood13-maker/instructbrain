@@ -201,7 +201,7 @@ export function PhotosPanel({
       const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
-        captureFields: { ...zoneValues },
+        captureFields: { ...zoneValues, ...(pinnedFields ?? {}) },
       }));
 
       for (const item of items) pendingRef.current.set(item.id, item);
@@ -217,7 +217,7 @@ export function PhotosPanel({
       ]);
       void runQueue(items);
     },
-    [runQueue, zoneValues, remainingPhotos, photoCap],
+    [runQueue, zoneValues, pinnedFields, remainingPhotos, photoCap],
   );
 
   // Quick capture picks the photographs before the report exists; they are
