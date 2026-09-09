@@ -18,7 +18,7 @@ function finding(id: string, sequence: number, surveyType?: string): DocFinding 
     severityId: null,
     categoryId: null,
     findingText: "Observed condition.",
-    remedialText: null,
+    remedialText: "",
     captureFields: surveyType ? { [SURVEY_TYPE_FIELD]: surveyType } : {},
     assignedTrade: null,
     suggestedTrade: null,
