@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { reportDocumentQuery } from "@/lib/report/report-data";
+import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { formatDocumentDate } from "@/lib/report/document";
 import { safeResultView } from "@/lib/report/grouping";
 
@@ -92,7 +93,7 @@ function PrintReport() {
       </div>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        <ReportDocumentView document={document} print view={view} />
+        <ReportDocumentView document={translation.document ?? document} print view={view} />
       </main>
     </div>
 
