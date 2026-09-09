@@ -12,7 +12,12 @@ import { analysePhoto, analysisState } from "@/lib/ai/analyse.functions";
  * photograph completes, so review can start before the batch finishes.
  */
 
-export const RUN_CONCURRENCY = 4;
+/**
+ * Photographs analysed at once. Raised from 4 to 12: speed comes from running
+ * more work in parallel, never from sending the AI a smaller photograph
+ * (invariant 3). The server still backs off on 429/5xx per request.
+ */
+export const RUN_CONCURRENCY = 12;
 
 export type PhotoRunState = "pending" | "running" | "done" | "failed" | "skipped";
 
