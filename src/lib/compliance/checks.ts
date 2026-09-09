@@ -25,11 +25,16 @@ export function complianceStatusTone(status: string): "pass" | "fail" | "neutral
 export type PointField = {
   id: string;
   label: string;
-  type: "yesno" | "text" | "date";
+  type: "yesno" | "text" | "date" | "number";
   /** Present only for the unit types listed. Absent means: always ask. */
   onlyForUnitTypes?: string[];
   /** A "no" answer on these fields is what makes a point non-compliant. */
   compliance?: boolean;
+  /** A "no" here forces non-compliant outright, whatever else is answered. */
+  hardGate?: boolean;
+  /** Date field filled in for you as another date field plus N days. */
+  dueFromField?: string;
+  dueAfterDays?: number;
   hint?: string;
 };
 
@@ -41,11 +46,16 @@ export type CheckTypeDefinition = {
   requiresCompetentPerson: boolean;
   unitNoun: string;
   unitTypes: string[];
-  /** Photo of every unit, every week. Missing photo blocks issuing. */
-  photoRequired: boolean;
+  /**
+   * true — a photograph of every unit, every week.
+   * "on_fail" — a photograph only where the point is non-compliant.
+   * Missing required photograph blocks completing the run.
+   */
+  photoRequired: boolean | "on_fail";
   fields: PointField[];
   blurb: string;
 };
+
 
 /**
  * Water and foam extinguishers carry a pressure gauge. CO2 and wet chemical
