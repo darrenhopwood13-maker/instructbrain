@@ -280,12 +280,7 @@ export async function analysePhotoForReport(
       }
     : baseConfig;
 
-  const snapshot = coerceSnapshot(report.survey_type_snapshot);
-  const key = snapshotKey(
-    snapshot,
-    config.models,
-    brief ? `${tone.id}:${brief.specialRequest}` : "",
-  );
+  const primarySnapshot = coerceSnapshot(report.survey_type_snapshot);
 
   const { data: photoRow, error: photoError } = await table(client, "photos")
     .select(
@@ -297,6 +292,17 @@ export async function analysePhotoForReport(
   if (photoError) throw new Error(photoError.message);
   if (!photoRow) throw new Error("That photograph could not be found on this report.");
   const photo = photoRow as PhotoRecord;
+
+  // A report may cover several survey types. The type recorded on the
+  // photograph decides which snapshot assesses it — and only a type the
+  // report itself lists is ever honoured, so vocabulary cannot leak in.
+  const snapshot = resolvePhotoSnapshot(primarySnapshot, brief, photo.capture_fields);
+
+  const key = snapshotKey(
+    snapshot,
+    config.models,
+    brief ? `${tone.id}:${brief.specialRequest}` : "",
+  );
 
   if (input.force) await clearPreviousDrafts(client, input.reportId, photo.id);
 
