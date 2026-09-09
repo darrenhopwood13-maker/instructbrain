@@ -66,7 +66,7 @@ export async function loadReportDocument(
   const { data: reportRow } = await db
     .from("reports")
     .select(
-      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot",
+      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot, brief",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -215,6 +215,9 @@ export async function loadReportDocument(
         }
       : null,
     snapshot: coerceSnapshot(report["survey_type_snapshot"]),
+    // A custom report may cover several survey types; the labels come from
+    // the report's own brief, never from anything hardcoded here.
+    surveyTypes: coerceBrief(report["brief"])?.surveyTypes ?? [],
     findings: docFindings,
     photos: docPhotos,
     synthesis: synthesis(report["synthesis"]),
