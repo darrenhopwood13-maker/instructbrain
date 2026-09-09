@@ -248,7 +248,7 @@ function DistributionReview() {
           />
           <div className="mt-4 flex justify-center">
             <Button variant="quiet" asChild>
-              <Link to="/reports/$id" params={{ id }} search={{ tab: "review", view: undefined }}>
+              <Link to="/reports/$id" params={{ id }} search={{ tab: "review" }}>
                 Go to Review
               </Link>
             </Button>
