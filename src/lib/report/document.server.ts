@@ -7,6 +7,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { coerceSnapshot } from "@/lib/report/snapshot";
+import { coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import type {
