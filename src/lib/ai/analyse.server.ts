@@ -115,6 +115,24 @@ function coerceSnapshot(value: unknown): SurveyTypeSnapshot {
 }
 
 /** Cache identity: the same photograph under the same definition and models. */
+/**
+ * Which survey type assesses this photograph. Defaults to the report's own
+ * snapshot; a per-photograph type is honoured only when the report's brief
+ * lists it, so one discipline's vocabulary can never reach another's items.
+ */
+function resolvePhotoSnapshot(
+  primary: SurveyTypeSnapshot,
+  brief: ReturnType<typeof coerceBrief>,
+  captureFields: Record<string, string> | null,
+): SurveyTypeSnapshot {
+  const wanted = captureFields?.[SURVEY_TYPE_FIELD];
+  if (!wanted || wanted === primary.id) return primary;
+  const listed = brief?.surveyTypes?.some((type) => type.id === wanted);
+  if (!listed) return primary;
+  const definition = getDefinition(wanted);
+  return definition ? coerceSnapshot(definition) : primary;
+}
+
 function snapshotKey(
   snapshot: SurveyTypeSnapshot,
   models: { triage: string; escalation: string },
