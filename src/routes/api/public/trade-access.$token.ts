@@ -131,12 +131,12 @@ async function audit(
 }
 
 async function payload(context: Context): Promise<Response> {
-  const findings = await scopedFindings(context);
+  const rawFindings = await scopedFindings(context);
 
   const [{ data: reports }, { data: organisations }] = await Promise.all([
     context.admin
       .from("reports")
-      .select("id, title, reference, report_date, survey_type_snapshot, project_id")
+      .select("id, title, reference, report_date, survey_type_snapshot, project_id, output_language")
       .eq("id", context.access.report_id)
       .limit(1),
     context.admin
@@ -145,8 +145,21 @@ async function payload(context: Context): Promise<Response> {
       .eq("id", context.access.organisation_id)
       .limit(1),
   ]);
-  const report = reports?.[0];
-  if (!report) return problem("unknown", "That report could not be read.");
+  const rawReport = reports?.[0];
+  if (!rawReport) return problem("unknown", "That report could not be read.");
+
+  // A crew reading Polish gets the Polish sheet: the same issue language the
+  // report's PDF and covering email use. English stays the record copy.
+  const { overlayReportRow, overlayFindingRows, outputStrings } = await import(
+    "@/lib/i18n/overlay-rows.server"
+  );
+  const strings = await outputStrings(
+    context.admin,
+    rawReport.id,
+    rawReport["output_language"],
+  );
+  const report = overlayReportRow(rawReport, strings);
+  const findings = overlayFindingRows(rawFindings, strings);
 
   const { data: projects } = await context.admin
     .from("projects")
