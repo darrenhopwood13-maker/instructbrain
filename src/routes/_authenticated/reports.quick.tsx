@@ -427,6 +427,88 @@ function CustomReport() {
                 </div>
               </fieldset>
 
+              <fieldset>
+                <legend className="text-sm font-semibold">Report type</legend>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {REPORT_TYPES.map((option) => (
+                    <label
+                      key={option.id}
+                      className={`flex min-h-14 cursor-pointer items-start gap-2 rounded-xl border p-3 transition-colors ${
+                        option.id === reportType
+                          ? "border-brand-accent bg-surface-sunken"
+                          : "border-border hover:bg-surface-sunken"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="report-type"
+                        value={option.id}
+                        checked={option.id === reportType}
+                        onChange={() => setReportType(option.id)}
+                        className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold">{option.label}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {option.description}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="text-sm font-semibold">What the report includes</legend>
+                {identifier ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    An identifier report describes what is in each photograph, so repairs and
+                    severity are left out.
+                  </p>
+                ) : null}
+                <div className="mt-2 space-y-2">
+                  {[
+                    {
+                      id: "include-fix",
+                      label: "Suggested remedial work",
+                      checked: identifier ? false : includeFix,
+                      disabled: identifier,
+                      set: setIncludeFix,
+                    },
+                    {
+                      id: "include-severity",
+                      label: "Severity rating",
+                      checked: identifier ? false : includeSeverity,
+                      disabled: identifier,
+                      set: setIncludeSeverity,
+                    },
+                    {
+                      id: "advisory-footer",
+                      label: "Advisory note at the end of the report",
+                      checked: advisoryFooter,
+                      disabled: false,
+                      set: setAdvisoryFooter,
+                    },
+                  ].map((row) => (
+                    <label
+                      key={row.id}
+                      htmlFor={row.id}
+                      className="flex min-h-11 items-center gap-3 rounded-xl border border-border p-3 text-sm"
+                    >
+                      <input
+                        id={row.id}
+                        type="checkbox"
+                        checked={row.checked}
+                        disabled={row.disabled}
+                        onChange={(event) => row.set(event.target.checked)}
+                        className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                      />
+                      {row.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
               <div>
                 <label htmlFor="special-request" className="text-sm font-semibold">
                   Special request
