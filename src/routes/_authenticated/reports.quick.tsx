@@ -233,10 +233,7 @@ function CustomReport() {
   };
 
   const capturing = reportId !== null && snapshot !== null;
-  const activeSnapshot = useMemo(() => {
-    const definition = chosen.find((entry) => entry.id === activeType);
-    return definition ? snapshotOf(definition) : snapshot;
-  }, [activeType, chosen, snapshot]);
+  const activeSnapshot = snapshot;
 
   return (
     <AppShell>
