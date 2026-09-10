@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
+import { TemplateSelect } from "@/components/template-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createReport } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
@@ -97,6 +105,7 @@ function CustomReport() {
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
 
   const [reportId, setReportId] = useState<string | null>(null);
