@@ -835,8 +835,26 @@
   }
 }
 
+@keyframes ib-slogan {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  5%,
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ib-scan {
+  .ib-scan,
+  .ib-slogan {
     animation: none !important;
   }
 }
