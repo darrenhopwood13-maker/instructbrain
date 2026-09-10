@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/reports/new")({
   head: () => {
     const title = "Start a report — instructBrain";
     const description =
-      "Choose the survey type before uploading photographs. The survey type determines the statuses, capture fields and output the report will use.";
+      "Choose the report template before uploading photographs. The template determines the statuses, capture fields and output the report will use.";
     return {
       meta: [
         { title },
@@ -86,7 +86,7 @@ function NewReport() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!selected) throw new Error("Choose a survey type first.");
+      if (!selected) throw new Error("Choose a report template first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       if (!effectiveProjectId) throw new Error("Choose the project this report belongs to.");
       const autoTitle = `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`;
@@ -133,7 +133,7 @@ function NewReport() {
       <header className="border-b border-border pb-6">
         <p className="eyebrow">Step one</p>
         <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
-          Choose the survey type
+          Choose the report template
         </h1>
       </header>
 
@@ -245,8 +245,8 @@ function NewReport() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <fieldset>
-          <legend className="editorial-title text-lg font-semibold">Survey types</legend>
-          <div role="radiogroup" aria-label="Survey type" className="mt-3 space-y-3">
+          <legend className="editorial-title text-lg font-semibold">Report templates</legend>
+          <div role="radiogroup" aria-label="Report template" className="mt-3 space-y-3">
             {systemDefinitions.map((definition) => {
               const active = definition.id === selectedId;
               return (
