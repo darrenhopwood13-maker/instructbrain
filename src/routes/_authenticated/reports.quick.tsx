@@ -7,6 +7,14 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
+import { TemplateSelect } from "@/components/template-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createReport } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
@@ -97,6 +105,7 @@ function CustomReport() {
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
 
   const [reportId, setReportId] = useState<string | null>(null);
@@ -269,43 +278,14 @@ function CustomReport() {
             : "The template sets the instructions the AI works to. Tone, report type and what the report includes stay yours to change."}
         </p>
 
-        <fieldset className="mt-3" disabled={capturing || start.isPending}>
-          <legend className="sr-only">Choose the report template</legend>
-          <div className="space-y-4">
-            {groupedTemplates.map((group) => (
-              <div key={group.category}>
-                <p className="eyebrow text-xs">{group.label}</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {group.definitions.map((definition) => {
-                    const active = definition.id === templateId;
-                    return (
-                      <label
-                        key={definition.id}
-                        className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
-                          active
-                            ? "border-brand-accent bg-surface-raised"
-                            : "border-border bg-surface-raised hover:bg-surface-sunken"
-                        } ${capturing && !active ? "opacity-50" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name="report-template"
-                          value={definition.id}
-                          checked={active}
-                          onChange={() => setTemplateId(definition.id)}
-                          className="size-4 shrink-0 accent-[var(--brand-accent)]"
-                        />
-                        <span className="text-sm font-semibold leading-tight">
-                          {definitionLabel(snapshotOf(definition))}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </fieldset>
+        <div className="mt-3">
+          <TemplateSelect
+            id="custom-report-template"
+            value={templateId}
+            onChange={setTemplateId}
+            disabled={capturing || start.isPending}
+          />
+        </div>
       </section>
 
       {!capturing ? (
@@ -337,138 +317,140 @@ function CustomReport() {
               className="mt-4 space-y-6 rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
             >
               {templates.data && templates.data.length > 0 ? (
-                <fieldset>
-                  <legend className="text-sm font-semibold">Saved templates</legend>
-                  <ul className="mt-2 space-y-2">
-                    {templates.data.map((template) => (
-                      <li key={template.id} className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1 justify-start"
-                          onClick={() => {
-                            setPresetId(template.presetId ?? "blank");
-                            setTone(toneById(template.tone).id);
-                            setReportType(reportTypeById(template.reportType));
-                            setIncludeFix(template.includeFix);
-                            setIncludeSeverity(template.includeSeverity);
-                            setAdvisoryFooter(template.advisoryFooter);
-                            setSpecialRequest(template.specialRequest);
-                            const first = template.surveyTypeIds[0];
-                            if (first) setTemplateId(first);
-                            toast.success(`Loaded “${template.name}”.`);
-                          }}
-                        >
-                          {template.name}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Delete template ${template.name}`}
-                          onClick={() => dropTemplate.mutate(template.id)}
-                        >
-                          <Trash2 aria-hidden="true" className="size-4" />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </fieldset>
+                <div>
+                  <label htmlFor="saved-template" className="text-sm font-semibold">
+                    Saved templates
+                  </label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Select
+                      {...(savedTemplateId === "" ? {} : { value: savedTemplateId })}
+                      onValueChange={(id) => {
+                        const template = templates.data?.find((entry) => entry.id === id);
+                        if (!template) return;
+                        setSavedTemplateId(id);
+                        setPresetId(template.presetId ?? "blank");
+                        setTone(toneById(template.tone).id);
+                        setReportType(reportTypeById(template.reportType));
+                        setIncludeFix(template.includeFix);
+                        setIncludeSeverity(template.includeSeverity);
+                        setAdvisoryFooter(template.advisoryFooter);
+                        setSpecialRequest(template.specialRequest);
+                        const first = template.surveyTypeIds[0];
+                        if (first) setTemplateId(first);
+                        toast.success(`Loaded “${template.name}”.`);
+                      }}
+                    >
+                      <SelectTrigger
+                        id="saved-template"
+                        aria-label="Saved templates"
+                        className="h-11 flex-1 bg-surface-raised text-sm"
+                      >
+                        <SelectValue placeholder="Load a saved template…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.data.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-11"
+                      disabled={savedTemplateId === ""}
+                      aria-label="Delete the selected saved template"
+                      onClick={() => {
+                        if (savedTemplateId === "") return;
+                        dropTemplate.mutate(savedTemplateId);
+                        setSavedTemplateId("");
+                      }}
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" />
+                    </Button>
+                  </div>
+                </div>
               ) : null}
 
-              <fieldset>
-                <legend className="text-sm font-semibold">Preset</legend>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {REPORT_PRESETS.map((preset) => (
-                    <label
-                      key={preset.id}
-                      className={`flex min-h-14 cursor-pointer items-start gap-2 rounded-xl border p-3 transition-colors ${
-                        preset.id === presetId
-                          ? "border-brand-accent bg-surface-sunken"
-                          : "border-border hover:bg-surface-sunken"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="preset"
-                        value={preset.id}
-                        checked={preset.id === presetId}
-                        onChange={() => applyPreset(preset.id)}
-                        className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]"
-                      />
-                      <span>
-                        <span className="block text-sm font-semibold">{preset.label}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {preset.description}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <div>
+                <label htmlFor="preset" className="text-sm font-semibold">
+                  Preset
+                </label>
+                <Select value={presetId} onValueChange={applyPreset}>
+                  <SelectTrigger
+                    id="preset"
+                    aria-label="Preset"
+                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
+                  >
+                    <SelectValue placeholder="Choose a preset…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPORT_PRESETS.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {presetById(presetId)?.description}
+                </p>
+              </div>
 
-              <fieldset>
-                <legend className="text-sm font-semibold">Tone</legend>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  {REPORT_TONES.map((option) => (
-                    <label
-                      key={option.id}
-                      className={`flex min-h-14 cursor-pointer items-start gap-2 rounded-xl border p-3 transition-colors ${
-                        option.id === tone
-                          ? "border-brand-accent bg-surface-sunken"
-                          : "border-border hover:bg-surface-sunken"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="tone"
-                        value={option.id}
-                        checked={option.id === tone}
-                        onChange={() => setTone(option.id)}
-                        className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]"
-                      />
-                      <span>
-                        <span className="block text-sm font-semibold">{option.label}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {option.description}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <div>
+                <label htmlFor="tone" className="text-sm font-semibold">
+                  Tone
+                </label>
+                <Select value={tone} onValueChange={(next) => setTone(toneById(next).id)}>
+                  <SelectTrigger
+                    id="tone"
+                    aria-label="Tone"
+                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPORT_TONES.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {REPORT_TONES.find((option) => option.id === tone)?.description}
+                </p>
+              </div>
 
-              <fieldset>
-                <legend className="text-sm font-semibold">Report type</legend>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {REPORT_TYPES.map((option) => (
-                    <label
-                      key={option.id}
-                      className={`flex min-h-14 cursor-pointer items-start gap-2 rounded-xl border p-3 transition-colors ${
-                        option.id === reportType
-                          ? "border-brand-accent bg-surface-sunken"
-                          : "border-border hover:bg-surface-sunken"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="report-type"
-                        value={option.id}
-                        checked={option.id === reportType}
-                        onChange={() => setReportType(option.id)}
-                        className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]"
-                      />
-                      <span>
-                        <span className="block text-sm font-semibold">{option.label}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {option.description}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <div>
+                <label htmlFor="report-type" className="text-sm font-semibold">
+                  Report type
+                </label>
+                <Select
+                  value={reportType}
+                  onValueChange={(next) => setReportType(reportTypeById(next))}
+                >
+                  <SelectTrigger
+                    id="report-type"
+                    aria-label="Report type"
+                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPORT_TYPES.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {REPORT_TYPES.find((option) => option.id === reportType)?.description}
+                </p>
+              </div>
 
               <fieldset>
                 <legend className="text-sm font-semibold">What the report includes</legend>

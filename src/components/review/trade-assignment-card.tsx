@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { Sparkles, UserRoundCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FieldCard } from "@/components/field-card";
 import type { Finding } from "@/lib/types";
 import { deriveDueDate, formatTarget } from "@/lib/findings/due-date";
@@ -121,25 +128,31 @@ export function TradeAssignmentCard({
           >
             Assign to
           </label>
-          <select
-            id={`trade-${finding.id}`}
-            value={draft}
+          <Select
+            value={draft === "" ? "__none__" : draft}
             disabled={disabled || saving}
-            onChange={(event) => setDraft(event.target.value)}
-            className="mt-2 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+            onValueChange={(value) => setDraft(value === "__none__" ? "" : value)}
           >
-            <option value="">No trade assigned</option>
-            {suggested && !inDirectory.has(suggested.toLowerCase()) ? (
-              <option value={suggested}>{suggested} (suggested, not in directory)</option>
-            ) : null}
-            {tradeOptions.map((trade) => (
-              <option key={trade} value={trade}>
-                {trade}
-              </option>
-            ))}
-
-            <option value="__other__">Another trade…</option>
-          </select>
+            <SelectTrigger
+              id={`trade-${finding.id}`}
+              aria-label="Assigned trade"
+              className="mt-2 h-11 w-full bg-surface-raised text-base"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">No trade assigned</SelectItem>
+              {suggested && !inDirectory.has(suggested.toLowerCase()) ? (
+                <SelectItem value={suggested}>{suggested} (suggested, not in directory)</SelectItem>
+              ) : null}
+              {tradeOptions.map((trade) => (
+                <SelectItem key={trade} value={trade}>
+                  {trade}
+                </SelectItem>
+              ))}
+              <SelectItem value="__other__">Another trade…</SelectItem>
+            </SelectContent>
+          </Select>
 
           {draft === "__other__" ? (
             <div className="mt-2">

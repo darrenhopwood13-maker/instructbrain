@@ -21,8 +21,7 @@ import {
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
-import { systemDefinitions } from "@/lib/survey-definitions";
-import { definitionLabel } from "@/lib/survey-types";
+import { TemplateSelect } from "@/components/template-select";
 
 type Mode = "project" | "quick";
 
@@ -203,21 +202,17 @@ function Dashboard() {
         </div>
 
         {mode ? (
-          <div className="mt-8" role="radiogroup" aria-label="Report template">
-            <p className="eyebrow text-center sm:text-left">Report template</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {systemDefinitions.map((definition) => (
-                <button
-                  key={definition.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={false}
-                  onClick={() => chooseType(definition.id)}
-                  className="min-h-16 rounded-xl border border-border bg-surface-raised p-4 text-center text-sm font-semibold shadow-raised transition-colors hover:border-brand-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-20 sm:text-base"
-                >
-                  {definitionLabel(definition)}
-                </button>
-              ))}
+          <div className="mx-auto mt-8 max-w-3xl">
+            <label htmlFor="dashboard-template" className="eyebrow block">
+              Report template
+            </label>
+            <div className="mt-2">
+              <TemplateSelect
+                id="dashboard-template"
+                value=""
+                onChange={chooseType}
+                className="h-11 w-full bg-surface-raised text-sm"
+              />
             </div>
           </div>
         ) : null}
