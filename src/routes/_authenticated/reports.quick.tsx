@@ -204,7 +204,7 @@ function CustomReport() {
           includeSeverity: brief.includeSeverity,
           advisoryFooter,
           specialRequest,
-          surveyTypeIds: selectedIds,
+          surveyTypeIds: [templateId],
         },
       });
     },
