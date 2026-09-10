@@ -7,9 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { createReport } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -27,7 +25,6 @@ import {
   type ReportToneId,
   type ReportTypeId,
 } from "@/lib/report/brief";
-import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import {
   deleteReportTemplate,
   listReportTemplates,
@@ -82,7 +79,6 @@ function CustomReport() {
   const { type: typeParam } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
-  const usage = usePlanUsage(organisationId);
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
@@ -106,7 +102,6 @@ function CustomReport() {
   const [reportId, setReportId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SurveyTypeSnapshot | null>(null);
   const [initialFiles, setInitialFiles] = useState<File[]>([]);
-  const [activeType, setActiveType] = useState<string | null>(null);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
