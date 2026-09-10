@@ -700,25 +700,31 @@ export function ReviewList({
                         >
                           Regulatory reference
                         </label>
-                        <select
-                          id={`ref-${item.id}`}
-                          value={item.regulatoryReference ?? ""}
-                          onChange={(event) =>
+                        <Select
+                          value={item.regulatoryReference ?? "__none__"}
+                          onValueChange={(value) =>
                             updateItem(index, {
-                              regulatoryReference:
-                                event.target.value === "" ? null : event.target.value,
+                              regulatoryReference: value === "__none__" ? null : value,
                               regulatoryReferenceConfirmed: false,
                             })
                           }
-                          className="mt-2 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
                         >
-                          <option value="">No reference</option>
-                          {references.map((reference) => (
-                            <option key={reference.id} value={reference.id}>
-                              {reference.label}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            id={`ref-${item.id}`}
+                            aria-label="Regulatory reference"
+                            className="mt-2 h-11 w-full bg-surface-raised text-base"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">No reference</SelectItem>
+                            {references.map((reference) => (
+                              <SelectItem key={reference.id} value={reference.id}>
+                                {reference.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         {!item.regulatoryReferenceConfirmed ? (
                           <Button
                             variant="brand"
