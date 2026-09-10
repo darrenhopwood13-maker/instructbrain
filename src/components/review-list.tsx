@@ -299,7 +299,7 @@ export function ReviewList({
       const row = rowRefs.current[index];
       if (!row) return;
       row.focus({ preventScroll: true });
-      row.scrollIntoView({ block: "center", behavior: "smooth" });
+      row.scrollIntoView?.({ block: "center", behavior: "smooth" });
     });
   }, []);
 
