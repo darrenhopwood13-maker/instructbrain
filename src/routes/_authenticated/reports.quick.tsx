@@ -76,10 +76,10 @@ function CustomReport() {
   const storeTemplate = useServerFn(saveReportTemplate);
   const removeTemplate = useServerFn(deleteReportTemplate);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>(
+  const [templateId, setTemplateId] = useState<string>(
     systemDefinitions.some((definition) => definition.id === typeParam)
-      ? [typeParam as string]
-      : [systemDefinitions[0]?.id ?? ""],
+      ? (typeParam as string)
+      : (systemDefinitions[0]?.id ?? ""),
   );
   const [presetId, setPresetId] = useState<string>("record");
   const [tone, setTone] = useState<ReportToneId>(DEFAULT_TONE_ID);
