@@ -21,8 +21,7 @@ import {
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
-import { systemDefinitions } from "@/lib/survey-definitions";
-import { definitionLabel } from "@/lib/survey-types";
+import { TemplateSelect } from "@/components/template-select";
 
 type Mode = "project" | "quick";
 

@@ -244,46 +244,17 @@ function NewReport() {
 
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <fieldset>
-          <legend className="editorial-title text-lg font-semibold">Report templates</legend>
-          <div role="radiogroup" aria-label="Report template" className="mt-3 space-y-3">
-            {systemDefinitions.map((definition) => {
-              const active = definition.id === selectedId;
-              return (
-                <label
-                  key={definition.id}
-                  className={
-                    "block cursor-pointer rounded-xl border bg-surface-raised p-4 transition-colors " +
-                    (active
-                      ? "border-brand-accent ring-2 ring-brand-accent/30"
-                      : "border-border hover:border-border-strong")
-                  }
-                >
-                  <span className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      name="survey-type"
-                      value={definition.id}
-                      checked={active}
-                      onChange={() => setSelectedId(definition.id)}
-                      className="mt-1 size-4 accent-[var(--brand-accent)]"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-semibold">{definitionLabel(definition)}</span>
-                      <span className="mt-1 block text-sm text-muted-foreground">
-                        {statusesOf(definition).length} statuses ·{" "}
-                        {severitiesOf(definition).length} severity levels ·{" "}
-                        {definition.findingsPerPhoto === "multiple"
-                          ? "several findings per photograph"
-                          : "one finding per photograph"}
-                      </span>
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
+        <div>
+          <label htmlFor="survey-type" className="editorial-title block text-lg font-semibold">
+            Report template
+          </label>
+          <p className="mt-1 text-sm text-muted-foreground">
+            The template sets the statuses, capture fields and output this report uses.
+          </p>
+          <div className="mt-3">
+            <TemplateSelect id="survey-type" value={selectedId} onChange={setSelectedId} />
           </div>
-        </fieldset>
+        </div>
 
         {/*
           The weekly compliance register is entered from the Compliance reports
