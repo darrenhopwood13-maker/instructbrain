@@ -159,37 +159,24 @@ function CustomReport() {
     if (preset.specialRequest) setSpecialRequest(preset.specialRequest);
   };
 
-  const toggleType = (id: string) => {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.length === 1
-          ? current
-          : current.filter((entry) => entry !== id)
-        : [...current, id],
-    );
-  };
-
   // The report row is created on the first photograph, never on arrival, so an
   // abandoned visit costs nothing against the monthly allowance.
   const start = useMutation({
     mutationFn: async (files: File[]) => {
-      const primary = chosen[0];
-      if (!primary) throw new Error("Choose at least one survey type first.");
+      const primary = chosenDefinition;
+      if (!primary) throw new Error("Choose a report template first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       const frozen = snapshotOf(primary);
       const id = await createReport({
         organisationId,
         projectId: null,
         isQuick: true,
-        title:
-          chosen.length > 1
-            ? `Custom report — ${todayLabel()}`
-            : `${definitionLabel(frozen)} — ${todayLabel()}`,
+        title: `${definitionLabel(frozen)} — ${todayLabel()}`,
         reference: "",
         definition: frozen,
         authorId: userId,
         brief,
-        surveyTypeIds: chosen.map((definition) => definition.id),
+        surveyTypeIds: [primary.id],
       });
       return { id, frozen, files };
     },
@@ -197,7 +184,7 @@ function CustomReport() {
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
-      setActiveType(chosen[0]?.id ?? null);
+      setActiveType(chosenDefinition?.id ?? null);
       setReportId(id);
     },
     onError: (error: Error) => toast.error(error.message),
