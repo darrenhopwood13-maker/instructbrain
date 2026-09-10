@@ -7,9 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { createReport } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -27,7 +25,6 @@ import {
   type ReportToneId,
   type ReportTypeId,
 } from "@/lib/report/brief";
-import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import {
   deleteReportTemplate,
   listReportTemplates,
@@ -58,6 +55,18 @@ export const Route = createFileRoute("/_authenticated/reports/quick")({
   component: CustomReport,
 });
 
+// Group headings only — the templates themselves carry every discipline term.
+const CATEGORY_LABELS: Record<string, string> = {
+  condition_survey: "Building fabric",
+  condition: "Building fabric",
+  snagging: "Quality & handover",
+  fit_out: "Quality & handover",
+  site_walk: "Site & safety",
+  inventory: "Property records",
+  electrical: "Electrical",
+  mechanical: "Mechanical & HVAC",
+};
+
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", {
     day: "numeric",
@@ -70,16 +79,15 @@ function CustomReport() {
   const { type: typeParam } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
-  const usage = usePlanUsage(organisationId);
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
   const removeTemplate = useServerFn(deleteReportTemplate);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>(
+  const [templateId, setTemplateId] = useState<string>(
     systemDefinitions.some((definition) => definition.id === typeParam)
-      ? [typeParam as string]
-      : [systemDefinitions[0]?.id ?? ""],
+      ? (typeParam as string)
+      : (systemDefinitions[0]?.id ?? ""),
   );
   const [presetId, setPresetId] = useState<string>("record");
   const [tone, setTone] = useState<ReportToneId>(DEFAULT_TONE_ID);
@@ -94,7 +102,6 @@ function CustomReport() {
   const [reportId, setReportId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SurveyTypeSnapshot | null>(null);
   const [initialFiles, setInitialFiles] = useState<File[]>([]);
-  const [activeType, setActiveType] = useState<string | null>(null);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
@@ -105,13 +112,27 @@ function CustomReport() {
     enabled: Boolean(organisationId),
   });
 
-  const chosen = useMemo(
+  const chosenDefinition = useMemo(
     () =>
-      selectedIds
-        .map((id) => systemDefinitions.find((definition) => definition.id === id))
-        .filter((definition): definition is (typeof systemDefinitions)[number] => !!definition),
-    [selectedIds],
+      systemDefinitions.find((definition) => definition.id === templateId) ??
+      systemDefinitions[0] ??
+      null,
+    [templateId],
   );
+
+  const groupedTemplates = useMemo(() => {
+    const groups: { category: string; label: string; definitions: typeof systemDefinitions }[] = [];
+    for (const definition of systemDefinitions) {
+      const category = definition.category ?? "other";
+      let group = groups.find((entry) => entry.category === category);
+      if (!group) {
+        group = { category, label: CATEGORY_LABELS[category] ?? "Other", definitions: [] };
+        groups.push(group);
+      }
+      group.definitions.push(definition);
+    }
+    return groups;
+  }, []);
 
   const identifier = reportType === "identifier";
 
@@ -123,10 +144,14 @@ function CustomReport() {
     includeSeverity: identifier ? false : includeSeverity,
     advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
-    surveyTypes: chosen.map((definition) => ({
-      id: definition.id,
-      label: definitionLabel(snapshotOf(definition)),
-    })),
+    surveyTypes: chosenDefinition
+      ? [
+          {
+            id: chosenDefinition.id,
+            label: definitionLabel(snapshotOf(chosenDefinition)),
+          },
+        ]
+      : [],
   };
 
   const applyPreset = (id: string) => {
@@ -141,37 +166,24 @@ function CustomReport() {
     if (preset.specialRequest) setSpecialRequest(preset.specialRequest);
   };
 
-  const toggleType = (id: string) => {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.length === 1
-          ? current
-          : current.filter((entry) => entry !== id)
-        : [...current, id],
-    );
-  };
-
   // The report row is created on the first photograph, never on arrival, so an
   // abandoned visit costs nothing against the monthly allowance.
   const start = useMutation({
     mutationFn: async (files: File[]) => {
-      const primary = chosen[0];
-      if (!primary) throw new Error("Choose at least one survey type first.");
+      const primary = chosenDefinition;
+      if (!primary) throw new Error("Choose a report template first.");
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       const frozen = snapshotOf(primary);
       const id = await createReport({
         organisationId,
         projectId: null,
         isQuick: true,
-        title:
-          chosen.length > 1
-            ? `Custom report — ${todayLabel()}`
-            : `${definitionLabel(frozen)} — ${todayLabel()}`,
+        title: `${definitionLabel(frozen)} — ${todayLabel()}`,
         reference: "",
         definition: frozen,
         authorId: userId,
         brief,
-        surveyTypeIds: chosen.map((definition) => definition.id),
+        surveyTypeIds: [primary.id],
       });
       return { id, frozen, files };
     },
@@ -179,7 +191,6 @@ function CustomReport() {
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
-      setActiveType(chosen[0]?.id ?? null);
       setReportId(id);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -199,7 +210,7 @@ function CustomReport() {
           includeSeverity: brief.includeSeverity,
           advisoryFooter,
           specialRequest,
-          surveyTypeIds: selectedIds,
+          surveyTypeIds: [templateId],
         },
       });
     },
@@ -228,10 +239,7 @@ function CustomReport() {
   };
 
   const capturing = reportId !== null && snapshot !== null;
-  const activeSnapshot = useMemo(() => {
-    const definition = chosen.find((entry) => entry.id === activeType);
-    return definition ? snapshotOf(definition) : snapshot;
-  }, [activeType, chosen, snapshot]);
+  const activeSnapshot = snapshot;
 
   return (
     <AppShell>
@@ -251,46 +259,51 @@ function CustomReport() {
         </p>
       </header>
 
-      {organisationId ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
-
       <section aria-labelledby="type-heading" className="mt-6">
         <h2 id="type-heading" className="text-sm font-semibold">
-          Survey types
+          Report template
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {capturing
-            ? "Locked — start a new custom report to change them."
-            : "Choose one, or several to cover more than one in a single report."}
+            ? "Locked — start a new custom report to change it."
+            : "The template sets the instructions the AI works to. Tone, report type and what the report includes stay yours to change."}
         </p>
 
         <fieldset className="mt-3" disabled={capturing || start.isPending}>
-          <legend className="sr-only">Choose the survey types this report covers</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {systemDefinitions.map((definition) => {
-              const active = selectedIds.includes(definition.id);
-              return (
-                <label
-                  key={definition.id}
-                  className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
-                    active
-                      ? "border-brand-accent bg-surface-raised"
-                      : "border-border bg-surface-raised hover:bg-surface-sunken"
-                  } ${capturing && !active ? "opacity-50" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    name="survey-type"
-                    value={definition.id}
-                    checked={active}
-                    onChange={() => toggleType(definition.id)}
-                    className="size-4 shrink-0 accent-[var(--brand-accent)]"
-                  />
-                  <span className="text-sm font-semibold leading-tight">
-                    {definitionLabel(snapshotOf(definition))}
-                  </span>
-                </label>
-              );
-            })}
+          <legend className="sr-only">Choose the report template</legend>
+          <div className="space-y-4">
+            {groupedTemplates.map((group) => (
+              <div key={group.category}>
+                <p className="eyebrow text-xs">{group.label}</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {group.definitions.map((definition) => {
+                    const active = definition.id === templateId;
+                    return (
+                      <label
+                        key={definition.id}
+                        className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
+                          active
+                            ? "border-brand-accent bg-surface-raised"
+                            : "border-border bg-surface-raised hover:bg-surface-sunken"
+                        } ${capturing && !active ? "opacity-50" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="report-template"
+                          value={definition.id}
+                          checked={active}
+                          onChange={() => setTemplateId(definition.id)}
+                          className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                        />
+                        <span className="text-sm font-semibold leading-tight">
+                          {definitionLabel(snapshotOf(definition))}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </fieldset>
       </section>
@@ -342,9 +355,8 @@ function CustomReport() {
                             setIncludeSeverity(template.includeSeverity);
                             setAdvisoryFooter(template.advisoryFooter);
                             setSpecialRequest(template.specialRequest);
-                            if (template.surveyTypeIds.length > 0) {
-                              setSelectedIds(template.surveyTypeIds);
-                            }
+                            const first = template.surveyTypeIds[0];
+                            if (first) setTemplateId(first);
                             toast.success(`Loaded “${template.name}”.`);
                           }}
                         >
@@ -560,40 +572,8 @@ function CustomReport() {
 
       {capturing && activeSnapshot ? (
         <>
-          {chosen.length > 1 ? (
-            <section aria-labelledby="active-type-heading" className="mt-8">
-              <h2 id="active-type-heading" className="text-sm font-semibold">
-                Photographs I am taking now are
-              </h2>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {chosen.map((definition) => {
-                  const active = definition.id === activeType;
-                  return (
-                    <Button
-                      key={definition.id}
-                      type="button"
-                      variant={active ? "default" : "secondary"}
-                      size="sm"
-                      aria-pressed={active}
-                      onClick={() => setActiveType(definition.id)}
-                    >
-                      {definitionLabel(snapshotOf(definition))}
-                    </Button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
           <section className="mt-8">
-            <PhotosPanel
-              reportId={reportId}
-              snapshot={activeSnapshot}
-              initialFiles={initialFiles}
-              {...(chosen.length > 1 && activeType
-                ? { pinnedFields: { [SURVEY_TYPE_FIELD]: activeType } }
-                : {})}
-            />
+            <PhotosPanel reportId={reportId} snapshot={activeSnapshot} initialFiles={initialFiles} />
           </section>
 
           <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">

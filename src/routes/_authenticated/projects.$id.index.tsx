@@ -174,7 +174,7 @@ function ProjectDashboard() {
                 icon={FileText}
                 eyebrow="No reports"
                 title="This project has no reports yet"
-                description="Start a report, choose a survey type, and upload the photographs taken on site."
+                description="Start a report, choose a report template, and upload the photographs taken on site."
                 action={
                   <Button variant="brand" asChild>
                     <Link to="/reports/new" search={{ project: current.id }}>

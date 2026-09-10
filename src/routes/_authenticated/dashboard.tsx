@@ -203,8 +203,8 @@ function Dashboard() {
         </div>
 
         {mode ? (
-          <div className="mt-8" role="radiogroup" aria-label="Survey type">
-            <p className="eyebrow text-center sm:text-left">Survey type</p>
+          <div className="mt-8" role="radiogroup" aria-label="Report template">
+            <p className="eyebrow text-center sm:text-left">Report template</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {systemDefinitions.map((definition) => (
                 <button
