@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ReviewList } from "@/components/review-list";
 import type { Finding } from "@/lib/types";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -14,10 +14,10 @@ const snapshot = {
   ],
 } as unknown as SurveyTypeSnapshot;
 
-const asFinding = (id: string, ref: string, status: string, title: string, photoIds: string[] = []): Finding =>
+const asFinding = (id: string, ref: string, status: string, title: string): Finding =>
   ({
     id, ref, title, location: "L1", trade: "Trade not assigned", status,
-    aiDrafted: true, confirmed: false, isConfidential: false, photoIds,
+    aiDrafted: true, confirmed: false, isConfidential: false, photoIds: [],
     note: "", description: "Desc.", remedial: "",
     likelyCause: null, likelyCauseConfirmed: false,
     regulatoryReference: null, regulatoryReferenceConfirmed: false,
@@ -26,34 +26,24 @@ const asFinding = (id: string, ref: string, status: string, title: string, photo
 const visibleTitle = () =>
   document.querySelector("ul[aria-label='Findings for review'] li p.font-semibold")?.textContent;
 
-// Simulate a real browser click: mousedown moves focus to the button first.
-function realClick(el: HTMLElement) {
-  fireEvent.mouseDown(el);
-  act(() => { el.focus(); });
-  fireEvent.mouseUp(el);
-  fireEvent.click(el);
-}
-
-describe("real click", () => {
-  it("jump works with browser-like focus", () => {
+describe("go to first unresolved", () => {
+  it("jumps back to the first not assessed finding and focuses its card", () => {
     render(
       <ReviewList
         snapshot={snapshot}
         findings={[
-          asFinding("a", "F-001", "pass", "First pass", ["p1"]),
-          asFinding("b", "F-002", "not_assessed", "Blocked one", ["p2"]),
-          asFinding("c", "F-003", "not_assessed", "Blocked two", ["p3"]),
-          asFinding("d", "F-004", "fail", "Third fail", ["p4"]),
+          asFinding("a", "F-001", "pass", "First pass"),
+          asFinding("b", "F-002", "not_assessed", "Blocked one"),
+          asFinding("c", "F-003", "fail", "Third fail"),
         ]}
         onConfirm={() => Promise.resolve()}
       />,
     );
-    console.log("initial:", visibleTitle());
-    realClick(screen.getByRole("button", { name: /^next$/i }));
-    console.log("after next1:", visibleTitle());
-    realClick(screen.getByRole("button", { name: /^next$/i }));
-    console.log("after next2:", visibleTitle());
-    realClick(screen.getByRole("button", { name: /go to first unresolved/i }));
-    console.log("after jump:", visibleTitle());
+    fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
+    expect(visibleTitle()).toBe("Third fail");
+    fireEvent.click(screen.getByRole("button", { name: /go to first unresolved/i }));
+    expect(visibleTitle()).toBe("Blocked one");
+    expect(document.activeElement?.textContent).toContain("Blocked one");
   });
 });
