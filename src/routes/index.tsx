@@ -194,14 +194,18 @@ const SLOGANS = [
 
 function RotatingSlogans() {
   return (
-    <p aria-live="polite" className="relative mt-5 h-12 text-sm font-medium text-brand-accent-ink sm:h-5">
+    <p
+      aria-live="polite"
+      className="relative mt-5 h-12 text-sm font-medium text-brand-accent-ink sm:h-5"
+    >
       {SLOGANS.map((text, index) => (
         <span
           key={text}
-          className="ib-slogan absolute left-0 top-0 block w-full"
+          className="ib-slogan absolute left-0 top-0 block w-full opacity-0"
           style={{
             animation: "ib-slogan 16s linear infinite",
             animationDelay: `${index * 4}s`,
+            animationFillMode: "forwards",
           }}
         >
           {text}
