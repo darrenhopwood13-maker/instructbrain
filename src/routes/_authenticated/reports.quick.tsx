@@ -191,7 +191,6 @@ function CustomReport() {
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
-      setActiveType(chosenDefinition?.id ?? null);
       setReportId(id);
     },
     onError: (error: Error) => toast.error(error.message),
