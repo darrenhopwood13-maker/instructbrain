@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ReviewList } from "@/components/review-list";
 import type { Finding } from "@/lib/types";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -26,8 +26,8 @@ const asFinding = (id: string, ref: string, status: string, title: string): Find
 const visibleTitle = () =>
   document.querySelector("ul[aria-label='Findings for review'] li p.font-semibold")?.textContent;
 
-describe("jump to first not assessed", () => {
-  it("traces navigation", () => {
+describe("trace", () => {
+  it("traces", () => {
     render(
       <ReviewList
         snapshot={snapshot}
@@ -39,12 +39,13 @@ describe("jump to first not assessed", () => {
         onConfirm={() => Promise.resolve()}
       />,
     );
-    console.log("initial:", visibleTitle());
-    screen.getByRole("button", { name: /^next$/i }).click();
-    console.log("after next 1:", visibleTitle());
-    screen.getByRole("button", { name: /^next$/i }).click();
-    console.log("after next 2:", visibleTitle());
-    screen.getByRole("button", { name: /go to first unresolved/i }).click();
+    console.log("initial:", visibleTitle(), "| activeEl:", document.activeElement?.textContent?.slice(0,20));
+    const next = screen.getByRole("button", { name: /^next$/i });
+    fireEvent.click(next);
+    console.log("after next1:", visibleTitle());
+    fireEvent.click(next);
+    console.log("after next2:", visibleTitle());
+    fireEvent.click(screen.getByRole("button", { name: /go to first unresolved/i }));
     console.log("after jump:", visibleTitle());
   });
 });
