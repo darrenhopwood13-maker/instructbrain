@@ -105,13 +105,27 @@ function CustomReport() {
     enabled: Boolean(organisationId),
   });
 
-  const chosen = useMemo(
+  const chosenDefinition = useMemo(
     () =>
-      selectedIds
-        .map((id) => systemDefinitions.find((definition) => definition.id === id))
-        .filter((definition): definition is (typeof systemDefinitions)[number] => !!definition),
-    [selectedIds],
+      systemDefinitions.find((definition) => definition.id === templateId) ??
+      systemDefinitions[0] ??
+      null,
+    [templateId],
   );
+
+  const groupedTemplates = useMemo(() => {
+    const groups: { category: string; label: string; definitions: typeof systemDefinitions }[] = [];
+    for (const definition of systemDefinitions) {
+      const category = definition.category ?? "other";
+      let group = groups.find((entry) => entry.category === category);
+      if (!group) {
+        group = { category, label: CATEGORY_LABELS[category] ?? "Other", definitions: [] };
+        groups.push(group);
+      }
+      group.definitions.push(definition);
+    }
+    return groups;
+  }, []);
 
   const identifier = reportType === "identifier";
 
