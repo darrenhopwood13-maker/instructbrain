@@ -3,20 +3,24 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   CheckCircle2,
+  ClipboardCheck,
   ClipboardList,
-  HardHat,
+  FileText,
+  Languages,
   ScanLine,
   ShieldCheck,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RoiRace } from "@/components/landing/roi-race";
+import { ComplianceTicker, PhotoToReport } from "@/components/landing/photo-to-report";
+import { Reveal } from "@/components/landing/reveal";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
 
-const TITLE = "instructBrain — walk the site, issue the same afternoon";
+const TITLE = "instructBrain — construction reports from site photographs";
 const DESCRIPTION =
-  "instructBrain reads your site photographs, drafts referenced findings against your survey type and issues UK condition surveys, site walks and snagging schedules. Free for your first 3 reports.";
+  "instructBrain turns site photographs into client-ready construction reports: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and issue. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -96,7 +100,6 @@ function Wordmark() {
         <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
       </span>
-
     </span>
   );
 }
@@ -141,13 +144,14 @@ function Hero() {
         Free for your first 3 reports. No card required.
       </p>
 
-      <div className="rule-top mt-8 max-w-3xl pt-8">
-        <h1 className="editorial-title text-2xl font-bold leading-tight sm:text-3xl">
+      <div className="rule-top mt-8 max-w-4xl pt-8">
+        <h1 className="editorial-title text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
           Walk the site. Issue the same afternoon.
         </h1>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Every photograph is read against your survey type and drafted into referenced
-          findings. Confirm them and issue a signed-off PDF with per-trade extracts.{" "}
+        <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          Custom Reports, Project Reports and Weekly Compliance Registers — all from the photographs
+          you already take. AI drafts referenced findings against the right construction template;
+          you confirm, sign off and issue a PDF with per-trade extracts.{" "}
           <a
             href="#how-it-works"
             className="font-semibold text-brand-accent-ink underline underline-offset-4"
@@ -155,24 +159,77 @@ function Hero() {
             See how it works
           </a>
         </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Button variant="glass-orange" size="xl" asChild>
+            <Link to="/auth/sign-up">
+              <ClipboardList aria-hidden="true" />
+              Create custom report
+            </Link>
+          </Button>
+          <Button variant="outline" size="xl" asChild>
+            <Link to="/auth/sign-up">
+              <FileText aria-hidden="true" />
+              Create project report
+            </Link>
+          </Button>
+        </div>
+
+        <RotatingSlogans />
+      </div>
+
+      <div className="mt-10 max-w-4xl">
+        <PhotoToReport />
       </div>
     </section>
   );
 }
 
+const SLOGANS = [
+  "AI drafts the findings. You confirm and issue.",
+  "Full-resolution image analysis. Structured output. Human sign-off.",
+  "Per-trade extracts, close-out tracking and shared links — in English or issued in another language.",
+  "When it can't tell, it says so. No guesswork becomes a pass.",
+];
+
+function RotatingSlogans() {
+  return (
+    <p
+      aria-live="polite"
+      className="relative mt-5 h-12 text-sm font-medium text-brand-accent-ink sm:h-5"
+    >
+      {SLOGANS.map((text, index) => (
+        <span
+          key={text}
+          className="ib-slogan absolute left-0 top-0 block w-full opacity-0"
+          style={{
+            animation: "ib-slogan 16s linear infinite",
+            animationDelay: `${index * 4}s`,
+            animationFillMode: "forwards",
+          }}
+        >
+          {text}
+        </span>
+      ))}
+    </p>
+  );
+}
 
 function RoiSection() {
   return (
     <section className="py-20 lg:py-28" aria-labelledby="roi-heading">
       <div className="shell-container">
-        <p className="eyebrow">What it gives you back</p>
-        <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-          Move the sliders. Watch the gap.
-        </h2>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          The write-up is the expensive part of a survey, and it happens after hours. This is what
-          it costs you now, and what it costs with instructBrain.
-        </p>
+        <Reveal>
+          <p className="eyebrow">What it gives you back</p>
+          <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+            Move the sliders. Watch the gap.
+          </h2>
+          <p className="mt-4 max-w-2xl text-base text-muted-foreground">
+            The write-up is the expensive part of a survey, a snagging list or a compliance register,
+            and it happens after hours. This is what it costs you now, and what it costs with
+            instructBrain.
+          </p>
+        </Reveal>
         <div className="glass-panel mt-12 rounded-2xl p-6 sm:p-8">
           <RoiRace />
         </div>
@@ -181,69 +238,80 @@ function RoiSection() {
   );
 }
 
-
 const useCases = [
   {
     icon: ShieldCheck,
-    title: "Weatherproofing / condition survey",
-    who: "Site manager or building surveyor",
-    when: "Before handover, or when a leak is reported",
-    now: "150 photographs, then three days of desk work writing it up.",
-    then: "Minutes.",
+    title: "Custom Reports",
+    who: "Surveyor, clerk of works or project manager",
+    when: "One-off inspections, specialist audits, batch photo reviews",
+    now: "Start from a blank page every time, or wrestle with a Word template that never matches the job.",
+    then: "Pick a construction template, set tone and report type, add special instructions, and let the AI analyse the photos against fixed core parameters.",
   },
   {
-    icon: HardHat,
-    title: "Site condition",
-    who: "Site manager",
-    when: "Daily or weekly",
-    now: "An hour walking the site, then an evening splitting observations by trade and writing eight separate emails.",
-    then: "One walk, split into per-trade extracts automatically.",
+    icon: FileText,
+    title: "Project Reports",
+    who: "Site manager, building surveyor or clerk of works",
+    when: "Site walks, snagging, weatherproofing and condition surveys",
+    now: "Hours writing up observations, splitting them by trade, then chasing ownership.",
+    then: "Referenced findings with stable IDs, suggested trades, close-out tracking and per-trade extracts — all from one upload.",
   },
   {
-    icon: ClipboardList,
-    title: "Snagging",
-    who: "Clerk of works or project manager",
-    when: "Before handover",
-    now: "Days spent listing defects and chasing which trade owns what.",
-    then: "Identified, described, with likely cause, severity, the standard it touches, and the fix.",
+    icon: ClipboardCheck,
+    title: "Weekly Compliance Registers",
+    who: "Site manager or safety officer",
+    when: "Every week, for every active project",
+    now: "Six separate checks, six clipboards, then re-keying it all into a spreadsheet.",
+    then: "Fire, Excavation, Scaffold, Welfare, Lifting and plant, Housekeeping — prepopulated from the previous run, locked when complete, six-week history at a glance.",
+  },
+  {
+    icon: Languages,
+    title: "Issue in another language",
+    who: "Teams with international clients or multilingual sites",
+    when: "At issue, for any report",
+    now: "Translate the PDF manually, or send English to a client who needs another language.",
+    then: "Issue the report in the chosen language. Shared links and trade-access pages render in that language while English stays the record copy.",
   },
 ];
 
 function UseCases() {
   return (
     <section className="shell-container py-20 lg:py-28" aria-labelledby="cases-heading">
-      <p className="eyebrow">Where it earns its keep</p>
-      <h2 id="cases-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-        Three jobs it does today
-      </h2>
-      <ul className="mt-12 grid gap-6 lg:grid-cols-3">
-        {useCases.map((item) => (
-          <li
-            key={item.title}
-            className="glass-panel flex flex-col rounded-2xl p-6 sm:p-7"
-          >
-            <h3 className="editorial-title text-xl font-semibold leading-snug">
-              {item.title}
-            </h3>
-            <dl className="mt-5 space-y-3 text-sm">
-              <div>
-                <dt className="eyebrow">Who</dt>
-                <dd className="mt-1 text-muted-foreground">{item.who}</dd>
+      <Reveal>
+        <p className="eyebrow">Where it earns its keep</p>
+        <h2 id="cases-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+          Built for what you actually do on site
+        </h2>
+      </Reveal>
+      <ul className="mt-12 grid gap-6 lg:grid-cols-2">
+        {useCases.map((item, index) => (
+          <Reveal key={item.title} as="li" delayMs={index * 80}>
+            <li className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-7">
+              <div className="flex items-center gap-3">
+                <item.icon aria-hidden="true" className="size-6 text-brand-accent-ink" />
+                <h3 className="editorial-title text-xl font-semibold leading-snug">
+                  {item.title}
+                </h3>
               </div>
-              <div>
-                <dt className="eyebrow">How often</dt>
-                <dd className="mt-1 text-muted-foreground">{item.when}</dd>
-              </div>
-              <div>
-                <dt className="eyebrow">Today</dt>
-                <dd className="mt-1 text-muted-foreground">{item.now}</dd>
-              </div>
-              <div className="rule-top pt-3">
-                <dt className="eyebrow">With instructBrain</dt>
-                <dd className="mt-1 font-semibold text-foreground">{item.then}</dd>
-              </div>
-            </dl>
-          </li>
+              <dl className="mt-5 space-y-3 text-sm">
+                <div>
+                  <dt className="eyebrow">Who</dt>
+                  <dd className="mt-1 text-muted-foreground">{item.who}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">How often</dt>
+                  <dd className="mt-1 text-muted-foreground">{item.when}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">Today</dt>
+                  <dd className="mt-1 text-muted-foreground">{item.now}</dd>
+                </div>
+                <div className="rule-top pt-3">
+                  <dt className="eyebrow">With instructBrain</dt>
+                  <dd className="mt-1 font-semibold text-foreground">{item.then}</dd>
+                </div>
+              </dl>
+            </li>
+          </Reveal>
         ))}
       </ul>
     </section>
@@ -254,17 +322,17 @@ const steps = [
   {
     icon: Upload,
     title: "Upload photos",
-    body: "Straight off the phone or the camera. HEIC and JPEG, capture time and location kept intact.",
+    body: "Straight off the phone or the camera. HEIC and JPEG, capture time and location kept intact. Full-resolution originals go to the AI; thumbnails and display copies are handled separately.",
   },
   {
     icon: ScanLine,
     title: "AI drafts findings",
-    body: "Every photograph read against your survey type, with severity, likely cause and the suggested trade.",
+    body: "Every photograph is read against the report template with structured output, confidence scoring and trade suggestions. When it is uncertain — bad light, awkward angle — it routes to Not assessed, never to a passing status.",
   },
   {
     icon: CheckCircle2,
     title: "Review and issue",
-    body: "Confirm or correct on the keyboard, then issue the PDF and send per-trade extracts.",
+    body: "Confirm or correct on the keyboard. Then issue a PDF with a contents page, per-trade extracts, close-out tracking where required, and a share link in the issue language.",
   },
 ];
 
@@ -276,22 +344,30 @@ function HowItWorks() {
       aria-labelledby="how-heading"
     >
       <div className="shell-container">
-        <p className="eyebrow">How it works</p>
-        <h2 id="how-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-          Three steps, start to issued
-        </h2>
+        <Reveal>
+          <p className="eyebrow">How it works</p>
+          <h2 id="how-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+            Three steps, start to issued
+          </h2>
+        </Reveal>
         <ol className="mt-12 grid gap-6 lg:grid-cols-3">
           {steps.map((step, index) => (
-            <li
-              key={step.title}
-              className="glass-panel rounded-2xl p-6 sm:p-7"
-            >
-              <span className="eyebrow">Step {index + 1}</span>
-              <h3 className="editorial-title mt-4 text-xl font-semibold">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
-            </li>
+            <Reveal key={step.title} as="li" delayMs={index * 100}>
+              <li className="glass-panel rounded-2xl p-6 sm:p-7">
+                <span className="eyebrow">Step {index + 1}</span>
+                <div className="mt-4 flex items-center gap-3">
+                  <step.icon aria-hidden="true" className="size-5 text-brand-accent-ink" />
+                  <h3 className="editorial-title text-xl font-semibold">{step.title}</h3>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+              </li>
+            </Reveal>
           ))}
         </ol>
+
+        <div className="mt-12 max-w-3xl">
+          <ComplianceTicker />
+        </div>
       </div>
     </section>
   );
@@ -301,19 +377,43 @@ function PlainEnglish() {
   return (
     <section className="shell-container py-20 lg:py-28" aria-labelledby="ai-heading">
       <div className="max-w-3xl">
-        <p className="eyebrow">What the AI actually does</p>
-        <h2 id="ai-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-          In plain English
-        </h2>
-        <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
-          You photograph the site as you always have. instructBrain looks at every photo, describes
-          what it sees in the language you'd use, decides how serious it is, and says what to do
-          about it.
-        </p>
-        <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
-          When it can't tell — bad light, awkward angle — it says so rather than guessing. You
-          review, correct anything wrong, and issue.
-        </p>
+        <Reveal>
+          <p className="eyebrow">What the AI actually does</p>
+          <h2 id="ai-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+            In plain English
+          </h2>
+        </Reveal>
+        <Reveal delayMs={100}>
+          <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
+            You photograph the site as you always have. instructBrain looks at every photo,
+            describes what it sees in the language you'd use, decides how serious it is, and says
+            what to do about it. It only describes conditions and hazards — never people.
+          </p>
+        </Reveal>
+        <Reveal delayMs={200}>
+          <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
+            When it can't tell — bad light, awkward angle — it says so rather than guessing. You
+            review, correct anything wrong, and issue.
+          </p>
+        </Reveal>
+        <Reveal delayMs={300}>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            <li className="glass-panel rounded-xl p-5">
+              <p className="eyebrow">Trade attribution</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Suggested trades are suggestions, not assertions. A human confirms every assignment
+                before anything is distributed.
+              </p>
+            </li>
+            <li className="glass-panel rounded-xl p-5">
+              <p className="eyebrow">Confidential findings</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Findings involving people are restricted to supervisors and above, and excluded
+                from every subcontractor distribution at the database level.
+              </p>
+            </li>
+          </ul>
+        </Reveal>
       </div>
     </section>
   );
@@ -324,8 +424,8 @@ const tiers = [
     name: "Free",
     price: "£0",
     cadence: "",
-    summary: "3 reports. Up to 30 photos each.",
-    points: ["No card required", "Every survey type", "Issued PDF and share link"],
+    summary: "3 reports across Custom Reports, Project Reports and Compliance Registers. Up to 30 photos each.",
+    points: ["No card required", "Every report template", "Issued PDF and share link"],
     cta: "Start free",
     featured: false,
   },
@@ -352,7 +452,7 @@ const tiers = [
     price: "Talk to us",
     cadence: "",
     summary: "Teams and enterprise.",
-    points: ["Volume pricing", "Bespoke survey types", "Onboarding support"],
+    points: ["Volume pricing", "Bespoke report templates", "Onboarding support"],
     cta: "Contact us",
     featured: false,
   },
@@ -366,67 +466,71 @@ function Pricing() {
       aria-labelledby="pricing-heading"
     >
       <div className="shell-container">
-        <p className="eyebrow">Pricing</p>
-        <h2 id="pricing-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-          Priced in reports, not tokens
-        </h2>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          A report is one survey, from upload to issued PDF. Go over your photo allowance and you
-          can buy overage per photo — no tier jump required.
-        </p>
+        <Reveal>
+          <p className="eyebrow">Pricing</p>
+          <h2 id="pricing-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+            Priced in reports, not tokens
+          </h2>
+          <p className="mt-4 max-w-2xl text-base text-muted-foreground">
+            A report is one job, from upload to issued PDF — whether it is a Custom Report, a
+            Project Report or a Weekly Compliance Register. Go over your photo allowance and you can
+            buy overage per photo — no tier jump required.
+          </p>
+        </Reveal>
 
         <ul className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {tiers.map((tier) => (
-            <li
-              key={tier.name}
-              className={
-                tier.featured
-                  ? "glass-panel flex flex-col rounded-2xl border-2 border-brand-accent p-6"
-                  : "glass-panel flex flex-col rounded-2xl p-6"
-              }
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="editorial-title text-lg font-semibold">{tier.name}</h3>
-                {tier.featured ? (
-                  <span className="rounded-full bg-brand-accent-soft px-2.5 py-0.5 text-xs font-bold text-brand-accent-ink">
-                    Most popular
-                  </span>
-                ) : null}
-              </div>
-              <p className="editorial-title mt-4 text-3xl font-bold">
-                {tier.price}
-                <span className="text-base font-medium text-muted-foreground">{tier.cadence}</span>
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">{tier.summary}</p>
-              <ul className="mt-5 flex-1 space-y-2 text-sm">
-                {tier.points.map((point) => (
-                  <li key={point} className="flex gap-2">
-                    <CheckCircle2
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-brand-accent-ink"
-                    />
-                    <span className="text-muted-foreground">{point}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6">
-                {tier.name === "Custom" ? (
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href="mailto:hello@instructsite.ai?subject=Report%20Ready%20for%20teams">
-                      {tier.cta}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button
-                    variant={tier.featured ? "glass-orange" : "outline"}
-                    className="w-full"
-                    asChild
-                  >
-                    <Link to="/auth/sign-up">{tier.cta}</Link>
-                  </Button>
-                )}
-              </div>
-            </li>
+          {tiers.map((tier, index) => (
+            <Reveal key={tier.name} as="li" delayMs={index * 80}>
+              <li
+                className={
+                  tier.featured
+                    ? "glass-panel flex h-full flex-col rounded-2xl border-2 border-brand-accent p-6"
+                    : "glass-panel flex h-full flex-col rounded-2xl p-6"
+                }
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="editorial-title text-lg font-semibold">{tier.name}</h3>
+                  {tier.featured ? (
+                    <span className="rounded-full bg-brand-accent-soft px-2.5 py-0.5 text-xs font-bold text-brand-accent-ink">
+                      Most popular
+                    </span>
+                  ) : null}
+                </div>
+                <p className="editorial-title mt-4 text-3xl font-bold">
+                  {tier.price}
+                  <span className="text-base font-medium text-muted-foreground">{tier.cadence}</span>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">{tier.summary}</p>
+                <ul className="mt-5 flex-1 space-y-2 text-sm">
+                  {tier.points.map((point) => (
+                    <li key={point} className="flex gap-2">
+                      <CheckCircle2
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-brand-accent-ink"
+                      />
+                      <span className="text-muted-foreground">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6">
+                  {tier.name === "Custom" ? (
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href="mailto:hello@instructsite.ai?subject=Report%20Ready%20for%20teams">
+                        {tier.cta}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={tier.featured ? "glass-orange" : "outline"}
+                      className="w-full"
+                      asChild
+                    >
+                      <Link to="/auth/sign-up">{tier.cta}</Link>
+                    </Button>
+                  )}
+                </div>
+              </li>
+            </Reveal>
           ))}
         </ul>
 
@@ -442,39 +546,42 @@ function Pricing() {
 function ClosingCta() {
   return (
     <section className="shell-container py-24 lg:py-32" aria-labelledby="closing-heading">
-      <div className="glass-panel rounded-2xl p-8 sm:p-12">
-        <div className="max-w-2xl">
-          <h2
-            id="closing-heading"
-            className="editorial-title text-3xl font-bold sm:text-4xl"
-          >
-            Your next survey can be off your desk before the drive home.
-          </h2>
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Three reports free. No card required. Bring the photographs you already have.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button variant="brand" size="lg" asChild>
-              <Link to="/auth/sign-up">
-                Start free — 3 reports
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/auth/sign-in">Sign in</Link>
-            </Button>
-          </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              to="/auth/sign-in"
-              className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+      <Reveal>
+        <div className="glass-panel rounded-2xl p-8 sm:p-12">
+          <div className="max-w-2xl">
+            <h2
+              id="closing-heading"
+              className="editorial-title text-3xl font-bold sm:text-4xl"
             >
-              Sign in
-            </Link>
-          </p>
+              Your next report can be off your desk before the drive home.
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+              Three reports free. No card required. Custom Reports, Project Reports and Compliance
+              Registers — bring the photographs you already have.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button variant="brand" size="lg" asChild>
+                <Link to="/auth/sign-up">
+                  Start free — 3 reports
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/auth/sign-in">Sign in</Link>
+              </Button>
+            </div>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                to="/auth/sign-in"
+                className="inline-flex min-h-11 items-center font-semibold text-brand-accent-ink underline underline-offset-4"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

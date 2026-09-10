@@ -821,3 +821,40 @@
     }
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Landing motion                                                      */
+/* ------------------------------------------------------------------ */
+
+@keyframes ib-scan {
+  0% {
+    left: -4rem;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes ib-slogan {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  6%,
+  19% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ib-scan,
+  .ib-slogan {
+    animation: none !important;
+  }
+}
