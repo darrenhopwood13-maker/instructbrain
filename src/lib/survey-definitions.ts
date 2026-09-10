@@ -408,12 +408,402 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
   supportsDistribution: false,
 };
 
+export const electricalInstallationDefinition: SurveyDefinition = {
+  id: "electrical_installation",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Electrical installation condition",
+  category: "electrical",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "compliant_install", label: "Compliant — no action", tone: "pass" },
+    { id: "defective_install", label: "Defective — rectification required", tone: "fail" },
+    { id: "improvement_recommended", label: "Improvement recommended", tone: "warn" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [
+    {
+      id: "danger_present",
+      label: "Danger present",
+      guidance: "Risk of shock, burn or fire from what is visible. Isolate and make safe now.",
+      targetHours: 0,
+    },
+    {
+      id: "potentially_dangerous",
+      label: "Potentially dangerous",
+      guidance: "Could become unsafe in service. Attend urgently.",
+      targetHours: 24,
+    },
+    {
+      id: "improvement_item",
+      label: "Improvement item",
+      guidance: "Serviceable but short of good installation practice. Schedule an improvement.",
+      targetHours: 336,
+    },
+    {
+      id: "further_investigation",
+      label: "Further investigation",
+      guidance: "Cannot be judged from the photograph. Test and inspect before a call is made.",
+    },
+  ],
+  captureFields: [
+    {
+      id: "location",
+      label: "Location",
+      type: "text",
+      required: true,
+      hint: "Level, room or board reference",
+    },
+    { id: "circuit_ref", label: "Circuit or board reference", type: "text" },
+    {
+      id: "installation_area",
+      label: "Installation area",
+      type: "select",
+      options: [
+        "Distribution board",
+        "Containment run",
+        "Accessory or outlet",
+        "Luminaire",
+        "Temporary site supply",
+        "Plant connection",
+      ],
+    },
+  ],
+  aiGuidance: {
+    persona: `Recording the visible condition of an electrical installation for a competent person to verify. You never claim a test result you cannot see.
+
+Say what is visible and what it implies. Exposed conductors, missing blanks, unsupported cable, damaged enclosures, incorrect containment, missing labelling, ingress into an enclosure.
+
+Nothing in a photograph proves continuity, insulation resistance or polarity. Where the point turns on a test, say that testing is required and return the further investigation severity.`,
+    focus:
+      "Distribution boards and enclosures, cable containment and support, terminations and glanding, accessories and outlets, luminaires, temporary supplies and plant connections.",
+    multiFindingGuidance:
+      "One photograph often shows several separate installation issues. Return one observation per distinct issue and do not merge them.",
+    descriptionGuidance:
+      "Name the item, where it is, and precisely what is wrong with it as installed. Avoid speculation about the design.",
+    remedialGuidance:
+      "Give the practical rectification and say plainly where isolation, testing or certification by a competent person must come first.",
+    failCriteria:
+      "Exposed live parts, missing blanking pieces, damaged or unsealed enclosures, unsupported or unprotected cable, incorrect or missing glands, absent identification, or any arrangement that would be raised on an inspection.",
+    excludeCriteria:
+      "First-fix work still in progress, cables drawn in but not yet terminated, and installations obviously not yet energised are NOT defects. Do not flag unfinished work.",
+    peopleGuidance:
+      "Describe the installation only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "Where the responsible trade follows plainly from the item photographed, suggest it and give the reason. Otherwise return null.",
+    abstainGuidance:
+      "If the photograph is too dark, distant or obstructed to identify the item or judge how it is installed, return not_assessed.",
+  },
+  defaultRemedial:
+    "Isolate, rectify the installation defect and re-test the affected circuit; issue certification for the remedial work.",
+  outputSections: ["cover", "scope", "methodology", "summary", "schedule", "appendix"],
+  requiresTradeAssignment: true,
+  requiresLifecycle: true,
+  supportsDistribution: true,
+  defaultDistributionGrouping: "trade",
+};
+
+export const mechanicalServicesDefinition: SurveyDefinition = {
+  id: "mechanical_services",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Mechanical & HVAC installation",
+  category: "mechanical",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "installed_to_standard", label: "Installed to standard", tone: "pass" },
+    { id: "installation_defect", label: "Installation defect — rectify", tone: "fail" },
+    { id: "incomplete_install", label: "Incomplete — revisit before commissioning", tone: "warn" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [
+    {
+      id: "leak_or_imminent_failure",
+      label: "Leak or imminent failure",
+      guidance: "Water, gas or air loss visible or imminent. Attend now.",
+      targetHours: 0,
+    },
+    {
+      id: "commissioning_risk",
+      label: "Commissioning risk",
+      guidance: "Will prevent or delay commissioning of the system.",
+      targetHours: 72,
+    },
+    {
+      id: "efficiency_loss",
+      label: "Efficiency loss",
+      guidance: "System will run, but output or efficiency is compromised.",
+      targetHours: 336,
+    },
+    {
+      id: "labelling_item",
+      label: "Labelling or tidy-up",
+      guidance: "Identification, bracketing or tidiness. Complete in the normal course of work.",
+      targetHours: 336,
+    },
+  ],
+  captureFields: [
+    {
+      id: "location",
+      label: "Location",
+      type: "text",
+      required: true,
+      hint: "Plantroom, riser, level or room",
+    },
+    {
+      id: "system_type",
+      label: "System",
+      type: "select",
+      options: [
+        "Heating pipework",
+        "Chilled water",
+        "Domestic water",
+        "Ductwork",
+        "Ventilation terminal",
+        "Plantroom equipment",
+        "Thermal insulation",
+      ],
+    },
+    { id: "asset_ref", label: "Asset or valve tag", type: "text" },
+  ],
+  aiGuidance: {
+    persona: `Recording the installed quality of mechanical and HVAC services before commissioning. You write for the M&E manager who has to sign the system off.
+
+Support, alignment, jointing, valve access, insulation continuity and identification are the things that decide whether a system can be commissioned and maintained. Judge what is visible against that.
+
+Do not claim a pressure, a flow rate or a set point. None of that is in a photograph.`,
+    focus:
+      "Pipework routing and support, jointing and valve arrangement, ductwork joints and hangers, ventilation terminals, plantroom equipment, thermal insulation continuity and identification.",
+    multiFindingGuidance:
+      "One photograph often shows several separate service issues. Return one observation per distinct issue and do not merge them.",
+    descriptionGuidance:
+      "Name the service, its route or position, and what is wrong with how it has been installed.",
+    remedialGuidance:
+      "Give the rectification in the order it has to be done, and say where the system must be drained down, isolated or re-pressure-tested first.",
+    failCriteria:
+      "Missing or overspaced supports, strained or misaligned joints, valves fitted without access, breaks in insulation, unsealed duct joints, missing identification, or anything that would be rejected at witness inspection.",
+    excludeCriteria:
+      "Work clearly still in progress, temporary caps and test equipment in place, and protective wrapping are NOT defects. Do not flag unfinished installation.",
+    peopleGuidance:
+      "Describe the services only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "Where the responsible package follows plainly from the service photographed, suggest it and give the reason. Otherwise return null.",
+    abstainGuidance:
+      "If the photograph is too dark, distant or obstructed to identify the service or judge the installation, return not_assessed.",
+  },
+  defaultRemedial:
+    "Rectify the installation to the specified detail, reinstate insulation and identification, and re-test the affected section before commissioning.",
+  outputSections: ["cover", "scope", "methodology", "summary", "schedule", "appendix"],
+  requiresTradeAssignment: true,
+  requiresLifecycle: true,
+  supportsDistribution: true,
+  defaultDistributionGrouping: "trade",
+};
+
+export const fitOutQualityDefinition: SurveyDefinition = {
+  id: "fitout_quality",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Fit-out & finishes quality",
+  category: "fit_out",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "as_designed", label: "As designed", tone: "pass" },
+    { id: "design_deviation", label: "Deviation from design intent", tone: "fail" },
+    { id: "tolerance_query", label: "Tolerance query — verify on site", tone: "warn" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [
+    {
+      id: "prominent_area",
+      label: "Prominent area",
+      guidance: "Client-facing or high-traffic position. Rectify before handover.",
+      targetHours: 168,
+    },
+    {
+      id: "specification_difference",
+      label: "Specification difference",
+      guidance: "Material, colour or component differs from the specified item.",
+      targetHours: 168,
+    },
+    {
+      id: "interface_unresolved",
+      label: "Interface unresolved",
+      guidance: "The junction between two packages has not been closed out.",
+      targetHours: 336,
+    },
+    {
+      id: "visual_minor",
+      label: "Visual, minor",
+      guidance: "Appearance only, in a position that is not on show.",
+      targetHours: 336,
+    },
+  ],
+  captureFields: [
+    {
+      id: "location",
+      label: "Location",
+      type: "text",
+      required: true,
+      hint: "Room, elevation or drawing reference",
+    },
+    {
+      id: "finish_type",
+      label: "Finish",
+      type: "select",
+      options: [
+        "Joinery",
+        "Wall finish",
+        "Floor finish",
+        "Ceiling finish",
+        "Ironmongery",
+        "Feature lighting",
+        "Sanitary fittings",
+      ],
+    },
+    { id: "drawing_ref", label: "Drawing reference", type: "text" },
+  ],
+  aiGuidance: {
+    persona: `Comparing installed fit-out against the design intent for a designer's site report. You care about line, level, junction and material.
+
+Judge the thing in front of you: shadow gaps, setting out, alignment of joints, consistency of finish, how one material meets another.
+
+You do not hold the drawings. Where a point turns on the specification, say what is installed and mark it for verification rather than asserting a breach.`,
+    focus:
+      "Joinery and casework, wall, floor and ceiling finishes, ironmongery, feature lighting, sanitary fittings, and the junctions between them.",
+    multiFindingGuidance:
+      "One photograph often shows several separate quality issues. Return one observation per distinct issue and do not merge them.",
+    descriptionGuidance:
+      "Describe the installed condition and the way it departs from a properly set-out, consistent finish. Give approximate dimensions where they can be judged.",
+    remedialGuidance:
+      "Give the least invasive rectification that restores the intended appearance and junction, and say where a sample or benchmark should be agreed first.",
+    failCriteria:
+      "Setting out that does not line through, inconsistent shadow gaps, mismatched material or colour, poorly closed junctions, damaged or marked finished surfaces, or ironmongery fitted off-line.",
+    excludeCriteria:
+      "Protection still in place, unfinished areas and site marking-up are NOT quality issues. Do not judge a surface that has not yet been completed.",
+    peopleGuidance:
+      "Describe the finishes only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "Where the responsible package follows plainly from the finish photographed, suggest it and give the reason. Otherwise return null.",
+    abstainGuidance:
+      "If the photograph is too dark, distant or obstructed to judge the finish, return not_assessed.",
+  },
+  defaultRemedial:
+    "Ease, refix or replace the affected finish to line and level, and close the junction to the agreed benchmark.",
+  outputSections: ["cover", "scope", "summary", "schedule", "appendix"],
+  requiresTradeAssignment: true,
+  requiresLifecycle: true,
+  supportsDistribution: true,
+  defaultDistributionGrouping: "trade",
+};
+
+export const dampMoistureDefinition: SurveyDefinition = {
+  id: "damp_moisture",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Damp, mould & water ingress",
+  category: "condition",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "dry_sound", label: "Dry — no evidence of moisture", tone: "pass" },
+    { id: "active_moisture", label: "Active moisture present", tone: "fail" },
+    { id: "historic_staining", label: "Historic staining — watch for change", tone: "warn" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [
+    {
+      id: "occupancy_risk",
+      label: "Mould with occupancy risk",
+      guidance: "Visible mould growth in an occupied or about-to-be-occupied space. Escalate.",
+      targetHours: 24,
+    },
+    {
+      id: "widespread_moisture",
+      label: "Widespread moisture",
+      guidance: "A substantial area of the fabric is affected. Investigate the source.",
+      targetHours: 72,
+    },
+    {
+      id: "localised_ingress",
+      label: "Localised ingress",
+      guidance: "Moisture entering at a single identifiable point. Trace and seal.",
+      targetHours: 168,
+    },
+    {
+      id: "surface_marking",
+      label: "Surface marking",
+      guidance: "Discolouration only, with no sign the fabric behind is affected.",
+      targetHours: 336,
+    },
+  ],
+  captureFields: [
+    {
+      id: "location",
+      label: "Location",
+      type: "text",
+      required: true,
+      hint: "Room, elevation or level",
+    },
+    {
+      id: "affected_element",
+      label: "Affected element",
+      type: "select",
+      options: [
+        "Ceiling area",
+        "Wall face",
+        "Floor slab",
+        "Window reveal",
+        "Roof void",
+        "Below ground",
+      ],
+    },
+    { id: "meter_reading", label: "Moisture meter reading", type: "text", hint: "If one was taken" },
+  ],
+  aiGuidance: {
+    persona: `Recording evidence of moisture in a building for a report that may end up in a dispute. You are careful about the difference between evidence and cause.
+
+A photograph shows a symptom. Staining, salting, blistering, tide marks, mould growth. It does not show where the water came from.
+
+Say what is visible, say whether it reads as active or historic and why, and offer the most likely mechanism as an assessment. Where you cannot tell, say so.`,
+    focus:
+      "Staining and tide marks, salting and efflorescence, blistering or lifting decoration, mould growth, condensation patterns, and moisture at reveals, junctions and below-ground elements.",
+    multiFindingGuidance:
+      "One photograph may show more than one area of moisture. Return one observation per distinct affected area and do not merge them.",
+    descriptionGuidance:
+      "Describe the pattern, its extent and its position, and say what in the image supports calling it active or historic.",
+    causeGuidance:
+      "Offer the most likely mechanism — penetrating, rising, plumbing leak or condensation — as an assessment, never as a finding of fact. Where the image will not support one, return null.",
+    remedialGuidance:
+      "Set out the investigation needed to confirm the source before any making good, then the making good itself.",
+    failCriteria:
+      "Damp-looking surfaces, fresh tide marks, active droplets or run marks, mould growth, or salting and blistering that indicate moisture is still reaching the element.",
+    excludeCriteria:
+      "Wet trades still curing, recent cleaning or wash-down water, and construction moisture in a newly poured element are NOT findings.",
+    peopleGuidance:
+      "Describe the fabric only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "This survey type records evidence rather than attributing fault. Return suggested_trade as null unless the source is unambiguous in the photograph.",
+    abstainGuidance:
+      "If the photograph is too dark, distant or obstructed to tell moisture from shadow, dirt or a surface pattern, return not_assessed.",
+  },
+  defaultRemedial:
+    "Investigate to confirm the source of moisture, remedy the source, allow the element to dry, then make good the affected finishes.",
+  outputSections: ["cover", "scope", "methodology", "summary", "schedule", "appendix"],
+  requiresTradeAssignment: false,
+  requiresLifecycle: true,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
   siteWalkDefinition,
   weatherproofingDefinition,
   propertyInventoryDefinition,
+  electricalInstallationDefinition,
+  mechanicalServicesDefinition,
+  fitOutQualityDefinition,
+  dampMoistureDefinition,
 ];
 
 
