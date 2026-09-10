@@ -352,9 +352,8 @@ function CustomReport() {
                             setIncludeSeverity(template.includeSeverity);
                             setAdvisoryFooter(template.advisoryFooter);
                             setSpecialRequest(template.specialRequest);
-                            if (template.surveyTypeIds.length > 0) {
-                              setSelectedIds(template.surveyTypeIds);
-                            }
+                            const first = template.surveyTypeIds[0];
+                            if (first) setTemplateId(first);
                             toast.success(`Loaded “${template.name}”.`);
                           }}
                         >
