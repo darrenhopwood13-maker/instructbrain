@@ -560,40 +560,8 @@ function CustomReport() {
 
       {capturing && activeSnapshot ? (
         <>
-          {chosen.length > 1 ? (
-            <section aria-labelledby="active-type-heading" className="mt-8">
-              <h2 id="active-type-heading" className="text-sm font-semibold">
-                Photographs I am taking now are
-              </h2>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {chosen.map((definition) => {
-                  const active = definition.id === activeType;
-                  return (
-                    <Button
-                      key={definition.id}
-                      type="button"
-                      variant={active ? "default" : "secondary"}
-                      size="sm"
-                      aria-pressed={active}
-                      onClick={() => setActiveType(definition.id)}
-                    >
-                      {definitionLabel(snapshotOf(definition))}
-                    </Button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
           <section className="mt-8">
-            <PhotosPanel
-              reportId={reportId}
-              snapshot={activeSnapshot}
-              initialFiles={initialFiles}
-              {...(chosen.length > 1 && activeType
-                ? { pinnedFields: { [SURVEY_TYPE_FIELD]: activeType } }
-                : {})}
-            />
+            <PhotosPanel reportId={reportId} snapshot={activeSnapshot} initialFiles={initialFiles} />
           </section>
 
           <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">
