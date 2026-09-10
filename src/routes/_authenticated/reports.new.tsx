@@ -26,6 +26,7 @@ import {
   supportsDistribution,
 } from "@/lib/survey-types";
 import { StatusPill } from "@/components/status-pill";
+import { TemplateSelect } from "@/components/template-select";
 import { toast } from "sonner";
 
 type NewReportSearch = { project?: string | undefined; type?: string | undefined };
