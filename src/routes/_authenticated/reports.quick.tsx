@@ -251,46 +251,51 @@ function CustomReport() {
         </p>
       </header>
 
-      {organisationId ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
-
       <section aria-labelledby="type-heading" className="mt-6">
         <h2 id="type-heading" className="text-sm font-semibold">
-          Survey types
+          Report template
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {capturing
-            ? "Locked — start a new custom report to change them."
-            : "Choose one, or several to cover more than one in a single report."}
+            ? "Locked — start a new custom report to change it."
+            : "The template sets the instructions the AI works to. Tone, report type and what the report includes stay yours to change."}
         </p>
 
         <fieldset className="mt-3" disabled={capturing || start.isPending}>
-          <legend className="sr-only">Choose the survey types this report covers</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {systemDefinitions.map((definition) => {
-              const active = selectedIds.includes(definition.id);
-              return (
-                <label
-                  key={definition.id}
-                  className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
-                    active
-                      ? "border-brand-accent bg-surface-raised"
-                      : "border-border bg-surface-raised hover:bg-surface-sunken"
-                  } ${capturing && !active ? "opacity-50" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    name="survey-type"
-                    value={definition.id}
-                    checked={active}
-                    onChange={() => toggleType(definition.id)}
-                    className="size-4 shrink-0 accent-[var(--brand-accent)]"
-                  />
-                  <span className="text-sm font-semibold leading-tight">
-                    {definitionLabel(snapshotOf(definition))}
-                  </span>
-                </label>
-              );
-            })}
+          <legend className="sr-only">Choose the report template</legend>
+          <div className="space-y-4">
+            {groupedTemplates.map((group) => (
+              <div key={group.category}>
+                <p className="eyebrow text-xs">{group.label}</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {group.definitions.map((definition) => {
+                    const active = definition.id === templateId;
+                    return (
+                      <label
+                        key={definition.id}
+                        className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-xl border p-3 shadow-raised transition-colors ${
+                          active
+                            ? "border-brand-accent bg-surface-raised"
+                            : "border-border bg-surface-raised hover:bg-surface-sunken"
+                        } ${capturing && !active ? "opacity-50" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="report-template"
+                          value={definition.id}
+                          checked={active}
+                          onChange={() => setTemplateId(definition.id)}
+                          className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                        />
+                        <span className="text-sm font-semibold leading-tight">
+                          {definitionLabel(snapshotOf(definition))}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </fieldset>
       </section>
