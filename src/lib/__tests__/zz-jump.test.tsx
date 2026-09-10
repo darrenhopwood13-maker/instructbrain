@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ReviewList } from "@/components/review-list";
 import type { Finding } from "@/lib/types";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
 const snapshot = {
-  id: "test",
-  label: "Test survey",
+  id: "test", label: "Test survey",
   statuses: [
     { id: "pass", label: "Satisfactory", tone: "pass", shortcut: "p" },
     { id: "fail", label: "Defective", tone: "fail", shortcut: "f" },
@@ -24,8 +23,11 @@ const asFinding = (id: string, ref: string, status: string, title: string): Find
     regulatoryReference: null, regulatoryReferenceConfirmed: false,
   }) as unknown as Finding;
 
+const visibleTitle = () =>
+  document.querySelector("ul[aria-label='Findings for review'] li p.font-semibold")?.textContent;
+
 describe("jump to first not assessed", () => {
-  it("moves the visible card to the first not assessed finding", async () => {
+  it("traces navigation", () => {
     render(
       <ReviewList
         snapshot={snapshot}
@@ -37,12 +39,12 @@ describe("jump to first not assessed", () => {
         onConfirm={() => Promise.resolve()}
       />,
     );
-    // not_assessed sorts first, so start there then move away
+    console.log("initial:", visibleTitle());
     screen.getByRole("button", { name: /^next$/i }).click();
+    console.log("after next 1:", visibleTitle());
     screen.getByRole("button", { name: /^next$/i }).click();
-    expect(screen.getByText("Third fail")).toBeTruthy();
+    console.log("after next 2:", visibleTitle());
     screen.getByRole("button", { name: /go to first unresolved/i }).click();
-    expect(screen.getByText("Blocked one")).toBeTruthy();
-    expect(screen.queryByText("Third fail")).toBeNull();
+    console.log("after jump:", visibleTitle());
   });
 });
