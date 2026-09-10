@@ -288,6 +288,21 @@ export function ReviewList({
     rowRefs.current[active]?.focus();
   }, [active]);
 
+  /**
+   * Jump to a finding even when it is already the active one: the reviewer may
+   * have scrolled away, so always bring the card (and its photograph) back
+   * into view and hand it keyboard focus.
+   */
+  const goToFinding = useCallback((index: number) => {
+    setActive(index);
+    requestAnimationFrame(() => {
+      const row = rowRefs.current[index];
+      if (!row) return;
+      row.focus({ preventScroll: true });
+      row.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, []);
+
   const resolved = items.map((item) => resolveStatus(snapshot, item.status));
   const notAssessedCount = resolved.filter((status) => status.id === NOT_ASSESSED_ID).length;
   const unconfirmed = items.filter(
