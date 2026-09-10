@@ -194,19 +194,11 @@ const SLOGANS = [
 
 function RotatingSlogans() {
   return (
-    <p
-      aria-live="polite"
-      className="mt-5 text-sm font-medium text-brand-accent-ink"
-      // The slogans cycle via CSS only, so the live region is polite and non-intrusive.
-      style={{
-        // Use a CSS animation to swap opacity on the four slogans.
-        // We render all four spans stacked and fade them in sequence.
-      }}
-    >
+    <p aria-live="polite" className="relative mt-5 h-12 text-sm font-medium text-brand-accent-ink sm:h-5">
       {SLOGANS.map((text, index) => (
         <span
           key={text}
-          className="ib-slogan block sm:inline"
+          className="ib-slogan absolute left-0 top-0 block w-full"
           style={{
             animation: "ib-slogan 16s linear infinite",
             animationDelay: `${index * 4}s`,
