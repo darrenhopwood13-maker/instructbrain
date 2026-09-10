@@ -170,10 +170,13 @@ function Dashboard() {
               setMode(null);
               void navigate({ to: "/reports/quick", search: {} });
             }}
-            className="glass-orange flex min-h-24 w-full items-center gap-4 rounded-2xl px-5 py-5 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+            className="orb-tile flex min-h-28 w-full items-center gap-4 px-5 py-5 text-left text-primary-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-32 sm:px-7"
           >
-            <Camera aria-hidden="true" className="size-8 shrink-0 sm:size-10" />
-            <span className="min-w-0">
+            <Camera
+              aria-hidden="true"
+              className="relative z-10 size-8 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:size-10"
+            />
+            <span className="relative z-10 min-w-0">
               <span className="editorial-title block text-xl font-semibold sm:text-2xl">
                 Custom report
               </span>
