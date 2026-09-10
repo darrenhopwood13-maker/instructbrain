@@ -316,8 +316,12 @@ export function ReviewList({
     if (notAssessedCount > 0) {
       toast.error("Resolve not assessed findings first", {
         description: `${notAssessedCount} finding${notAssessedCount === 1 ? "" : "s"} still need a human decision.`,
+        action: {
+          label: "Go to first unresolved",
+          onClick: () => goToFinding(Math.max(firstNotAssessed, 0)),
+        },
       });
-      setActive(Math.max(firstNotAssessed, 0));
+      goToFinding(Math.max(firstNotAssessed, 0));
       return;
     }
     const pending = items.filter(
@@ -368,7 +372,7 @@ export function ReviewList({
             size="sm"
             variant="quiet"
             className="ml-auto"
-            onClick={() => setActive(Math.max(firstNotAssessed, 0))}
+            onClick={() => goToFinding(Math.max(firstNotAssessed, 0))}
           >
             Go to first unresolved
           </Button>
