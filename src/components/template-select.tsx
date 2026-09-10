@@ -71,7 +71,7 @@ export function TemplateSelect({
   const groups = useGroupedTemplates();
 
   return (
-    <Select value={value === "" ? undefined : value} disabled={disabled} onValueChange={onChange}>
+    <Select {...(value === "" ? {} : { value })} disabled={disabled} onValueChange={onChange}>
       <SelectTrigger
         id={id}
         aria-label={label}
