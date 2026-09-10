@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { Sparkles, UserRoundCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FieldCard } from "@/components/field-card";
 import type { Finding } from "@/lib/types";
 import { deriveDueDate, formatTarget } from "@/lib/findings/due-date";
