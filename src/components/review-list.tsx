@@ -3,6 +3,13 @@ import { StatusPill } from "@/components/status-pill";
 import { FieldCard } from "@/components/field-card";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Finding } from "@/lib/types";
 import {
@@ -408,7 +415,7 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <Button
           variant="quiet"
           className="min-h-11"
@@ -418,6 +425,34 @@ export function ReviewList({
           <ChevronLeft aria-hidden="true" className="size-4" />
           Previous
         </Button>
+        <div className="order-last w-full sm:order-none sm:w-auto sm:flex-1">
+          <label htmlFor="go-to-finding" className="sr-only">
+            Go to finding
+          </label>
+          <Select
+            value={items[active]?.id ?? ""}
+            onValueChange={(id) => {
+              const next = items.findIndex((item) => item.id === id);
+              if (next >= 0) setActive(next);
+            }}
+          >
+            <SelectTrigger
+              id="go-to-finding"
+              aria-label="Go to finding"
+              className="h-11 w-full bg-surface-raised text-sm sm:mx-auto sm:max-w-sm"
+            >
+              <SelectValue placeholder="Go to finding…" />
+            </SelectTrigger>
+            <SelectContent>
+              {items.map((item, i) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {itemLabel(item.ref)} — {item.title || "Untitled finding"} ·{" "}
+                  {resolved[i]?.label ?? ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button
           variant="quiet"
           className="min-h-11"
@@ -428,6 +463,7 @@ export function ReviewList({
           <ChevronRight aria-hidden="true" className="size-4" />
         </Button>
       </div>
+
 
       <ul
         aria-label="Findings for review"
