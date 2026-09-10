@@ -652,7 +652,7 @@ export const fitOutQualityDefinition: SurveyDefinition = {
       label: "Finish",
       type: "select",
       options: [
-        "Joinery",
+        "Joinery & casework",
         "Wall finish",
         "Floor finish",
         "Ceiling finish",
