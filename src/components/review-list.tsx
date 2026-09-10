@@ -288,6 +288,21 @@ export function ReviewList({
     rowRefs.current[active]?.focus();
   }, [active]);
 
+  /**
+   * Jump to a finding even when it is already the active one: the reviewer may
+   * have scrolled away, so always bring the card (and its photograph) back
+   * into view and hand it keyboard focus.
+   */
+  const goToFinding = useCallback((index: number) => {
+    setActive(index);
+    requestAnimationFrame(() => {
+      const row = rowRefs.current[index];
+      if (!row) return;
+      row.focus({ preventScroll: true });
+      row.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    });
+  }, []);
+
   const resolved = items.map((item) => resolveStatus(snapshot, item.status));
   const notAssessedCount = resolved.filter((status) => status.id === NOT_ASSESSED_ID).length;
   const unconfirmed = items.filter(
@@ -301,8 +316,12 @@ export function ReviewList({
     if (notAssessedCount > 0) {
       toast.error("Resolve not assessed findings first", {
         description: `${notAssessedCount} finding${notAssessedCount === 1 ? "" : "s"} still need a human decision.`,
+        action: {
+          label: "Go to first unresolved",
+          onClick: () => goToFinding(Math.max(firstNotAssessed, 0)),
+        },
       });
-      setActive(Math.max(firstNotAssessed, 0));
+      goToFinding(Math.max(firstNotAssessed, 0));
       return;
     }
     const pending = items.filter(
@@ -353,7 +372,7 @@ export function ReviewList({
             size="sm"
             variant="quiet"
             className="ml-auto"
-            onClick={() => setActive(Math.max(firstNotAssessed, 0))}
+            onClick={() => goToFinding(Math.max(firstNotAssessed, 0))}
           >
             Go to first unresolved
           </Button>
