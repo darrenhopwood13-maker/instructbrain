@@ -199,8 +199,8 @@ export function ComplianceTicker() {
                   className={`rounded-full border px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide ${
                     done
                       ? nonCompliant
-                        ? STATUS_CLASS.fail
-                        : STATUS_CLASS.pass
+                        ? STATUS_CLASS["fail"]
+                        : STATUS_CLASS["pass"]
                       : "border-border text-muted-foreground"
                   }`}
                 >
