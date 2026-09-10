@@ -58,6 +58,18 @@ export const Route = createFileRoute("/_authenticated/reports/quick")({
   component: CustomReport,
 });
 
+// Group headings only — the templates themselves carry every discipline term.
+const CATEGORY_LABELS: Record<string, string> = {
+  condition_survey: "Building fabric",
+  condition: "Building fabric",
+  snagging: "Quality & handover",
+  fit_out: "Quality & handover",
+  site_walk: "Site & safety",
+  inventory: "Property records",
+  electrical: "Electrical",
+  mechanical: "Mechanical & HVAC",
+};
+
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", {
     day: "numeric",
