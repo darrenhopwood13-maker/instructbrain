@@ -137,10 +137,14 @@ function CustomReport() {
     includeSeverity: identifier ? false : includeSeverity,
     advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
-    surveyTypes: chosen.map((definition) => ({
-      id: definition.id,
-      label: definitionLabel(snapshotOf(definition)),
-    })),
+    surveyTypes: chosenDefinition
+      ? [
+          {
+            id: chosenDefinition.id,
+            label: definitionLabel(snapshotOf(chosenDefinition)),
+          },
+        ]
+      : [],
   };
 
   const applyPreset = (id: string) => {
