@@ -150,6 +150,17 @@ export const REPORT_PRESETS = [
     specialRequest: "",
   },
   {
+    id: "condition_record",
+    label: "Condition record",
+    description: "A photograph and one line of condition. Nothing else.",
+    tone: "sharp" as ReportToneId,
+    reportType: "assessment" as ReportTypeId,
+    includeFix: false,
+    includeSeverity: false,
+    advisoryFooter: false,
+    specialRequest: "",
+  },
+  {
     id: "blank",
     label: "Start blank",
     description: "No preset. Choose your own tone and request.",
