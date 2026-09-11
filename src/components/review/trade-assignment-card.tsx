@@ -200,7 +200,7 @@ export function TradeAssignmentCard({
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {severity?.targetHours === undefined || severity?.targetHours === null
-                    ? "This survey type sets no target window for this severity, so no date is derived. Set one here if the job needs it."
+                    ? "This report template sets no target window for this severity, so no date is derived. Set one here if the job needs it."
                     : `Derived from the ${severity.label} target of ${severity.targetHours} hours. You can change it.`}
                 </p>
               </>

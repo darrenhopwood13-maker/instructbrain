@@ -73,7 +73,7 @@ export function AnalysisPanel({
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
               Each photograph is assessed at full resolution against the{" "}
-              {definitionLabel(snapshot)} survey type. Anything uncertain is re-checked by a
+              {definitionLabel(snapshot)} report template. Anything uncertain is re-checked by a
               stronger model, and anything still uncertain is marked{" "}
               <strong>Not assessed</strong> for a person to resolve.
             </p>

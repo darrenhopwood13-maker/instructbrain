@@ -239,7 +239,7 @@ export function ReviewList({
     if (!current) return;
     if (resolveStatus(snapshot, current.status).id === NOT_ASSESSED_ID) {
       toast.error("Not assessed items cannot be confirmed", {
-        description: "Choose a status from the survey type before confirming.",
+        description: "Choose a status from the report template before confirming.",
       });
       return;
     }
@@ -703,7 +703,7 @@ export function ReviewList({
                 {showReference ? (
                   <FieldCard
                     label="Regulatory reference"
-                    popOutDescription="Chosen from the references this survey type defines. Nothing outside that list can be recorded."
+                    popOutDescription="Chosen from the references this report template defines. Nothing outside that list can be recorded."
                     badge={
                       item.regulatoryReferenceConfirmed ? (
                         <span className="text-[0.6875rem] font-semibold text-muted-foreground">
