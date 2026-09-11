@@ -169,11 +169,35 @@ export function AnalysisPanel({
 
       {run.photos.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-surface-raised shadow-raised">
-          <h3 className="border-b border-border px-4 py-3 text-sm font-semibold">
-            Photographs on this report
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+            <h3 className="text-sm font-semibold">
+              {collapsed
+                ? attentionCount === 0
+                  ? "All photographs analysed"
+                  : `Needs attention (${attentionCount})`
+                : "Photographs on this report"}
+            </h3>
+            {!run.running ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="min-h-11"
+                onClick={() => setShowAll((current) => !current)}
+              >
+                {showAll
+                  ? "Show only photographs needing attention"
+                  : `Show all ${run.photos.length} photographs`}
+              </Button>
+            ) : null}
+          </div>
+          {collapsed && visiblePhotos.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-muted-foreground">
+              Nothing needs attention — every photograph was assessed.
+            </p>
+          ) : null}
           <ul className="divide-y divide-border">
-            {run.photos.map((photo) => (
+            {visiblePhotos.map((photo) => (
               <li
                 key={photo.photoId}
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
