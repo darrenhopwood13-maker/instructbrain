@@ -26,7 +26,7 @@ export function CaptureFieldsForm({
   if (fields.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        This survey type records no on-site fields against a photograph.
+        This report template records no on-site fields against a photograph.
       </p>
     );
   }

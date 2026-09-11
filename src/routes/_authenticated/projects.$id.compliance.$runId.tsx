@@ -260,7 +260,7 @@ function ComplianceRun() {
   if (project.error) return <ErrorState title="Could not load this check" error={project.error} />;
   if (!run) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <p className="py-16 text-center text-muted-foreground">This check could not be found.</p>
       </AppShell>
     );
@@ -278,7 +278,7 @@ function ComplianceRun() {
   });
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link
           to="/projects/$id/compliance"

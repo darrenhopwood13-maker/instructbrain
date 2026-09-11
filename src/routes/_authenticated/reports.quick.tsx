@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -78,6 +78,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   mechanical: "Mechanical & HVAC",
 };
 
+/** Device-local memory of the last brief used, so capture needs no set-up. */
+const LAST_BRIEF_KEY = "instructbrain.custom-report.last-brief";
+
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", {
     day: "numeric",
@@ -117,6 +120,72 @@ function CustomReport() {
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
+
+  // The last brief this device used, restored after hydration so a returning
+  // user lands on a screen where the only thing to do is take a photograph.
+  const [recalled, setRecalled] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(LAST_BRIEF_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (
+          !typeParam &&
+          typeof saved["templateId"] === "string" &&
+          systemDefinitions.some((definition) => definition.id === saved["templateId"])
+        ) {
+          setTemplateId(saved["templateId"] as string);
+        }
+        if (typeof saved["presetId"] === "string") setPresetId(saved["presetId"]);
+        if (typeof saved["tone"] === "string") setTone(toneById(saved["tone"]).id);
+        if (typeof saved["reportType"] === "string") {
+          setReportType(reportTypeById(saved["reportType"]));
+        }
+        if (typeof saved["includeFix"] === "boolean") setIncludeFix(saved["includeFix"]);
+        if (typeof saved["includeSeverity"] === "boolean") {
+          setIncludeSeverity(saved["includeSeverity"]);
+        }
+        if (typeof saved["advisoryFooter"] === "boolean") {
+          setAdvisoryFooter(saved["advisoryFooter"]);
+        }
+      }
+    } catch {
+      // A corrupt or blocked store simply means the defaults stand.
+    }
+    setRecalled(true);
+    // Restore once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!recalled) return;
+    try {
+      window.localStorage.setItem(
+        LAST_BRIEF_KEY,
+        JSON.stringify({
+          templateId,
+          presetId,
+          tone,
+          reportType,
+          includeFix,
+          includeSeverity,
+          advisoryFooter,
+        }),
+      );
+    } catch {
+      // Storage unavailable — the brief simply is not remembered.
+    }
+  }, [
+    recalled,
+    templateId,
+    presetId,
+    tone,
+    reportType,
+    includeFix,
+    includeSeverity,
+    advisoryFooter,
+  ]);
+
 
   const templates = useQuery({
     queryKey: ["report-templates", organisationId],
@@ -267,42 +336,39 @@ function CustomReport() {
   const activeSnapshot = snapshot;
 
   return (
-    <AppShell>
-      <nav aria-label="Breadcrumb" className="pb-4 text-sm">
-        <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          Custom reports
-        </Link>
-      </nav>
+    <AppShell surface="light">
+      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Custom report</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {capturing
+          ? "Photographs upload as you take them."
+          : "Your last brief is ready — take a photo to start."}
+      </p>
 
-      <header className="border-b border-border pb-5">
-        <p className="eyebrow">Custom report</p>
-        <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
-          Set the brief, then shoot
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          No project, no client details. The report starts itself with your first photograph.
+      {capturing && activeSnapshot ? (
+        <p className="mt-4 text-sm">
+          <span className="font-semibold">Report template:</span>{" "}
+          {definitionLabel(activeSnapshot)} — locked for this report.
         </p>
-      </header>
+      ) : (
+        <section aria-labelledby="type-heading" className="mt-5">
+          <h2 id="type-heading" className="text-sm font-semibold">
+            Report template
+          </h2>
+          <div className="mt-2">
+            <TemplateSelect
+              id="custom-report-template"
+              value={templateId}
+              onChange={setTemplateId}
+              disabled={start.isPending}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The report template sets the instructions the AI works to. Tone, report type and what
+            the report includes stay yours to change under Options.
+          </p>
+        </section>
+      )}
 
-      <section aria-labelledby="type-heading" className="mt-6">
-        <h2 id="type-heading" className="text-sm font-semibold">
-          Report template
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {capturing
-            ? "Locked — start a new custom report to change it."
-            : "The template sets the instructions the AI works to. Tone, report type and what the report includes stay yours to change."}
-        </p>
-
-        <div className="mt-3">
-          <TemplateSelect
-            id="custom-report-template"
-            value={templateId}
-            onChange={setTemplateId}
-            disabled={capturing || start.isPending}
-          />
-        </div>
-      </section>
 
       {minimal && !capturing ? (
         <section aria-labelledby="focus-heading" className="mt-6">
@@ -332,10 +398,67 @@ function CustomReport() {
       ) : null}
 
       {!capturing ? (
+        <section aria-labelledby="capture-heading" className="mt-6">
+          <h2 id="capture-heading" className="sr-only">
+            Capture photographs
+          </h2>
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <input
+            ref={pickerRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            size="lg"
+            className="min-h-14 w-full text-base"
+            disabled={start.isPending || !organisationId || focusMissing}
+            onClick={() => cameraRef.current?.click()}
+          >
+            {start.isPending ? (
+              <Loader2 aria-hidden="true" className="size-5 animate-spin" />
+            ) : (
+              <Camera aria-hidden="true" className="size-5" />
+            )}
+            Take photo
+          </Button>
+          <div className="mt-2 flex justify-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 text-sm font-medium"
+              disabled={start.isPending || !organisationId || focusMissing}
+              onClick={() => pickerRef.current?.click()}
+            >
+              <ImagePlus aria-hidden="true" className="size-4" />
+              Add photos from the gallery
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="brief-heading" className="text-sm font-semibold">
-              The brief
+              Options
             </h2>
             <Button
               type="button"
@@ -346,13 +469,14 @@ function CustomReport() {
               onClick={() => setBriefOpen((open) => !open)}
             >
               <Sparkles aria-hidden="true" className="size-4" />
-              {briefOpen ? "Hide the brief" : "Set the brief"}
+              {briefOpen ? "Hide options" : "Options"}
             </Button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
             {brief.specialRequest ? " · special request set" : ""}
           </p>
+
 
           {briefOpen ? (
             <div
@@ -601,21 +725,20 @@ function CustomReport() {
                   </Button>
                 </div>
               </div>
+
+              <CoverBrandingFields
+                organisationId={organisationId}
+                coverFile={coverFile}
+                logoFile={logoFile}
+                onCoverFile={setCoverFile}
+                onLogoFile={setLogoFile}
+                disabled={start.isPending}
+              />
             </div>
           ) : null}
         </section>
       ) : null}
 
-      {!capturing ? (
-        <CoverBrandingFields
-          organisationId={organisationId}
-          coverFile={coverFile}
-          logoFile={logoFile}
-          onCoverFile={setCoverFile}
-          onLogoFile={setLogoFile}
-          disabled={start.isPending}
-        />
-      ) : null}
 
       {capturing && activeSnapshot ? (
         <>
@@ -632,63 +755,7 @@ function CustomReport() {
             </Button>
           </div>
         </>
-      ) : (
-        <section aria-labelledby="capture-heading" className="mt-8">
-          <h2 id="capture-heading" className="sr-only">
-            Capture photographs
-          </h2>
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              receive(event.target.files);
-              event.target.value = "";
-            }}
-          />
-          <input
-            ref={pickerRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              receive(event.target.files);
-              event.target.value = "";
-            }}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              size="lg"
-              className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId || focusMissing}
-              onClick={() => cameraRef.current?.click()}
-            >
-              {start.isPending ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <Camera aria-hidden="true" className="size-4" />
-              )}
-              Take photo
-            </Button>
-            <Button
-              type="button"
-              size="lg"
-              variant="secondary"
-              className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId || focusMissing}
-              onClick={() => pickerRef.current?.click()}
-            >
-              <ImagePlus aria-hidden="true" className="size-4" />
-              Add photos
-            </Button>
-          </div>
-        </section>
-      )}
+      ) : null}
     </AppShell>
   );
 }
