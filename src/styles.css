@@ -228,6 +228,87 @@
   color: var(--foreground);
 }
 
+/*
+ * Working-screen scope — capture, photos, review and the compliance register.
+ * Same light sheet as `.paper`, but the primary action keeps the brand orange
+ * (deepened so white label text clears AA on white). Chrome is stripped: no
+ * blueprint grid, no outer glow, no layered console surfaces.
+ *
+ * Accent is collapsed to three roles here — fill, hover and a text-safe ink —
+ * so orange can only ever mean "the primary action on this screen".
+ */
+.work-surface {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.035 262);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.965 0.006 262);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.035 262);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.035 262);
+
+  /* Three accent roles only. */
+  --brand-accent: oklch(0.52 0.19 38.2);
+  --brand-accent-deep: oklch(0.46 0.17 38.2);
+  --brand-accent-light: oklch(0.52 0.19 38.2);
+  --brand-accent-soft: oklch(0.965 0.03 45);
+  --brand-accent-ink: oklch(0.45 0.16 40);
+
+  --brand-blue: oklch(0.4 0.11 262);
+  --brand-blue-soft: oklch(0.955 0.02 262);
+  --brand-blue-ink: oklch(0.3 0.09 262);
+
+  --primary: oklch(0.52 0.19 38.2);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.962 0.006 262);
+  --secondary-foreground: oklch(0.28 0.045 262);
+  --muted: oklch(0.962 0.006 262);
+  --muted-foreground: oklch(0.44 0.025 262);
+  --accent: oklch(0.965 0.03 45);
+  --accent-foreground: oklch(0.45 0.16 40);
+  --destructive: oklch(0.5 0.2 27);
+  --destructive-foreground: oklch(0.99 0.003 27);
+
+  --border: oklch(0.9 0.012 262);
+  --border-strong: oklch(0.78 0.02 262);
+  --input: oklch(0.88 0.014 262);
+  --ring: oklch(0.52 0.19 38.2);
+
+  --pass: oklch(0.42 0.11 158);
+  --pass-soft: oklch(0.955 0.03 158);
+  --fail: oklch(0.47 0.19 27);
+  --fail-soft: oklch(0.958 0.025 27);
+  --warn: oklch(0.45 0.11 95);
+  --warn-soft: oklch(0.96 0.05 100);
+  --flag: oklch(0.4 0.15 258);
+  --flag-soft: oklch(0.955 0.025 258);
+
+  --glass-surface: oklch(0.98 0.004 262);
+  --glass-surface-hover: oklch(0.955 0.006 262);
+  --glass-border: oklch(0.9 0.012 262);
+  --glass-border-hover: oklch(0.8 0.02 262);
+  --glass-highlight: oklch(1 0 0 / 0%);
+
+  --gradient-panel: none;
+  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%);
+
+  background-color: var(--surface);
+  background-image: none;
+  color: var(--foreground);
+}
+
+/* Legibility beats decoration outdoors: no grid, no glow on working screens. */
+.work-surface [class*="console-panel"],
+.work-surface [class*="glass-panel"] {
+  background-image: none;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-raised);
+  backdrop-filter: none;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
