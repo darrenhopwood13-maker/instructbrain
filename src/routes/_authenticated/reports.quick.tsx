@@ -297,6 +297,33 @@ function CustomReport() {
         </div>
       </section>
 
+      {minimal && !capturing ? (
+        <section aria-labelledby="focus-heading" className="mt-6">
+          <h2 id="focus-heading" className="text-sm font-semibold">
+            Focus of this report
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            In your own words — what each photograph is a record of. Required for this template.
+          </p>
+          <textarea
+            id="report-focus"
+            value={specialRequest}
+            maxLength={SPECIAL_REQUEST_LIMIT}
+            rows={3}
+            required
+            aria-describedby="report-focus-hint"
+            onChange={(event) => setSpecialRequest(event.target.value)}
+            placeholder="Condition of doors and ironmongery on level 2 before handover."
+            className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
+          />
+          <p id="report-focus-hint" className="mt-1 text-xs text-muted-foreground">
+            {focusMissing
+              ? "Write the focus before you start."
+              : `${sanitiseSpecialRequest(specialRequest).length} of ${SPECIAL_REQUEST_LIMIT} characters.`}
+          </p>
+        </section>
+      ) : null}
+
       {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
