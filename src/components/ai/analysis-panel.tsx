@@ -12,6 +12,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AiUsageMeter } from "@/components/ai/usage-meter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useAnalysisRun, type PhotoRun } from "@/lib/ai/use-analysis-run";
 import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -48,6 +56,9 @@ export function AnalysisPanel({
   const run = useAnalysisRun(reportId);
   const { organisationId } = useOrganisations();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Standard keeps the second opinion. Fast is a single pass, chosen per run.
+  const [speed, setSpeed] = useState<"standard" | "fast">("standard");
+  const fast = speed === "fast";
 
   const progress = run.totals.total > 0 ? (run.totals.completed / run.totals.total) * 100 : 0;
 
@@ -69,6 +80,24 @@ export function AnalysisPanel({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-[13rem]">
+              <Label htmlFor="analysis-speed" className="text-xs text-muted-foreground">
+                Speed
+              </Label>
+              <Select
+                value={speed}
+                onValueChange={(value) => setSpeed(value === "fast" ? "fast" : "standard")}
+                disabled={run.running}
+              >
+                <SelectTrigger id="analysis-speed" className="mt-1">
+                  <SelectValue placeholder="Standard" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard — second opinion on</SelectItem>
+                  <SelectItem value="fast">Fast — single pass</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {run.running ? (
               <Button type="button" variant="quiet" onClick={run.cancel}>
                 Cancel run
@@ -160,7 +189,7 @@ export function AnalysisPanel({
                   variant="quiet"
                   size="sm"
                   disabled={run.running}
-                  onClick={() => void run.reanalyse(photo.photoId)}
+                  onClick={() => void run.reanalyse(photo.photoId, fast)}
                 >
                   <RotateCcw className="mr-1.5 size-3.5" aria-hidden="true" />
                   Re-analyse
@@ -185,6 +214,9 @@ export function AnalysisPanel({
               Everything produced is a draft: nothing is confirmed, no trade is assigned, and
               nothing is sent to anyone. You can cancel part-way through and whatever has already
               been drafted is kept. Usage counts against this organisation&rsquo;s monthly AI cap.
+              {fast
+                ? " Fast is a single pass: no second opinion. Anything uncertain is still marked Not assessed."
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -192,7 +224,7 @@ export function AnalysisPanel({
             <AlertDialogAction
               onClick={() => {
                 setConfirmOpen(false);
-                void run.analyseAll();
+                void run.analyseAll(fast);
               }}
             >
               Analyse photographs

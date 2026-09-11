@@ -29,6 +29,8 @@ export const analysePhoto = createServerFn({ method: "POST" })
       reportId: requiredId(value["reportId"], "report id"),
       photoId: requiredId(value["photoId"], "photograph id"),
       force: value["force"] === true,
+      // Opt-in single pass: no second opinion for this call only.
+      fast: value["fast"] === true,
     };
   })
   .handler(async ({ data, context }): Promise<PhotoAnalysisResult> => {
