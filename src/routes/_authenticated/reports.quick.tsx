@@ -647,7 +647,7 @@ function CustomReport() {
               type="button"
               size="lg"
               className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId}
+              disabled={start.isPending || !organisationId || focusMissing}
               onClick={() => cameraRef.current?.click()}
             >
               {start.isPending ? (
@@ -662,7 +662,7 @@ function CustomReport() {
               size="lg"
               variant="secondary"
               className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId}
+              disabled={start.isPending || !organisationId || focusMissing}
               onClick={() => pickerRef.current?.click()}
             >
               <ImagePlus aria-hidden="true" className="size-4" />
