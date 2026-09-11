@@ -4,6 +4,7 @@ import { DataError, coerceSnapshot } from "@/lib/data";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
+import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import type {
   DocFinding,
   DocFindingPhoto,
@@ -195,7 +196,13 @@ export const reportDocumentQuery = (reportId: string) =>
           abstainReason: row.ai_abstain_reason ?? null,
           photos: attached,
         };
-      });
+        }),
+        // Upload order wins over the order the AI happened to finish in.
+        (finding) => ({
+          photoSequence: finding.photos[0]?.photo.sequence ?? null,
+          sequence: finding.sequence,
+        }),
+      );
 
       return {
         report: {
