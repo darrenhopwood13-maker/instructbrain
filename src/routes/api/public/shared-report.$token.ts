@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           admin
             .from("reports")
             .select(
-              "id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, survey_type_snapshot, project_id, organisation_id, output_language",
+              "id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, survey_type_snapshot, project_id, organisation_id, output_language",
             )
             .eq("id", share.report_id)
             .limit(1),
@@ -117,10 +117,12 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
               .in("finding_id", findingIds)
           : { data: [] as any[] };
 
+        // A per-report logo wins over the organisation's saved logo.
+        const logoPath = rawReport.logo_path ?? organisations?.[0]?.logo_path ?? null;
         const paths = [
           ...(photos ?? []).map((photo: any) => photo.storage_path),
           ...(photos ?? []).map((photo: any) => photo.thumbnail_path),
-          organisations?.[0]?.logo_path,
+          logoPath,
         ].filter(Boolean) as string[];
 
         const { data: signed } = await admin.storage
@@ -144,9 +146,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
               thumbUrl: photo.thumbnail_path ? (urls.get(photo.thumbnail_path) ?? null) : null,
             })),
             links: links ?? [],
-            logoUrl: organisations?.[0]?.logo_path
-              ? (urls.get(organisations[0].logo_path) ?? null)
-              : null,
+            logoUrl: logoPath ? (urls.get(logoPath) ?? null) : null,
             expiresAt: share.expires_at ?? null,
           },
           { headers: { "cache-control": "no-store" } },
