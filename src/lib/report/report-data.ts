@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DataError, coerceSnapshot } from "@/lib/data";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
+import { resolveLogoPath } from "@/lib/report/logo";
 import type {
   DocFinding,
   DocFindingPhoto,

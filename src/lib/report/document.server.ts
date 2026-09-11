@@ -10,6 +10,7 @@ import { coerceSnapshot } from "@/lib/report/snapshot";
 import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
+import { resolveLogoPath } from "@/lib/report/logo";
 import type {
   DocFinding,
   DocFindingPhoto,
