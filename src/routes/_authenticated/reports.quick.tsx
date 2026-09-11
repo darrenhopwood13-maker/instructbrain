@@ -78,6 +78,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   mechanical: "Mechanical & HVAC",
 };
 
+/** Device-local memory of the last brief used, so capture needs no set-up. */
+const LAST_BRIEF_KEY = "instructbrain.custom-report.last-brief";
+
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", {
     day: "numeric",
