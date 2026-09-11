@@ -36,6 +36,16 @@ The keyboard strip above the review list is removed from the visible page. The s
 
 In its place, a small "Keyboard shortcuts" link opens the same list in a panel when wanted. The shortcut list is also announced to screen readers so keyboard-only reviewers still discover it.
 
+## 5. Softer, flatter buttons everywhere
+
+The glossy 3D treatment goes. All buttons — orange primary, navy, choices, secondary — become:
+
+- Rounded, pill-like corners instead of tight radii.
+- Flat colour: no specular highlight strip, no bottom "depth" edge, no outer glow.
+- Gentle feedback instead of machinery: a slight colour deepen on hover/press and a subtle soft shadow, plus the existing focus ring.
+
+Orange stays reserved for the single primary action on a screen; selected choices stay lighter navy with white text. The wordmark, colours and layout are unchanged — only the button surface treatment. The report document itself (`.paper`) is untouched.
+
 ## Technical notes
 
 - `src/components/report/report-actions.tsx`: keep Issue/Reopen and Download PDF inline; move Preview, Print, Share, Draft summary into a shadcn `DropdownMenu`. `reports.$id.index.tsx` moves its Review distribution link and `DeleteReportButton` into the same menu, passed in as children so the menu owns the layout.
