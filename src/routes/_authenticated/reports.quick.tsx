@@ -267,42 +267,39 @@ function CustomReport() {
   const activeSnapshot = snapshot;
 
   return (
-    <AppShell>
-      <nav aria-label="Breadcrumb" className="pb-4 text-sm">
-        <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
-          Custom reports
-        </Link>
-      </nav>
+    <AppShell surface="light">
+      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Custom report</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {capturing
+          ? "Photographs upload as you take them."
+          : "Your last brief is ready — take a photo to start."}
+      </p>
 
-      <header className="border-b border-border pb-5">
-        <p className="eyebrow">Custom report</p>
-        <h1 className="editorial-title mt-1.5 text-2xl font-semibold sm:text-3xl">
-          Set the brief, then shoot
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          No project, no client details. The report starts itself with your first photograph.
+      {capturing && activeSnapshot ? (
+        <p className="mt-4 text-sm">
+          <span className="font-semibold">Report template:</span>{" "}
+          {definitionLabel(activeSnapshot)} — locked for this report.
         </p>
-      </header>
+      ) : (
+        <section aria-labelledby="type-heading" className="mt-5">
+          <h2 id="type-heading" className="text-sm font-semibold">
+            Report template
+          </h2>
+          <div className="mt-2">
+            <TemplateSelect
+              id="custom-report-template"
+              value={templateId}
+              onChange={setTemplateId}
+              disabled={start.isPending}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The report template sets the instructions the AI works to. Tone, report type and what
+            the report includes stay yours to change under Options.
+          </p>
+        </section>
+      )}
 
-      <section aria-labelledby="type-heading" className="mt-6">
-        <h2 id="type-heading" className="text-sm font-semibold">
-          Report template
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {capturing
-            ? "Locked — start a new custom report to change it."
-            : "The template sets the instructions the AI works to. Tone, report type and what the report includes stay yours to change."}
-        </p>
-
-        <div className="mt-3">
-          <TemplateSelect
-            id="custom-report-template"
-            value={templateId}
-            onChange={setTemplateId}
-            disabled={capturing || start.isPending}
-          />
-        </div>
-      </section>
 
       {minimal && !capturing ? (
         <section aria-labelledby="focus-heading" className="mt-6">
