@@ -1,6 +1,6 @@
-# Calmer report screens: fewer buttons, less noise
+# Calmer report screens: fewer buttons, less noise, softer buttons
 
-Four tidy-ups across the report workspace. All are presentation-only — no change to reports, photos, findings, AI behaviour, permissions or PDFs.
+Five tidy-ups across the app. All are presentation-only — no change to reports, photos, findings, AI behaviour, permissions or PDFs.
 
 ## 1. Report header: one clear action, the rest tucked away
 
@@ -36,10 +36,21 @@ The keyboard strip above the review list is removed from the visible page. The s
 
 In its place, a small "Keyboard shortcuts" link opens the same list in a panel when wanted. The shortcut list is also announced to screen readers so keyboard-only reviewers still discover it.
 
+## 5. Softer, flatter buttons everywhere
+
+The glossy 3D treatment goes. All buttons — orange primary, navy, choices, secondary — become:
+
+- Rounded, pill-like corners instead of tight radii.
+- Flat colour: no specular highlight strip, no bottom "depth" edge, no outer glow.
+- Gentle feedback instead of machinery: a slight colour deepen on hover/press and a subtle soft shadow, plus the existing focus ring.
+
+Orange stays reserved for the single primary action on a screen; selected choices stay lighter navy with white text. The wordmark, colours and layout are unchanged — only the button surface treatment. The report document itself (`.paper`) is untouched.
+
 ## Technical notes
 
 - `src/components/report/report-actions.tsx`: keep Issue/Reopen and Download PDF inline; move Preview, Print, Share, Draft summary into a shadcn `DropdownMenu`. `reports.$id.index.tsx` moves its Review distribution link and `DeleteReportButton` into the same menu, passed in as children so the menu owns the layout.
 - `src/components/ai/analysis-panel.tsx`: drop `<AiUsageMeter />` and the `costUsd` segment of the totals line. Keep the exhausted-cap warning by rendering only that branch of the meter (a compact `AiCapNotice`), leaving `usage-meter.tsx` intact for settings.
 - `src/lib/ai/use-analysis-run.ts` unchanged; add a derived `needsAttention` filter in the panel from existing `state` plus the per-photo message, so no new data is fetched.
 - `src/components/review-list.tsx`: move the keyboard strip into a `Sheet`/`Dialog` triggered by a text button; keep the existing `onKeyDown` handler and `sr-only` copy untouched.
-- No token, layout-scope or `.paper` changes. 44px targets, focus rings and status-with-text preserved. Run the full test suite before and after; update any test asserting the removed usage meter or keyboard strip.
+- Button softening lives in `src/styles.css` (`glass-orange`, `glass-navy`, `work-choice`, `work-choice-selected` and shared radius tokens): drop the inset specular/depth/glow layers, widen the radius, keep tokenised colours so both navy console and light `.work-surface` scopes inherit it. No new tokens.
+- No token-colour, layout-scope or `.paper` changes. 44px targets, focus rings and status-with-text preserved. Run the full test suite before and after; update any test asserting the removed usage meter or keyboard strip.
