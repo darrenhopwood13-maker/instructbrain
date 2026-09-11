@@ -18,6 +18,8 @@ const buttonVariants = cva(
         brand: "glass-orange focus-visible:ring-brand-accent",
         quiet: "glass font-medium",
         "glass-orange": "glass-orange focus-visible:ring-brand-accent",
+        choice: "work-choice focus-visible:ring-work-blue",
+        "choice-selected": "work-choice-selected focus-visible:ring-work-blue",
       },
 
       size: {

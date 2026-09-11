@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, ChevronRight, Lock, Plus, Wrench } from "lucide-react";
+import { Camera, Check, ChevronRight, Lock, Plus, Wrench, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -421,7 +421,7 @@ function ComplianceRun() {
                               {[true, false].map((option) => (
                                 <Button
                                   key={String(option)}
-                                  variant={value === option ? "default" : "outline"}
+                                   variant={value === option ? "choice-selected" : "choice"}
                                   aria-pressed={value === option}
                                   aria-label={`${field.label} ${option ? "Yes" : "No"}`}
                                   disabled={locked || answer.isPending}
@@ -434,6 +434,13 @@ function ComplianceRun() {
                                     })
                                   }
                                 >
+                                   {value === option ? (
+                                     option ? (
+                                       <Check aria-hidden="true" />
+                                     ) : (
+                                       <X aria-hidden="true" />
+                                     )
+                                   ) : null}
                                   {option ? "Yes" : "No"}
                                 </Button>
                               ))}

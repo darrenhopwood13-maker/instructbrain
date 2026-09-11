@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildReportPdf, pdfFilename, selectFindings } from "@/lib/report/pdf.server";
 import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { NOT_ASSESSED_ID } from "@/lib/survey-types";
+import { buildCompliancePack, type PackData } from "@/lib/compliance/pack.server";
 
 function finding(overrides: Partial<DocFinding>): DocFinding {
   return {
@@ -114,5 +115,46 @@ describe("report PDF", () => {
 
   it("names the file after the report reference", () => {
     expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
+  });
+});
+
+describe("production PDF entry points", () => {
+  it("creates a compliance pack through the same Worker-safe PDF build", async () => {
+    const packData: PackData = {
+      project: {
+        name: "Riverside Works",
+        reference: "RW-01",
+        clientName: "Example Client",
+        address: "London",
+      },
+      organisationName: "Example Surveying",
+      runs: [
+        {
+          id: "run-1",
+          organisationId: "org-1",
+          projectId: "project-1",
+          checkType: "fire",
+          checkDate: "2026-09-11",
+          siteReference: "RW-01",
+          reportNumber: "FIRE-01",
+          performedByName: "Site Manager",
+          signedAt: "2026-09-11T10:00:00Z",
+          competentPerson: null,
+          lockedAt: "2026-09-11T10:00:00Z",
+          reportId: null,
+          createdAt: "2026-09-11T09:00:00Z",
+        },
+      ],
+      points: [],
+      entries: [],
+      actions: [],
+      photoUrls: new Map(),
+      photoCaptured: new Map(),
+    };
+
+    const built = await buildCompliancePack(packData, { checkType: "fire", single: true });
+    expect(textOf(built.bytes.slice(0, 5))).toBe("%PDF-");
+    expect(built.bytes.byteLength).toBeGreaterThan(1000);
+    expect(built.filename).toContain("compliance-pack-fire-riverside-works");
   });
 });
