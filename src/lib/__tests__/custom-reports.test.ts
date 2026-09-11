@@ -188,8 +188,8 @@ describe("photo condition record template", () => {
       includeSeverity: true,
       surveyTypes: [{ id: "photo_condition_record", label: "Photo condition record" }],
     });
-    expect(brief.includeFix).toBe(false);
-    expect(brief.includeSeverity).toBe(false);
+    expect(brief?.includeFix).toBe(false);
+    expect(brief?.includeSeverity).toBe(false);
   });
 
   it("leaves an ordinary template's switches alone", () => {
@@ -200,7 +200,7 @@ describe("photo condition record template", () => {
       includeSeverity: true,
       surveyTypes: [{ id: "snagging", label: "Snagging" }],
     });
-    expect(brief.includeFix).toBe(true);
-    expect(brief.includeSeverity).toBe(true);
+    expect(brief?.includeFix).toBe(true);
+    expect(brief?.includeSeverity).toBe(true);
   });
 });
