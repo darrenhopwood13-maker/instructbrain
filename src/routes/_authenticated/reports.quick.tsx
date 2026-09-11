@@ -433,103 +433,114 @@ function CustomReport() {
                 </p>
               </div>
 
-              <div>
-                <label htmlFor="report-type" className="text-sm font-semibold">
-                  Report type
-                </label>
-                <Select
-                  value={reportType}
-                  onValueChange={(next) => setReportType(reportTypeById(next))}
-                >
-                  <SelectTrigger
-                    id="report-type"
-                    aria-label="Report type"
-                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
+              {minimal ? null : (
+                <div>
+                  <label htmlFor="report-type" className="text-sm font-semibold">
+                    Report type
+                  </label>
+                  <Select
+                    value={reportType}
+                    onValueChange={(next) => setReportType(reportTypeById(next))}
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REPORT_TYPES.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {REPORT_TYPES.find((option) => option.id === reportType)?.description}
-                </p>
-              </div>
-
-              <fieldset>
-                <legend className="text-sm font-semibold">What the report includes</legend>
-                {identifier ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    An identifier report describes what is in each photograph, so repairs and
-                    severity are left out.
-                  </p>
-                ) : null}
-                <div className="mt-2 space-y-2">
-                  {[
-                    {
-                      id: "include-fix",
-                      label: "Suggested remedial work",
-                      checked: identifier ? false : includeFix,
-                      disabled: identifier,
-                      set: setIncludeFix,
-                    },
-                    {
-                      id: "include-severity",
-                      label: "Severity rating",
-                      checked: identifier ? false : includeSeverity,
-                      disabled: identifier,
-                      set: setIncludeSeverity,
-                    },
-                    {
-                      id: "advisory-footer",
-                      label: "Advisory note at the end of the report",
-                      checked: advisoryFooter,
-                      disabled: false,
-                      set: setAdvisoryFooter,
-                    },
-                  ].map((row) => (
-                    <label
-                      key={row.id}
-                      htmlFor={row.id}
-                      className="flex min-h-11 items-center gap-3 rounded-xl border border-border p-3 text-sm"
+                    <SelectTrigger
+                      id="report-type"
+                      aria-label="Report type"
+                      className="mt-2 h-11 w-full bg-surface-raised text-sm"
                     >
-                      <input
-                        id={row.id}
-                        type="checkbox"
-                        checked={row.checked}
-                        disabled={row.disabled}
-                        onChange={(event) => row.set(event.target.checked)}
-                        className="size-4 shrink-0 accent-[var(--brand-accent)]"
-                      />
-                      {row.label}
-                    </label>
-                  ))}
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_TYPES.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {REPORT_TYPES.find((option) => option.id === reportType)?.description}
+                  </p>
                 </div>
-              </fieldset>
+              )}
 
-              <div>
-                <label htmlFor="special-request" className="text-sm font-semibold">
-                  Special request
-                </label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  In your own words. It changes what the AI emphasises — never whether something
-                  passes.
+              {minimal ? (
+                <p className="text-xs text-muted-foreground">
+                  This template records the item and its condition only. No suggested repairs, no
+                  severity rating and no target dates.
                 </p>
-                <textarea
-                  id="special-request"
-                  value={specialRequest}
-                  maxLength={500}
-                  rows={3}
-                  onChange={(event) => setSpecialRequest(event.target.value)}
-                  placeholder="Focus on the roof edge detail. Flag anything affecting handover."
-                  className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
-                />
-              </div>
+              ) : (
+                <fieldset>
+                  <legend className="text-sm font-semibold">What the report includes</legend>
+                  {identifier ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      An identifier report describes what is in each photograph, so repairs and
+                      severity are left out.
+                    </p>
+                  ) : null}
+                  <div className="mt-2 space-y-2">
+                    {[
+                      {
+                        id: "include-fix",
+                        label: "Suggested remedial work",
+                        checked: identifier ? false : includeFix,
+                        disabled: identifier,
+                        set: setIncludeFix,
+                      },
+                      {
+                        id: "include-severity",
+                        label: "Severity rating",
+                        checked: identifier ? false : includeSeverity,
+                        disabled: identifier,
+                        set: setIncludeSeverity,
+                      },
+                      {
+                        id: "advisory-footer",
+                        label: "Advisory note at the end of the report",
+                        checked: advisoryFooter,
+                        disabled: false,
+                        set: setAdvisoryFooter,
+                      },
+                    ].map((row) => (
+                      <label
+                        key={row.id}
+                        htmlFor={row.id}
+                        className="flex min-h-11 items-center gap-3 rounded-xl border border-border p-3 text-sm"
+                      >
+                        <input
+                          id={row.id}
+                          type="checkbox"
+                          checked={row.checked}
+                          disabled={row.disabled}
+                          onChange={(event) => row.set(event.target.checked)}
+                          className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                        />
+                        {row.label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
+              {minimal ? null : (
+                <div>
+                  <label htmlFor="special-request" className="text-sm font-semibold">
+                    Special request
+                  </label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    In your own words. It changes what the AI emphasises — never whether something
+                    passes.
+                  </p>
+                  <textarea
+                    id="special-request"
+                    value={specialRequest}
+                    maxLength={SPECIAL_REQUEST_LIMIT}
+                    rows={3}
+                    onChange={(event) => setSpecialRequest(event.target.value)}
+                    placeholder="Focus on the roof edge detail. Flag anything affecting handover."
+                    className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="template-name" className="text-sm font-semibold">
