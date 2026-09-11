@@ -24,6 +24,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   inventory: "Property records",
   electrical: "Electrical",
   mechanical: "Mechanical & HVAC",
+  record: "Simple records",
 };
 
 export function useGroupedTemplates() {
