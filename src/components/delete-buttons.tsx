@@ -26,13 +26,23 @@ export function DeleteReportButton({
   reportId,
   title,
   projectId,
+  open,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   reportId: string;
   title: string;
   projectId: string | null;
+  /** Controlled mode: the parent owns open state (e.g. a menu item opens it). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const navigate = useNavigate();
+  const isOpen = open ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   const onDelete = async () => {
     setBusy(true);
@@ -51,13 +61,15 @@ export function DeleteReportButton({
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="quiet" className="min-h-11 text-fail hover:text-fail">
-          <Trash2 aria-hidden="true" className="size-4" />
-          Delete report
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog open={isOpen} onOpenChange={setOpen}>
+      {hideTrigger ? null : (
+        <AlertDialogTrigger asChild>
+          <Button variant="quiet" className="min-h-11 text-fail hover:text-fail">
+            <Trash2 aria-hidden="true" className="size-4" />
+            Delete report
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{title}”?</AlertDialogTitle>

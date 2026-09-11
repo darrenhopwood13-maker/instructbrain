@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
+import { FileText, ChevronRight, History, FolderInput, Trash2 } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
 import { DeleteReportButton } from "@/components/delete-buttons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
@@ -65,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
 
 function ReportWorkspace() {
   const [attaching, setAttaching] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { id } = Route.useParams();
   const { tab, view } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -252,30 +254,41 @@ function ReportWorkspace() {
 
         {doc ? (
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <ReportActions document={doc} organisationId={organisationId} resultView={resultView} />
-            <Link
-              to="/reports/$id/distribute"
-              params={{ id: report.id }}
-              className={buttonVariants({ variant: "quiet" })}
-            >
-              <Send aria-hidden="true" className="size-4" />
-              Review distribution
-            </Link>
-
-            {!project ? (
-              <Button variant="quiet" onClick={() => setAttaching(true)}>
-                <FolderInput aria-hidden="true" className="size-4" />
-                Attach to project
-              </Button>
-            ) : null}
-            <DeleteReportButton
-              reportId={report.id}
-              title={report.title}
-              projectId={project?.id ?? null}
-            />
+            <ReportActions document={doc} organisationId={organisationId} resultView={resultView}>
+              <DropdownMenuItem className="min-h-11" asChild>
+                <Link to="/reports/$id/distribute" params={{ id: report.id }}>
+                  <Send aria-hidden="true" className="mr-2 size-4" />
+                  Review distribution
+                </Link>
+              </DropdownMenuItem>
+              {!project ? (
+                <DropdownMenuItem
+                  className="min-h-11"
+                  onSelect={() => window.setTimeout(() => setAttaching(true), 0)}
+                >
+                  <FolderInput aria-hidden="true" className="mr-2 size-4" />
+                  Attach to project
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem
+                className="min-h-11 text-fail focus:text-fail"
+                onSelect={() => window.setTimeout(() => setDeleting(true), 0)}
+              >
+                <Trash2 aria-hidden="true" className="mr-2 size-4" />
+                Delete report
+              </DropdownMenuItem>
+            </ReportActions>
           </div>
         ) : null}
 
+        <DeleteReportButton
+          reportId={report.id}
+          title={report.title}
+          projectId={project?.id ?? null}
+          open={deleting}
+          onOpenChange={setDeleting}
+          hideTrigger
+        />
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 

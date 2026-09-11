@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AiUsageMeter } from "@/components/ai/usage-meter";
 import {
   Select,
   SelectContent,
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAnalysisRun, type PhotoRun } from "@/lib/ai/use-analysis-run";
-import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /**
@@ -54,13 +52,24 @@ export function AnalysisPanel({
   snapshot: SurveyTypeSnapshot;
 }) {
   const run = useAnalysisRun(reportId);
-  const { organisationId } = useOrganisations();
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Standard keeps the second opinion. Fast is a single pass, chosen per run.
   const [speed, setSpeed] = useState<"standard" | "fast">("standard");
   const fast = speed === "fast";
+  // Once a run is done the list collapses to what still needs a person —
+  // failures, cancellations and photographs with Not assessed findings.
+  const [showAll, setShowAll] = useState(false);
 
   const progress = run.totals.total > 0 ? (run.totals.completed / run.totals.total) * 100 : 0;
+
+  const needsAttention = (photo: PhotoRun) =>
+    photo.state === "failed" ||
+    photo.state === "skipped" ||
+    (photo.message?.includes("not assessed") ?? false);
+
+  const collapsed = !showAll && !run.running;
+  const visiblePhotos = collapsed ? run.photos.filter(needsAttention) : run.photos;
+  const attentionCount = run.photos.filter(needsAttention).length;
 
   return (
     <div className="space-y-4">
@@ -137,8 +146,7 @@ export function AnalysisPanel({
             <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
               {run.totals.completed} of {run.totals.total} photographs · {run.totals.findings}{" "}
               draft findings · {run.totals.notAssessed} not assessed
-              {run.totals.failed > 0 ? ` · ${run.totals.failed} failed` : ""} · $
-              {run.totals.costUsd.toFixed(3)} this run
+              {run.totals.failed > 0 ? ` · ${run.totals.failed} failed` : ""}
             </p>
           </div>
         ) : null}
@@ -159,15 +167,37 @@ export function AnalysisPanel({
         ) : null}
       </div>
 
-      <AiUsageMeter organisationId={organisationId} />
-
       {run.photos.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-surface-raised shadow-raised">
-          <h3 className="border-b border-border px-4 py-3 text-sm font-semibold">
-            Photographs on this report
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+            <h3 className="text-sm font-semibold">
+              {collapsed
+                ? attentionCount === 0
+                  ? "All photographs analysed"
+                  : `Needs attention (${attentionCount})`
+                : "Photographs on this report"}
+            </h3>
+            {!run.running ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="min-h-11"
+                onClick={() => setShowAll((current) => !current)}
+              >
+                {showAll
+                  ? "Show only photographs needing attention"
+                  : `Show all ${run.photos.length} photographs`}
+              </Button>
+            ) : null}
+          </div>
+          {collapsed && visiblePhotos.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-muted-foreground">
+              Nothing needs attention — every photograph was assessed.
+            </p>
+          ) : null}
           <ul className="divide-y divide-border">
-            {run.photos.map((photo) => (
+            {visiblePhotos.map((photo) => (
               <li
                 key={photo.photoId}
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
