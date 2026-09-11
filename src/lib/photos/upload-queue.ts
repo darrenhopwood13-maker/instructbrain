@@ -46,9 +46,12 @@ export async function runUploadQueue<T>(
   tasks: Array<Task<T>>,
   options: QueueOptions = {},
 ): Promise<Array<QueueResult<T>>> {
-  const concurrency = Math.max(1, Math.min(options.concurrency ?? 4, 6));
+  // Up to 12 in flight: speed comes from parallelism, never from shrinking a
+  // photograph (invariant 3).
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 4, 12));
   const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
-  const backoffMs = options.backoffMs ?? 400;
+  // A first retry after a blip should be quick; later ones back off.
+  const backoffMs = options.backoffMs ?? 200;
   const sleep = options.sleep ?? defaultSleep;
 
   const progress: TaskProgress[] = tasks.map((task) => ({

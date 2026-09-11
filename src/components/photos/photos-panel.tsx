@@ -46,7 +46,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 
-const CONCURRENCY = 5;
+const CONCURRENCY = 12;
 
 function sizeLabel(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
