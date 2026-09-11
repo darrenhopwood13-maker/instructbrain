@@ -241,14 +241,16 @@ export function coerceBrief(value: unknown): ReportBrief | null {
   const reportType = reportTypeById(
     typeof raw["reportType"] === "string" ? raw["reportType"] : null,
   );
+  const minimal = surveyTypes.some((entry) => isMinimalBriefTemplate(entry.id));
+  const stripped = reportType === "identifier" || minimal;
   return {
     presetId: typeof raw["presetId"] === "string" ? raw["presetId"] : null,
     tone: toneById(typeof raw["tone"] === "string" ? raw["tone"] : null).id,
     reportType,
-    // An identifier report never carries a fix or a severity, whatever the
-    // stored switches say.
-    includeFix: reportType === "identifier" ? false : boolOr(raw["includeFix"], true),
-    includeSeverity: reportType === "identifier" ? false : boolOr(raw["includeSeverity"], true),
+    // An identifier report — and a minimal record template — never carries a
+    // fix or a severity, whatever the stored switches say.
+    includeFix: stripped ? false : boolOr(raw["includeFix"], true),
+    includeSeverity: stripped ? false : boolOr(raw["includeSeverity"], true),
     advisoryFooter: boolOr(raw["advisoryFooter"], false),
     specialRequest: sanitiseSpecialRequest(
       typeof raw["specialRequest"] === "string" ? raw["specialRequest"] : "",
