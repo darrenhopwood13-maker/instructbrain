@@ -329,10 +329,67 @@ function CustomReport() {
       ) : null}
 
       {!capturing ? (
+        <section aria-labelledby="capture-heading" className="mt-6">
+          <h2 id="capture-heading" className="sr-only">
+            Capture photographs
+          </h2>
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <input
+            ref={pickerRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              receive(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            size="lg"
+            className="min-h-14 w-full text-base"
+            disabled={start.isPending || !organisationId || focusMissing}
+            onClick={() => cameraRef.current?.click()}
+          >
+            {start.isPending ? (
+              <Loader2 aria-hidden="true" className="size-5 animate-spin" />
+            ) : (
+              <Camera aria-hidden="true" className="size-5" />
+            )}
+            Take photo
+          </Button>
+          <div className="mt-2 flex justify-center">
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 text-sm font-medium"
+              disabled={start.isPending || !organisationId || focusMissing}
+              onClick={() => pickerRef.current?.click()}
+            >
+              <ImagePlus aria-hidden="true" className="size-4" />
+              Add photos from the gallery
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="brief-heading" className="text-sm font-semibold">
-              The brief
+              Options
             </h2>
             <Button
               type="button"
@@ -343,13 +400,14 @@ function CustomReport() {
               onClick={() => setBriefOpen((open) => !open)}
             >
               <Sparkles aria-hidden="true" className="size-4" />
-              {briefOpen ? "Hide the brief" : "Set the brief"}
+              {briefOpen ? "Hide options" : "Options"}
             </Button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
             {brief.specialRequest ? " · special request set" : ""}
           </p>
+
 
           {briefOpen ? (
             <div
