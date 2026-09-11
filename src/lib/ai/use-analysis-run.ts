@@ -155,7 +155,7 @@ export function useAnalysisRun(reportId: string) {
             patch(item.photoId, { state: "running", message: null });
             try {
               const result = await runPhoto({
-                data: { reportId, photoId: item.photoId, force },
+                data: { reportId, photoId: item.photoId, force, fast },
               });
               if (!mounted.current) return;
               // A run that still recorded observations is not a failure: the
@@ -177,8 +177,9 @@ export function useAnalysisRun(reportId: string) {
                 costUsd: current.costUsd + result.costUsd,
               }));
 
-              // Results stream into the review list as they complete.
-              await invalidate();
+              // Results stream into the review list as they complete, batched
+              // so a large run does not refetch once per photograph.
+              scheduleInvalidate();
             } catch (error) {
               const message =
                 error instanceof Error ? error.message : "This photograph could not be assessed.";
@@ -209,24 +210,28 @@ export function useAnalysisRun(reportId: string) {
             : photo,
         ),
       );
-      await invalidate();
+      await flushInvalidate();
     },
-    [invalidate, patch, reportId, runPhoto],
+    [flushInvalidate, scheduleInvalidate, patch, reportId, runPhoto],
   );
 
-  const analyseAll = useCallback(async () => {
-    const queue = photos.filter((photo) => !photo.analysed);
-    await execute(queue, false);
-  }, [execute, photos]);
-
-  const reanalyse = useCallback(
-    async (photoId: string) => {
-      const photo = photos.find((entry) => entry.photoId === photoId);
-      if (!photo) return;
-      await execute([photo], true);
+  const analyseAll = useCallback(
+    async (fast = false) => {
+      const queue = photos.filter((photo) => !photo.analysed);
+      await execute(queue, false, fast);
     },
     [execute, photos],
   );
+
+  const reanalyse = useCallback(
+    async (photoId: string, fast = false) => {
+      const photo = photos.find((entry) => entry.photoId === photoId);
+      if (!photo) return;
+      await execute([photo], true, fast);
+    },
+    [execute, photos],
+  );
+
 
   const cancel = useCallback(() => {
     cancelled.current = true;
