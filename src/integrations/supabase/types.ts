@@ -1396,6 +1396,7 @@ export type Database = {
           id: string
           is_quick: boolean
           issued_at: string | null
+          logo_path: string | null
           methodology_text: string | null
           organisation_id: string
           output_language: string
@@ -1423,6 +1424,7 @@ export type Database = {
           id?: string
           is_quick?: boolean
           issued_at?: string | null
+          logo_path?: string | null
           methodology_text?: string | null
           organisation_id: string
           output_language?: string
@@ -1450,6 +1452,7 @@ export type Database = {
           id?: string
           is_quick?: boolean
           issued_at?: string | null
+          logo_path?: string | null
           methodology_text?: string | null
           organisation_id?: string
           output_language?: string
