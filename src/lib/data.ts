@@ -63,6 +63,7 @@ function from(table: string) {
 /* ------------------------------------------------------------------ */
 
 import { coerceSnapshot } from "@/lib/report/snapshot";
+import { sortByPhotoOrder } from "@/lib/report/finding-order";
 export { coerceSnapshot };
 
 
@@ -506,11 +507,11 @@ export const findingsQuery = (reportId: string) =>
         await from("photos").select("id, sequence").eq("report_id", reportId),
       ) as Array<{ id: string; sequence: number | null }>;
       const photoSequence = new Map(photoRows.map((photo) => [photo.id, photo.sequence ?? null]));
-      const findings = rows.map((row) => toFinding(row, byFinding.get(row.id) ?? []));
-      return sortByPhotoOrder(findings, (finding) => ({
-        photoSequence: photoSequence.get(finding.photoIds?.[0] ?? "") ?? null,
-        sequence: finding.sequence ?? 0,
+      const ordered = sortByPhotoOrder(rows, (row) => ({
+        photoSequence: photoSequence.get(byFinding.get(row.id)?.[0] ?? "") ?? null,
+        sequence: Number((row as { sequence?: number }).sequence ?? 0),
       }));
+      return ordered.map((row) => toFinding(row, byFinding.get(row.id) ?? []));
     },
   });
 
