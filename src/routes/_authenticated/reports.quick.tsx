@@ -656,21 +656,20 @@ function CustomReport() {
                   </Button>
                 </div>
               </div>
+
+              <CoverBrandingFields
+                organisationId={organisationId}
+                coverFile={coverFile}
+                logoFile={logoFile}
+                onCoverFile={setCoverFile}
+                onLogoFile={setLogoFile}
+                disabled={start.isPending}
+              />
             </div>
           ) : null}
         </section>
       ) : null}
 
-      {!capturing ? (
-        <CoverBrandingFields
-          organisationId={organisationId}
-          coverFile={coverFile}
-          logoFile={logoFile}
-          onCoverFile={setCoverFile}
-          onLogoFile={setLogoFile}
-          disabled={start.isPending}
-        />
-      ) : null}
 
       {capturing && activeSnapshot ? (
         <>
