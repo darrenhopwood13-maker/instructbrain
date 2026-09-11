@@ -815,76 +815,24 @@
 /* Domed orange action tile — ported verbatim from instructSite's
    `enterprise-orb-button`: radial dome fill, silver ring, deep drop, insets. */
 @utility orb-tile {
-  position: relative;
-  isolation: isolate;
-  border-radius: 1rem;
-  background: radial-gradient(
-    circle at 32% 28%,
-    oklch(0.898 0.083 71.3) 0%,
-    oklch(0.741 0.165 50.6) 35%,
-    var(--brand-accent) 80%,
-    oklch(0.372 0.116 41.1) 100%
-  );
-  box-shadow:
-    0 0 0 2px oklch(0.372 0.116 41.1),
-    0 0 0 4px oklch(1 0 0 / 90%),
-    0 0 0 6px oklch(0.372 0.116 41.1),
-    0 8px 18px oklch(0 0 0 / 40%),
-    inset 0 3px 6px oklch(1 0 0 / 70%),
-    inset 0 -4px 8px oklch(0 0 0 / 30%);
+  border-radius: 1.5rem;
+  background: var(--brand-accent);
+  box-shadow: 0 10px 24px -10px oklch(0.372 0.116 41.1 / 55%);
   transition:
-    transform 0.18s ease,
     filter 0.18s ease,
     box-shadow 0.18s ease;
 
-  /* glossy top sheen sheet */
-  &::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 6%;
-    height: 38%;
-    width: 86%;
-    transform: translateX(-50%);
-    border-radius: 1rem;
-    background: linear-gradient(
-      180deg,
-      oklch(1 0 0 / 80%) 0%,
-      oklch(1 0 0 / 12%) 70%,
-      transparent 100%
-    );
-    filter: blur(0.5px);
-    pointer-events: none;
-  }
-
   &:hover:not(:disabled) {
-    transform: scale(1.03);
-    filter: brightness(1.08);
-    box-shadow:
-      0 0 0 2px oklch(0.372 0.116 41.1),
-      0 0 0 4px oklch(1 0 0),
-      0 0 0 7px oklch(0.372 0.116 41.1),
-      0 12px 22px oklch(0 0 0 / 50%),
-      inset 0 3px 6px oklch(1 0 0 / 80%),
-      inset 0 -4px 8px oklch(0 0 0 / 30%);
+    filter: brightness(1.07);
+    box-shadow: 0 14px 28px -10px oklch(0.372 0.116 41.1 / 60%);
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.95);
-    box-shadow:
-      0 0 0 2px oklch(0.372 0.116 41.1),
-      0 0 0 4px oklch(1 0 0),
-      0 0 0 7px oklch(0.372 0.116 41.1),
-      0 3px 8px oklch(0 0 0 / 50%),
-      inset 0 4px 10px oklch(0 0 0 / 35%);
+    filter: brightness(0.93);
   }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
-    &:hover:not(:disabled),
-    &:active:not(:disabled) {
-      transform: none;
-    }
   }
 }
 
