@@ -1,6 +1,6 @@
-# Calmer report screens: fewer buttons, less noise
+# Calmer report screens: fewer buttons, less noise, softer buttons
 
-Four tidy-ups across the report workspace. All are presentation-only — no change to reports, photos, findings, AI behaviour, permissions or PDFs.
+Five tidy-ups across the app. All are presentation-only — no change to reports, photos, findings, AI behaviour, permissions or PDFs.
 
 ## 1. Report header: one clear action, the rest tucked away
 
