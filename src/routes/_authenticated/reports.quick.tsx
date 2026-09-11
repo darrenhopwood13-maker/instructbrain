@@ -686,63 +686,7 @@ function CustomReport() {
             </Button>
           </div>
         </>
-      ) : (
-        <section aria-labelledby="capture-heading" className="mt-8">
-          <h2 id="capture-heading" className="sr-only">
-            Capture photographs
-          </h2>
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              receive(event.target.files);
-              event.target.value = "";
-            }}
-          />
-          <input
-            ref={pickerRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              receive(event.target.files);
-              event.target.value = "";
-            }}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              size="lg"
-              className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId || focusMissing}
-              onClick={() => cameraRef.current?.click()}
-            >
-              {start.isPending ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              ) : (
-                <Camera aria-hidden="true" className="size-4" />
-              )}
-              Take photo
-            </Button>
-            <Button
-              type="button"
-              size="lg"
-              variant="secondary"
-              className="min-h-14 w-full"
-              disabled={start.isPending || !organisationId || focusMissing}
-              onClick={() => pickerRef.current?.click()}
-            >
-              <ImagePlus aria-hidden="true" className="size-4" />
-              Add photos
-            </Button>
-          </div>
-        </section>
-      )}
+      ) : null}
     </AppShell>
   );
 }
