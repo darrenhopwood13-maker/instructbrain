@@ -145,13 +145,18 @@ function CustomReport() {
   }, []);
 
   const identifier = reportType === "identifier";
+  // A minimal record template carries no fix, no severity and no report type
+  // choice — those controls are hidden rather than shown switched off.
+  const minimal = isMinimalBriefTemplate(templateId);
+  const stripped = identifier || minimal;
+  const focusMissing = minimal && sanitiseSpecialRequest(specialRequest) === "";
 
   const brief: ReportBrief = {
     presetId,
     tone,
     reportType,
-    includeFix: identifier ? false : includeFix,
-    includeSeverity: identifier ? false : includeSeverity,
+    includeFix: stripped ? false : includeFix,
+    includeSeverity: stripped ? false : includeSeverity,
     advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
     surveyTypes: chosenDefinition
@@ -182,6 +187,9 @@ function CustomReport() {
     mutationFn: async (files: File[]) => {
       const primary = chosenDefinition;
       if (!primary) throw new Error("Choose a report template first.");
+      if (focusMissing) {
+        throw new Error("Write the focus of this report before you start.");
+      }
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       const frozen = snapshotOf(primary);
       const id = await createReport({
