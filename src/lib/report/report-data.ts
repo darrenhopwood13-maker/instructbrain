@@ -159,7 +159,8 @@ export const reportDocumentQuery = (reportId: string) =>
       }));
       const photoById = new Map(docPhotos.map((photo) => [photo.id, photo]));
 
-      const docFindings: DocFinding[] = findings.map((row) => {
+      const docFindings: DocFinding[] = sortByPhotoOrder(
+        findings.map((row) => {
         const attached: DocFindingPhoto[] = links
           .filter((link) => link.finding_id === row.id)
           .map((link) => {
