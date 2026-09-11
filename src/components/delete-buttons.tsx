@@ -61,13 +61,15 @@ export function DeleteReportButton({
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="quiet" className="min-h-11 text-fail hover:text-fail">
-          <Trash2 aria-hidden="true" className="size-4" />
-          Delete report
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog open={isOpen} onOpenChange={setOpen}>
+      {hideTrigger ? null : (
+        <AlertDialogTrigger asChild>
+          <Button variant="quiet" className="min-h-11 text-fail hover:text-fail">
+            <Trash2 aria-hidden="true" className="size-4" />
+            Delete report
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{title}”?</AlertDialogTitle>
