@@ -26,13 +26,23 @@ export function DeleteReportButton({
   reportId,
   title,
   projectId,
+  open,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   reportId: string;
   title: string;
   projectId: string | null;
+  /** Controlled mode: the parent owns open state (e.g. a menu item opens it). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const navigate = useNavigate();
+  const isOpen = open ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   const onDelete = async () => {
     setBusy(true);
