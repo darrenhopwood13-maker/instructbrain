@@ -85,13 +85,25 @@ const baseNav = [
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
 ] as const;
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  surface = "console",
+}: {
+  children: ReactNode;
+  /**
+   * "light" puts the whole screen on the working-surface scope: white sheet,
+   * dark text, no blueprint grid or console chrome. Used on the screens people
+   * work from outdoors — capture, photos, review, compliance register.
+   */
+  surface?: "console" | "light";
+}) {
   const { t } = useI18n();
   const nav = [...baseNav];
 
-
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div
+      className={`flex min-h-dvh flex-col${surface === "light" ? " work-surface" : ""}`}
+    >
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
