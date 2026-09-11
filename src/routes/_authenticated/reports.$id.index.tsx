@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
+import { FileText, ChevronRight, History, FolderInput, Trash2 } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
 import { DeleteReportButton } from "@/components/delete-buttons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
