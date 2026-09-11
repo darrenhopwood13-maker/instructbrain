@@ -109,8 +109,33 @@ export function useAnalysisRun(reportId: string) {
     await queryClient.invalidateQueries({ queryKey: ["ai-usage"] });
   }, [queryClient, reportId]);
 
+  // A 150-photograph run must not fire 150 refetches. Results still stream in,
+  // at most about twice a second, and the run always ends with a final flush.
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleInvalidate = useCallback(() => {
+    if (refreshTimer.current) return;
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      if (mounted.current) void invalidate();
+    }, 500);
+  }, [invalidate]);
+  const flushInvalidate = useCallback(async () => {
+    if (refreshTimer.current) {
+      clearTimeout(refreshTimer.current);
+      refreshTimer.current = null;
+    }
+    await invalidate();
+  }, [invalidate]);
+
+  useEffect(
+    () => () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
   const execute = useCallback(
-    async (queue: PhotoRun[], force: boolean) => {
+    async (queue: PhotoRun[], force: boolean, fast = false) => {
       if (queue.length === 0) return;
       cancelled.current = false;
       setRunning(true);
