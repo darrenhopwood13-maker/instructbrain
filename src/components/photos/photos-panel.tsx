@@ -159,22 +159,21 @@ export function PhotosPanel({
     async (items: Pending[]) => {
       if (!organisationId || items.length === 0) return;
       setBusy(true);
-      let sequence = await nextSequence(reportId);
+      const base = await nextSequence(reportId);
       try {
         await runUploadQueue(
-          items.map((item) => ({
+          // The number is decided here, in selection order — never inside the
+          // task, where a slow or retried upload would take a later number.
+          items.map((item, index) => ({
             id: item.id,
-            run: async (report) => {
-              const assigned = sequence;
-              sequence += 1;
+            run: async (report) =>
               // Photographs reach storage on selection — never held in memory only.
-              return uploadPhoto(
+              uploadPhoto(
                 item.file,
                 { organisationId, reportId, captureFields: item.captureFields },
-                assigned,
+                base + index,
                 report,
-              );
-            },
+              ),
           })),
           { concurrency: CONCURRENCY, maxAttempts: 3, onProgress: applyProgress },
         );
