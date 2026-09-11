@@ -1,30 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { PHOTO_BUCKET, collisionSafeFilename } from "@/lib/photos/storage-paths";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { nextSequence, uploadPhoto } from "@/lib/photos/photo-service";
+import { brandingPath } from "@/lib/report/logo";
 
-/**
- * Branding files live under the report's own folder, alongside its
- * photographs — never in a shared or cross-organisation location.
- */
-export function brandingPath(
-  organisationId: string,
-  reportId: string,
-  filename: string,
-): string {
-  return `${organisationId}/${reportId}/branding/${collisionSafeFilename(filename)}`;
-}
-
-/**
- * A per-report logo wins; otherwise the organisation's saved logo is used;
- * otherwise there is no logo. Everything that renders a report — screen,
- * PDF and shared link — resolves through this one rule.
- */
-export function resolveLogoPath(
-  reportLogoPath: string | null | undefined,
-  organisationLogoPath: string | null | undefined,
-): string | null {
-  return reportLogoPath ?? organisationLogoPath ?? null;
-}
+export { brandingPath, resolveLogoPath } from "@/lib/report/logo";
 
 /** Upload a logo (or other branding image) into the report's branding folder. */
 export async function uploadBrandingImage(
