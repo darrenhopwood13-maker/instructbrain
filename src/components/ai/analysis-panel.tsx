@@ -146,8 +146,7 @@ export function AnalysisPanel({
             <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
               {run.totals.completed} of {run.totals.total} photographs · {run.totals.findings}{" "}
               draft findings · {run.totals.notAssessed} not assessed
-              {run.totals.failed > 0 ? ` · ${run.totals.failed} failed` : ""} · $
-              {run.totals.costUsd.toFixed(3)} this run
+              {run.totals.failed > 0 ? ` · ${run.totals.failed} failed` : ""}
             </p>
           </div>
         ) : null}
