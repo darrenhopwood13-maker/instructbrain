@@ -19,6 +19,7 @@ import {
   type ResultView,
 } from "@/lib/report/grouping";
 import { itemLabel, itemLabels } from "@/lib/item-label";
+import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
@@ -525,16 +526,18 @@ function FindingRow({
                 patch({ finding_text: next }, { finding_text: finding.findingText })
               }
             />
-            <InlineField
-              label="Remedial action"
-              value={finding.remedialText}
-              readOnly={readOnly}
-              multiline
-              rows={3}
-              onSave={async (next) =>
-                patch({ remedial_text: next }, { remedial_text: finding.remedialText })
-              }
-            />
+            {isMinimalBriefTemplate((snapshot as { id?: string }).id) ? null : (
+              <InlineField
+                label="Remedial action"
+                value={finding.remedialText}
+                readOnly={readOnly}
+                multiline
+                rows={3}
+                onSave={async (next) =>
+                  patch({ remedial_text: next }, { remedial_text: finding.remedialText })
+                }
+              />
+            )}
 
             {definesField(snapshot, "likely_cause") ? (
               <InlineField

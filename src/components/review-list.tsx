@@ -32,6 +32,7 @@ import {
 import { AlertTriangle, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { itemLabel } from "@/lib/item-label";
+import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import { listPhotos, signedThumbnailUrls } from "@/lib/photos/photo-service";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -169,6 +170,8 @@ export function ReviewList({
   const showReference = definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
   const showTrade = requiresTradeAssignment(snapshot) && !!onAssignTrade;
+  // A minimal record template carries no repairs, so no remedial box is shown.
+  const showRemedial = !isMinimalBriefTemplate((snapshot as { id?: string }).id);
   const causeGuidance =
     derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
 
@@ -682,18 +685,20 @@ export function ReviewList({
                   />
                 ) : null}
 
-                <FieldCard
-                  label="Remedial action"
-                  popOutDescription="The recommended action recorded against this finding."
-                >
-                  <p className="whitespace-pre-wrap">
-                    {item.remedial || (
-                      <span className="text-muted-foreground">
-                        No remedial action recorded yet.
-                      </span>
-                    )}
-                  </p>
-                </FieldCard>
+                {showRemedial ? (
+                  <FieldCard
+                    label="Remedial action"
+                    popOutDescription="The recommended action recorded against this finding."
+                  >
+                    <p className="whitespace-pre-wrap">
+                      {item.remedial || (
+                        <span className="text-muted-foreground">
+                          No remedial action recorded yet.
+                        </span>
+                      )}
+                    </p>
+                  </FieldCard>
+                ) : null}
 
                 {showReference ? (
                   <FieldCard

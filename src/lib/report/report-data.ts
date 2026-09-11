@@ -4,6 +4,7 @@ import { DataError, coerceSnapshot } from "@/lib/data";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
+import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import type {
   DocFinding,
   DocFindingPhoto,
@@ -159,7 +160,8 @@ export const reportDocumentQuery = (reportId: string) =>
       }));
       const photoById = new Map(docPhotos.map((photo) => [photo.id, photo]));
 
-      const docFindings: DocFinding[] = findings.map((row) => {
+      const docFindings: DocFinding[] = sortByPhotoOrder(
+        findings.map((row) => {
         const attached: DocFindingPhoto[] = links
           .filter((link) => link.finding_id === row.id)
           .map((link) => {
@@ -194,7 +196,13 @@ export const reportDocumentQuery = (reportId: string) =>
           abstainReason: row.ai_abstain_reason ?? null,
           photos: attached,
         };
-      });
+        }),
+        // Upload order wins over the order the AI happened to finish in.
+        (finding) => ({
+          photoSequence: finding.photos[0]?.photo.sequence ?? null,
+          sequence: finding.sequence,
+        }),
+      );
 
       return {
         report: {

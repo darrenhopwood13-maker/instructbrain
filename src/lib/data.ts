@@ -63,6 +63,7 @@ function from(table: string) {
 /* ------------------------------------------------------------------ */
 
 import { coerceSnapshot } from "@/lib/report/snapshot";
+import { sortByPhotoOrder } from "@/lib/report/finding-order";
 export { coerceSnapshot };
 
 
@@ -500,7 +501,17 @@ export const findingsQuery = (reportId: string) =>
       for (const link of links) {
         byFinding.set(link.finding_id, [...(byFinding.get(link.finding_id) ?? []), link.photo_id]);
       }
-      return rows.map((row) => toFinding(row, byFinding.get(row.id) ?? []));
+      // Review follows the order the photographs were uploaded in, not the
+      // order the AI happened to finish reading them.
+      const photoRows = unwrap(
+        await from("photos").select("id, sequence").eq("report_id", reportId),
+      ) as Array<{ id: string; sequence: number | null }>;
+      const photoSequence = new Map(photoRows.map((photo) => [photo.id, photo.sequence ?? null]));
+      const ordered = sortByPhotoOrder(rows, (row) => ({
+        photoSequence: photoSequence.get(byFinding.get(row.id)?.[0] ?? "") ?? null,
+        sequence: Number((row as { sequence?: number }).sequence ?? 0),
+      }));
+      return ordered.map((row) => toFinding(row, byFinding.get(row.id) ?? []));
     },
   });
 
