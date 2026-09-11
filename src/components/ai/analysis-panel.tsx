@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AiUsageMeter } from "@/components/ai/usage-meter";
 import {
   Select,
   SelectContent,
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAnalysisRun, type PhotoRun } from "@/lib/ai/use-analysis-run";
-import { useOrganisations } from "@/lib/use-organisations";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /**
