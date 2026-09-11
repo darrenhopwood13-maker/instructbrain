@@ -29,7 +29,14 @@ import {
   TradeAssignmentCard,
   type TradeAssignment,
 } from "@/components/review/trade-assignment-card";
-import { AlertTriangle, Lock, Sparkles } from "lucide-react";
+import { AlertTriangle, Keyboard, Lock, Sparkles } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { itemLabel } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
