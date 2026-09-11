@@ -11,6 +11,7 @@ import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
+import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import type {
   DocFinding,
   DocFindingPhoto,
@@ -145,42 +146,49 @@ export async function loadReportDocument(
   }));
   const photoById = new Map(docPhotos.map((photo) => [photo.id, photo]));
 
-  const docFindings: DocFinding[] = findings.map((row) => {
-    const attached: DocFindingPhoto[] = links
-      .filter((link) => link["finding_id"] === row["id"])
-      .map((link) => {
-        const photo = photoById.get(link["photo_id"] as string);
-        return photo
-          ? { photo, role: (link["role"] as string) ?? "primary", region: region(link["region"]) }
-          : null;
-      })
-      .filter((entry): entry is DocFindingPhoto => entry !== null)
-      .sort((a, b) => (a.role === "primary" ? -1 : b.role === "primary" ? 1 : 0));
+  const docFindings: DocFinding[] = sortByPhotoOrder(
+    findings.map((row) => {
+      const attached: DocFindingPhoto[] = links
+        .filter((link) => link["finding_id"] === row["id"])
+        .map((link) => {
+          const photo = photoById.get(link["photo_id"] as string);
+          return photo
+            ? { photo, role: (link["role"] as string) ?? "primary", region: region(link["region"]) }
+            : null;
+        })
+        .filter((entry): entry is DocFindingPhoto => entry !== null)
+        .sort((a, b) => (a.role === "primary" ? -1 : b.role === "primary" ? 1 : 0));
 
-    return {
-      id: row["id"] as string,
-      ref: row["ref"] as string,
-      sequence: row["sequence"] as number,
-      statusId: (row["status"] as string) ?? "",
-      severityId: (row["severity"] as string | null) ?? null,
-      categoryId: (row["hazard_category"] as string | null) ?? null,
-      findingText: (row["finding_text"] as string) ?? "",
-      remedialText: (row["remedial_text"] as string) ?? "",
-      captureFields: fields(row["capture_fields"]),
-      assignedTrade: (row["assigned_trade"] as string | null) ?? null,
-      suggestedTrade: (row["ai_suggested_trade"] as string | null) ?? null,
-      tradeReasoning: (row["ai_trade_reasoning"] as string | null) ?? null,
-      tradeConfidence: (row["ai_trade_confidence"] as number | null) ?? null,
-      dueDate: (row["due_date"] as string | null) ?? null,
-      lifecycleState: (row["lifecycle_state"] as string) ?? "open",
-      isConfidential: row["is_confidential"] === true,
-      confirmedAt: (row["confirmed_at"] as string | null) ?? null,
-      likelyCause: (row["likely_cause"] as string | null) ?? null,
-      regulatoryReference: (row["regulatory_reference"] as string | null) ?? null,
-      abstainReason: (row["ai_abstain_reason"] as string | null) ?? null,
-      photos: attached,
-    };
-  });
+      return {
+        id: row["id"] as string,
+        ref: row["ref"] as string,
+        sequence: row["sequence"] as number,
+        statusId: (row["status"] as string) ?? "",
+        severityId: (row["severity"] as string | null) ?? null,
+        categoryId: (row["hazard_category"] as string | null) ?? null,
+        findingText: (row["finding_text"] as string) ?? "",
+        remedialText: (row["remedial_text"] as string) ?? "",
+        captureFields: fields(row["capture_fields"]),
+        assignedTrade: (row["assigned_trade"] as string | null) ?? null,
+        suggestedTrade: (row["ai_suggested_trade"] as string | null) ?? null,
+        tradeReasoning: (row["ai_trade_reasoning"] as string | null) ?? null,
+        tradeConfidence: (row["ai_trade_confidence"] as number | null) ?? null,
+        dueDate: (row["due_date"] as string | null) ?? null,
+        lifecycleState: (row["lifecycle_state"] as string) ?? "open",
+        isConfidential: row["is_confidential"] === true,
+        confirmedAt: (row["confirmed_at"] as string | null) ?? null,
+        likelyCause: (row["likely_cause"] as string | null) ?? null,
+        regulatoryReference: (row["regulatory_reference"] as string | null) ?? null,
+        abstainReason: (row["ai_abstain_reason"] as string | null) ?? null,
+        photos: attached,
+      };
+    }),
+    // Upload order wins over the order the AI happened to finish in.
+    (finding) => ({
+      photoSequence: finding.photos[0]?.photo.sequence ?? null,
+      sequence: finding.sequence,
+    }),
+  );
 
   return {
     report: {
