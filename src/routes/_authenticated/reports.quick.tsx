@@ -25,6 +25,7 @@ import {
   REPORT_TONES,
   REPORT_TYPES,
   SPECIAL_REQUEST_LIMIT,
+  isMinimalBriefTemplate,
   presetById,
   reportTypeById,
   sanitiseSpecialRequest,
