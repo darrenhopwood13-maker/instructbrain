@@ -19,6 +19,7 @@ import {
   type ResultView,
 } from "@/lib/report/grouping";
 import { itemLabel, itemLabels } from "@/lib/item-label";
+import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
