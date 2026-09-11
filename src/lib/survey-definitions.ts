@@ -794,6 +794,55 @@ Say what is visible, say whether it reads as active or historic and why, and off
   supportsDistribution: false,
 };
 
+/**
+ * The stripped-back record. One photograph, one line: what the item is and the
+ * condition or issue seen. No remedial advice, no severity, no target date, no
+ * trade, no close-out. The focus of the record is written by the person each
+ * time and arrives through the brief, not through this definition.
+ */
+export const photoConditionRecordDefinition: SurveyDefinition = {
+  id: "photo_condition_record",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Photo condition record",
+  category: "record",
+  findingsPerPhoto: "single",
+  statuses: [
+    { id: "sound", label: "Sound — nothing to report", tone: "pass" },
+    { id: "issue_identified", label: "Issue identified", tone: "fail" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [],
+  captureFields: [],
+  aiGuidance: {
+    persona: `Recording a plain photographic record. One entry per photograph, one or two short sentences at most: name the item in focus, then state its condition or the issue seen.
+
+No repairs, no recommendations, no rating of how bad it is, no timescale, no responsibility. The reader wants the observation and nothing else.`,
+    focus:
+      "The item the photograph is plainly focused on. The person commissioning the record states what they are recording; follow that focus.",
+    descriptionGuidance:
+      "Write the entry as: the item, then its condition or the issue seen. For example 'Skirting to the east wall. Scuffed and lifting at the joint.' Never exceed two sentences and never add commentary on how it looks overall.",
+    remedialGuidance:
+      "This record specifies no works. Always return remedial as null.",
+    severityGuidance: "This record does not rate severity. Always return severity as null.",
+    failCriteria:
+      "Where the photograph plainly shows damage, a defect or an incomplete item, record it as an issue identified. Where the item is plainly in order, record it as sound.",
+    excludeCriteria:
+      "Do not speculate about causes, consequences, cost or compliance. Do not judge anything the photograph does not plainly show.",
+    peopleGuidance:
+      "Describe items and conditions only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "This record does not attribute responsibility. Always return suggested_trade as null.",
+    abstainGuidance:
+      "If the photograph is too dark, distant, blurred or obstructed to identify the item or state its condition, return not_assessed rather than guessing.",
+  },
+  defaultRemedial: "",
+  outputSections: ["cover", "schedule"],
+  requiresTradeAssignment: false,
+  requiresLifecycle: false,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
@@ -804,6 +853,7 @@ export const systemDefinitions: SurveyDefinition[] = [
   mechanicalServicesDefinition,
   fitOutQualityDefinition,
   dampMoistureDefinition,
+  photoConditionRecordDefinition,
 ];
 
 

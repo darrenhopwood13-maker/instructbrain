@@ -150,6 +150,17 @@ export const REPORT_PRESETS = [
     specialRequest: "",
   },
   {
+    id: "condition_record",
+    label: "Condition record",
+    description: "A photograph and one line of condition. Nothing else.",
+    tone: "sharp" as ReportToneId,
+    reportType: "assessment" as ReportTypeId,
+    includeFix: false,
+    includeSeverity: false,
+    advisoryFooter: false,
+    specialRequest: "",
+  },
+  {
     id: "blank",
     label: "Start blank",
     description: "No preset. Choose your own tone and request.",
@@ -191,6 +202,17 @@ export const EMPTY_BRIEF: ReportBrief = {
   surveyTypes: [],
 };
 
+/**
+ * Templates that carry no remedial advice, no severity and no target date. The
+ * brief hides those controls and forces them off, whatever a stored setup says.
+ * Nothing discipline-specific is decided here: only which controls apply.
+ */
+export const MINIMAL_BRIEF_TEMPLATE_IDS = ["photo_condition_record"] as const;
+
+export function isMinimalBriefTemplate(id: string | null | undefined): boolean {
+  return typeof id === "string" && MINIMAL_BRIEF_TEMPLATE_IDS.includes(id as never);
+}
+
 /** A free-text request must never be able to rewrite the status rules. */
 export const SPECIAL_REQUEST_LIMIT = 500;
 
@@ -219,14 +241,16 @@ export function coerceBrief(value: unknown): ReportBrief | null {
   const reportType = reportTypeById(
     typeof raw["reportType"] === "string" ? raw["reportType"] : null,
   );
+  const minimal = surveyTypes.some((entry) => isMinimalBriefTemplate(entry.id));
+  const stripped = reportType === "identifier" || minimal;
   return {
     presetId: typeof raw["presetId"] === "string" ? raw["presetId"] : null,
     tone: toneById(typeof raw["tone"] === "string" ? raw["tone"] : null).id,
     reportType,
-    // An identifier report never carries a fix or a severity, whatever the
-    // stored switches say.
-    includeFix: reportType === "identifier" ? false : boolOr(raw["includeFix"], true),
-    includeSeverity: reportType === "identifier" ? false : boolOr(raw["includeSeverity"], true),
+    // An identifier report — and a minimal record template — never carries a
+    // fix or a severity, whatever the stored switches say.
+    includeFix: stripped ? false : boolOr(raw["includeFix"], true),
+    includeSeverity: stripped ? false : boolOr(raw["includeSeverity"], true),
     advisoryFooter: boolOr(raw["advisoryFooter"], false),
     specialRequest: sanitiseSpecialRequest(
       typeof raw["specialRequest"] === "string" ? raw["specialRequest"] : "",
