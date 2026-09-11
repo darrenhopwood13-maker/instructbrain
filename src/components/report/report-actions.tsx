@@ -161,6 +161,10 @@ export function ReportActions({
       }),
   });
 
+  // Opening a dialog from a menu item needs the menu fully closed first,
+  // otherwise the focus handoff fights and the dialog never appears.
+  const openLater = (open: () => void) => window.setTimeout(open, 0);
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -168,15 +172,11 @@ export function ReportActions({
           reportId={document.report.id}
           value={document.report.outputLanguage}
         />
-        <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(false)}>
-          <Eye aria-hidden="true" className="mr-1.5 size-4" />
-          Preview
-        </Button>
-
         <Button
           type="button"
           variant="quiet"
           size="sm"
+          className="min-h-11"
           disabled={pdf.isPending}
           onClick={() => pdf.mutate()}
         >
@@ -187,35 +187,13 @@ export function ReportActions({
           )}
           Download PDF
         </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => openPrint(true)}>
-          <Printer aria-hidden="true" className="mr-1.5 size-4" />
-          Print
-
-        </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => setShareOpen(true)}>
-          <Share2 aria-hidden="true" className="mr-1.5 size-4" />
-          Share
-        </Button>
-        <Button
-          type="button"
-          variant="quiet"
-          size="sm"
-          disabled={summary.isPending || issued}
-          onClick={() => summary.mutate()}
-        >
-          {summary.isPending ? (
-            <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
-          ) : (
-            <Sparkles aria-hidden="true" className="mr-1.5 size-4" />
-          )}
-          Draft summary
-        </Button>
 
         {issued ? (
           <Button
             type="button"
             variant="quiet"
             size="sm"
+            className="min-h-11"
             disabled={reopen.isPending}
             onClick={() => reopen.mutate()}
           >
@@ -223,11 +201,73 @@ export function ReportActions({
             Reopen for editing
           </Button>
         ) : (
-          <Button type="button" variant="brand" size="sm" onClick={() => setIssueOpen(true)}>
+          <Button
+            type="button"
+            variant="brand"
+            size="sm"
+            className="min-h-11"
+            onClick={() => setIssueOpen(true)}
+          >
             <Send aria-hidden="true" className="mr-1.5 size-4" />
             Issue report
           </Button>
         )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="quiet"
+              size="sm"
+              className="min-h-11"
+              aria-label="More report actions"
+            >
+              <MoreHorizontal aria-hidden="true" className="mr-1.5 size-4" />
+              More
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuItem
+              className="min-h-11"
+              onSelect={() => openLater(() => openPrint(false))}
+            >
+              <Eye aria-hidden="true" className="mr-2 size-4" />
+              Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="min-h-11"
+              onSelect={() => openLater(() => openPrint(true))}
+            >
+              <Printer aria-hidden="true" className="mr-2 size-4" />
+              Print
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="min-h-11"
+              onSelect={() => openLater(() => setShareOpen(true))}
+            >
+              <Share2 aria-hidden="true" className="mr-2 size-4" />
+              Share
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="min-h-11"
+              disabled={summary.isPending || issued}
+              onSelect={() => openLater(() => summary.mutate())}
+            >
+              {summary.isPending ? (
+                <Loader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Sparkles aria-hidden="true" className="mr-2 size-4" />
+              )}
+              Draft summary
+            </DropdownMenuItem>
+            {children ? (
+              <>
+                <DropdownMenuSeparator />
+                {children}
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <IssueDialog
