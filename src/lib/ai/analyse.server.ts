@@ -289,9 +289,12 @@ async function clearPreviousDrafts(
  */
 export async function analysePhotoForReport(
   client: AnyClient,
-  input: { reportId: string; photoId: string; force?: boolean },
+  input: { reportId: string; photoId: string; force?: boolean; fast?: boolean },
 ): Promise<PhotoAnalysisResult> {
-  const baseConfig = aiConfig();
+  const configured = aiConfig();
+  // Fast mode is a single pass: no second opinion. It never changes the
+  // photograph sent, and an uncertain answer still resolves to not_assessed.
+  const baseConfig = input.fast ? { ...configured, escalationEnabled: false } : configured;
   const report = await loadReport(client, input.reportId);
   await assertWithinBudget(client, report.organisation_id);
 
