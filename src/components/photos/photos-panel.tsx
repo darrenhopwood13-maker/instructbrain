@@ -87,6 +87,7 @@ export function PhotosPanel({
   const [editing, setEditing] = useState<PhotoRow | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
   const lastToggledRef = useRef<string | null>(null);
 
   const planQuery = useQuery(organisationPlanQuery(organisationId));
@@ -114,7 +115,7 @@ export function PhotosPanel({
     void (async () => {
       const { data: report } = await supabase
         .from("reports")
-        .select("id, organisation_id")
+        .select("id, organisation_id, cover_photo_id")
         .eq("id", reportId)
         .maybeSingle();
       if (!active) return;
@@ -123,6 +124,7 @@ export function PhotosPanel({
         return;
       }
       setOrganisationId(report.organisation_id);
+      setCoverPhotoId(report.cover_photo_id ?? null);
       try {
         await refresh();
         if (active) setReady("ready");

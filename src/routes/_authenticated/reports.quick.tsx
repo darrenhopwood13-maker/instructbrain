@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createReport } from "@/lib/data";
+import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
+import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -169,6 +171,9 @@ function CustomReport() {
       : [],
   };
 
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
   const applyPreset = (id: string) => {
     setPresetId(id);
     const preset = presetById(id);
@@ -203,6 +208,8 @@ function CustomReport() {
         brief,
         surveyTypeIds: [primary.id],
       });
+      // Optional title-page photo and per-report logo, chosen at creation.
+      await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
       return { id, frozen, files };
     },
     onSuccess: async ({ id, frozen, files }) => {
@@ -597,6 +604,17 @@ function CustomReport() {
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {!capturing ? (
+        <CoverBrandingFields
+          organisationId={organisationId}
+          coverFile={coverFile}
+          logoFile={logoFile}
+          onCoverFile={setCoverFile}
+          onLogoFile={setLogoFile}
+          disabled={start.isPending}
+        />
       ) : null}
 
       {capturing && activeSnapshot ? (
