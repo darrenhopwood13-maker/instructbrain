@@ -95,6 +95,7 @@ export function ReviewList({
    */
   const [overrides, setOverrides] = useState<Record<string, Partial<Finding>>>({});
   const [active, setActive] = useState(0);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
   // Stable review order: unresolved `not_assessed` items sort to the top when
   // first seen, and nothing reorders underneath the reviewer afterwards.
