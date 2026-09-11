@@ -525,16 +525,18 @@ function FindingRow({
                 patch({ finding_text: next }, { finding_text: finding.findingText })
               }
             />
-            <InlineField
-              label="Remedial action"
-              value={finding.remedialText}
-              readOnly={readOnly}
-              multiline
-              rows={3}
-              onSave={async (next) =>
-                patch({ remedial_text: next }, { remedial_text: finding.remedialText })
-              }
-            />
+            {isMinimalBriefTemplate((snapshot as { id?: string }).id) ? null : (
+              <InlineField
+                label="Remedial action"
+                value={finding.remedialText}
+                readOnly={readOnly}
+                multiline
+                rows={3}
+                onSave={async (next) =>
+                  patch({ remedial_text: next }, { remedial_text: finding.remedialText })
+                }
+              />
+            )}
 
             {definesField(snapshot, "likely_cause") ? (
               <InlineField
