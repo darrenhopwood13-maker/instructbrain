@@ -56,6 +56,9 @@ export function AnalysisPanel({
   const run = useAnalysisRun(reportId);
   const { organisationId } = useOrganisations();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Standard keeps the second opinion. Fast is a single pass, chosen per run.
+  const [speed, setSpeed] = useState<"standard" | "fast">("standard");
+  const fast = speed === "fast";
 
   const progress = run.totals.total > 0 ? (run.totals.completed / run.totals.total) * 100 : 0;
 
@@ -77,6 +80,24 @@ export function AnalysisPanel({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-[13rem]">
+              <Label htmlFor="analysis-speed" className="text-xs text-muted-foreground">
+                Speed
+              </Label>
+              <Select
+                value={speed}
+                onValueChange={(value) => setSpeed(value === "fast" ? "fast" : "standard")}
+                disabled={run.running}
+              >
+                <SelectTrigger id="analysis-speed" className="mt-1">
+                  <SelectValue placeholder="Standard" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard — second opinion on</SelectItem>
+                  <SelectItem value="fast">Fast — single pass</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {run.running ? (
               <Button type="button" variant="quiet" onClick={run.cancel}>
                 Cancel run
