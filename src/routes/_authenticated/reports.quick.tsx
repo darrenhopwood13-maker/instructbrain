@@ -118,6 +118,72 @@ function CustomReport() {
   const cameraRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
 
+  // The last brief this device used, restored after hydration so a returning
+  // user lands on a screen where the only thing to do is take a photograph.
+  const [recalled, setRecalled] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(LAST_BRIEF_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (
+          !typeParam &&
+          typeof saved["templateId"] === "string" &&
+          systemDefinitions.some((definition) => definition.id === saved["templateId"])
+        ) {
+          setTemplateId(saved["templateId"] as string);
+        }
+        if (typeof saved["presetId"] === "string") setPresetId(saved["presetId"]);
+        if (typeof saved["tone"] === "string") setTone(toneById(saved["tone"]).id);
+        if (typeof saved["reportType"] === "string") {
+          setReportType(reportTypeById(saved["reportType"]));
+        }
+        if (typeof saved["includeFix"] === "boolean") setIncludeFix(saved["includeFix"]);
+        if (typeof saved["includeSeverity"] === "boolean") {
+          setIncludeSeverity(saved["includeSeverity"]);
+        }
+        if (typeof saved["advisoryFooter"] === "boolean") {
+          setAdvisoryFooter(saved["advisoryFooter"]);
+        }
+      }
+    } catch {
+      // A corrupt or blocked store simply means the defaults stand.
+    }
+    setRecalled(true);
+    // Restore once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!recalled) return;
+    try {
+      window.localStorage.setItem(
+        LAST_BRIEF_KEY,
+        JSON.stringify({
+          templateId,
+          presetId,
+          tone,
+          reportType,
+          includeFix,
+          includeSeverity,
+          advisoryFooter,
+        }),
+      );
+    } catch {
+      // Storage unavailable — the brief simply is not remembered.
+    }
+  }, [
+    recalled,
+    templateId,
+    presetId,
+    tone,
+    reportType,
+    includeFix,
+    includeSeverity,
+    advisoryFooter,
+  ]);
+
+
   const templates = useQuery({
     queryKey: ["report-templates", organisationId],
     queryFn: () => loadTemplates({ data: { organisationId: organisationId as string } }),
