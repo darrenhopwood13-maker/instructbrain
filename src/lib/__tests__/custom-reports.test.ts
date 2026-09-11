@@ -10,6 +10,7 @@ import {
 import { applyToneRules } from "@/lib/report/tone-post-process";
 import { sectionsFor, SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import type { DocFinding } from "@/lib/report/document";
+import { systemDefinitions } from "@/lib/survey-definitions";
 
 function finding(id: string, sequence: number, surveyType?: string): DocFinding {
   return {
@@ -163,5 +164,43 @@ describe("report sections", () => {
     );
     expect(sections[0]!.findings.map((item) => item.ref)).toEqual(["2"]);
     expect(sections[1]!.findings.map((item) => item.ref)).toEqual(["1", "3"]);
+  });
+});
+
+describe("photo condition record template", () => {
+  it("is a system template with not_assessed, no severity and no capture fields", () => {
+    const definition = systemDefinitions.find((item) => item.id === "photo_condition_record");
+    expect(definition).toBeDefined();
+    expect(definition!.statuses.some((status) => status.id === "not_assessed")).toBe(true);
+    expect(definition!.severityScale ?? []).toHaveLength(0);
+    expect(definition!.captureFields ?? []).toHaveLength(0);
+    expect(definition!.requiresTradeAssignment).toBe(false);
+    expect(definition!.requiresLifecycle).toBe(false);
+    expect(definition!.supportsDistribution).toBe(false);
+    expect(definition!.findingsPerPhoto).toBe("single");
+  });
+
+  it("forces the fix and severity off however the stored brief was saved", () => {
+    const brief = coerceBrief({
+      tone: "formal",
+      reportType: "assessment",
+      includeFix: true,
+      includeSeverity: true,
+      surveyTypes: [{ id: "photo_condition_record", label: "Photo condition record" }],
+    });
+    expect(brief.includeFix).toBe(false);
+    expect(brief.includeSeverity).toBe(false);
+  });
+
+  it("leaves an ordinary template's switches alone", () => {
+    const brief = coerceBrief({
+      tone: "formal",
+      reportType: "assessment",
+      includeFix: true,
+      includeSeverity: true,
+      surveyTypes: [{ id: "snagging", label: "Snagging" }],
+    });
+    expect(brief.includeFix).toBe(true);
+    expect(brief.includeSeverity).toBe(true);
   });
 });
