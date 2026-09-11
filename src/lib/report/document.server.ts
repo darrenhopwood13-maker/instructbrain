@@ -10,6 +10,7 @@ import { coerceSnapshot } from "@/lib/report/snapshot";
 import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
+import { resolveLogoPath } from "@/lib/report/logo";
 import type {
   DocFinding,
   DocFindingPhoto,
@@ -67,7 +68,7 @@ export async function loadReportDocument(
   const { data: reportRow } = await db
     .from("reports")
     .select(
-      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot, brief",
+      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, brief",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -119,10 +120,15 @@ export async function loadReportDocument(
             )
         ).data ?? []) as Array<Record<string, any>>);
 
+  // A per-report logo wins over the organisation's saved logo.
+  const logoPath = resolveLogoPath(
+    report["logo_path"] as string | null,
+    organisation?.["logo_path"] as string | null,
+  );
   const urls = await signedUrls(db, [
     ...photos.map((photo) => photo["storage_path"] as string),
     ...photos.map((photo) => photo["thumbnail_path"] as string),
-    ...(organisation?.["logo_path"] ? [organisation["logo_path"] as string] : []),
+    ...(logoPath ? [logoPath] : []),
   ]);
 
   const docPhotos: DocPhoto[] = photos.map((photo) => ({
@@ -209,9 +215,7 @@ export async function loadReportDocument(
           id: organisation["id"],
           name: organisation["name"],
           brandColour: organisation["brand_colour"] ?? null,
-          logoUrl: organisation["logo_path"]
-            ? (urls.get(organisation["logo_path"] as string) ?? null)
-            : null,
+          logoUrl: logoPath ? (urls.get(logoPath) ?? null) : null,
           address: organisation["address"] ?? null,
         }
       : null,

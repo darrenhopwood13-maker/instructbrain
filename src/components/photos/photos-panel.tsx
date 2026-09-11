@@ -3,6 +3,7 @@ import { Camera, ImagePlus, Info, Loader2, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { organisationPlanQuery } from "@/lib/plans";
 import { toast } from "sonner";
+import { setCoverPhoto } from "@/lib/report/branding";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -87,6 +88,7 @@ export function PhotosPanel({
   const [editing, setEditing] = useState<PhotoRow | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
   const lastToggledRef = useRef<string | null>(null);
 
   const planQuery = useQuery(organisationPlanQuery(organisationId));
@@ -114,7 +116,7 @@ export function PhotosPanel({
     void (async () => {
       const { data: report } = await supabase
         .from("reports")
-        .select("id, organisation_id")
+        .select("id, organisation_id, cover_photo_id")
         .eq("id", reportId)
         .maybeSingle();
       if (!active) return;
@@ -123,6 +125,7 @@ export function PhotosPanel({
         return;
       }
       setOrganisationId(report.organisation_id);
+      setCoverPhotoId(report.cover_photo_id ?? null);
       try {
         await refresh();
         if (active) setReady("ready");
@@ -609,6 +612,24 @@ export function PhotosPanel({
             idPrefix="edit"
           />
           <DialogFooter>
+            <Button
+              variant="quiet"
+              disabled={!editing || editing.id === coverPhotoId}
+              onClick={() => {
+                if (!editing) return;
+                void (async () => {
+                  try {
+                    await setCoverPhoto(reportId, editing.id);
+                    setCoverPhotoId(editing.id);
+                    toast.success("Photograph set as the report cover.");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "The cover could not be set.");
+                  }
+                })();
+              }}
+            >
+              {editing && editing.id === coverPhotoId ? "Cover photo" : "Use as cover"}
+            </Button>
             <Button variant="quiet" onClick={() => setEditing(null)}>
               Cancel
             </Button>

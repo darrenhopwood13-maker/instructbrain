@@ -168,11 +168,18 @@ export async function photoAnalysisStates(
   client: AnyClient,
   reportId: string,
 ): Promise<PhotoAnalysisState[]> {
-  const { data: photoRows, error } = await table(client, "photos")
-    .select("id, original_filename, sequence")
-    .eq("report_id", reportId)
-    .order("sequence", { ascending: true });
+  const [{ data: photoRows, error }, { data: coverRows }] = await Promise.all([
+    table(client, "photos")
+      .select("id, original_filename, sequence")
+      .eq("report_id", reportId)
+      .order("sequence", { ascending: true }),
+    table(client, "reports").select("cover_photo_id").eq("id", reportId).limit(1),
+  ]);
   if (error) throw new Error(error.message);
+  // A dedicated cover photograph carries no finding and is never analysed.
+  const coverPhotoId =
+    ((coverRows ?? [])[0] as { cover_photo_id?: string | null } | undefined)?.cover_photo_id ??
+    null;
   const photos = (photoRows ?? []) as Array<{
     id: string;
     original_filename: string | null;
@@ -196,7 +203,7 @@ export async function photoAnalysisStates(
     photoId: photo.id,
     filename: photo.original_filename,
     sequence: photo.sequence,
-    analysed: analysed.has(photo.id),
+    analysed: analysed.has(photo.id) || photo.id === coverPhotoId,
   }));
 }
 
