@@ -27,6 +27,8 @@ import {
 } from "@/lib/survey-types";
 import { StatusPill } from "@/components/status-pill";
 import { TemplateSelect } from "@/components/template-select";
+import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
+import { applyBranding } from "@/lib/report/branding";
 import { toast } from "sonner";
 
 type NewReportSearch = { project?: string | undefined; type?: string | undefined };
@@ -73,6 +75,9 @@ function NewReport() {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
   // Only the inventory type asks for its own document header; the others stay
@@ -93,7 +98,7 @@ function NewReport() {
       const autoTitle = `${definitionLabel(snapshotOf(selected))} — ${project?.name ?? "Report"}`;
       // The definition is COPIED into the report at creation; the report never
       // reads a live definition again.
-      return createReport({
+      const id = await createReport({
         organisationId,
         projectId: effectiveProjectId,
         title: asksForHeader && title.trim() !== "" ? title : autoTitle,
@@ -102,8 +107,14 @@ function NewReport() {
         definition: snapshotOf(selected),
         authorId: userId,
       });
+      // Optional title-page photo and per-report logo, chosen at creation.
+      await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
+      return id;
     },
-
+    onSuccess: (id) => {
+      void navigate({ to: "/reports/$id", params: { id } });
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   return (
@@ -331,6 +342,15 @@ function NewReport() {
           </section>
         ) : null}
       </div>
+
+      <CoverBrandingFields
+        organisationId={organisationId}
+        coverFile={coverFile}
+        logoFile={logoFile}
+        onCoverFile={setCoverFile}
+        onLogoFile={setLogoFile}
+        disabled={mutation.isPending}
+      />
 
       {mutation.error ? (
         <div className="mt-6">
