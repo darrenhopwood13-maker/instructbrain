@@ -3,6 +3,7 @@ import { Camera, ImagePlus, Info, Loader2, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { organisationPlanQuery } from "@/lib/plans";
 import { toast } from "sonner";
+import { setCoverPhoto } from "@/lib/report/branding";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -611,6 +612,24 @@ export function PhotosPanel({
             idPrefix="edit"
           />
           <DialogFooter>
+            <Button
+              variant="quiet"
+              disabled={!editing || editing.id === coverPhotoId}
+              onClick={() => {
+                if (!editing) return;
+                void (async () => {
+                  try {
+                    await setCoverPhoto(reportId, editing.id);
+                    setCoverPhotoId(editing.id);
+                    toast.success("Photograph set as the report cover.");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "The cover could not be set.");
+                  }
+                })();
+              }}
+            >
+              {editing && editing.id === coverPhotoId ? "Cover photo" : "Use as cover"}
+            </Button>
             <Button variant="quiet" onClick={() => setEditing(null)}>
               Cancel
             </Button>
