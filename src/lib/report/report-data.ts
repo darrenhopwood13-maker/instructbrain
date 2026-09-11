@@ -85,7 +85,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const reports = unwrap(
         await from("reports")
           .select(
-            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, output_language, survey_type_snapshot, author_id",
+            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, author_id",
           )
           .eq("id", reportId)
           .limit(1),
@@ -136,10 +136,12 @@ export const reportDocumentQuery = (reportId: string) =>
                 ),
             ) as any[]) ?? []);
 
+      // A per-report logo wins over the organisation's saved logo.
+      const logoPath = resolveLogoPath(report.logo_path, organisation?.logo_path);
       const urls = await signedUrls([
         ...photos.map((photo) => photo.storage_path),
         ...photos.map((photo) => photo.thumbnail_path).filter(Boolean),
-        ...(organisation?.logo_path ? [organisation.logo_path] : []),
+        ...(logoPath ? [logoPath] : []),
       ]);
 
       const docPhotos: DocPhoto[] = photos.map((photo) => ({
@@ -225,9 +227,7 @@ export const reportDocumentQuery = (reportId: string) =>
               id: organisation.id,
               name: organisation.name,
               brandColour: organisation.brand_colour ?? null,
-              logoUrl: organisation.logo_path
-                ? (urls.get(organisation.logo_path) ?? null)
-                : null,
+              logoUrl: logoPath ? (urls.get(logoPath) ?? null) : null,
               address: organisation.address ?? null,
             }
           : null,
