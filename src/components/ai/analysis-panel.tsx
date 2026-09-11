@@ -52,13 +52,24 @@ export function AnalysisPanel({
   snapshot: SurveyTypeSnapshot;
 }) {
   const run = useAnalysisRun(reportId);
-  const { organisationId } = useOrganisations();
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Standard keeps the second opinion. Fast is a single pass, chosen per run.
   const [speed, setSpeed] = useState<"standard" | "fast">("standard");
   const fast = speed === "fast";
+  // Once a run is done the list collapses to what still needs a person —
+  // failures, cancellations and photographs with Not assessed findings.
+  const [showAll, setShowAll] = useState(false);
 
   const progress = run.totals.total > 0 ? (run.totals.completed / run.totals.total) * 100 : 0;
+
+  const needsAttention = (photo: PhotoRun) =>
+    photo.state === "failed" ||
+    photo.state === "skipped" ||
+    (photo.message?.includes("not assessed") ?? false);
+
+  const collapsed = !showAll && !run.running;
+  const visiblePhotos = collapsed ? run.photos.filter(needsAttention) : run.photos;
+  const attentionCount = run.photos.filter(needsAttention).length;
 
   return (
     <div className="space-y-4">
