@@ -168,7 +168,7 @@ function ReportWorkspace() {
 
   if (query.isPending) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <LoadingState label="Loading this report…" />
       </AppShell>
     );
@@ -176,7 +176,7 @@ function ReportWorkspace() {
 
   if (query.isError) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <ErrorState
           title="This report could not be loaded"
           error={query.error}
@@ -188,7 +188,7 @@ function ReportWorkspace() {
 
   if (!query.data) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <EmptyState
           icon={FileText}
           eyebrow="Not found"
@@ -209,7 +209,7 @@ function ReportWorkspace() {
   const locked = doc?.report.status === "issued";
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           {project ? "Projects" : "Custom reports"}
