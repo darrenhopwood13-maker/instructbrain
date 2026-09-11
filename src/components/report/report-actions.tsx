@@ -54,17 +54,21 @@ import type { ResultView } from "@/lib/report/grouping";
 
 
 /**
- * The output actions live in the report header, visible, never behind a menu:
- * preview, print/PDF, share, and the issue gate itself.
+ * The output actions live in the report header. The working set stays visible —
+ * language, Download PDF, and the issue gate — and the occasional actions sit
+ * behind one More menu so the header stays calm on a phone.
+ * Extra menu entries (distribution, attach, delete) arrive as `children`.
  */
 export function ReportActions({
   document,
   organisationId,
   resultView = "severity",
+  children,
 }: {
   document: ReportDocument;
   organisationId: string | null;
   resultView?: ResultView;
+  children?: ReactNode;
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
