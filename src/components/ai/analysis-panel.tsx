@@ -189,7 +189,7 @@ export function AnalysisPanel({
                   variant="quiet"
                   size="sm"
                   disabled={run.running}
-                  onClick={() => void run.reanalyse(photo.photoId)}
+                  onClick={() => void run.reanalyse(photo.photoId, fast)}
                 >
                   <RotateCcw className="mr-1.5 size-3.5" aria-hidden="true" />
                   Re-analyse
@@ -214,6 +214,9 @@ export function AnalysisPanel({
               Everything produced is a draft: nothing is confirmed, no trade is assigned, and
               nothing is sent to anyone. You can cancel part-way through and whatever has already
               been drafted is kept. Usage counts against this organisation&rsquo;s monthly AI cap.
+              {fast
+                ? " Fast is a single pass: no second opinion. Anything uncertain is still marked Not assessed."
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -221,7 +224,7 @@ export function AnalysisPanel({
             <AlertDialogAction
               onClick={() => {
                 setConfirmOpen(false);
-                void run.analyseAll();
+                void run.analyseAll(fast);
               }}
             >
               Analyse photographs
