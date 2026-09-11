@@ -167,8 +167,6 @@ export function AnalysisPanel({
         ) : null}
       </div>
 
-      <AiUsageMeter organisationId={organisationId} />
-
       {run.photos.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-border bg-surface-raised shadow-raised">
           <h3 className="border-b border-border px-4 py-3 text-sm font-semibold">
