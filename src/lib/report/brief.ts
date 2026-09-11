@@ -202,6 +202,17 @@ export const EMPTY_BRIEF: ReportBrief = {
   surveyTypes: [],
 };
 
+/**
+ * Templates that carry no remedial advice, no severity and no target date. The
+ * brief hides those controls and forces them off, whatever a stored setup says.
+ * Nothing discipline-specific is decided here: only which controls apply.
+ */
+export const MINIMAL_BRIEF_TEMPLATE_IDS = ["photo_condition_record"] as const;
+
+export function isMinimalBriefTemplate(id: string | null | undefined): boolean {
+  return typeof id === "string" && MINIMAL_BRIEF_TEMPLATE_IDS.includes(id as never);
+}
+
 /** A free-text request must never be able to rewrite the status rules. */
 export const SPECIAL_REQUEST_LIMIT = 500;
 
