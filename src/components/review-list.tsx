@@ -404,26 +404,48 @@ export function ReviewList({
         </Button>
       </div>
 
-      <div
-        role="note"
-        className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-sunken px-4 py-3 text-xs text-muted-foreground"
-      >
-        <span className="font-semibold uppercase tracking-[0.12em]">Keyboard</span>
-        <span>
-          <span className="kbd-hint">J</span> <span className="kbd-hint">K</span> move
-        </span>
-        {shortcuts
-          .filter((shortcut) => shortcut.key)
-          .map((shortcut) => (
-            <span key={shortcut.status.id}>
-              <span className="kbd-hint">{shortcut.key.toUpperCase()}</span>{" "}
-              {shortcut.status.label.toLowerCase()}
-            </span>
-          ))}
-        <span>
-          <span className="kbd-hint">↵</span> confirm
-        </span>
+      <div className="mt-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-11 text-muted-foreground"
+          aria-haspopup="dialog"
+          onClick={() => setShortcutsOpen(true)}
+        >
+          <Keyboard aria-hidden="true" className="mr-1.5 size-4" />
+          Keyboard shortcuts
+        </Button>
       </div>
+
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Keyboard shortcuts</DialogTitle>
+            <DialogDescription>
+              Review a whole list without the mouse. Shortcuts apply while a finding is
+              focused.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li>
+              <span className="kbd-hint">J</span> <span className="kbd-hint">K</span> move between
+              findings
+            </li>
+            {shortcuts
+              .filter((shortcut) => shortcut.key)
+              .map((shortcut) => (
+                <li key={shortcut.status.id}>
+                  <span className="kbd-hint">{shortcut.key.toUpperCase()}</span> mark{" "}
+                  {shortcut.status.label.toLowerCase()}
+                </li>
+              ))}
+            <li>
+              <span className="kbd-hint">↵</span> confirm the focused finding
+            </li>
+          </ul>
+        </DialogContent>
+      </Dialog>
 
       {position ? (
         <div className="mt-4 rounded-xl border border-border bg-surface-raised p-3">
