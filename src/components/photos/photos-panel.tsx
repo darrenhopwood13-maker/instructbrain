@@ -361,10 +361,6 @@ export function PhotosPanel({
       <section className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:p-5">
         <p className="eyebrow">Step one</p>
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Each photograph is uploaded at full resolution and untouched — that original is what the
-          analysis reads. A small preview is generated separately for this grid only.
-        </p>
 
         {fields.length > 0 ? (
           <div className="mt-4 rounded-lg border border-border bg-surface p-3.5">
@@ -392,9 +388,6 @@ export function PhotosPanel({
                 compact
               />
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Required fields are flagged but never block an upload. Complete them later, off site.
-            </p>
           </div>
         ) : null}
 
@@ -421,11 +414,6 @@ export function PhotosPanel({
             event.target.value = "";
           }}
         />
-
-        <p className="mt-3 text-xs text-muted-foreground">
-          iPhone HEIC photographs are supported. Whatever your phone hands over — HEIC or JPEG —
-          is stored as the original, and a full-resolution copy is made for analysis when needed.
-        </p>
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
           <Button

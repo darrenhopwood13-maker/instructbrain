@@ -133,7 +133,7 @@ function LandingHeader() {
 function Hero() {
   return (
     <section className="shell-container pb-12 pt-8 lg:pb-20 lg:pt-12">
-      <p className="wordmark whitespace-nowrap text-[clamp(2rem,8.5vw,7.5rem)] leading-none">
+      <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
         <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
       </p>
@@ -151,14 +151,14 @@ function Hero() {
         <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           Custom Reports, Project Reports and Weekly Compliance Registers — all from the photographs
           you already take. AI drafts referenced findings against the right construction template;
-          you confirm, sign off and issue a PDF with per-trade extracts.{" "}
-          <a
-            href="#how-it-works"
-            className="font-semibold text-brand-accent-ink underline underline-offset-4"
-          >
-            See how it works
-          </a>
+          you confirm, sign off and issue a PDF with per-trade extracts.
         </p>
+        <a
+          href="#how-it-works"
+          className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-brand-accent-ink no-underline"
+        >
+          See how it works
+        </a>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button variant="glass-orange" size="xl" asChild>
@@ -217,7 +217,7 @@ function RotatingSlogans() {
 
 function RoiSection() {
   return (
-    <section className="py-20 lg:py-28" aria-labelledby="roi-heading">
+    <section className="py-12 lg:py-16" aria-labelledby="roi-heading">
       <div className="shell-container">
         <Reveal>
           <p className="eyebrow">What it gives you back</p>
@@ -230,7 +230,7 @@ function RoiSection() {
             instructBrain.
           </p>
         </Reveal>
-        <div className="glass-panel mt-12 rounded-2xl p-6 sm:p-8">
+        <div className="glass-panel mt-8 rounded-2xl p-6 sm:p-8">
           <RoiRace />
         </div>
       </div>
@@ -275,14 +275,14 @@ const useCases = [
 
 function UseCases() {
   return (
-    <section className="shell-container py-20 lg:py-28" aria-labelledby="cases-heading">
+    <section className="shell-container py-12 lg:py-16" aria-labelledby="cases-heading">
       <Reveal>
         <p className="eyebrow">Where it earns its keep</p>
         <h2 id="cases-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
           Built for what you actually do on site
         </h2>
       </Reveal>
-      <ul className="mt-12 grid gap-6 lg:grid-cols-2">
+      <ul className="mt-8 grid gap-6 lg:grid-cols-2">
         {useCases.map((item, index) => (
           <Reveal key={item.title} as="li" delayMs={index * 80}>
             <li className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-7">
@@ -340,7 +340,7 @@ function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="py-20 lg:py-28"
+      className="py-12 lg:py-16"
       aria-labelledby="how-heading"
     >
       <div className="shell-container">
@@ -350,7 +350,7 @@ function HowItWorks() {
             Three steps, start to issued
           </h2>
         </Reveal>
-        <ol className="mt-12 grid gap-6 lg:grid-cols-3">
+        <ol className="mt-8 grid gap-6 lg:grid-cols-3">
           {steps.map((step, index) => (
             <Reveal key={step.title} as="li" delayMs={index * 100}>
               <li className="glass-panel rounded-2xl p-6 sm:p-7">
@@ -365,7 +365,7 @@ function HowItWorks() {
           ))}
         </ol>
 
-        <div className="mt-12 max-w-3xl">
+        <div className="mt-8 max-w-3xl">
           <ComplianceTicker />
         </div>
       </div>
@@ -375,7 +375,7 @@ function HowItWorks() {
 
 function PlainEnglish() {
   return (
-    <section className="shell-container py-20 lg:py-28" aria-labelledby="ai-heading">
+    <section className="shell-container py-12 lg:py-16" aria-labelledby="ai-heading">
       <div className="max-w-3xl">
         <Reveal>
           <p className="eyebrow">What the AI actually does</p>
@@ -462,7 +462,7 @@ function Pricing() {
   return (
     <section
       id="pricing"
-      className="py-20 lg:py-28"
+      className="py-12 lg:py-16"
       aria-labelledby="pricing-heading"
     >
       <div className="shell-container">
@@ -478,7 +478,7 @@ function Pricing() {
           </p>
         </Reveal>
 
-        <ul className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <ul className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {tiers.map((tier, index) => (
             <Reveal key={tier.name} as="li" delayMs={index * 80}>
               <li

@@ -114,7 +114,7 @@ export function CoverBrandingFields({
             <Button
               type="button"
               variant="quiet"
-              size="sm"
+              size="default" className="min-h-11"
               disabled={disabled}
               onClick={() => onCoverFile(null)}
             >
@@ -126,7 +126,7 @@ export function CoverBrandingFields({
           <Button
             type="button"
             variant="secondary"
-            size="sm"
+            size="default" className="min-h-11"
             disabled={disabled}
             onClick={() => coverInputRef.current?.click()}
           >
@@ -148,7 +148,7 @@ export function CoverBrandingFields({
             <Button
               type="button"
               variant="quiet"
-              size="sm"
+              size="default" className="min-h-11"
               disabled={disabled}
               onClick={() => onLogoFile(null)}
             >
@@ -172,7 +172,7 @@ export function CoverBrandingFields({
             <Button
               type="button"
               variant="quiet"
-              size="sm"
+              size="default" className="min-h-11"
               disabled={disabled}
               onClick={() => logoInputRef.current?.click()}
             >
