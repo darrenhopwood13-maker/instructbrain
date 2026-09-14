@@ -114,16 +114,18 @@ function LandingHeader() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             to="/auth/sign-in"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-sunken"
+            className="ib-btn-minline"
           >
             Sign in
           </Link>
-          <Button variant="brand" asChild>
-            <Link to="/auth/sign-up">
-              <span className="sm:hidden">Start</span>
-              <span className="hidden sm:inline">Start free</span>
-            </Link>
-          </Button>
+          <Link
+            to="/auth/sign-up"
+            className="ib-btn-3d sm"
+          >
+            <span className="sm:hidden">Start</span>
+            <span className="hidden sm:inline">Start free</span>
+            <ArrowRight aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </header>
@@ -132,7 +134,38 @@ function LandingHeader() {
 
 function Hero() {
   return (
-    <section className="shell-container pb-12 pt-8 lg:pb-20 lg:pt-12">
+    <section className="shell-container hero-blueprint hero-topo pb-12 pt-8 lg:pb-20 lg:pt-12">
+      <style>{`
+        /* Split Action button — primary CTA */
+        .ib-btn-split { display:inline-flex; align-items:stretch; border-radius:10px; overflow:hidden; background:#fff; border:1.5px solid #1a1a2e; box-shadow:0 3px 0 rgba(26,26,46,.18); text-decoration:none; }
+        .ib-btn-split .txt { padding:13px 18px 13px 22px; display:inline-flex; align-items:center; gap:9px; color:#1a1a2e; font-weight:600; font-size:15px; }
+        .ib-btn-split .arrow { background:#ff7b00; color:#fff; padding:0 18px; display:flex; align-items:center; transition:background .15s; }
+        .ib-btn-split:hover .arrow { background:#e56f00; }
+        .ib-btn-split:hover { box-shadow:0 4px 0 rgba(26,26,46,.22); }
+        /* Minimal Line button — secondary */
+        .ib-btn-minline { display:inline-flex; align-items:center; gap:9px; padding:12px 20px; border-radius:9px; border:1.5px solid rgba(26,26,46,.45); background:transparent; color:#1a1a2e; font-weight:600; font-size:15px; text-decoration:none; transition:background .15s; }
+        .ib-btn-minline.orange { color:#d16600; border-color:rgba(255,123,0,.55); }
+        .ib-btn-minline:hover { background:rgba(26,26,46,.05); }
+        /* Blueprint grid backdrop */
+        .hero-blueprint { position:relative; }
+        .hero-blueprint::before { content:""; position:absolute; inset:0; background-image: linear-gradient(rgba(43,75,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(43,75,255,.06) 1px, transparent 1px); background-size:38px 38px; pointer-events:none; }
+        /* 3D Element buttons (concept 08) — light deck */
+        .cta-deck { background: rgba(43,75,255,.07); border:1px solid rgba(43,75,255,.22); border-radius:22px; padding:30px 26px 26px; box-shadow:0 10px 34px rgba(43,75,255,.12); }
+        .ib-btn-3d { position:relative; display:flex; align-items:center; gap:8px; width:100%; padding:16px 70px 16px 18px; border-radius:999px; background:linear-gradient(180deg, rgba(43,75,255,.28) 0%, rgba(20,30,60,.55) 100%); border:1px solid rgba(255,255,255,.28); color:#fff; font-weight:600; font-size:14px; text-decoration:none; backdrop-filter:blur(4px); transition:transform .15s, border-color .15s; }
+        .ib-btn-3d:hover { transform:translateY(-2px); border-color:rgba(255,255,255,.5); }
+        .ib-btn-3d .obj { position:absolute; right:12px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:3px; }
+        .ib-btn-3d .obj img { width:54px; height:54px; object-fit:cover; border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.45); }
+        .ib-btn-3d .obj svg { width:18px; height:18px; }
+        .ib-btn-3d.orange .obj svg { color:#ff7b00; }
+        /* compact header variant */
+        .ib-btn-3d.sm { width:auto; padding:10px 20px; font-size:13px; gap:6px; }
+        .ib-btn-3d.sm svg { width:16px; height:16px; }
+        /* hero z-order so the 3D objects sit above the deck edge */
+        .cta-deck > * { position:relative; z-index:1; }
+        .cta-deck::before { content:""; position:absolute; inset:0; border-radius:22px; background:radial-gradient(500px 160px at 85% 0%, rgba(255,123,0,.12), transparent 60%); pointer-events:none; }
+        .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: radial-gradient(circle at 30% 30%, rgba(43,75,255,.12), transparent 60%), radial-gradient(circle at 70% 70%, rgba(255,123,0,.08), transparent 55%), repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, rgba(43,75,255,.05) 30px 32px); border-radius:50%; pointer-events:none; }
+        .hero-topo > * { position:relative; z-index:1; }
+      `}</style>
       <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
         <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
@@ -155,24 +188,41 @@ function Hero() {
         </p>
         <a
           href="#how-it-works"
-          className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-brand-accent-ink no-underline"
+          className="ib-btn-minline orange mt-4"
         >
           See how it works
         </a>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Button variant="glass-orange" size="xl" asChild>
-            <Link to="/auth/sign-up">
+        <div className="cta-deck mt-10 max-w-4xl">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link to="/auth/sign-up" className="ib-btn-3d">
               <ClipboardList aria-hidden="true" />
               Create custom report
+              <span className="obj">
+                <ArrowRight aria-hidden="true" />
+                <img src="/3d/hard-hat-t.png" alt="3D hard hat" />
+              </span>
             </Link>
-          </Button>
-          <Button variant="outline" size="xl" asChild>
-            <Link to="/auth/sign-up">
+            <Link to="/auth/sign-up" className="ib-btn-3d orange">
               <FileText aria-hidden="true" />
               Create project report
+              <span className="obj">
+                <ArrowRight aria-hidden="true" />
+                <img src="/3d/blueprints-t.png" alt="3D blueprints" />
+              </span>
             </Link>
-          </Button>
+            <Link to="/auth/sign-up" className="ib-btn-3d">
+              <ShieldCheck aria-hidden="true" />
+              Create compliance register
+              <span className="obj">
+                <ArrowRight aria-hidden="true" />
+                <img src="/3d/clipboard-t.png" alt="3D clipboard" />
+              </span>
+            </Link>
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Free for your first 3 reports. No card required.
+          </p>
         </div>
 
         <RotatingSlogans />
