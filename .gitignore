@@ -33,3 +33,4 @@ dist-ssr
 
 # env — never commit secrets
 .env
+.env.local

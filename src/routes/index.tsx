@@ -160,7 +160,7 @@ function Hero() {
           See how it works
         </a>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Button variant="glass-orange" size="xl" asChild>
             <Link to="/auth/sign-up">
               <ClipboardList aria-hidden="true" />
