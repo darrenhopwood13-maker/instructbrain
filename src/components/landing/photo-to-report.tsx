@@ -69,10 +69,10 @@ export function PhotoToReport() {
       {/* Photo strip with the analysis pass */}
       <div className="relative mt-5 overflow-hidden rounded-xl border border-border bg-surface-sunken p-3">
         <ul className="flex gap-2">
-          {[0, 1, 2, 3, 4].map((index) => (
+          {["photo-1", "photo-2", "photo-3", "photo-4", "photo-5"].map((photo, index) => (
             <li
-              key={index}
-              className="h-14 flex-1 rounded-md border border-border bg-brand-blue-soft sm:h-16"
+              key={photo}
+              className="relative h-14 flex-1 overflow-hidden rounded-md border border-border sm:h-16"
               style={
                 reduced
                   ? undefined
@@ -84,6 +84,12 @@ export function PhotoToReport() {
                     }
               }
             >
+              <img
+                src={`/demo/${photo}.jpg`}
+                alt={`Site photograph ${index + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
               <span className="sr-only">Site photograph {index + 1}</span>
             </li>
           ))}
