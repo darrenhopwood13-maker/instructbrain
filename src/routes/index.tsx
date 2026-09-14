@@ -18,6 +18,7 @@ import { Reveal } from "@/components/landing/reveal";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
 
+// Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
 const TITLE = "instructBrain — construction reports from site photographs";
 const DESCRIPTION =
   "instructBrain turns site photographs into client-ready construction reports: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and issue. Free for your first 3 reports.";
