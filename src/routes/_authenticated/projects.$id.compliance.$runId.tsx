@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Check, ChevronRight, Lock, Plus, Wrench, X } from "lucide-react";
+import { Archive, Camera, Check, ChevronRight, Lock, Plus, Wrench, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { projectQuery } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
+import { archiveComplianceRun } from "@/lib/delete.functions";
 import { uploadPhoto, nextSequence } from "@/lib/photos/photo-service";
 import {
   checkType,
@@ -98,6 +99,7 @@ function ComplianceRun() {
   const actions = useQuery(complianceActionsQuery(id));
 
   const locked = !!run?.lockedAt;
+  const archived = !!run?.archivedAt;
   const pointById = useMemo(
     () => new Map((points.data ?? []).map((point) => [point.id, point])),
     [points.data],
@@ -251,6 +253,15 @@ function ComplianceRun() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const archive = useMutation({
+    mutationFn: async () => archiveComplianceRun({ data: { runId } }),
+    onSuccess: () => {
+      toast.success("Register archived and retained as evidence.");
+      void refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [photoFor, setPhotoFor] = useState<ComplianceEntry | null>(null);
 
@@ -310,7 +321,9 @@ function ComplianceRun() {
         {locked ? (
           <p className="mt-3 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
             <Lock aria-hidden="true" className="size-4" />
-            Completed and read-only. A correction is recorded as a new entry, never an edit.
+            {archived
+              ? "Archived and retained as evidence. Nothing in it can be changed."
+              : "Completed and read-only. A correction is recorded as a new entry, never an edit."}
           </p>
         ) : null}
       </header>
@@ -576,6 +589,17 @@ function ComplianceRun() {
             >
               <Lock aria-hidden="true" className="size-4" />
               Complete and lock this check
+            </Button>
+          ) : null}
+          {locked && !archived ? (
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => archive.mutate()}
+              disabled={archive.isPending}
+            >
+              <Archive aria-hidden="true" className="size-4" />
+              {archive.isPending ? "Archiving…" : "Archive register"}
             </Button>
           ) : null}
           <PackDownloadButton

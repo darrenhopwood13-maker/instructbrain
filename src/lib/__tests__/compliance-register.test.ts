@@ -25,6 +25,7 @@ function run(id: string, checkDate: string, locked = true): ComplianceRun {
     signedAt: locked ? `${checkDate}T10:00:00Z` : null,
     competentPerson: null,
     lockedAt: locked ? `${checkDate}T10:00:00Z` : null,
+    archivedAt: null,
     reportId: null,
     createdAt: `${checkDate}T09:00:00Z`,
   };

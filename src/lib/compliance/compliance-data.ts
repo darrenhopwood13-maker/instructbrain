@@ -90,6 +90,7 @@ export type ComplianceRun = {
   signedAt: string | null;
   competentPerson: string | null;
   lockedAt: string | null;
+  archivedAt: string | null;
   reportId: string | null;
   createdAt: string;
 };
@@ -110,7 +111,7 @@ export type ComplianceAction = {
 };
 
 const runColumns =
-  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, report_id, created_at";
+  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, archived_at, report_id, created_at";
 const pointColumns =
   "id, project_id, check_type, location, unit_ref, unit_type, state, decommissioned_at, decommission_note";
 const entryColumns =
@@ -131,6 +132,7 @@ function toRun(row: Record<string, any>): ComplianceRun {
     signedAt: row["signed_at"] ?? null,
     competentPerson: row["competent_person"] ?? null,
     lockedAt: row["locked_at"] ?? null,
+    archivedAt: row["archived_at"] ?? null,
     reportId: row["report_id"] ?? null,
     createdAt: row["created_at"],
   };

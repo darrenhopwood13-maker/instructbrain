@@ -1,17 +1,29 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImageUp } from "lucide-react";
+import { ImageUp, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmailSettingsPanel } from "@/components/settings/email-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { organisationQuery, updateOrganisation } from "@/lib/data";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
+import { deleteOrganisation, getOrganisationDeleteSummary } from "@/lib/delete.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/organisation")({
@@ -185,6 +197,121 @@ function OrganisationSettings() {
           </div>
         </form>
       )}
+
+      {role === "owner" && organisationId ? (
+        <DeleteOrganisationZone
+          organisationId={organisationId}
+          organisationName={organisation?.name ?? "this organisation"}
+        />
+      ) : null}
     </AppShell>
+  );
+}
+
+/**
+ * Danger zone, owners only. Permanently deletes the organisation and
+ * everything beneath it. Completed registers are archived (kept as evidence)
+ * before the cascade, so deletion always finishes.
+ */
+function DeleteOrganisationZone({
+  organisationId,
+  organisationName,
+}: {
+  organisationId: string;
+  organisationName: string;
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [typed, setTyped] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const summary = useQuery({
+    queryKey: ["organisation", "delete-summary", organisationId],
+    enabled: !!organisationId && open,
+    queryFn: async () => getOrganisationDeleteSummary({ data: { organisationId } }),
+  });
+
+  const mutation = useMutation({
+    mutationFn: async () => deleteOrganisation({ data: { organisationId } }),
+    onSuccess: async () => {
+      toast.success("Organisation deleted.");
+      queryClient.clear();
+      await navigate({ to: "/dashboard" });
+    },
+  });
+
+  const counts = summary.data;
+  const matches = typed === organisationName;
+
+  return (
+    <section className="mt-12 max-w-2xl rounded-xl border border-fail/40 bg-fail/5 p-6">
+      <h2 className="text-base font-semibold text-fail">Delete organisation</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Permanently deletes the organisation
+        {counts
+          ? ` and everything inside it — ${counts.projects} ${counts.projects === 1 ? "project" : "projects"}, ${counts.reports} ${counts.reports === 1 ? "report" : "reports"}${
+              counts.lockedRuns > 0
+                ? ` and ${counts.lockedRuns} completed ${counts.lockedRuns === 1 ? "register" : "registers"} (archived as evidence first)`
+                : ""
+            }`
+          : ""}
+        — every photograph, finding, share link and audit record. This cannot be undone.
+      </p>
+
+      <div className="mt-4 space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="org-delete-confirm">Type the organisation name to confirm</Label>
+          <Input
+            id="org-delete-confirm"
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+            placeholder={organisationName}
+            className="max-w-sm"
+            autoComplete="off"
+          />
+        </div>
+
+        <AlertDialog open={open} onOpenChange={setOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="quiet"
+              className="min-h-11 text-fail hover:text-fail"
+              disabled={!matches}
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              Delete organisation
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete “{organisationName}” forever?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Everything inside it is permanently deleted and cannot be recovered.
+                {counts && counts.lockedRuns > 0
+                  ? ` ${counts.lockedRuns} completed ${counts.lockedRuns === 1 ? "register is" : "registers are"} archived as evidence first.`
+                  : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="min-h-11">Keep the organisation</AlertDialogCancel>
+              <AlertDialogAction
+                className="min-h-11 bg-fail text-white hover:bg-fail/90"
+                onClick={() => mutation.mutate()}
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending ? "Deleting…" : "Delete permanently"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {mutation.error ? (
+          <p className="text-sm text-fail">
+            {mutation.error instanceof Error ? mutation.error.message : "The organisation could not be deleted."}
+          </p>
+        ) : null}
+      </div>
+    </section>
   );
 }

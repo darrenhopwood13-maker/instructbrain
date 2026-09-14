@@ -141,6 +141,7 @@ describe("production PDF entry points", () => {
           signedAt: "2026-09-11T10:00:00Z",
           competentPerson: null,
           lockedAt: "2026-09-11T10:00:00Z",
+          archivedAt: null,
           reportId: null,
           createdAt: "2026-09-11T09:00:00Z",
         },

@@ -428,6 +428,7 @@ export type Database = {
       }
       compliance_runs: {
         Row: {
+          archived_at: string | null
           check_date: string
           check_type: string
           competent_person: string | null
@@ -446,6 +447,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           check_date?: string
           check_type: string
           competent_person?: string | null
@@ -464,6 +466,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           check_date?: string
           check_type?: string
           competent_person?: string | null

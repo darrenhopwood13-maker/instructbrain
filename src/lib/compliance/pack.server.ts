@@ -184,6 +184,7 @@ function mapRun(row: Record<string, any>): ComplianceRun {
     signedAt: row["signed_at"] ?? null,
     competentPerson: row["competent_person"] ?? null,
     lockedAt: row["locked_at"] ?? null,
+    archivedAt: row["archived_at"] ?? null,
     reportId: row["report_id"] ?? null,
     createdAt: row["created_at"],
   };
