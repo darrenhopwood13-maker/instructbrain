@@ -836,6 +836,50 @@
   }
 }
 
+/* Dashboard 3D-element tiles — the landing CTA family, sized for the
+   dashboard: navy glass fill, hairline white border, hard drop, and the
+   3D object sitting bottom-right. */
+.dash-3d {
+  position: relative;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(43, 75, 255, 0.3), rgba(16, 24, 48, 0.62));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  box-shadow: 0 14px 30px -16px oklch(0.16 0.08 260 / 60%);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.dash-3d:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 18px 34px -16px oklch(0.16 0.08 260 / 65%);
+}
+.dash-3d:active:not(:disabled) {
+  transform: translateY(0);
+}
+.dash-3d .obj {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  width: 58px;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.38));
+}
+@media (min-width: 640px) {
+  .dash-3d .obj {
+    width: 84px;
+    right: 14px;
+    bottom: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-3d {
+    transition: none;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Landing motion                                                      */
 /* ------------------------------------------------------------------ */

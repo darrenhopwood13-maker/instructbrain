@@ -40,12 +40,14 @@ function ActionTile({
   label,
   sub,
   icon: Icon,
+  obj,
   onSelect,
 }: {
   active: boolean;
   label: string;
   sub: string;
   icon: typeof ClipboardList;
+  obj?: string;
   onSelect: () => void;
 }) {
   return (
@@ -57,11 +59,12 @@ function ActionTile({
         active ? "ring-4 ring-brand-accent/50" : ""
       }`}
     >
-      <span className="orb-tile flex h-20 w-full items-center justify-center sm:h-32 lg:h-36">
+      <span className="dash-3d flex h-20 w-full items-center justify-center overflow-hidden sm:h-32 lg:h-36">
         <Icon
           aria-hidden="true"
-          className="relative size-7 text-primary-foreground drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:size-10 lg:size-12"
+          className="relative size-7 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:size-10 lg:size-12"
         />
+        {obj ? <img src={obj} alt="" className="obj" /> : null}
       </span>
       <span className="text-[0.72rem] font-bold leading-tight tracking-wide text-foreground sm:text-sm lg:text-base">
         {label}
@@ -170,7 +173,7 @@ function Dashboard() {
               setMode(null);
               void navigate({ to: "/reports/quick", search: {} });
             }}
-            className="orb-tile flex min-h-28 w-full items-center gap-4 px-5 py-5 text-left text-primary-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-32 sm:px-7"
+            className="dash-3d flex min-h-28 w-full items-center gap-4 overflow-hidden px-5 py-5 pr-28 text-left text-white outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-32 sm:px-7 sm:pr-44"
           >
             <Camera
               aria-hidden="true"
@@ -184,6 +187,7 @@ function Dashboard() {
                 Brief the AI — your photos, your wording, 160+ in a batch
               </span>
             </span>
+            <img src="/3d/hard-hat-t.png" alt="" className="obj" />
           </button>
 
           <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-5">
@@ -192,6 +196,7 @@ function Dashboard() {
               label="Project report"
               sub="Belongs to a project, with a directory and close-out"
               icon={ClipboardList}
+              obj="/3d/blueprints-t.png"
               onSelect={() => chooseMode("project")}
             />
             <ActionTile
@@ -199,6 +204,7 @@ function Dashboard() {
               label="Compliance reports"
               sub="Weekly compliance register for a project"
               icon={ClipboardCheck}
+              obj="/3d/clipboard-t.png"
               onSelect={openCompliance}
             />
           </div>
