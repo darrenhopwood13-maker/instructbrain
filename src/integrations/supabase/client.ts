@@ -31,8 +31,17 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
+  // Hardcoded fallback: the project's own URL + anon key, so the production
+  // build keeps working even when Lovable Cloud does not inject the envs.
+  // The anon (publishable) key is public by design — it ships in every browser.
+  const SUPABASE_URL =
+    import.meta.env['VITE_SUPABASE_URL'] ||
+    process.env['SUPABASE_URL'] ||
+    'https://krwphsejinmlwvtwugwk.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] ||
+    process.env['SUPABASE_PUBLISHABLE_KEY'] ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtyd3Boc2VqaW5tbHd2dHd1Z3drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMTM5MjQsImV4cCI6MjEwMTU4OTkyNH0.okjK1J7KNPtQ77PK7i3XguekLsdMnRv3x1gvzmQ0gXs';
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
