@@ -38,16 +38,16 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function ActionTile({
   active,
   label,
-  sub,
   icon: Icon,
   obj,
+  orange = false,
   onSelect,
 }: {
   active: boolean;
   label: string;
-  sub: string;
   icon: typeof ClipboardList;
-  obj?: string;
+  obj: string;
+  orange?: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -55,21 +55,14 @@ function ActionTile({
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      className={`flex min-h-11 flex-col items-center gap-2 rounded-2xl p-1.5 outline-none transition-shadow focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:p-2 ${
-        active ? "ring-4 ring-brand-accent/50" : ""
-      }`}
+      className={orange ? "ib-btn-3d orange" : "ib-btn-3d"}
     >
-      <span className="dash-3d flex h-20 w-full items-center justify-center overflow-hidden sm:h-32 lg:h-36">
-        <Icon
-          aria-hidden="true"
-          className="relative size-7 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:size-10 lg:size-12"
-        />
-        {obj ? <img src={obj} alt="" className="obj" /> : null}
+      <Icon aria-hidden="true" />
+      {label}
+      <span className="obj">
+        <ArrowRight aria-hidden="true" />
+        <img src={obj} alt="" />
       </span>
-      <span className="text-[0.72rem] font-bold leading-tight tracking-wide text-foreground sm:text-sm lg:text-base">
-        {label}
-      </span>
-      <span className="sr-only">{sub}</span>
     </button>
   );
 }
@@ -167,42 +160,33 @@ function Dashboard() {
           Choose what you are making
         </h2>
         <div className="mx-auto max-w-3xl">
-          <button
-            type="button"
-            onClick={() => {
-              setMode(null);
-              void navigate({ to: "/reports/quick", search: {} });
-            }}
-            className="dash-3d flex min-h-28 w-full items-center gap-4 overflow-hidden px-5 py-5 pr-28 text-left text-white outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:min-h-32 sm:px-7 sm:pr-44"
-          >
-            <Camera
-              aria-hidden="true"
-              className="relative z-10 size-8 shrink-0 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] sm:size-10"
-            />
-            <span className="relative z-10 min-w-0">
-              <span className="editorial-title block text-xl font-semibold sm:text-2xl">
-                Custom report
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => {
+                setMode(null);
+                void navigate({ to: "/reports/quick", search: {} });
+              }}
+              className="ib-btn-3d"
+            >
+              <Camera aria-hidden="true" />
+              Custom report
+              <span className="obj">
+                <ArrowRight aria-hidden="true" />
+                <img src="/3d/hard-hat-t.png" alt="" />
               </span>
-              <span className="block text-sm opacity-90">
-                Brief the AI — your photos, your wording, 160+ in a batch
-              </span>
-            </span>
-            <img src="/3d/hard-hat-t.png" alt="" className="obj" />
-          </button>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-5">
+            </button>
             <ActionTile
               active={mode === "project"}
               label="Project report"
-              sub="Belongs to a project, with a directory and close-out"
               icon={ClipboardList}
               obj="/3d/blueprints-t.png"
               onSelect={() => chooseMode("project")}
+              orange
             />
             <ActionTile
               active={false}
               label="Compliance reports"
-              sub="Weekly compliance register for a project"
               icon={ClipboardCheck}
               obj="/3d/clipboard-t.png"
               onSelect={openCompliance}

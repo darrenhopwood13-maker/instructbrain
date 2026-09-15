@@ -78,8 +78,11 @@ function Landing() {
 
       <main id="main" className="flex-1">
         <Hero />
+        <StatsStrip />
         <RoiSection />
         <UseCases />
+        <ComplianceBand />
+        <TrustStrip />
         <HowItWorks />
         <PlainEnglish />
         <Pricing />
@@ -150,49 +153,57 @@ function Hero() {
         /* Blueprint grid backdrop */
         .hero-blueprint { position:relative; }
         .hero-blueprint::before { content:""; position:absolute; inset:0; background-image: linear-gradient(rgba(43,75,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(43,75,255,.06) 1px, transparent 1px); background-size:38px 38px; pointer-events:none; }
-        /* 3D Element buttons (concept 08) — light deck */
+        /* 3D Element buttons live in styles.css (.ib-btn-3d) — shared with the
+           dashboard's three feature buttons so both get the same treatment. */
         .cta-deck { background: rgba(43,75,255,.07); border:1px solid rgba(43,75,255,.22); border-radius:22px; padding:30px 26px 26px; box-shadow:0 10px 34px rgba(43,75,255,.12); }
-        .ib-btn-3d { position:relative; display:flex; align-items:center; gap:8px; width:100%; padding:16px 70px 16px 18px; border-radius:999px; background:linear-gradient(180deg, rgba(43,75,255,.28) 0%, rgba(20,30,60,.55) 100%); border:1px solid rgba(255,255,255,.28); color:#fff; font-weight:600; font-size:14px; text-decoration:none; backdrop-filter:blur(4px); transition:transform .15s, border-color .15s; }
-        .ib-btn-3d:hover { transform:translateY(-2px); border-color:rgba(255,255,255,.5); }
-        .ib-btn-3d .obj { position:absolute; right:12px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:3px; }
-        .ib-btn-3d .obj img { width:54px; height:54px; object-fit:cover; border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.45); }
-        .ib-btn-3d .obj svg { width:18px; height:18px; }
-        .ib-btn-3d.orange .obj svg { color:#ff7b00; }
-        /* compact header variant */
-        .ib-btn-3d.sm { width:auto; padding:10px 20px; font-size:13px; gap:6px; }
-        .ib-btn-3d.sm svg { width:16px; height:16px; }
         /* hero z-order so the 3D objects sit above the deck edge */
         .cta-deck > * { position:relative; z-index:1; }
         .cta-deck::before { content:""; position:absolute; inset:0; border-radius:22px; background:radial-gradient(500px 160px at 85% 0%, rgba(255,123,0,.12), transparent 60%); pointer-events:none; }
         .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: radial-gradient(circle at 30% 30%, rgba(43,75,255,.12), transparent 60%), radial-gradient(circle at 70% 70%, rgba(255,123,0,.08), transparent 55%), repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, rgba(43,75,255,.05) 30px 32px); border-radius:50%; pointer-events:none; }
         .hero-topo > * { position:relative; z-index:1; }
       `}</style>
-      <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
-        <span className="text-brand-accent">instruct</span>
-        <span className="text-foreground">Brain</span>
-      </p>
-      <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
-        Photos in. Client-ready reports out.
-      </p>
-      <p className="mt-6 text-sm text-muted-foreground">
-        Free for your first 3 reports. No card required.
-      </p>
+      <div className="land-hero-grid">
+        <div>
+          <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
+            <span className="text-brand-accent">instruct</span>
+            <span className="text-foreground">Brain</span>
+          </p>
+          <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
+            Photos in. Client-ready reports out.
+          </p>
+          <h1 className="editorial-title mt-4 text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
+            Walk the site. Issue the same afternoon.
+          </h1>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
+            Point, shoot, done. instructBrain turns your site photos into a referenced
+            construction report — with the proof and the dates regulators ask for.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link to="/auth/sign-up" className="ib-btn-3d orange">
+              Start free — no card
+            </Link>
+            <a href="#how-it-works" className="ib-btn-minline orange">
+              See how it works
+            </a>
+          </div>
+          <div className="land-roi-teaser">
+            <b>Move the slider. Watch the gap.</b>
+            <div className="track">
+              <span className="knob" />
+            </div>
+            <div className="out">
+              <span>Your weekly write-up time</span>
+              <span>
+                <b>6 hrs</b> → <b style={{ color: "#7ce5ad" }}>25 min</b>
+              </span>
+            </div>
+          </div>
+        </div>
+        <ConsoleMock />
+      </div>
 
-      <div className="rule-top mt-8 max-w-4xl pt-8">
-        <h1 className="editorial-title text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
-          Walk the site. Issue the same afternoon.
-        </h1>
-        <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Custom Reports, Project Reports and Weekly Compliance Registers — all from the photographs
-          you already take. AI drafts referenced findings against the right construction template;
-          you confirm, sign off and issue a PDF with per-trade extracts.
-        </p>
-        <a
-          href="#how-it-works"
-          className="ib-btn-minline orange mt-4"
-        >
-          See how it works
-        </a>
+      <div className="rule-top mt-10 max-w-4xl pt-8">
+        <span className="eyebrow">Pick what you're making</span>
 
         <div className="cta-deck mt-10 max-w-4xl">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -293,34 +304,22 @@ const useCases = [
   {
     icon: ShieldCheck,
     title: "Custom Reports",
-    who: "Surveyor, clerk of works or project manager",
-    when: "One-off inspections, specialist audits, batch photo reviews",
-    now: "Start from a blank page every time, or wrestle with a Word template that never matches the job.",
-    then: "Pick a construction template, set tone and report type, add special instructions, and let the AI analyse the photos against fixed core parameters.",
+    line: "One-off inspections, specialist audits, batch photo reviews — issued from a template, not a blank page.",
   },
   {
     icon: FileText,
     title: "Project Reports",
-    who: "Site manager, building surveyor or clerk of works",
-    when: "Site walks, snagging, weatherproofing and condition surveys",
-    now: "Hours writing up observations, splitting them by trade, then chasing ownership.",
-    then: "Referenced findings with stable IDs, suggested trades, close-out tracking and per-trade extracts — all from one upload.",
+    line: "Site walks, snagging, weatherproofing — referenced findings, suggested trades, per-trade extracts.",
   },
   {
     icon: ClipboardCheck,
     title: "Weekly Compliance Registers",
-    who: "Site manager or safety officer",
-    when: "Every week, for every active project",
-    now: "Six separate checks, six clipboards, then re-keying it all into a spreadsheet.",
-    then: "Fire, Excavation, Scaffold, Welfare, Lifting and plant, Housekeeping — prepopulated from the previous run, locked when complete, six-week history at a glance.",
+    line: "Six checks, prepopulated, locked when complete, six-week history at a glance.",
   },
   {
     icon: Languages,
     title: "Issue in another language",
-    who: "Teams with international clients or multilingual sites",
-    when: "At issue, for any report",
-    now: "Translate the PDF manually, or send English to a client who needs another language.",
-    then: "Issue the report in the chosen language. Shared links and trade-access pages render in that language while English stays the record copy.",
+    line: "Issue the PDF and shared links in the client's language while English stays the record copy.",
   },
 ];
 
@@ -333,38 +332,250 @@ function UseCases() {
           Built for what you actually do on site
         </h2>
       </Reveal>
-      <ul className="mt-8 grid gap-6 lg:grid-cols-2">
+      <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {useCases.map((item, index) => (
-          <Reveal key={item.title} as="li" delayMs={index * 80}>
-            <li className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-7">
-              <div className="flex items-center gap-3">
-                <item.icon aria-hidden="true" className="size-6 text-brand-accent-ink" />
-                <h3 className="editorial-title text-xl font-semibold leading-snug">
-                  {item.title}
-                </h3>
-              </div>
-              <dl className="mt-5 space-y-3 text-sm">
-                <div>
-                  <dt className="eyebrow">Who</dt>
-                  <dd className="mt-1 text-muted-foreground">{item.who}</dd>
-                </div>
-                <div>
-                  <dt className="eyebrow">How often</dt>
-                  <dd className="mt-1 text-muted-foreground">{item.when}</dd>
-                </div>
-                <div>
-                  <dt className="eyebrow">Today</dt>
-                  <dd className="mt-1 text-muted-foreground">{item.now}</dd>
-                </div>
-                <div className="rule-top pt-3">
-                  <dt className="eyebrow">With instructBrain</dt>
-                  <dd className="mt-1 font-semibold text-foreground">{item.then}</dd>
-                </div>
-              </dl>
-            </li>
+          <Reveal
+            key={item.title}
+            as="li"
+            delayMs={index * 80}
+            className="glass-panel flex h-full flex-col rounded-2xl p-5"
+          >
+            <item.icon aria-hidden="true" className="size-6 text-brand-accent-ink" />
+            <h3 className="editorial-title mt-4 text-lg font-semibold leading-snug">
+              {item.title}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.line}</p>
           </Reveal>
         ))}
       </ul>
+    </section>
+  );
+}
+
+const REGISTER_POINTS: Array<{
+  lvl: string;
+  name: string;
+  weeks: Array<"ok" | "flag" | "rep" | "pend">;
+}> = [
+  { lvl: "L1", name: "L1-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L1", name: "L1-B", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L1", name: "L1-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L1", name: "L1-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L2", name: "L2-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L2", name: "L2-B", weeks: ["ok", "ok", "flag", "rep", "ok", "ok"] },
+  { lvl: "L2", name: "L2-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L2", name: "L2-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L3", name: "L3-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L3", name: "L3-B", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L3", name: "L3-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+  { lvl: "L3", name: "L3-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
+];
+const WEEK_LABELS = [
+  "W1 · 10 Aug",
+  "W2 · 17 Aug",
+  "W3 · 24 Aug",
+  "W4 · 31 Aug",
+  "W5 · 07 Sep",
+  "W6 · 14 Sep",
+];
+
+function ConsoleMock() {
+  return (
+    <div className="land-console">
+      <div className="topbar">
+        <span className="wordmark">
+          <span className="i">instruct</span>
+          <span className="b">Brain</span>
+        </span>
+        <span>Site walk · ALM-2026-0142</span>
+      </div>
+      <div className="filestrip">
+        <img src="/demo/photo-1.jpg" alt="" />
+        <img src="/demo/photo-2.jpg" alt="" />
+        <img src="/demo/photo-3.jpg" alt="" />
+        <img src="/demo/photo-4.jpg" alt="" />
+      </div>
+      <div className="work">
+        <div>
+          <div className="photogrid">
+            <img src="/demo/photo-5.jpg" alt="" />
+            <img src="/demo/photo-2.jpg" alt="" />
+            <img src="/demo/photo-1.jpg" alt="" />
+            <img src="/demo/photo-3.jpg" alt="" />
+          </div>
+          <div className="photo-note">12 photos · HEIC handled · full-res to AI</div>
+        </div>
+        <div className="panel">
+          <div className="rhead">
+            <strong>Findings</strong>
+            <span>3 flagged</span>
+          </div>
+          <div className="f">
+            <span className="chip pass">Pass</span> F-001 Sealant — perimeter
+          </div>
+          <div className="f">
+            <span className="chip warn">Warn</span> F-002 Ponding — valley gutter
+          </div>
+          <div className="f">
+            <span className="chip na">Not assessed</span> F-003 Cavity tray — human review
+          </div>
+        </div>
+      </div>
+      <div className="dock">
+        <span className="mini-btn solid">Issue report</span>
+        <span className="mini-btn">Preview</span>
+        <span className="mini-btn">Share</span>
+      </div>
+    </div>
+  );
+}
+
+const STATS = [
+  { num: "150", suffix: "+", label: "inspections issued" },
+  { num: "2", suffix: " min", label: "to first AI draft" },
+  { num: "17", suffix: "", label: "trades covered" },
+  { num: "25", suffix: " min", label: "report turnaround" },
+];
+
+function StatsStrip() {
+  return (
+    <section className="py-12 lg:py-16" aria-label="instructBrain by the numbers">
+      <div className="shell-container">
+        <div className="land-stats">
+          {STATS.map((s) => (
+            <div key={s.label} className="land-stat">
+              <div className="num">
+                {s.num}
+                <em>{s.suffix}</em>
+              </div>
+              <div className="lab">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ComplianceBand() {
+  return (
+    <section className="land-band py-14 lg:py-20" aria-labelledby="compliance-heading">
+      <div className="shell-container">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-2xl">
+            <p className="eyebrow">Weekly compliance register</p>
+            <h2
+              id="compliance-heading"
+              className="editorial-title mt-3 text-3xl font-bold sm:text-4xl"
+            >
+              Six weeks. Twelve points. Proof.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-white/80">
+              Fire checks photographed every week, every extinguisher point, every level. Miss
+              something in week 3? The photo proves it — and week 4 proves it&apos;s fixed.
+            </p>
+          </div>
+          <Link to="/auth/sign-up" className="ib-btn-3d" style={{ padding: "12px 22px", fontSize: ".88rem" }}>
+            Build the register
+          </Link>
+        </div>
+        <div className="land-matrix mt-8">
+          <table>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left" }}>Extinguisher point</th>
+                {WEEK_LABELS.map((w) => (
+                  <th key={w}>{w}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {REGISTER_POINTS.map((p) => (
+                <tr key={p.name} className={p.weeks.includes("flag") ? "land-flagged-row" : undefined}>
+                  <td className="pt">
+                    <span className="lvl">{p.lvl}</span> {p.name}
+                  </td>
+                  {p.weeks.map((cell, i) => (
+                    <td key={i}>
+                      {cell === "ok" ? (
+                        <span className="land-dot ok">✓</span>
+                      ) : cell === "flag" ? (
+                        <>
+                          <span className="land-dot flag">!</span>
+                          <span className="land-badge">📷 proof</span>
+                        </>
+                      ) : cell === "rep" ? (
+                        <>
+                          <span className="land-dot rep">✓</span>
+                          <span className="land-badge green">replaced</span>
+                        </>
+                      ) : (
+                        <span className="land-dot pend">·</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="land-legend">
+          <span>
+            <span className="land-dot ok">✓</span> Checked &amp; photographed
+          </span>
+          <span>
+            <span className="land-dot flag">!</span> Flagged — proof attached
+          </span>
+          <span>
+            <span className="land-dot rep">✓</span> Replaced &amp; restocked
+          </span>
+          <span>
+            <span className="land-dot pend">·</span> Pending
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const QUOTES = [
+  {
+    img: "/demo/photo-4.jpg",
+    text: "\u201CWeek 3 flagged a point missing two extinguishers. Week 4, replaced — photographed, dated, done.\u201D",
+    who: "Fire register · 6-week cycle",
+  },
+  {
+    img: "/demo/photo-5.jpg",
+    text: "\u201CThe AI never guesses. If it can't tell, it says so — and the report blocks until a human looks.\u201D",
+    who: "Not-assessed invariant · every report",
+  },
+  {
+    img: "/demo/photo-2.jpg",
+    text: "\u201COne walk, four reports, issued before lunch. That's the whole pitch.\u201D",
+    who: "Site walk → custom report",
+  },
+];
+
+function TrustStrip() {
+  return (
+    <section className="py-14 lg:py-20" aria-labelledby="trust-heading">
+      <div className="shell-container">
+        <p className="eyebrow">From the field</p>
+        <h2 id="trust-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+          Real sites. Real photos. Real proof.
+        </h2>
+        <div className="land-trust mt-8">
+          {QUOTES.map((q) => (
+            <figure key={q.who} className="land-quote">
+              <img src={q.img} alt="" />
+              <figcaption className="body">
+                <p>{q.text}</p>
+                <div className="who">{q.who}</div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
@@ -403,15 +614,18 @@ function HowItWorks() {
         </Reveal>
         <ol className="mt-8 grid gap-6 lg:grid-cols-3">
           {steps.map((step, index) => (
-            <Reveal key={step.title} as="li" delayMs={index * 100}>
-              <li className="glass-panel rounded-2xl p-6 sm:p-7">
-                <span className="eyebrow">Step {index + 1}</span>
-                <div className="mt-4 flex items-center gap-3">
-                  <step.icon aria-hidden="true" className="size-5 text-brand-accent-ink" />
-                  <h3 className="editorial-title text-xl font-semibold">{step.title}</h3>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
-              </li>
+            <Reveal
+              key={step.title}
+              as="li"
+              delayMs={index * 100}
+              className="glass-panel rounded-2xl p-6 sm:p-7"
+            >
+              <span className="eyebrow">Step {index + 1}</span>
+              <div className="mt-4 flex items-center gap-3">
+                <step.icon aria-hidden="true" className="size-5 text-brand-accent-ink" />
+                <h3 className="editorial-title text-xl font-semibold">{step.title}</h3>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </Reveal>
           ))}
         </ol>
@@ -531,15 +745,17 @@ function Pricing() {
 
         <ul className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {tiers.map((tier, index) => (
-            <Reveal key={tier.name} as="li" delayMs={index * 80}>
-              <li
-                className={
-                  tier.featured
-                    ? "glass-panel flex h-full flex-col rounded-2xl border-2 border-brand-accent p-6"
-                    : "glass-panel flex h-full flex-col rounded-2xl p-6"
-                }
-              >
-                <div className="flex items-center justify-between gap-2">
+            <Reveal
+              key={tier.name}
+              as="li"
+              delayMs={index * 80}
+              className={
+                tier.featured
+                  ? "glass-panel flex h-full flex-col rounded-2xl border-2 border-brand-accent p-6"
+                  : "glass-panel flex h-full flex-col rounded-2xl p-6"
+              }
+            >
+              <div className="flex items-center justify-between gap-2">
                   <h3 className="editorial-title text-lg font-semibold">{tier.name}</h3>
                   {tier.featured ? (
                     <span className="rounded-full bg-brand-accent-soft px-2.5 py-0.5 text-xs font-bold text-brand-accent-ink">
@@ -580,7 +796,6 @@ function Pricing() {
                     </Button>
                   )}
                 </div>
-              </li>
             </Reveal>
           ))}
         </ul>
