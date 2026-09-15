@@ -43,6 +43,7 @@ import {
   lockRun,
   raiseAction,
   runBlockers,
+  runPhotosQuery,
   saveEntry,
   statusForEntry,
   updateAction,
@@ -264,6 +265,8 @@ function ComplianceRun() {
 
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [photoFor, setPhotoFor] = useState<ComplianceEntry | null>(null);
+  const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const photoUrls = useQuery(runPhotosQuery(run?.reportId ?? null));
 
   if (project.isPending || runQuery.isPending || entries.isPending) {
     return <LoadingState label="Loading the check" />;
@@ -403,6 +406,19 @@ function ComplianceRun() {
                         {entry.confirmed ? "Confirmed this week" : "Not yet confirmed"}
                         {entry.photoId ? " · photographed" : " · no photograph"}
                       </p>
+                      {entry.photoId && photoUrls.data?.get(entry.photoId) ? (
+                        <button
+                          type="button"
+                          onClick={() => setViewPhoto(photoUrls.data?.get(entry.photoId) ?? null)}
+                          className="mt-2 block overflow-hidden rounded-md border border-border transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+                        >
+                          <img
+                            src={photoUrls.data.get(entry.photoId)}
+                            alt={`Photograph of ${point?.unitRef || "this point"}`}
+                            className="h-28 w-40 object-cover"
+                          />
+                        </button>
+                      ) : null}
                       {isOverdue(definition, entry.answers) ? (
                         <p className="mt-1 text-sm font-semibold text-destructive">
                           Critical — past its due date with no report.
@@ -721,6 +737,18 @@ function ComplianceRun() {
               Raise action
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewPhoto} onOpenChange={(open) => !open && setViewPhoto(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Photograph</DialogTitle>
+            <DialogDescription>Evidence attached to this week's register entry.</DialogDescription>
+          </DialogHeader>
+          {viewPhoto ? (
+            <img src={viewPhoto} alt="Register photograph" className="w-full rounded-md border border-border" />
+          ) : null}
         </DialogContent>
       </Dialog>
     </AppShell>

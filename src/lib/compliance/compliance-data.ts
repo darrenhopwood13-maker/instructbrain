@@ -269,6 +269,34 @@ export function complianceActionsQuery(projectId: string) {
 /* Mutations                                                           */
 /* ------------------------------------------------------------------ */
 
+/** Signed thumbnail URLs for every photograph attached to a run's report. */
+export const runPhotosQuery = (reportId: string | null) =>
+  queryOptions({
+    queryKey: ["compliance", "run-photos", reportId],
+    enabled: !!reportId,
+    queryFn: async (): Promise<Map<string, string>> => {
+      if (!reportId) return new Map();
+      const rows = unwrap<Record<string, any>[]>(
+        await from("photos").select("id, thumbnail_path").eq("report_id", reportId),
+      );
+      const withThumb = rows.filter((r) => !!r["thumbnail_path"]);
+      if (withThumb.length === 0) return new Map();
+      const { data, error } = await supabase.storage
+        .from("report-photos")
+        .createSignedUrls(
+          withThumb.map((r) => r["thumbnail_path"] as string),
+          3600,
+        );
+      if (error || !data) return new Map();
+      const map = new Map<string, string>();
+      data.forEach((entry, index) => {
+        const row = withThumb[index];
+        if (entry.signedUrl && row) map.set(row["id"] as string, entry.signedUrl);
+      });
+      return map;
+    },
+  });
+
 export async function createPoint(input: {
   organisationId: string;
   projectId: string;
