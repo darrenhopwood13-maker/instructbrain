@@ -97,7 +97,7 @@ function Landing() {
 function Wordmark() {
   return (
     <span className="block min-w-0">
-      <span className="block text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
+      <span className="block truncate text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
         An instructSite company
       </span>
       <span className="wordmark block truncate text-lg leading-tight">
@@ -178,26 +178,6 @@ function Hero() {
             Point, shoot, done. instructBrain turns your site photos into a referenced
             construction report — with the proof and the dates regulators ask for.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link to="/auth/sign-up" className="ib-btn-3d orange">
-              Start free — no card
-            </Link>
-            <a href="#how-it-works" className="ib-btn-minline orange">
-              See how it works
-            </a>
-          </div>
-          <div className="land-roi-teaser">
-            <b>Move the slider. Watch the gap.</b>
-            <div className="track">
-              <span className="knob" />
-            </div>
-            <div className="out">
-              <span>Your weekly write-up time</span>
-              <span>
-                <b>6 hrs</b> → <b style={{ color: "#7ce5ad" }}>25 min</b>
-              </span>
-            </div>
-          </div>
         </div>
         <ConsoleMock />
       </div>
@@ -284,7 +264,7 @@ function RoiSection() {
         <Reveal>
           <p className="eyebrow">What it gives you back</p>
           <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-            Move the sliders. Watch the gap.
+            The write-up gap, in numbers.
           </h2>
           <p className="mt-4 max-w-2xl text-base text-muted-foreground">
             The write-up is the expensive part of a survey, a snagging list or a compliance register,
