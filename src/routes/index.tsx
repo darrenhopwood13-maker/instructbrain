@@ -79,9 +79,9 @@ function Landing() {
       <main id="main" className="flex-1">
         <Hero />
         <StatsStrip />
+        <FireRegister />
         <RoiSection />
         <UseCases />
-        <ComplianceBand />
         <TrustStrip />
         <HowItWorks />
         <PlainEnglish />
@@ -352,33 +352,6 @@ function UseCases() {
   );
 }
 
-const REGISTER_POINTS: Array<{
-  lvl: string;
-  name: string;
-  weeks: Array<"ok" | "flag" | "rep" | "pend">;
-}> = [
-  { lvl: "L1", name: "L1-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L1", name: "L1-B", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L1", name: "L1-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L1", name: "L1-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L2", name: "L2-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L2", name: "L2-B", weeks: ["ok", "ok", "flag", "rep", "ok", "ok"] },
-  { lvl: "L2", name: "L2-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L2", name: "L2-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L3", name: "L3-A", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L3", name: "L3-B", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L3", name: "L3-C", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-  { lvl: "L3", name: "L3-D", weeks: ["ok", "ok", "ok", "ok", "ok", "ok"] },
-];
-const WEEK_LABELS = [
-  "W1 · 10 Aug",
-  "W2 · 17 Aug",
-  "W3 · 24 Aug",
-  "W4 · 31 Aug",
-  "W5 · 07 Sep",
-  "W6 · 14 Sep",
-];
-
 function ConsoleMock() {
   return (
     <div className="land-console">
@@ -389,36 +362,27 @@ function ConsoleMock() {
         </span>
         <span>Site walk · ALM-2026-0142</span>
       </div>
-      <div className="filestrip">
+      <div className="photostrip">
         <img src="/demo/photo-1.jpg" alt="" />
         <img src="/demo/photo-2.jpg" alt="" />
-        <img src="/demo/photo-3.jpg" alt="" />
-        <img src="/demo/photo-4.jpg" alt="" />
+        <img src="/demo/photo-5.jpg" alt="" />
       </div>
-      <div className="work">
-        <div>
-          <div className="photogrid">
-            <img src="/demo/photo-5.jpg" alt="" />
-            <img src="/demo/photo-2.jpg" alt="" />
-            <img src="/demo/photo-1.jpg" alt="" />
-            <img src="/demo/photo-3.jpg" alt="" />
-          </div>
-          <div className="photo-note">12 photos · HEIC handled · full-res to AI</div>
+      <div className="panel">
+        <div className="rhead">
+          <strong>Findings</strong>
+          <span>3 flagged</span>
         </div>
-        <div className="panel">
-          <div className="rhead">
-            <strong>Findings</strong>
-            <span>3 flagged</span>
-          </div>
-          <div className="f">
-            <span className="chip pass">Pass</span> F-001 Sealant — perimeter
-          </div>
-          <div className="f">
-            <span className="chip warn">Warn</span> F-002 Ponding — valley gutter
-          </div>
-          <div className="f">
-            <span className="chip na">Not assessed</span> F-003 Cavity tray — human review
-          </div>
+        <div className="f">
+          <span className="chip pass">Pass</span>
+          <span className="f-text">F-001 Sealant — perimeter</span>
+        </div>
+        <div className="f">
+          <span className="chip warn">Warn</span>
+          <span className="f-text">F-002 Ponding — valley gutter</span>
+        </div>
+        <div className="f">
+          <span className="chip na">Not assessed</span>
+          <span className="f-text">F-003 Cavity tray — human review</span>
         </div>
       </div>
       <div className="dock">
@@ -451,87 +415,6 @@ function StatsStrip() {
               <div className="lab">{s.label}</div>
             </div>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ComplianceBand() {
-  return (
-    <section className="land-band py-14 lg:py-20" aria-labelledby="compliance-heading">
-      <div className="shell-container">
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div className="max-w-2xl">
-            <p className="eyebrow">Weekly compliance register</p>
-            <h2
-              id="compliance-heading"
-              className="editorial-title mt-3 text-3xl font-bold sm:text-4xl"
-            >
-              Six weeks. Twelve points. Proof.
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-white/80">
-              Fire checks photographed every week, every extinguisher point, every level. Miss
-              something in week 3? The photo proves it — and week 4 proves it&apos;s fixed.
-            </p>
-          </div>
-          <Link to="/auth/sign-up" className="ib-btn-3d" style={{ padding: "12px 22px", fontSize: ".88rem" }}>
-            Build the register
-          </Link>
-        </div>
-        <div className="land-matrix mt-8">
-          <table>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left" }}>Extinguisher point</th>
-                {WEEK_LABELS.map((w) => (
-                  <th key={w}>{w}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {REGISTER_POINTS.map((p) => (
-                <tr key={p.name} className={p.weeks.includes("flag") ? "land-flagged-row" : undefined}>
-                  <td className="pt">
-                    <span className="lvl">{p.lvl}</span> {p.name}
-                  </td>
-                  {p.weeks.map((cell, i) => (
-                    <td key={i}>
-                      {cell === "ok" ? (
-                        <span className="land-dot ok">✓</span>
-                      ) : cell === "flag" ? (
-                        <>
-                          <span className="land-dot flag">!</span>
-                          <span className="land-badge">📷 proof</span>
-                        </>
-                      ) : cell === "rep" ? (
-                        <>
-                          <span className="land-dot rep">✓</span>
-                          <span className="land-badge green">replaced</span>
-                        </>
-                      ) : (
-                        <span className="land-dot pend">·</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="land-legend">
-          <span>
-            <span className="land-dot ok">✓</span> Checked &amp; photographed
-          </span>
-          <span>
-            <span className="land-dot flag">!</span> Flagged — proof attached
-          </span>
-          <span>
-            <span className="land-dot rep">✓</span> Replaced &amp; restocked
-          </span>
-          <span>
-            <span className="land-dot pend">·</span> Pending
-          </span>
         </div>
       </div>
     </section>
@@ -629,10 +512,24 @@ function HowItWorks() {
             </Reveal>
           ))}
         </ol>
+      </div>
+    </section>
+  );
+}
 
-        <div className="mt-8 max-w-3xl">
-          <ComplianceTicker />
-        </div>
+/** The six-check fire register — the product's recurring-revenue proof,
+ * placed low on the page so the compliance band leads. */
+function FireRegister() {
+  return (
+    <section className="shell-container py-12 lg:py-16" aria-labelledby="fire-register-heading">
+      <Reveal>
+        <p className="eyebrow">The weekly register</p>
+        <h2 id="fire-register-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+          Six checks, every week
+        </h2>
+      </Reveal>
+      <div className="mt-8 max-w-3xl">
+        <ComplianceTicker />
       </div>
     </section>
   );
