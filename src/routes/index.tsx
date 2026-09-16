@@ -427,6 +427,17 @@ function TrustStrip() {
         <h2 id="trust-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
           Real sites. Real photos. Real proof.
         </h2>
+        <figure className="glass-panel mt-8 rounded-2xl p-6 sm:p-10">
+          <blockquote className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
+            &ldquo;Honestly, I used to dread the monthly condition and weatherproofing reports —
+            they&rsquo;d take me 2 or 3 days, and they have to be bang on, because they go to the
+            client team and the insurers. With instructBrain, I snap the photos, review the AI
+            findings, and issue. That&rsquo;s literally it. A client-ready report in minutes.&rdquo;
+          </blockquote>
+          <figcaption className="mt-5">
+            <span className="eyebrow">Senior Site Manager · Tier 1 contractor · London</span>
+          </figcaption>
+        </figure>
         <div className="land-trust mt-8">
           {QUOTES.map((q) => (
             <figure key={q.who} className="land-quote">
