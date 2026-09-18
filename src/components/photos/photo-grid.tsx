@@ -90,7 +90,7 @@ export function PhotoGrid({
                 #{photo.sequence}
               </span>
               {photo.id === coverPhotoId ? (
-                <span className="absolute bottom-1 left-1 rounded-md bg-brand-accent px-1.5 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-foreground">
+                <span className="absolute bottom-1 left-1 rounded-md bg-brand-accent-soft px-1.5 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
                   Title page
                 </span>
               ) : null}
