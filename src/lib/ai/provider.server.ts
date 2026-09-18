@@ -11,6 +11,7 @@ import {
   needsEscalation,
   parseEnvelope,
   SchemaValidationError,
+  type BriefFindingsRule,
   type Envelope,
 } from "@/lib/ai/observation";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -46,6 +47,8 @@ export type AnalyseInput = {
   systemPrompt: string;
   userPrompt: string;
   imageUrl: string;
+  /** Whether the report's brief tightens output to one finding per photograph. */
+  findingsRule?: BriefFindingsRule;
 };
 
 /** Exponential backoff with jitter, applied only to 429, 5xx and network faults. */
