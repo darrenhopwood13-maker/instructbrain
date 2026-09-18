@@ -331,7 +331,7 @@ export async function analysePhotoForReport(
   const key = snapshotKey(
     snapshot,
     config.models,
-    brief ? `${tone.id}:${brief.specialRequest}` : "",
+    brief ? `${tone.id}:${brief.findingsPerPhoto}:${brief.specialRequest}` : "",
   );
 
   if (input.force) await clearPreviousDrafts(client, input.reportId, photo.id);
