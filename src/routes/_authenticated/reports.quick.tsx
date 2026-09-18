@@ -27,11 +27,13 @@ import {
   REPORT_TONES,
   REPORT_TYPES,
   SPECIAL_REQUEST_LIMIT,
+  findingsPerPhotoById,
   isMinimalBriefTemplate,
   presetById,
   reportTypeById,
   sanitiseSpecialRequest,
   toneById,
+  type FindingsPerPhoto,
   type ReportBrief,
   type ReportToneId,
   type ReportTypeId,
@@ -223,6 +225,10 @@ function CustomReport() {
   // A minimal record template carries no fix, no severity and no report type
   // choice — those controls are hidden rather than shown switched off.
   const minimal = isMinimalBriefTemplate(templateId);
+  // Only a template that allows several findings per photograph can be tightened.
+  const multiFindingTemplate = chosenDefinition
+    ? allowsMultipleFindingsPerPhoto(snapshotOf(chosenDefinition))
+    : false;
   const stripped = identifier || minimal;
   const focusMissing = minimal && sanitiseSpecialRequest(specialRequest) === "";
 
