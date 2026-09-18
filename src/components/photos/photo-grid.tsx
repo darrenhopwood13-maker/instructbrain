@@ -28,12 +28,17 @@ export function PhotoGrid({
   selected,
   onToggle,
   onOpen,
+  coverPhotoId = null,
+  onSetCover,
 }: {
   photos: PhotoRow[];
   urls: Record<string, string>;
   selected: Set<string>;
   onToggle: (id: string, shiftKey: boolean) => void;
   onOpen: (photo: PhotoRow) => void;
+  /** The photograph currently used on the title page, if one is chosen. */
+  coverPhotoId?: string | null;
+  onSetCover?: (photo: PhotoRow) => void;
 }) {
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -84,6 +89,11 @@ export function PhotoGrid({
               <span className="absolute right-1 top-1 rounded-md bg-background/85 px-1 py-0.5 text-[0.6875rem] font-semibold tabular-nums">
                 #{photo.sequence}
               </span>
+              {photo.id === coverPhotoId ? (
+                <span className="absolute bottom-1 left-1 rounded-md bg-brand-accent-soft px-1.5 py-0.5 text-[0.6875rem] font-semibold text-brand-accent-ink">
+                  Title page
+                </span>
+              ) : null}
 
             </div>
 
@@ -109,6 +119,16 @@ export function PhotoGrid({
                     {photo.gps_lat.toFixed(5)}, {photo.gps_lng.toFixed(5)}
                   </span>
                 </p>
+              ) : null}
+              {onSetCover ? (
+                <button
+                  type="button"
+                  onClick={() => onSetCover(photo)}
+                  disabled={photo.id === coverPhotoId}
+                  className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border px-2 text-xs font-medium disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+                >
+                  {photo.id === coverPhotoId ? "On the title page" : "Set as title page"}
+                </button>
               ) : null}
             </div>
           </li>
