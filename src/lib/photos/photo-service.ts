@@ -110,8 +110,12 @@ export function uploadOriginal(
       const token = await accessToken();
       const baseUrl =
         (import.meta.env["VITE_SUPABASE_URL"] as string | undefined) ??
-        (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined);
-      const apiKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined;
+        (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined) ??
+        'https://krwphsejinmlwvtwugwk.supabase.co';
+      const apiKey =
+        (import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined) ??
+        (typeof process !== "undefined" ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined) ??
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtyd3Boc2VqaW5tbHd2dHd1Z3drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMTM5MjQsImV4cCI6MjEwMTU4OTkyNH0.okjK1J7KNPtQ77PK7i3XguekLsdMnRv3x1gvzmQ0gXs';
       if (!token) {
         reject(new Error("You need to be signed in to upload photographs."));
         return;
