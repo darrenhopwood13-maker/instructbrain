@@ -20,7 +20,11 @@ import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
-import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import {
+  allowsMultipleFindingsPerPhoto,
+  definitionLabel,
+  type SurveyTypeSnapshot,
+} from "@/lib/survey-types";
 import {
   DEFAULT_TONE_ID,
   REPORT_PRESETS,
