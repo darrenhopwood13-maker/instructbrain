@@ -268,6 +268,7 @@ export function coerceBrief(value: unknown): ReportBrief | null {
     specialRequest: sanitiseSpecialRequest(
       typeof raw["specialRequest"] === "string" ? raw["specialRequest"] : "",
     ),
+    findingsPerPhoto: findingsPerPhotoById(raw["findingsPerPhoto"]),
     surveyTypes,
   };
 }
