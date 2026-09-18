@@ -309,8 +309,9 @@ export function draftsFromEnvelope(
   envelope: Envelope,
   snapshot: SurveyTypeSnapshot,
   options: CoerceOptions,
+  brief?: BriefFindingsRule,
 ): DraftFinding[] {
-  const multiple = allowsMultipleFindingsPerPhoto(snapshot);
+  const multiple = allowsMultipleFindingsPerPhoto(snapshot, brief);
 
   if (!envelope.assessable) {
     return [
