@@ -112,7 +112,12 @@ export async function analysePhotograph(
     config.escalationEnabled &&
     config.models.escalation !== config.models.triage &&
     (triage.envelope === null ||
-      needsEscalation(triage.envelope, input.snapshot, config.confidenceThreshold))
+      needsEscalation(
+        triage.envelope,
+        input.snapshot,
+        config.confidenceThreshold,
+        input.findingsRule,
+      ))
   ) {
     const escalation = await callTier(input, "escalation", config);
     attempts.push(escalation);
