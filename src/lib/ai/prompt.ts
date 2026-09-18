@@ -62,7 +62,7 @@ export function buildSystemPrompt(
   snapshot: SurveyTypeSnapshot,
   brief?: ReportBrief | null,
 ): string {
-  const multiple = allowsMultipleFindingsPerPhoto(snapshot);
+  const multiple = allowsMultipleFindingsPerPhoto(snapshot, brief ?? null);
 
   const statuses = statusesOf(snapshot);
 
@@ -74,7 +74,7 @@ export function buildSystemPrompt(
     ...UNIVERSAL_RULES,
     multiple
       ? "A single photograph may contain several separate observations. Return one array entry per distinct observation."
-      : "This survey type records at most one observation per photograph. Return an array containing at most one entry, and an empty array if there is nothing to record.",
+      : "Record at most one observation per photograph. Where a photograph shows more than one thing, combine them into a single observation describing the overall condition — do not split them. Return an array containing at most one entry, and an empty array if there is nothing to record.",
     list(
       "Allowed status values (use the id exactly)",
       statuses.map((status) =>

@@ -310,10 +310,17 @@ export function distributionGrouping(
     : null;
 }
 
+/**
+ * The template decides whether several findings may come from one photograph.
+ * A report's brief may TIGHTEN that to one per photograph, never loosen it:
+ * a single-finding template stays single whatever the brief asks for.
+ */
 export function allowsMultipleFindingsPerPhoto(
   snapshot: SurveyTypeSnapshot | null | undefined,
+  brief?: { findingsPerPhoto?: string } | null,
 ): boolean {
-  return snapshot?.findingsPerPhoto === "multiple";
+  if (snapshot?.findingsPerPhoto !== "multiple") return false;
+  return brief?.findingsPerPhoto !== "one";
 }
 
 export function aiGuidanceOf(
