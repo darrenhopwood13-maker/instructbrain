@@ -11,6 +11,12 @@ import {
 } from "@/lib/survey-types";
 
 /**
+ * The only part of the brief this module needs: whether the report has been
+ * asked to keep one finding per photograph.
+ */
+export type BriefFindingsRule = { findingsPerPhoto?: string } | null | undefined;
+
+/**
  * The model's output contract.
  *
  * Envelope: { assessable, abstain_reason, observations: [...] }
@@ -214,9 +220,11 @@ export function needsEscalation(
   envelope: Envelope,
   snapshot: SurveyTypeSnapshot,
   confidenceThreshold: number,
+  brief?: BriefFindingsRule,
 ): boolean {
   if (!envelope.assessable) return true;
-  if (envelope.observations.length === 0 && !allowsMultipleFindingsPerPhoto(snapshot)) return true;
+  if (envelope.observations.length === 0 && !allowsMultipleFindingsPerPhoto(snapshot, brief))
+    return true;
   return envelope.observations.some((observation) => {
     if (observation.confidence === null || observation.confidence < confidenceThreshold) return true;
     return resolveStatus(snapshot, observation.status).tone === "fail";
