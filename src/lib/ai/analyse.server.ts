@@ -376,6 +376,7 @@ export async function analysePhotoForReport(
         {
           snapshot,
           systemPrompt: buildSystemPrompt(snapshot, brief),
+          findingsRule: brief,
           userPrompt: buildUserPrompt(
             {
               captureFields: photo.capture_fields ?? {},
@@ -432,11 +433,16 @@ export async function analysePhotoForReport(
   }
 
   const rawDrafts: DraftFinding[] = envelope
-    ? draftsFromEnvelope(envelope, snapshot, {
-        confidenceThreshold: config.confidenceThreshold,
-        tradeConfidenceThreshold: config.tradeConfidenceThreshold,
-        tier: result.tier,
-      })
+    ? draftsFromEnvelope(
+        envelope,
+        snapshot,
+        {
+          confidenceThreshold: config.confidenceThreshold,
+          tradeConfidenceThreshold: config.tradeConfidenceThreshold,
+          tier: result.tier,
+        },
+        brief,
+      )
     : [notAssessedDraft(failure ?? "the AI call failed.", result.tier, null)];
 
   // Wording only. Status, severity id, ref and confidence are never touched
