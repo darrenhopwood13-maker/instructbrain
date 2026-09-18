@@ -510,11 +510,35 @@ export function PhotosPanel({
             </div>
           </div>
 
+          <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
+            <span className="font-semibold">Title page photograph: </span>
+            {coverPhotoId
+              ? `#${photos.find((photo) => photo.id === coverPhotoId)?.sequence ?? "—"} — ${
+                  photos.find((photo) => photo.id === coverPhotoId)?.original_filename ??
+                  "chosen photograph"
+                }`
+              : "the first photograph will be used. Choose any photograph below instead."}
+          </p>
+
           <PhotoGrid
             photos={photos}
             urls={urls}
             selected={selected}
             onToggle={toggle}
+            coverPhotoId={coverPhotoId}
+            onSetCover={(photo) => {
+              void (async () => {
+                try {
+                  await setCoverPhoto(reportId, photo.id);
+                  setCoverPhotoId(photo.id);
+                  toast.success(`Photograph #${photo.sequence} is now the title page.`);
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error ? error.message : "The title page could not be changed.",
+                  );
+                }
+              })();
+            }}
             onOpen={(photo) => {
               setEditing(photo);
               setEditValues({ ...(photo.capture_fields ?? {}) });
