@@ -409,7 +409,9 @@ function ComplianceRun() {
                       {entry.photoId && photoUrls.data?.get(entry.photoId) ? (
                         <button
                           type="button"
-                          onClick={() => setViewPhoto(photoUrls.data?.get(entry.photoId) ?? null)}
+                          onClick={() =>
+                            setViewPhoto(photoUrls.data?.get(entry.photoId ?? "") ?? null)
+                          }
                           className="mt-2 block overflow-hidden rounded-md border border-border transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
                         >
                           <img
