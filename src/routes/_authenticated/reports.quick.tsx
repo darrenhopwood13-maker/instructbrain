@@ -110,6 +110,7 @@ function CustomReport() {
   const [includeFix, setIncludeFix] = useState(true);
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
+  const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
   const [templateName, setTemplateName] = useState("");
   const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
@@ -148,6 +149,7 @@ function CustomReport() {
         if (typeof saved["advisoryFooter"] === "boolean") {
           setAdvisoryFooter(saved["advisoryFooter"]);
         }
+        setFindingsPerPhoto(findingsPerPhotoById(saved["findingsPerPhoto"]));
       }
     } catch {
       // A corrupt or blocked store simply means the defaults stand.
@@ -170,6 +172,7 @@ function CustomReport() {
           includeFix,
           includeSeverity,
           advisoryFooter,
+          findingsPerPhoto,
         }),
       );
     } catch {
@@ -184,6 +187,7 @@ function CustomReport() {
     includeFix,
     includeSeverity,
     advisoryFooter,
+    findingsPerPhoto,
   ]);
 
 
@@ -230,6 +234,7 @@ function CustomReport() {
     includeSeverity: stripped ? false : includeSeverity,
     advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
+    findingsPerPhoto,
     surveyTypes: chosenDefinition
       ? [
           {
@@ -620,6 +625,37 @@ function CustomReport() {
                   </p>
                 </div>
               )}
+
+              {multiFindingTemplate ? (
+                <div>
+                  <label htmlFor="findings-per-photo" className="text-sm font-semibold">
+                    Findings per photograph
+                  </label>
+                  <Select
+                    value={findingsPerPhoto}
+                    onValueChange={(next) => setFindingsPerPhoto(findingsPerPhotoById(next))}
+                  >
+                    <SelectTrigger
+                      id="findings-per-photo"
+                      aria-label="Findings per photograph"
+                      className="mt-2 h-11 w-full bg-surface-raised text-sm"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="template">
+                        Follow the template — every item found
+                      </SelectItem>
+                      <SelectItem value="one">One finding per photograph</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {findingsPerPhoto === "one"
+                      ? "Each photograph gets one combined entry, so a single photograph cannot produce several near-identical items."
+                      : "A photograph showing several separate items produces a separate entry for each."}
+                  </p>
+                </div>
+              ) : null}
 
               {minimal ? (
                 <p className="text-xs text-muted-foreground">
