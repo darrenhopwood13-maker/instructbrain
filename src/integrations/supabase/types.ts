@@ -1604,6 +1604,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compliance_run_is_archived: {
+        Args: { _run_id: string }
+        Returns: boolean
+      }
       compliance_run_is_locked: { Args: { _run_id: string }; Returns: boolean }
       create_organisation: { Args: { _name: string }; Returns: string }
       directory_org: { Args: { _directory_id: string }; Returns: string }
