@@ -179,6 +179,17 @@ export function presetById(id: string | null | undefined): ReportPreset | null {
   return REPORT_PRESETS.find((preset) => preset.id === id) ?? null;
 }
 
+/**
+ * How many findings a photograph may produce. "template" follows the report
+ * template; "one" tightens it to a single combined finding per photograph.
+ * It can only tighten — a single-finding template is unaffected.
+ */
+export type FindingsPerPhoto = "template" | "one";
+
+export function findingsPerPhotoById(value: unknown): FindingsPerPhoto {
+  return value === "one" ? "one" : "template";
+}
+
 export type ReportBrief = {
   presetId: string | null;
   tone: ReportToneId;
@@ -187,6 +198,7 @@ export type ReportBrief = {
   includeSeverity: boolean;
   advisoryFooter: boolean;
   specialRequest: string;
+  findingsPerPhoto: FindingsPerPhoto;
   /** Snapshot of every survey type this report covers, keyed by definition id. */
   surveyTypes?: Array<{ id: string; label: string }>;
 };
@@ -199,6 +211,7 @@ export const EMPTY_BRIEF: ReportBrief = {
   includeSeverity: true,
   advisoryFooter: false,
   specialRequest: "",
+  findingsPerPhoto: "template",
   surveyTypes: [],
 };
 
