@@ -652,6 +652,22 @@ function CustomReport() {
                 </div>
               )}
 
+              {asksForHeader ? (
+                <DocumentHeaderFields
+                  title={docTitle}
+                  subtitle={docSubtitle}
+                  reportDate={docDate}
+                  authorLabel={user?.email ?? "The signed-in account"}
+                  titlePlaceholder={
+                    chosenDefinition ? definitionLabel(snapshotOf(chosenDefinition)) : "Report title"
+                  }
+                  onTitle={setDocTitle}
+                  onSubtitle={setDocSubtitle}
+                  onReportDate={setDocDate}
+                  disabled={start.isPending}
+                />
+              ) : null}
+
               {multiFindingTemplate ? (
                 <div>
                   <label htmlFor="findings-per-photo" className="text-sm font-semibold">
