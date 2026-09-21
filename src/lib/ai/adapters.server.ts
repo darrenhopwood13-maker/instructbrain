@@ -7,6 +7,7 @@
  */
 import type { AiConfig, AnalysisTier } from "@/lib/ai/config";
 import { envelopeJsonSchema } from "@/lib/ai/observation";
+import { dataUrlParts } from "@/lib/photos/analysis-image.server";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export class AiProviderError extends Error {
@@ -25,7 +26,11 @@ export type AdapterRequest = {
   snapshot: SurveyTypeSnapshot;
   systemPrompt: string;
   userPrompt: string;
-  /** Full-resolution source, resolved by analysisSourcePath. Never a thumbnail. */
+  /**
+   * Full-resolution source, resolved by analysisSourcePath. Never a thumbnail.
+   * Normally a `data:` URL carrying the stored bytes inline, so the provider
+   * never has to fetch anything itself.
+   */
   imageUrl: string;
   model: string;
   tier: AnalysisTier;
