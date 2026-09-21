@@ -167,7 +167,19 @@ async function anthropic(request: AdapterRequest): Promise<AdapterResponse> {
           {
             role: "user",
             content: [
-              { type: "image", source: { type: "url", url: request.imageUrl } },
+              (() => {
+                const inline = dataUrlParts(request.imageUrl);
+                return inline
+                  ? {
+                      type: "image",
+                      source: {
+                        type: "base64",
+                        media_type: inline.mimeType,
+                        data: inline.data,
+                      },
+                    }
+                  : { type: "image", source: { type: "url", url: request.imageUrl } };
+              })(),
               { type: "text", text: request.userPrompt },
             ],
           },
@@ -203,6 +215,8 @@ async function fetchAsBase64(
   url: string,
   timeoutMs: number,
 ): Promise<{ data: string; mimeType: string }> {
+  const inline = dataUrlParts(url);
+  if (inline) return { data: inline.data, mimeType: inline.mimeType };
   const response = await post(url, { method: "GET" }, timeoutMs);
   if (!response.ok) {
     throw new AiProviderError(`the photograph could not be read (${response.status}).`);
