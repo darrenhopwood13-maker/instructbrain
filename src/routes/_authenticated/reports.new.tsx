@@ -16,6 +16,8 @@ import { useOrganisations } from "@/lib/use-organisations";
 import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
+  allowsMultipleFindingsPerPhoto,
+  asksForDocumentHeader,
   captureFieldsOf,
   categoryGroupsOf,
   definitionLabel,
@@ -28,6 +30,13 @@ import {
 import { StatusPill } from "@/components/status-pill";
 import { TemplateSelect } from "@/components/template-select";
 import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
+import { DocumentHeaderFields } from "@/components/report/document-header-fields";
+import {
+  EMPTY_BRIEF,
+  findingsPerPhotoById,
+  type FindingsPerPhoto,
+  type ReportBrief,
+} from "@/lib/report/brief";
 import { applyBranding } from "@/lib/report/branding";
 import { toast } from "sonner";
 
