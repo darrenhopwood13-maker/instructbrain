@@ -137,7 +137,7 @@ export function inventoryAppendixEntries(document: ReportDocument): InventoryApp
     .filter((photo) => {
       if (photo.id === cover?.id) return false;
       const role = photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 });
-      return role?.id !== layout.overviewRoleId;
+      return role?.id !== layout.overviewRoleId && role?.countsAsCover !== true;
     })
     .sort((a, b) => a.sequence - b.sequence)
     .map((photo) => {
