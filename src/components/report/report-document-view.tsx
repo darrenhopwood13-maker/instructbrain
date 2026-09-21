@@ -21,10 +21,11 @@ import {
 import { itemLabel, itemLabels } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import {
+  inventoryAppendixEntries,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
-  inventoryItemLabel,
+  inventoryItemWithPhotoLabel,
   inventoryLayout,
   inventoryRooms,
   isInventoryLayout,
@@ -159,15 +160,7 @@ function InventoryDocument({
   const layout = inventoryLayout(document);
   const cover = inventoryCoverPhoto(document);
   const readOnly = !editable || !onFindingPatch;
-  const remainingPhotos = document.photos.filter((photo) => {
-    if (photo.id === cover?.id) return false;
-    if (rooms.some((room) => room.overviewPhotos.some((overview) => overview.id === photo.id))) {
-      return false;
-    }
-    return !document.findings.some((finding) =>
-      finding.photos.some((attachment) => attachment.photo.id === photo.id),
-    );
-  });
+  const appendixEntries = inventoryAppendixEntries(document);
 
   return (
     <article className="report-document inventory-document space-y-8">
@@ -290,11 +283,11 @@ function InventoryDocument({
                     >
                       <div className="border-border p-3 font-semibold sm:border-r">
                         <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
-                        {inventoryItemLabel(finding)}
+                        {inventoryItemWithPhotoLabel(finding)}
                       </div>
                       <div className="border-border p-3 sm:border-r">
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
-                          Description
+                          Description / photo reference
                         </span>
                         {finding.findingText || "Not recorded"}
                       </div>
@@ -324,7 +317,9 @@ function InventoryDocument({
         </div>
       </section>
 
-      {remainingPhotos.length > 0 ? <InventoryAppendix photos={remainingPhotos} print={print} /> : null}
+      {appendixEntries.length > 0 ? <InventoryAppendix entries={appendixEntries} print={print} /> : null}
+
+      <InventoryBackingPages document={document} />
     </article>
   );
 }
@@ -363,23 +358,72 @@ function InventoryCheckoutComment({
   );
 }
 
-function InventoryAppendix({ photos, print }: { photos: ReportDocument["photos"]; print: boolean }) {
+function InventoryAppendix({
+  entries,
+  print,
+}: {
+  entries: ReturnType<typeof inventoryAppendixEntries>;
+  print: boolean;
+}) {
   return (
     <section aria-labelledby="inventory-appendix" className="break-before-page">
       <h2 id="inventory-appendix" className="editorial-title text-xl font-semibold">
-        Appendix — photographs
+        Appendix — item photographs
       </h2>
       <ul className="mt-4 grid gap-5 sm:grid-cols-3">
-        {photos.map((photo) => (
-          <li key={photo.id} className="break-inside-avoid">
+        {entries.map(({ photo, findings, room }) => (
+          <li key={photo.id} className="break-inside-avoid rounded-lg border border-border p-2">
             <PhotoFigure
               attachment={{ photo, role: "appendix", region: null }}
               useFullResolution={print}
-              caption={`Photograph ${photo.sequence}`}
+              caption={`Photo ${photo.sequence} — ${room}`}
             />
+            {findings.length > 0 ? (
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                {findings.map((finding) => inventoryItemWithPhotoLabel(finding)).join(" · ")}
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function InventoryBackingPages({ document }: { document: ReportDocument }) {
+  const organisation = document.organisation?.name ?? "instructBrain";
+  return (
+    <section aria-label="Inventory notes" className="break-before-page space-y-8">
+      <div>
+        <h2 className="editorial-title text-xl font-semibold">Inventory guidance notes</h2>
+        <div className="mt-4 grid gap-4 text-sm leading-6 sm:grid-cols-2">
+          <p>
+            This inventory records the visible contents, fixtures and fittings photographed at the
+            time of inspection. Each room section shows the room overview photographs first, followed
+            by the item schedule recorded for that room.
+          </p>
+          <p>
+            Item photographs are reproduced at the rear of the report in upload order. The photograph
+            number shown in the table links the schedule entry to the matching photograph.
+          </p>
+          <p>
+            The Check Out Comment column is left available for end-of-tenancy or close-out notes. It
+            should be completed by a person before it is relied on as a check-out record.
+          </p>
+          <p>
+            Any item marked Not assessed was not resolved automatically and requires human review
+            before the report is issued.
+          </p>
+        </div>
+      </div>
+      <div>
+        <h2 className="editorial-title text-xl font-semibold">Schedule of condition</h2>
+        <p className="mt-4 text-sm leading-6">
+          The condition wording is based on the photographs supplied and the information recorded on
+          site. This document is branded by {organisation} as part of the instructSite family and is
+          intended as a professional record of the photographed inventory.
+        </p>
+      </div>
     </section>
   );
 }

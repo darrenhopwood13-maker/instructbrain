@@ -13,6 +13,13 @@ export type InventoryRoomSection = {
   label: string;
   overviewPhotos: DocPhoto[];
   findings: DocFinding[];
+  firstSequence: number;
+};
+
+export type InventoryAppendixEntry = {
+  photo: DocPhoto;
+  findings: DocFinding[];
+  room: string;
 };
 
 const UNRECORDED_SECTION = "Room not recorded";
@@ -57,7 +64,7 @@ export function inventoryRooms(document: ReportDocument): InventoryRoomSection[]
     const key = label.toLowerCase();
     const existing = map.get(key);
     if (existing) return existing;
-    const next = { key, label, overviewPhotos: [], findings: [] };
+    const next = { key, label, overviewPhotos: [], findings: [], firstSequence: Number.MAX_SAFE_INTEGER };
     map.set(key, next);
     return next;
   };
@@ -65,22 +72,81 @@ export function inventoryRooms(document: ReportDocument): InventoryRoomSection[]
   for (const photo of document.photos) {
     const role = photoRoleOf(document.snapshot, photo.captureFields);
     if (role?.id !== overviewRoleId) continue;
-    add(sectionValue(photo.captureFields, sectionField)).overviewPhotos.push(photo);
+    const room = add(sectionValue(photo.captureFields, sectionField));
+    room.overviewPhotos.push(photo);
+    room.firstSequence = Math.min(room.firstSequence, photo.sequence);
   }
 
   for (const finding of document.findings) {
-    add(sectionValue(finding.captureFields, sectionField)).findings.push(finding);
+    const room = add(sectionValue(finding.captureFields, sectionField));
+    room.findings.push(finding);
+    const firstPhotoSequence = inventoryFindingPhotos(finding)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+    room.firstSequence = Math.min(room.firstSequence, firstPhotoSequence, finding.sequence);
   }
 
-  return [...map.values()].map((room) => ({
-    ...room,
-    overviewPhotos: room.overviewPhotos.sort((a, b) => a.sequence - b.sequence).slice(0, 3),
-    findings: room.findings.sort((a, b) => {
-      const aSeq = a.photos[0]?.photo.sequence ?? Number.MAX_SAFE_INTEGER;
-      const bSeq = b.photos[0]?.photo.sequence ?? Number.MAX_SAFE_INTEGER;
-      return aSeq === bSeq ? a.sequence - b.sequence : aSeq - bSeq;
-    }),
-  }));
+  return [...map.values()]
+    .map((room) => ({
+      ...room,
+      overviewPhotos: room.overviewPhotos.sort((a, b) => a.sequence - b.sequence).slice(0, 3),
+      findings: room.findings.sort((a, b) => {
+        const aSeq = inventoryFindingPhotos(a)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+        const bSeq = inventoryFindingPhotos(b)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+        return aSeq === bSeq ? a.sequence - b.sequence : aSeq - bSeq;
+      }),
+    }))
+    .sort((a, b) => a.firstSequence - b.firstSequence || a.label.localeCompare(b.label, "en-GB"));
+}
+
+export function inventoryFindingPhotos(finding: DocFinding): DocPhoto[] {
+  const seen = new Set<string>();
+  return finding.photos
+    .map((attachment) => attachment.photo)
+    .filter((photo) => {
+      if (seen.has(photo.id)) return false;
+      seen.add(photo.id);
+      return true;
+    })
+    .sort((a, b) => a.sequence - b.sequence);
+}
+
+export function inventoryPhotoReference(finding: DocFinding): string {
+  const sequences = inventoryFindingPhotos(finding)
+    .map((photo) => photo.sequence)
+    .filter((sequence) => Number.isFinite(sequence));
+  if (sequences.length === 0) return "Photo not linked";
+  return sequences.length === 1
+    ? `Photo ${sequences[0]}`
+    : `Photos ${sequences.join(", ")}`;
+}
+
+export function inventoryAppendixEntries(document: ReportDocument): InventoryAppendixEntry[] {
+  const layout = inventoryLayout(document);
+  if (!layout) return [];
+
+  const cover = inventoryCoverPhoto(document);
+  const findingsByPhoto = new Map<string, DocFinding[]>();
+  for (const finding of document.findings) {
+    for (const photo of inventoryFindingPhotos(finding)) {
+      const existing = findingsByPhoto.get(photo.id) ?? [];
+      existing.push(finding);
+      findingsByPhoto.set(photo.id, existing);
+    }
+  }
+
+  return document.photos
+    .filter((photo) => {
+      if (photo.id === cover?.id) return false;
+      const role = photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 });
+      return role?.id !== layout.overviewRoleId;
+    })
+    .sort((a, b) => a.sequence - b.sequence)
+    .map((photo) => {
+      const findings = (findingsByPhoto.get(photo.id) ?? []).sort((a, b) => a.sequence - b.sequence);
+      const room =
+        findings[0]?.captureFields[layout.sectionField ?? ""] ??
+        sectionValue(photo.captureFields, layout.sectionField);
+      return { photo, findings, room: room || UNRECORDED_SECTION };
+    });
 }
 
 export function inventoryConditionLabel(document: ReportDocument, finding: DocFinding): string {
@@ -90,6 +156,10 @@ export function inventoryConditionLabel(document: ReportDocument, finding: DocFi
 export function inventoryItemLabel(finding: DocFinding): string {
   const count = finding.captureFields["count"]?.trim();
   return count ? `${itemLabel(finding.ref)} · Qty ${count}` : itemLabel(finding.ref);
+}
+
+export function inventoryItemWithPhotoLabel(finding: DocFinding): string {
+  return `${inventoryItemLabel(finding)} · ${inventoryPhotoReference(finding)}`;
 }
 
 export function inventoryCheckoutComment(document: ReportDocument, finding: DocFinding): string {
