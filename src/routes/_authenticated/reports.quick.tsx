@@ -297,8 +297,12 @@ function CustomReport() {
         organisationId,
         projectId: null,
         isQuick: true,
-        title: `${definitionLabel(frozen)} — ${todayLabel()}`,
+        title:
+          asksForHeader && docTitle.trim() !== ""
+            ? docTitle
+            : `${definitionLabel(frozen)} — ${todayLabel()}`,
         reference: "",
+        ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
         definition: frozen,
         authorId: userId,
         brief,
