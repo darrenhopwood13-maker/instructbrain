@@ -36,6 +36,41 @@ export type CaptureField = {
   hint?: string;
 };
 
+export type PhotoWorkflowRole = {
+  id: string;
+  label: string;
+  description?: string;
+  /** Photos with this role stay in the report but are not sent for AI analysis. */
+  excludesAi?: boolean;
+  /** A photo with this role is suitable for the report title page. */
+  countsAsCover?: boolean;
+};
+
+export type PhotoWorkflow = {
+  kind: string;
+  roleField: string;
+  sectionField?: string;
+  roles: PhotoWorkflowRole[];
+  firstPhotoRoleId?: string;
+  coverRoleId?: string;
+  overviewRoleId?: string;
+  detailRoleId?: string;
+  maxOverviewPhotos?: number;
+};
+
+export type ReportLayout = {
+  kind: string;
+  sectionField?: string;
+  overviewRoleId?: string;
+  checkoutCommentField?: string;
+  columns?: {
+    item?: string;
+    description?: string;
+    condition?: string;
+    checkoutComment?: string;
+  };
+};
+
 export type CategoryDefinition = {
   id: string;
   label: string;
@@ -78,6 +113,10 @@ export type SurveyDefinition = {
    * this by naming a discipline.
    */
   asksForDocumentHeader?: boolean;
+  /** Optional photo-capture workflow, carried by the template snapshot. */
+  photoWorkflow?: PhotoWorkflow;
+  /** Optional document layout, carried by the template snapshot. */
+  reportLayout?: ReportLayout;
 };
 
 /** A definition frozen into a report at creation. Same shape, by design. */
@@ -334,6 +373,98 @@ export function asksForDocumentHeader(
   snapshot: SurveyTypeSnapshot | null | undefined,
 ): boolean {
   return snapshot?.asksForDocumentHeader === true;
+}
+
+function isPhotoWorkflowRole(value: unknown): value is PhotoWorkflowRole {
+  return isRecord(value) && typeof value["id"] === "string" && typeof value["label"] === "string";
+}
+
+export function photoWorkflowOf(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): PhotoWorkflow | null {
+  const raw = snapshot?.photoWorkflow;
+  if (!isRecord(raw)) return null;
+  const roles = Array.isArray(raw["roles"]) ? raw["roles"].filter(isPhotoWorkflowRole) : [];
+  if (typeof raw["kind"] !== "string" || typeof raw["roleField"] !== "string" || roles.length === 0) {
+    return null;
+  }
+  return {
+    kind: raw["kind"],
+    roleField: raw["roleField"],
+    roles: roles.map((role) => ({
+      id: role.id,
+      label: role.label,
+      ...(typeof role.description === "string" ? { description: role.description } : {}),
+      ...(role.excludesAi === true ? { excludesAi: true } : {}),
+      ...(role.countsAsCover === true ? { countsAsCover: true } : {}),
+    })),
+    ...(typeof raw["sectionField"] === "string" ? { sectionField: raw["sectionField"] } : {}),
+    ...(typeof raw["firstPhotoRoleId"] === "string" ? { firstPhotoRoleId: raw["firstPhotoRoleId"] } : {}),
+    ...(typeof raw["coverRoleId"] === "string" ? { coverRoleId: raw["coverRoleId"] } : {}),
+    ...(typeof raw["overviewRoleId"] === "string" ? { overviewRoleId: raw["overviewRoleId"] } : {}),
+    ...(typeof raw["detailRoleId"] === "string" ? { detailRoleId: raw["detailRoleId"] } : {}),
+    ...(Number.isFinite(Number(raw["maxOverviewPhotos"]))
+      ? { maxOverviewPhotos: Math.max(1, Number(raw["maxOverviewPhotos"])) }
+      : {}),
+  };
+}
+
+export function reportLayoutOf(snapshot: SurveyTypeSnapshot | null | undefined): ReportLayout | null {
+  const raw = snapshot?.reportLayout;
+  if (!isRecord(raw) || typeof raw["kind"] !== "string") return null;
+  const columns = isRecord(raw["columns"]) ? raw["columns"] : null;
+  return {
+    kind: raw["kind"],
+    ...(typeof raw["sectionField"] === "string" ? { sectionField: raw["sectionField"] } : {}),
+    ...(typeof raw["overviewRoleId"] === "string" ? { overviewRoleId: raw["overviewRoleId"] } : {}),
+    ...(typeof raw["checkoutCommentField"] === "string"
+      ? { checkoutCommentField: raw["checkoutCommentField"] }
+      : {}),
+    ...(columns
+      ? {
+          columns: {
+            ...(typeof columns["item"] === "string" ? { item: columns["item"] } : {}),
+            ...(typeof columns["description"] === "string"
+              ? { description: columns["description"] }
+              : {}),
+            ...(typeof columns["condition"] === "string" ? { condition: columns["condition"] } : {}),
+            ...(typeof columns["checkoutComment"] === "string"
+              ? { checkoutComment: columns["checkoutComment"] }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+export function photoRoleOf(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  captureFields: Record<string, string> | null | undefined,
+  options: { isFirstPhoto?: boolean } = {},
+): PhotoWorkflowRole | null {
+  const workflow = photoWorkflowOf(snapshot);
+  if (!workflow) return null;
+  const explicit = captureFields?.[workflow.roleField]?.trim();
+  const roleId = explicit || (options.isFirstPhoto ? workflow.firstPhotoRoleId : null);
+  if (!roleId) return null;
+  return workflow.roles.find((role) => role.id === roleId) ?? null;
+}
+
+export function photoRoleLabel(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  captureFields: Record<string, string> | null | undefined,
+  options: { isFirstPhoto?: boolean } = {},
+): string | null {
+  return photoRoleOf(snapshot, captureFields, options)?.label ?? null;
+}
+
+export function photoExcludesFromAnalysis(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  captureFields: Record<string, string> | null | undefined,
+  options: { isCover?: boolean; isFirstPhoto?: boolean } = {},
+): boolean {
+  if (options.isCover === true) return true;
+  return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto })?.excludesAi === true;
 }
 
 export function aiGuidanceOf(
