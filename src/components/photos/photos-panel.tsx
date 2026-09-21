@@ -608,7 +608,7 @@ export function PhotosPanel({
               })();
             }}
             snapshot={snapshot}
-            onSetRole={workflow ? setPhotoRole : undefined}
+            {...(workflow ? { onSetRole: setPhotoRole } : {})}
             onOpen={(photo) => {
               setEditing(photo);
               setEditValues({ ...(photo.capture_fields ?? {}) });
