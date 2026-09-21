@@ -44,6 +44,7 @@ import {
   runUploadQueue,
   type TaskProgress,
 } from "@/lib/photos/upload-queue";
+import { snapshotFiles } from "@/lib/photos/file-snapshot";
 import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
@@ -288,6 +289,10 @@ export function PhotosPanel({
         selected = selected.slice(0, remainingPhotos);
         if (selected.length === 0) return;
       }
+      // Bytes are taken into memory in selection order, before anything is
+      // queued: an Android camera/gallery reference can be revoked while a
+      // large batch waits its turn.
+      selected = await snapshotFiles(selected);
       const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
