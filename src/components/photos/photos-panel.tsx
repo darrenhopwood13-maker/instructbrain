@@ -38,7 +38,12 @@ import {
   signedThumbnailUrls,
   type PhotoRow,
 } from "@/lib/photos/photo-service";
-import { overallProgress, runUploadQueue, type TaskProgress } from "@/lib/photos/upload-queue";
+import {
+  assignUploadSequences,
+  overallProgress,
+  runUploadQueue,
+  type TaskProgress,
+} from "@/lib/photos/upload-queue";
 import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
@@ -55,7 +60,13 @@ function sizeLabel(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-type Pending = { id: string; file: File; captureFields: Record<string, string> };
+type Pending = {
+  id: string;
+  file: File;
+  captureFields: Record<string, string>;
+  /** Reserved once from selection order and retained when this item is retried. */
+  sequence: number | null;
+};
 
 export function PhotosPanel({
   reportId,
@@ -171,7 +182,16 @@ export function PhotosPanel({
     async (items: Pending[]) => {
       if (!organisationId || items.length === 0) return;
       setBusy(true);
-      const base = await nextSequence(reportId);
+      const unnumbered = items.some((item) => item.sequence === null);
+      if (unnumbered) {
+        const databaseNext = await nextSequence(reportId);
+        const pendingNext =
+          Math.max(
+            0,
+            ...[...pendingRef.current.values()].map((item) => item.sequence ?? 0),
+          ) + 1;
+        assignUploadSequences(items, Math.max(databaseNext, pendingNext));
+      }
       const overviewCounts = new Map<string, number>();
       if (inventoryWorkflow?.sectionField && inventoryWorkflow.overviewRoleId) {
         for (const photo of photos) {
@@ -186,12 +206,13 @@ export function PhotosPanel({
       }
       try {
         const results = await runUploadQueue(
-          // The number is decided here, in selection order — never inside the
-          // task, where a slow or retried upload would take a later number.
-          items.map((item, index) => ({
+          // The number was reserved above, in selection order — never inside
+          // the task, where a slow or retried upload could take a later number.
+          items.map((item) => ({
             id: item.id,
             run: async (report) => {
-              const sequence = base + index;
+              const sequence = item.sequence;
+              if (sequence === null) throw new Error("Photograph number was not reserved.");
               const captureFields = { ...item.captureFields };
               if (
                 workflow?.firstPhotoRoleId &&
@@ -271,6 +292,7 @@ export function PhotosPanel({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
         captureFields: { ...zoneValues, ...(pinnedFields ?? {}) },
+        sequence: null,
       }));
 
       for (const item of items) pendingRef.current.set(item.id, item);

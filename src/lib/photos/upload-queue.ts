@@ -33,6 +33,23 @@ export type Task<T> = {
   isComplete?: () => Promise<boolean> | boolean;
 };
 
+/**
+ * Reserve stable photograph numbers before concurrent work starts. Existing
+ * numbers survive retries; only newly selected items receive fresh numbers.
+ */
+export function assignUploadSequences<T extends { sequence: number | null }>(
+  items: T[],
+  firstAvailable: number,
+): T[] {
+  let next = firstAvailable;
+  for (const item of items) {
+    if (item.sequence !== null) continue;
+    item.sequence = next;
+    next += 1;
+  }
+  return items;
+}
+
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export type QueueResult<T> = {

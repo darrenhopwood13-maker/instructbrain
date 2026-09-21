@@ -171,9 +171,11 @@ describe("report PDF", () => {
     const built = await buildReportPdf(inventoryDocument, { variant: "full", includePhotos: false });
     expect(textOf(built.bytes.slice(0, 5))).toBe("%PDF-");
     const pdf = await PDFDocument.load(built.bytes);
-    expect(Math.round(pdf.getPage(0).getWidth())).toBe(792);
-    expect(Math.round(pdf.getPage(0).getHeight())).toBe(612);
     expect(pdf.getPageCount()).toBeGreaterThanOrEqual(3);
+    for (const page of pdf.getPages()) {
+      expect(Math.round(page.getWidth())).toBe(792);
+      expect(Math.round(page.getHeight())).toBe(612);
+    }
   });
 });
 
