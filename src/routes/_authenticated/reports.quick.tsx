@@ -120,6 +120,9 @@ function CustomReport() {
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
+  const [docTitle, setDocTitle] = useState("");
+  const [docSubtitle, setDocSubtitle] = useState("");
+  const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [templateName, setTemplateName] = useState("");
   const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
