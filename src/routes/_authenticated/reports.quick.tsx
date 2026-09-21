@@ -444,7 +444,7 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              receive(event.target.files);
+              void receive(event.target.files);
               event.target.value = "";
             }}
           />
@@ -455,7 +455,7 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              receive(event.target.files);
+              void receive(event.target.files);
               event.target.value = "";
             }}
           />
