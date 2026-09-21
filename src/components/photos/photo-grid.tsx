@@ -1,6 +1,7 @@
 import { AlertTriangle, ImageOff, MapPin } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { PhotoRow } from "@/lib/photos/photo-service";
+import { photoRoleOf, photoWorkflowOf, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 function captureLabel(photo: PhotoRow): { text: string; missing: boolean } {
   if (!photo.captured_at) return { text: "No capture time in the file", missing: true };
@@ -30,6 +31,8 @@ export function PhotoGrid({
   onOpen,
   coverPhotoId = null,
   onSetCover,
+  snapshot,
+  onSetRole,
 }: {
   photos: PhotoRow[];
   urls: Record<string, string>;
@@ -39,13 +42,20 @@ export function PhotoGrid({
   /** The photograph currently used on the title page, if one is chosen. */
   coverPhotoId?: string | null;
   onSetCover?: (photo: PhotoRow) => void;
+  snapshot?: SurveyTypeSnapshot;
+  onSetRole?: (photo: PhotoRow, roleId: string) => void;
 }) {
+  const workflow = snapshot ? photoWorkflowOf(snapshot) : null;
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {photos.map((photo) => {
+      {photos.map((photo, index) => {
         const capture = captureLabel(photo);
         const isSelected = selected.has(photo.id);
         const url = urls[photo.id];
+        const role = snapshot
+          ? photoRoleOf(snapshot, photo.capture_fields, { isFirstPhoto: index === 0 })
+          : null;
+        const explicitRole = workflow ? (photo.capture_fields?.[workflow.roleField] ?? "") : "";
         return (
           <li
             key={photo.id}
@@ -94,6 +104,11 @@ export function PhotoGrid({
                   Title page
                 </span>
               ) : null}
+              {role && photo.id !== coverPhotoId ? (
+                <span className="absolute bottom-1 left-1 rounded-md bg-surface-raised/90 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-foreground">
+                  {role.label}
+                </span>
+              ) : null}
 
             </div>
 
@@ -119,6 +134,23 @@ export function PhotoGrid({
                     {photo.gps_lat.toFixed(5)}, {photo.gps_lng.toFixed(5)}
                   </span>
                 </p>
+              ) : null}
+              {workflow && onSetRole ? (
+                <label className="mt-2 block text-xs font-medium text-muted-foreground">
+                  Photograph type
+                  <select
+                    value={explicitRole}
+                    onChange={(event) => onSetRole(photo, event.target.value)}
+                    className="mt-1 h-11 w-full rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+                  >
+                    <option value="">Default</option>
+                    {workflow.roles.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : null}
               {onSetCover ? (
                 <button

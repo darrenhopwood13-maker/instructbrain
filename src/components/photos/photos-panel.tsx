@@ -43,6 +43,8 @@ import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
   definitionLabel,
+  photoRoleOf,
+  photoWorkflowOf,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 
@@ -71,6 +73,7 @@ export function PhotosPanel({
 
   const { session, loading: sessionLoading } = useSession();
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
+  const workflow = useMemo(() => photoWorkflowOf(snapshot), [snapshot]);
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
 
   const [organisationId, setOrganisationId] = useState<string | null>(null);
@@ -161,28 +164,51 @@ export function PhotosPanel({
       setBusy(true);
       const base = await nextSequence(reportId);
       try {
-        await runUploadQueue(
+        const results = await runUploadQueue(
           // The number is decided here, in selection order — never inside the
           // task, where a slow or retried upload would take a later number.
           items.map((item, index) => ({
             id: item.id,
-            run: async (report) =>
+            run: async (report) => {
+              const sequence = base + index;
+              const captureFields = { ...item.captureFields };
+              if (
+                workflow?.firstPhotoRoleId &&
+                sequence === 1 &&
+                !captureFields[workflow.roleField]
+              ) {
+                captureFields[workflow.roleField] = workflow.firstPhotoRoleId;
+              }
               // Photographs reach storage on selection — never held in memory only.
-              uploadPhoto(
+              return uploadPhoto(
                 item.file,
-                { organisationId, reportId, captureFields: item.captureFields },
-                base + index,
+                { organisationId, reportId, captureFields },
+                sequence,
                 report,
-              ),
+              );
+            },
           })),
           { concurrency: CONCURRENCY, maxAttempts: 3, onProgress: applyProgress },
         );
+        const firstCover = results
+          .map((result) => result.value?.photo ?? null)
+          .find((photo) => {
+            if (!photo) return false;
+            return (
+              photoRoleOf(snapshot, photo.capture_fields, { isFirstPhoto: photo.sequence === 1 })
+                ?.countsAsCover === true
+            );
+          });
+        if (!coverPhotoId && firstCover) {
+          await setCoverPhoto(reportId, firstCover.id);
+          setCoverPhotoId(firstCover.id);
+        }
       } finally {
         setBusy(false);
         await refresh();
       }
     },
-    [organisationId, reportId, applyProgress, refresh],
+    [organisationId, reportId, workflow, snapshot, coverPhotoId, applyProgress, refresh],
   );
 
   const addFiles = useCallback(
@@ -327,6 +353,40 @@ export function PhotosPanel({
     }
   };
 
+  const setPhotoRole = async (photo: PhotoRow, roleId: string) => {
+    if (!workflow) return;
+    if (roleId === workflow.overviewRoleId) {
+      const roomKey = workflow.sectionField
+        ? (photo.capture_fields?.[workflow.sectionField] ?? "").trim().toLowerCase()
+        : "";
+      const existing = photos.filter((item) => {
+        if (item.id === photo.id) return false;
+        const sameRoom = workflow.sectionField
+          ? (item.capture_fields?.[workflow.sectionField] ?? "").trim().toLowerCase() === roomKey
+          : true;
+        return sameRoom && item.capture_fields?.[workflow.roleField] === roleId;
+      }).length;
+      if (existing >= (workflow.maxOverviewPhotos ?? 3)) {
+        toast.error(`Only ${workflow.maxOverviewPhotos ?? 3} overview photographs per room.`);
+        return;
+      }
+    }
+    try {
+      await updateCaptureFields([photo.id], { [workflow.roleField]: roleId });
+      const role = workflow.roles.find((item) => item.id === roleId);
+      if (role?.countsAsCover) {
+        await setCoverPhoto(reportId, photo.id);
+        setCoverPhotoId(photo.id);
+      }
+      await refresh();
+      toast.success(role ? `Photograph #${photo.sequence} set as ${role.label}.` : "Photograph type cleared.");
+    } catch (error) {
+      toast.error("Could not update photograph type", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    }
+  };
+
   const overall = overallProgress(
     uploads.map((item) => ({
       id: item.id,
@@ -389,6 +449,12 @@ export function PhotosPanel({
               />
             </div>
           </div>
+        ) : null}
+
+        {workflow ? (
+          <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted-foreground">
+            First exterior photograph is used on the title page. Mark up to {workflow.maxOverviewPhotos ?? 3} wide-angle room photographs as overviews; those photographs stay in the report and are not analysed.
+          </p>
         ) : null}
 
         <input
@@ -539,6 +605,8 @@ export function PhotosPanel({
                 }
               })();
             }}
+            snapshot={snapshot}
+            {...(workflow ? { onSetRole: setPhotoRole } : {})}
             onOpen={(photo) => {
               setEditing(photo);
               setEditValues({ ...(photo.capture_fields ?? {}) });
