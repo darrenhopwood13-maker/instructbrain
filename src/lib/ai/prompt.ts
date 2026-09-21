@@ -12,6 +12,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import { briefPromptSection, type ReportBrief } from "@/lib/report/brief";
+import type { BriefFindingsRule } from "@/lib/ai/observation";
 
 /**
  * Invariant 5: every discipline-specific word in the prompt comes out of the
@@ -61,8 +62,9 @@ function orderedGuidance(snapshot: SurveyTypeSnapshot) {
 export function buildSystemPrompt(
   snapshot: SurveyTypeSnapshot,
   brief?: ReportBrief | null,
+  findingsRule?: BriefFindingsRule,
 ): string {
-  const multiple = allowsMultipleFindingsPerPhoto(snapshot, brief ?? null);
+  const multiple = allowsMultipleFindingsPerPhoto(snapshot, findingsRule ?? brief ?? null);
 
   const statuses = statusesOf(snapshot);
 

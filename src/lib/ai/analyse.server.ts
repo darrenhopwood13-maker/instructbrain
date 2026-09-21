@@ -62,7 +62,12 @@ async function allocateRef(
 
 import { analysisSourcePath } from "@/lib/photos/storage-paths";
 import { loadAnalysableImage } from "@/lib/photos/analysis-image.server";
-import { NOT_ASSESSED_ID, photoExcludesFromAnalysis, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import {
+  NOT_ASSESSED_ID,
+  findingsRuleForPhoto,
+  photoExcludesFromAnalysis,
+  type SurveyTypeSnapshot,
+} from "@/lib/survey-types";
 
 export { AiBudgetExceededError, AiNotConfiguredError };
 
@@ -358,11 +363,14 @@ export async function analysePhotoForReport(
   // photograph decides which snapshot assesses it — and only a type the
   // report itself lists is ever honoured, so vocabulary cannot leak in.
   const snapshot = resolvePhotoSnapshot(primarySnapshot, brief, photo.capture_fields);
+  const findingsRule = findingsRuleForPhoto(snapshot, photo.capture_fields, brief, {
+    isFirstPhoto: firstSequence,
+  });
 
   const key = snapshotKey(
     snapshot,
     config.models,
-    brief ? `${tone.id}:${brief.findingsPerPhoto}:${brief.specialRequest}` : "",
+    [tone.id, findingsRule?.findingsPerPhoto ?? "template", brief?.specialRequest ?? ""].join(":"),
   );
 
   if (input.force) await clearPreviousDrafts(client, input.reportId, photo.id);
@@ -406,8 +414,8 @@ export async function analysePhotoForReport(
       const outcome = await analysePhotograph(
         {
           snapshot,
-          systemPrompt: buildSystemPrompt(snapshot, brief),
-          findingsRule: brief,
+          systemPrompt: buildSystemPrompt(snapshot, brief, findingsRule),
+          findingsRule,
           userPrompt: buildUserPrompt(
             {
               captureFields: photo.capture_fields ?? {},
@@ -472,7 +480,7 @@ export async function analysePhotoForReport(
           tradeConfidenceThreshold: config.tradeConfidenceThreshold,
           tier: result.tier,
         },
-        brief,
+        findingsRule,
       )
     : [notAssessedDraft(failure ?? "the AI call failed.", result.tier, null)];
 

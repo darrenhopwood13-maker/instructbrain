@@ -17,10 +17,11 @@ import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor } from "@/lib/report/sections";
 import {
+  inventoryAppendixEntries,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
-  inventoryItemLabel,
+  inventoryItemWithPhotoLabel,
   inventoryLayout,
   inventoryRooms,
   isInventoryLayout,
@@ -400,6 +401,69 @@ function drawInventoryTableHeader(
   writer.cursor.y -= height;
 }
 
+async function drawInventoryAppendix(
+  writer: Writer,
+  document: ReportDocument,
+  fetcher: PhotoFetcher | null,
+): Promise<void> {
+  const entries = inventoryAppendixEntries(document);
+  if (entries.length === 0) return;
+
+  newPage(writer);
+  drawInventoryHeader(writer, "Photograph appendix");
+  drawText(writer, "Inventory item photographs in upload order.", { size: 9, colour: MUTED, gapAfter: 6 });
+
+  for (const entry of entries) {
+    const { photo, findings, room } = entry;
+    const linkedItems = findings.map((finding) => itemLabel(finding.ref)).join(", ") || "No item linked";
+    ensure(writer, 260);
+    writer.cursor.page.drawText(sanitise(`Photo ${photo.sequence} - ${room}`), {
+      x: writer.margin,
+      y: writer.cursor.y - 10,
+      size: 10,
+      font: writer.bold,
+      color: INK,
+    });
+    writer.cursor.page.drawText(sanitise(linkedItems), {
+      x: writer.margin + 160,
+      y: writer.cursor.y - 10,
+      size: 9,
+      font: writer.regular,
+      color: MUTED,
+    });
+    writer.cursor.y -= 20;
+
+    const boxWidth = Math.min(360, writer.contentWidth);
+    const boxHeight = 210;
+    writer.cursor.page.drawRectangle({
+      x: writer.margin,
+      y: writer.cursor.y - boxHeight,
+      width: boxWidth,
+      height: boxHeight,
+      borderColor: RULE,
+      borderWidth: 0.75,
+    });
+    if (fetcher) {
+      const image = await embedPhoto(writer, fetcher, photo);
+      if (image) drawImageAt(writer.cursor.page, image, writer.margin + 6, writer.cursor.y - 6, boxWidth - 12, boxHeight - 12);
+    }
+    writer.cursor.y -= boxHeight + 18;
+  }
+}
+
+function drawInventoryBackingPages(writer: Writer, document: ReportDocument): void {
+  const pages = inventoryLayout(document)?.backingPages ?? [];
+  if (pages.length === 0) return;
+
+  for (const page of pages) {
+    newPage(writer);
+    drawInventoryHeader(writer, page.title);
+    for (const paragraph of page.body) {
+      drawText(writer, paragraph, { size: 10, lineGap: 4, gapAfter: 8 });
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Findings                                                             */
 /* ------------------------------------------------------------------ */
@@ -671,7 +735,7 @@ async function buildInventoryReportPdf(
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
-        inventoryItemLabel(finding),
+        inventoryItemWithPhotoLabel(finding),
         finding.findingText || "Not recorded",
         inventoryConditionLabel(document, finding),
         inventoryCheckoutComment(document, finding),
@@ -720,6 +784,9 @@ async function buildInventoryReportPdf(
       writer.cursor.y -= rowHeight;
     }
   }
+
+  await drawInventoryAppendix(writer, document, fetcher);
+  drawInventoryBackingPages(writer, document);
 
   drawFooters(writer);
   const bytes = await doc.save();

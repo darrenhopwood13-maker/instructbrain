@@ -44,6 +44,8 @@ export type PhotoWorkflowRole = {
   excludesAi?: boolean;
   /** A photo with this role is suitable for the report title page. */
   countsAsCover?: boolean;
+  /** A stricter per-photo finding limit for photos carrying this role. */
+  maxFindingsPerPhoto?: number;
 };
 
 export type PhotoWorkflow = {
@@ -69,6 +71,7 @@ export type ReportLayout = {
     condition?: string;
     checkoutComment?: string;
   };
+  backingPages?: Array<{ title: string; body: string[] }>;
 };
 
 export type CategoryDefinition = {
@@ -368,6 +371,23 @@ export function allowsMultipleFindingsPerPhoto(
   return brief?.findingsPerPhoto !== "one";
 }
 
+export function findingsRuleForPhoto(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  captureFields: Record<string, string> | null | undefined,
+  brief?: { findingsPerPhoto?: string } | null,
+  options: { isFirstPhoto?: boolean } = {},
+): { findingsPerPhoto?: string } | null {
+  const role = photoRoleOf(snapshot, captureFields, options);
+  const workflow = photoWorkflowOf(snapshot);
+  const roleLimit = role?.maxFindingsPerPhoto;
+  const inventoryDetailFallback =
+    workflow?.kind === "inventory_room_schedule" &&
+    typeof workflow.detailRoleId === "string" &&
+    role?.id === workflow.detailRoleId;
+  if (roleLimit === 1 || inventoryDetailFallback) return { findingsPerPhoto: "one" };
+  return brief ?? null;
+}
+
 /** Whether this type writes its own document header rather than an automatic one. */
 export function asksForDocumentHeader(
   snapshot: SurveyTypeSnapshot | null | undefined,
@@ -397,6 +417,14 @@ export function photoWorkflowOf(
       ...(typeof role.description === "string" ? { description: role.description } : {}),
       ...(role.excludesAi === true ? { excludesAi: true } : {}),
       ...(role.countsAsCover === true ? { countsAsCover: true } : {}),
+      ...(Number.isFinite(Number((role as Record<string, unknown>)["maxFindingsPerPhoto"]))
+        ? {
+            maxFindingsPerPhoto: Math.max(
+              1,
+              Number((role as Record<string, unknown>)["maxFindingsPerPhoto"]),
+            ),
+          }
+        : {}),
     })),
     ...(typeof raw["sectionField"] === "string" ? { sectionField: raw["sectionField"] } : {}),
     ...(typeof raw["firstPhotoRoleId"] === "string" ? { firstPhotoRoleId: raw["firstPhotoRoleId"] } : {}),
@@ -413,6 +441,17 @@ export function reportLayoutOf(snapshot: SurveyTypeSnapshot | null | undefined):
   const raw = snapshot?.reportLayout;
   if (!isRecord(raw) || typeof raw["kind"] !== "string") return null;
   const columns = isRecord(raw["columns"]) ? raw["columns"] : null;
+  const backingPages = Array.isArray(raw["backingPages"])
+    ? raw["backingPages"]
+        .map((entry) => {
+          if (!isRecord(entry) || typeof entry["title"] !== "string") return null;
+          const body = Array.isArray(entry["body"])
+            ? entry["body"].filter((text): text is string => typeof text === "string")
+            : [];
+          return { title: entry["title"], body };
+        })
+        .filter((entry): entry is { title: string; body: string[] } => entry !== null)
+    : [];
   return {
     kind: raw["kind"],
     ...(typeof raw["sectionField"] === "string" ? { sectionField: raw["sectionField"] } : {}),
@@ -434,6 +473,7 @@ export function reportLayoutOf(snapshot: SurveyTypeSnapshot | null | undefined):
           },
         }
       : {}),
+    ...(backingPages.length > 0 ? { backingPages } : {}),
   };
 }
 
