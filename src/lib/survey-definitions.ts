@@ -354,7 +354,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 2,
+  version: 3,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
@@ -402,7 +402,49 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     abstainGuidance:
       "If the photograph is too dark, distant, blurred or obstructed to identify the object or judge its condition, return not_assessed rather than guessing.",
   },
-  outputSections: ["cover", "scope", "summary", "schedule", "appendix"],
+  photoWorkflow: {
+    kind: "inventory_room_schedule",
+    roleField: "_photo_role",
+    sectionField: "room",
+    firstPhotoRoleId: "exterior_cover",
+    coverRoleId: "exterior_cover",
+    overviewRoleId: "room_overview",
+    detailRoleId: "inventory_detail",
+    maxOverviewPhotos: 3,
+    roles: [
+      {
+        id: "exterior_cover",
+        label: "Exterior / title page",
+        description: "The first exterior photograph used on the title page. It is not analysed.",
+        excludesAi: true,
+        countsAsCover: true,
+      },
+      {
+        id: "room_overview",
+        label: "Room overview",
+        description: "One of the first wide-angle room photographs shown above that room's table.",
+        excludesAi: true,
+      },
+      {
+        id: "inventory_detail",
+        label: "Inventory item",
+        description: "A detail photograph analysed into the room inventory table.",
+      },
+    ],
+  },
+  reportLayout: {
+    kind: "inventory_room_schedule",
+    sectionField: "room",
+    overviewRoleId: "room_overview",
+    checkoutCommentField: "checkout_comment",
+    columns: {
+      item: "Item",
+      description: "Description",
+      condition: "Condition",
+      checkoutComment: "Check Out Comment",
+    },
+  },
+  outputSections: ["cover", "index", "schedule", "appendix"],
   requiresTradeAssignment: false,
   requiresLifecycle: false,
   supportsDistribution: false,
