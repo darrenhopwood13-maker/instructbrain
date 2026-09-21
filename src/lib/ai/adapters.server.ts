@@ -17,8 +17,15 @@ export class AiProviderError extends Error {
     super(message);
     this.name = "AiProviderError";
     this.status = status;
+    // 400 is worth one more attempt: a provider occasionally rejects a large
+    // image request that succeeds on the retry. A persistent 400 still ends as
+    // not_assessed — invariant 1 is untouched either way.
     this.retryable =
-      retryable ?? (status === 429 || (typeof status === "number" && status >= 500));
+      retryable ??
+      (status === 429 ||
+        status === 400 ||
+        status === 408 ||
+        (typeof status === "number" && status >= 500));
   }
 }
 
