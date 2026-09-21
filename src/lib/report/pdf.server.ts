@@ -158,7 +158,7 @@ function drawRule(writer: Writer, gapBefore = 6, gapAfter = 8): void {
   ensure(writer, gapBefore + gapAfter + 2);
   writer.cursor.y -= gapBefore;
   writer.cursor.page.drawLine({
-    start: { x: MARGIN, y: writer.cursor.y },
+    start: { x: writer.margin, y: writer.cursor.y },
     end: { x: writer.pageSize.width - writer.margin, y: writer.cursor.y },
     thickness: 0.75,
     color: RULE,
@@ -235,7 +235,7 @@ function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight:
   const height = image.height * scale;
   ensure(writer, height + 8);
   writer.cursor.page.drawImage(image, {
-    x: MARGIN,
+    x: writer.margin,
     y: writer.cursor.y - height,
     width,
     height,
@@ -371,6 +371,7 @@ function drawInventoryTableHeader(
   writer.cursor.page.drawRectangle({ x, y: writer.cursor.y - height, width: writer.contentWidth, height, color: rgb(0.94, 0.96, 0.98) });
   let cellX = x;
   for (const [index, label] of labels.entries()) {
+    const columnWidth = columns[index] ?? 0;
     writer.cursor.page.drawText(sanitise(label), {
       x: cellX + 5,
       y: writer.cursor.y - 14,
@@ -380,13 +381,13 @@ function drawInventoryTableHeader(
     });
     if (index < labels.length - 1) {
       writer.cursor.page.drawLine({
-        start: { x: cellX + columns[index]!, y: writer.cursor.y },
-        end: { x: cellX + columns[index]!, y: writer.cursor.y - height },
+        start: { x: cellX + columnWidth, y: writer.cursor.y },
+        end: { x: cellX + columnWidth, y: writer.cursor.y - height },
         thickness: 0.5,
         color: RULE,
       });
     }
-    cellX += columns[index]!;
+    cellX += columnWidth;
   }
   writer.cursor.page.drawRectangle({
     x,
@@ -599,7 +600,16 @@ async function buildInventoryReportPdf(
   }
   if (cover && fetcher) {
     const image = await embedPhoto(writer, fetcher, cover);
-    if (image) drawImageAt(writer.cursor.page, image, margin + writer.contentWidth * 0.54, 470, writer.contentWidth * 0.46, 310);
+    if (image) {
+      drawImageAt(
+        writer.cursor.page,
+        image,
+        margin + writer.contentWidth * 0.54,
+        470,
+        writer.contentWidth * 0.46,
+        310,
+      );
+    }
   }
 
   const rooms = inventoryRooms(document);
@@ -667,7 +677,7 @@ async function buildInventoryReportPdf(
         inventoryCheckoutComment(document, finding),
       ];
       const heights = values.map((value, index) =>
-        estimatedTextHeight(value, index === 0 ? bold : regular, 8.5, columns[index]! - 10),
+        estimatedTextHeight(value, index === 0 ? bold : regular, 8.5, (columns[index] ?? 0) - 10),
       );
       const rowHeight = Math.max(34, ...heights) + 10;
       if (writer.cursor.y - rowHeight < margin + 30) {
@@ -686,6 +696,7 @@ async function buildInventoryReportPdf(
       });
       let x = margin;
       values.forEach((value, index) => {
+        const columnWidth = columns[index] ?? 0;
         if (index > 0) {
           writer.cursor.page.drawLine({
             start: { x, y: rowTop },
@@ -700,11 +711,11 @@ async function buildInventoryReportPdf(
           value,
           x + 5,
           rowTop - 6,
-          columns[index]! - 10,
+          columnWidth - 10,
           8.5,
           index === 2 ? (TONE_COLOURS[resolveStatus(document.snapshot, finding.statusId).tone] ?? INK) : INK,
         );
-        x += columns[index]!;
+        x += columnWidth;
       });
       writer.cursor.y -= rowHeight;
     }
