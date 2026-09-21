@@ -464,7 +464,7 @@ export function photoExcludesFromAnalysis(
   options: { isCover?: boolean; isFirstPhoto?: boolean } = {},
 ): boolean {
   if (options.isCover === true) return true;
-  return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto })?.excludesAi === true;
+  return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto === true })?.excludesAi === true;
 }
 
 export function aiGuidanceOf(
