@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { propertyInventoryDefinition, systemDefinitions } from "@/lib/survey-definitions";
-import { asksForDocumentHeader, snapshotOf } from "@/lib/survey-types";
+import {
+  propertyInventoryDefinition,
+  snapshotOf,
+  systemDefinitions,
+} from "@/lib/survey-definitions";
+import { asksForDocumentHeader } from "@/lib/survey-types";
 
 describe("property inventory", () => {
   it("is version 2 and asks for its own document header", () => {
@@ -17,7 +21,7 @@ describe("property inventory", () => {
   });
 
   it("tells the AI to group repeats rather than repeat them", () => {
-    const guidance = propertyInventoryDefinition.aiGuidance?.multiFindingGuidance ?? "";
+    const guidance = propertyInventoryDefinition.aiGuidance?.["multiFindingGuidance"] ?? "";
     expect(guidance).toMatch(/quantity/i);
     expect(guidance).toMatch(/never one entry per copy/i);
   });
