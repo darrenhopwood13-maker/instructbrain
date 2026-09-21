@@ -360,8 +360,11 @@ async function drawInventoryOverviewPhotos(
   writer.cursor.y -= height + 18;
 }
 
-function drawInventoryTableHeader(writer: Writer, columns: [number, number, number, number]): void {
-  const labels = inventoryLayoutContext.columns;
+function drawInventoryTableHeader(
+  writer: Writer,
+  columns: [number, number, number, number],
+  labels: [string, string, string, string],
+): void {
   const x = writer.margin;
   const height = 22;
   ensure(writer, height);
@@ -395,10 +398,6 @@ function drawInventoryTableHeader(writer: Writer, columns: [number, number, numb
   });
   writer.cursor.y -= height;
 }
-
-let inventoryLayoutContext = {
-  columns: ["Item", "Description", "Condition", "Check Out Comment"],
-};
 
 /* ------------------------------------------------------------------ */
 /* Findings                                                             */
@@ -517,10 +516,213 @@ export function pdfFilename(document: ReportDocument, options: BuildPdfOptions):
   return `${base}.pdf`;
 }
 
+async function buildInventoryReportPdf(
+  document: ReportDocument,
+  options: BuildPdfOptions,
+): Promise<BuiltPdf> {
+  const doc = await PDFDocument.create();
+  const regular = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.addPage([LANDSCAPE_LETTER.width, LANDSCAPE_LETTER.height]);
+  const margin = 36;
+  const writer: Writer = {
+    doc,
+    regular,
+    bold,
+    cursor: { page, y: LANDSCAPE_LETTER.height - margin, pageNumber: 1 },
+    footer: [document.report.reference, document.report.title].filter(Boolean).join(" · "),
+    pageSize: LANDSCAPE_LETTER,
+    margin,
+    contentWidth: LANDSCAPE_LETTER.width - margin * 2,
+  };
+  const fetcher: PhotoFetcher | null =
+    options.includePhotos === false ? null : { spent: 0, cache: new Map() };
+
+  doc.setTitle(sanitise(document.report.title));
+  doc.setProducer("instructBrain");
+  doc.setCreator("instructBrain");
+
+  writer.cursor.page.drawRectangle({
+    x: 0,
+    y: LANDSCAPE_LETTER.height - 60,
+    width: LANDSCAPE_LETTER.width,
+    height: 60,
+    color: rgb(0.14, 0.25, 0.48),
+  });
+  writer.cursor.page.drawText(sanitise(document.organisation?.name ?? "instructBrain"), {
+    x: margin,
+    y: LANDSCAPE_LETTER.height - 35,
+    size: 15,
+    font: bold,
+    color: rgb(1, 1, 1),
+  });
+  writer.cursor.page.drawText("An instructSite Company", {
+    x: LANDSCAPE_LETTER.width - margin - regular.widthOfTextAtSize("An instructSite Company", 9),
+    y: LANDSCAPE_LETTER.height - 34,
+    size: 9,
+    font: regular,
+    color: rgb(1, 1, 1),
+  });
+  writer.cursor.y = LANDSCAPE_LETTER.height - 105;
+
+  const cover = inventoryCoverPhoto(document);
+  const titleWidth = cover && fetcher ? writer.contentWidth * 0.48 : writer.contentWidth;
+  drawText(writer, document.report.title, { size: 27, bold: true, lineGap: 7, width: titleWidth });
+  if (document.report.subtitle) {
+    drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, width: titleWidth, gapAfter: 10 });
+  }
+  const facts: Array<[string, string]> = [
+    ["Property", document.project?.name ?? ""],
+    ["Client", document.project?.clientName ?? ""],
+    ["Address", document.project?.address ?? ""],
+    ["Reference", document.report.reference ?? ""],
+    ["Report date", formatDocumentDate(document.report.reportDate)],
+    ["Author", document.author ?? ""],
+  ];
+  for (const [label, value] of facts) {
+    if (!value) continue;
+    writer.cursor.page.drawText(label, {
+      x: margin,
+      y: writer.cursor.y - 9,
+      size: 8,
+      font: bold,
+      color: MUTED,
+    });
+    writer.cursor.page.drawText(sanitise(value), {
+      x: margin + 92,
+      y: writer.cursor.y - 9,
+      size: 10,
+      font: regular,
+      color: INK,
+    });
+    writer.cursor.y -= 18;
+  }
+  if (cover && fetcher) {
+    const image = await embedPhoto(writer, fetcher, cover);
+    if (image) drawImageAt(writer.cursor.page, image, margin + writer.contentWidth * 0.54, 470, writer.contentWidth * 0.46, 310);
+  }
+
+  const rooms = inventoryRooms(document);
+  newPage(writer);
+  drawInventoryHeader(writer, "Index");
+  if (rooms.length === 0) {
+    drawText(writer, "No rooms have been recorded yet.", { size: 10, colour: MUTED });
+  } else {
+    for (const [index, room] of rooms.entries()) {
+      ensure(writer, 24);
+      writer.cursor.page.drawText(String(index + 1).padStart(2, "0"), {
+        x: margin,
+        y: writer.cursor.y - 10,
+        size: 10,
+        font: bold,
+        color: ACCENT,
+      });
+      writer.cursor.page.drawText(sanitise(room.label), {
+        x: margin + 38,
+        y: writer.cursor.y - 10,
+        size: 11,
+        font: bold,
+        color: INK,
+      });
+      const count = `${room.findings.length} item${room.findings.length === 1 ? "" : "s"}`;
+      writer.cursor.page.drawText(count, {
+        x: LANDSCAPE_LETTER.width - margin - regular.widthOfTextAtSize(count, 9),
+        y: writer.cursor.y - 10,
+        size: 9,
+        font: regular,
+        color: MUTED,
+      });
+      writer.cursor.y -= 24;
+    }
+  }
+
+  const layout = inventoryLayout(document);
+  const labels: [string, string, string, string] = [
+    layout?.columns?.item ?? "Item",
+    layout?.columns?.description ?? "Description",
+    layout?.columns?.condition ?? "Condition",
+    layout?.columns?.checkoutComment ?? "Check Out Comment",
+  ];
+  const columns: [number, number, number, number] = [92, 336, 124, writer.contentWidth - 92 - 336 - 124];
+
+  for (const room of rooms) {
+    newPage(writer);
+    drawInventoryHeader(writer, room.label);
+    drawText(writer, `${room.findings.length} item${room.findings.length === 1 ? "" : "s"}`, {
+      size: 9,
+      colour: MUTED,
+      gapAfter: 4,
+    });
+    await drawInventoryOverviewPhotos(writer, fetcher, room.overviewPhotos);
+    drawInventoryTableHeader(writer, columns, labels);
+    if (room.findings.length === 0) {
+      drawText(writer, "No inventory items recorded in this room yet.", { size: 10, colour: MUTED });
+      continue;
+    }
+    for (const finding of room.findings) {
+      const values: [string, string, string, string] = [
+        inventoryItemLabel(finding),
+        finding.findingText || "Not recorded",
+        inventoryConditionLabel(document, finding),
+        inventoryCheckoutComment(document, finding),
+      ];
+      const heights = values.map((value, index) =>
+        estimatedTextHeight(value, index === 0 ? bold : regular, 8.5, columns[index]! - 10),
+      );
+      const rowHeight = Math.max(34, ...heights) + 10;
+      if (writer.cursor.y - rowHeight < margin + 30) {
+        newPage(writer);
+        drawInventoryHeader(writer, room.label);
+        drawInventoryTableHeader(writer, columns, labels);
+      }
+      const rowTop = writer.cursor.y;
+      writer.cursor.page.drawRectangle({
+        x: margin,
+        y: rowTop - rowHeight,
+        width: writer.contentWidth,
+        height: rowHeight,
+        borderColor: RULE,
+        borderWidth: 0.5,
+      });
+      let x = margin;
+      values.forEach((value, index) => {
+        if (index > 0) {
+          writer.cursor.page.drawLine({
+            start: { x, y: rowTop },
+            end: { x, y: rowTop - rowHeight },
+            thickness: 0.5,
+            color: RULE,
+          });
+        }
+        drawCellText(
+          writer.cursor.page,
+          index === 0 ? bold : regular,
+          value,
+          x + 5,
+          rowTop - 6,
+          columns[index]! - 10,
+          8.5,
+          index === 2 ? (TONE_COLOURS[resolveStatus(document.snapshot, finding.statusId).tone] ?? INK) : INK,
+        );
+        x += columns[index]!;
+      });
+      writer.cursor.y -= rowHeight;
+    }
+  }
+
+  drawFooters(writer);
+  const bytes = await doc.save();
+  return { bytes, filename: pdfFilename(document, options) };
+}
+
 export async function buildReportPdf(
   document: ReportDocument,
   options: BuildPdfOptions,
 ): Promise<BuiltPdf> {
+  if (options.variant === "full" && isInventoryLayout(document)) {
+    return buildInventoryReportPdf(document, options);
+  }
+
   const doc = await PDFDocument.create();
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -686,25 +888,7 @@ export async function buildReportPdf(
     drawText(writer, document.advisoryFooter, { size: 9, colour: MUTED });
   }
 
-  /* Footers */
-  const pages = doc.getPages();
-  pages.forEach((sheet, index) => {
-    sheet.drawText(sanitise(writer.footer).slice(0, 90), {
-      x: MARGIN,
-      y: MARGIN - 18,
-      size: 8,
-      font: regular,
-      color: MUTED,
-    });
-    const label = `Page ${index + 1} of ${pages.length}`;
-    sheet.drawText(label, {
-      x: A4.width - MARGIN - regular.widthOfTextAtSize(label, 8),
-      y: MARGIN - 18,
-      size: 8,
-      font: regular,
-      color: MUTED,
-    });
-  });
+  drawFooters(writer);
 
   const bytes = await doc.save();
   return { bytes, filename: pdfFilename(document, options) };
