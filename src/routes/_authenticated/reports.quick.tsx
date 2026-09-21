@@ -356,11 +356,13 @@ function CustomReport() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const receive = (list: FileList | null) => {
+  const receive = async (list: FileList | null) => {
     const files = list ? Array.from(list) : [];
     if (files.length === 0) return;
     if (reportId) return;
-    start.mutate(files);
+    // Hold the bytes now: the report is created first, and a camera/gallery
+    // file reference can be revoked before the capture panel mounts.
+    start.mutate(await snapshotFiles(files));
   };
 
   const capturing = reportId !== null && snapshot !== null;
