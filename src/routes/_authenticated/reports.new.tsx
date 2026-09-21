@@ -86,12 +86,17 @@ function NewReport() {
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
 
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
-  // Only the inventory type asks for its own document header; the others stay
-  // on the fast, auto-titled path.
-  const asksForHeader = selected?.id === "property_inventory";
+  // Whether a report writes its own document header comes from the template
+  // itself, never from a discipline named here.
+  const asksForHeader = selected ? asksForDocumentHeader(snapshotOf(selected)) : false;
+  // Only a template that allows several findings per photograph can be tightened.
+  const multiFindingTemplate = selected
+    ? allowsMultipleFindingsPerPhoto(snapshotOf(selected))
+    : false;
   const projectList = projects.data ?? [];
   const project = useMemo(
     () => projectList.find((item) => item.id === (projectId || projectParam)),
