@@ -10,12 +10,21 @@
  * embedded as they are — nothing in this file touches the analysis path.
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
-import type { DocFinding, ReportDocument } from "@/lib/report/document";
+import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor } from "@/lib/report/sections";
+import {
+  inventoryCheckoutComment,
+  inventoryConditionLabel,
+  inventoryCoverPhoto,
+  inventoryItemLabel,
+  inventoryLayout,
+  inventoryRooms,
+  isInventoryLayout,
+} from "@/lib/report/inventory-layout";
 
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 
@@ -38,8 +47,8 @@ export type BuiltPdf = { bytes: Uint8Array; filename: string };
 /* ------------------------------------------------------------------ */
 
 const A4 = { width: 595.28, height: 841.89 };
+const LANDSCAPE_LETTER = { width: 792, height: 612 };
 const MARGIN = 48;
-const CONTENT_WIDTH = A4.width - MARGIN * 2;
 
 const INK = rgb(0.06, 0.11, 0.2);
 const MUTED = rgb(0.35, 0.39, 0.47);
@@ -66,15 +75,22 @@ type Writer = {
   bold: PDFFont;
   cursor: Cursor;
   footer: string;
+  pageSize: { width: number; height: number };
+  margin: number;
+  contentWidth: number;
 };
 
 function newPage(writer: Writer): void {
-  const page = writer.doc.addPage([A4.width, A4.height]);
-  writer.cursor = { page, y: A4.height - MARGIN, pageNumber: writer.cursor.pageNumber + 1 };
+  const page = writer.doc.addPage([writer.pageSize.width, writer.pageSize.height]);
+  writer.cursor = {
+    page,
+    y: writer.pageSize.height - writer.margin,
+    pageNumber: writer.cursor.pageNumber + 1,
+  };
 }
 
 function ensure(writer: Writer, needed: number): void {
-  if (writer.cursor.y - needed < MARGIN + 30) newPage(writer);
+  if (writer.cursor.y - needed < writer.margin + 30) newPage(writer);
 }
 
 function sanitise(value: string): string {
@@ -120,8 +136,8 @@ type TextOptions = {
 function drawText(writer: Writer, text: string, options: TextOptions = {}): void {
   const size = options.size ?? 10;
   const font = options.bold ? writer.bold : writer.regular;
-  const width = options.width ?? CONTENT_WIDTH;
-  const x = options.x ?? MARGIN;
+  const width = options.width ?? writer.contentWidth;
+  const x = options.x ?? writer.margin;
   const lineHeight = size + (options.lineGap ?? 3);
   for (const line of wrap(text, font, size, width)) {
     ensure(writer, lineHeight);
@@ -142,7 +158,7 @@ function drawRule(writer: Writer, gapBefore = 6, gapAfter = 8): void {
   writer.cursor.y -= gapBefore;
   writer.cursor.page.drawLine({
     start: { x: MARGIN, y: writer.cursor.y },
-    end: { x: A4.width - MARGIN, y: writer.cursor.y },
+    end: { x: writer.pageSize.width - writer.margin, y: writer.cursor.y },
     thickness: 0.75,
     color: RULE,
   });
@@ -225,6 +241,163 @@ function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight:
   });
   writer.cursor.y -= height + 8;
 }
+
+function drawImageAt(
+  page: PDFPage,
+  image: PDFImage,
+  x: number,
+  top: number,
+  maxWidth: number,
+  maxHeight: number,
+): { width: number; height: number } {
+  const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  page.drawImage(image, { x, y: top - height, width, height });
+  return { width, height };
+}
+
+function drawFooters(writer: Writer): void {
+  const pages = writer.doc.getPages();
+  pages.forEach((sheet, index) => {
+    sheet.drawText(sanitise(writer.footer).slice(0, 90), {
+      x: writer.margin,
+      y: writer.margin - 18,
+      size: 8,
+      font: writer.regular,
+      color: MUTED,
+    });
+    const label = `Page ${index + 1} of ${pages.length}`;
+    sheet.drawText(label, {
+      x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(label, 8),
+      y: writer.margin - 18,
+      size: 8,
+      font: writer.regular,
+      color: MUTED,
+    });
+  });
+}
+
+function drawCellText(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  x: number,
+  top: number,
+  width: number,
+  size: number,
+  colour = INK,
+): number {
+  const lineHeight = size + 3;
+  const lines = wrap(text, font, size, width);
+  lines.forEach((line, index) => {
+    page.drawText(line, { x, y: top - size - index * lineHeight, size, font, color: colour });
+  });
+  return lines.length * lineHeight;
+}
+
+function estimatedTextHeight(text: string, font: PDFFont, size: number, width: number): number {
+  return wrap(text, font, size, width).length * (size + 3);
+}
+
+function drawInventoryHeader(writer: Writer, title = "Property inventory"): void {
+  writer.cursor.page.drawRectangle({
+    x: 0,
+    y: writer.pageSize.height - 44,
+    width: writer.pageSize.width,
+    height: 44,
+    color: rgb(0.14, 0.25, 0.48),
+  });
+  writer.cursor.page.drawText(sanitise(title), {
+    x: writer.margin,
+    y: writer.pageSize.height - 28,
+    size: 12,
+    font: writer.bold,
+    color: rgb(1, 1, 1),
+  });
+  writer.cursor.page.drawText("An instructSite Company", {
+    x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize("An instructSite Company", 9),
+    y: writer.pageSize.height - 26,
+    size: 9,
+    font: writer.regular,
+    color: rgb(1, 1, 1),
+  });
+  writer.cursor.y = writer.pageSize.height - 68;
+}
+
+async function drawInventoryOverviewPhotos(
+  writer: Writer,
+  fetcher: PhotoFetcher | null,
+  photos: DocPhoto[],
+): Promise<void> {
+  if (!fetcher || photos.length === 0) return;
+  const gap = 12;
+  const width = (writer.contentWidth - gap * 2) / 3;
+  const height = 116;
+  ensure(writer, height + 18);
+  const top = writer.cursor.y;
+  for (const [index, photo] of photos.slice(0, 3).entries()) {
+    const x = writer.margin + index * (width + gap);
+    writer.cursor.page.drawRectangle({
+      x,
+      y: top - height,
+      width,
+      height,
+      borderColor: RULE,
+      borderWidth: 0.75,
+    });
+    const image = await embedPhoto(writer, fetcher, photo);
+    if (image) drawImageAt(writer.cursor.page, image, x + 4, top - 4, width - 8, height - 8);
+    writer.cursor.page.drawText(`Photo ${photo.sequence}`, {
+      x: x + 6,
+      y: top - height + 6,
+      size: 7,
+      font: writer.bold,
+      color: MUTED,
+    });
+  }
+  writer.cursor.y -= height + 18;
+}
+
+function drawInventoryTableHeader(writer: Writer, columns: [number, number, number, number]): void {
+  const labels = inventoryLayoutContext.columns;
+  const x = writer.margin;
+  const height = 22;
+  ensure(writer, height);
+  writer.cursor.page.drawRectangle({ x, y: writer.cursor.y - height, width: writer.contentWidth, height, color: rgb(0.94, 0.96, 0.98) });
+  let cellX = x;
+  for (const [index, label] of labels.entries()) {
+    writer.cursor.page.drawText(sanitise(label), {
+      x: cellX + 5,
+      y: writer.cursor.y - 14,
+      size: 8,
+      font: writer.bold,
+      color: MUTED,
+    });
+    if (index < labels.length - 1) {
+      writer.cursor.page.drawLine({
+        start: { x: cellX + columns[index]!, y: writer.cursor.y },
+        end: { x: cellX + columns[index]!, y: writer.cursor.y - height },
+        thickness: 0.5,
+        color: RULE,
+      });
+    }
+    cellX += columns[index]!;
+  }
+  writer.cursor.page.drawRectangle({
+    x,
+    y: writer.cursor.y - height,
+    width: writer.contentWidth,
+    height,
+    borderColor: RULE,
+    borderWidth: 0.5,
+  });
+  writer.cursor.y -= height;
+}
+
+let inventoryLayoutContext = {
+  columns: ["Item", "Description", "Condition", "Check Out Comment"],
+};
 
 /* ------------------------------------------------------------------ */
 /* Findings                                                             */
