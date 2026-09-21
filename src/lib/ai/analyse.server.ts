@@ -60,7 +60,8 @@ async function allocateRef(
   };
 }
 
-import { PHOTO_BUCKET, analysisSourcePath } from "@/lib/photos/storage-paths";
+import { analysisSourcePath } from "@/lib/photos/storage-paths";
+import { loadAnalysableImage } from "@/lib/photos/analysis-image.server";
 import { NOT_ASSESSED_ID, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export { AiBudgetExceededError, AiNotConfiguredError };
