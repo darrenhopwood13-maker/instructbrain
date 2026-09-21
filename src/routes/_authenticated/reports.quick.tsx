@@ -20,6 +20,7 @@ import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
+import { snapshotFiles } from "@/lib/photos/file-snapshot";
 import {
   allowsMultipleFindingsPerPhoto,
   asksForDocumentHeader,
