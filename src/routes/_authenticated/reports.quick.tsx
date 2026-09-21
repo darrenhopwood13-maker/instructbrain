@@ -240,6 +240,11 @@ function CustomReport() {
   const multiFindingTemplate = chosenDefinition
     ? allowsMultipleFindingsPerPhoto(snapshotOf(chosenDefinition))
     : false;
+  // Whether this template writes its own document header comes from the
+  // template itself, never from a discipline named here.
+  const asksForHeader = chosenDefinition
+    ? asksForDocumentHeader(snapshotOf(chosenDefinition))
+    : false;
   const stripped = identifier || minimal;
   const focusMissing = minimal && sanitiseSpecialRequest(specialRequest) === "";
 
