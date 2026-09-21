@@ -22,9 +22,12 @@ import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
   allowsMultipleFindingsPerPhoto,
+  asksForDocumentHeader,
   definitionLabel,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import { DocumentHeaderFields } from "@/components/report/document-header-fields";
+import { useSession } from "@/lib/auth";
 import {
   DEFAULT_TONE_ID,
   REPORT_PRESETS,
