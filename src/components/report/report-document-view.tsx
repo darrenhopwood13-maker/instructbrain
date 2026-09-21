@@ -312,7 +312,7 @@ function InventoryDocument({
                           document={document}
                           finding={finding}
                           readOnly={readOnly}
-                          onFindingPatch={onFindingPatch}
+                          {...(onFindingPatch ? { onFindingPatch } : {})}
                         />
                       </div>
                     </div>
