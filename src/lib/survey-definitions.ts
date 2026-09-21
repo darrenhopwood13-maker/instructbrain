@@ -406,6 +406,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
   requiresTradeAssignment: false,
   requiresLifecycle: false,
   supportsDistribution: false,
+  asksForDocumentHeader: true,
 };
 
 export const electricalInstallationDefinition: SurveyDefinition = {
