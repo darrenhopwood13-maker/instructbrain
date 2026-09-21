@@ -74,6 +74,14 @@ export function PhotosPanel({
   const { session, loading: sessionLoading } = useSession();
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
   const workflow = useMemo(() => photoWorkflowOf(snapshot), [snapshot]);
+  const inventoryWorkflow = workflow?.kind === "inventory_room_schedule" ? workflow : null;
+  const zoneFields = useMemo(
+    () =>
+      inventoryWorkflow?.sectionField
+        ? fields.filter((field) => field.id === inventoryWorkflow.sectionField)
+        : fields,
+    [fields, inventoryWorkflow],
+  );
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
 
   const [organisationId, setOrganisationId] = useState<string | null>(null);
@@ -92,6 +100,7 @@ export function PhotosPanel({
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const [inventoryUploadMode, setInventoryUploadMode] = useState<"auto" | "overview" | "detail">("auto");
   const lastToggledRef = useRef<string | null>(null);
 
   const planQuery = useQuery(organisationPlanQuery(organisationId));
@@ -163,6 +172,18 @@ export function PhotosPanel({
       if (!organisationId || items.length === 0) return;
       setBusy(true);
       const base = await nextSequence(reportId);
+      const overviewCounts = new Map<string, number>();
+      if (inventoryWorkflow?.sectionField && inventoryWorkflow.overviewRoleId) {
+        for (const photo of photos) {
+          if (photo.capture_fields?.[inventoryWorkflow.roleField] !== inventoryWorkflow.overviewRoleId) {
+            continue;
+          }
+          const roomKey = (photo.capture_fields?.[inventoryWorkflow.sectionField] ?? "")
+            .trim()
+            .toLowerCase();
+          overviewCounts.set(roomKey, (overviewCounts.get(roomKey) ?? 0) + 1);
+        }
+      }
       try {
         const results = await runUploadQueue(
           // The number is decided here, in selection order — never inside the
@@ -178,6 +199,26 @@ export function PhotosPanel({
                 !captureFields[workflow.roleField]
               ) {
                 captureFields[workflow.roleField] = workflow.firstPhotoRoleId;
+              }
+              if (
+                inventoryWorkflow?.sectionField &&
+                inventoryWorkflow.detailRoleId &&
+                inventoryWorkflow.overviewRoleId &&
+                sequence !== 1 &&
+                !captureFields[inventoryWorkflow.roleField]
+              ) {
+                const roomKey = (captureFields[inventoryWorkflow.sectionField] ?? "").trim().toLowerCase();
+                const usedOverviews = overviewCounts.get(roomKey) ?? 0;
+                const maxOverviews = inventoryWorkflow.maxOverviewPhotos ?? 3;
+                const shouldBeOverview =
+                  inventoryUploadMode === "overview" ||
+                  (inventoryUploadMode === "auto" && usedOverviews < maxOverviews);
+                if (shouldBeOverview && usedOverviews < maxOverviews) {
+                  captureFields[inventoryWorkflow.roleField] = inventoryWorkflow.overviewRoleId;
+                  overviewCounts.set(roomKey, usedOverviews + 1);
+                } else {
+                  captureFields[inventoryWorkflow.roleField] = inventoryWorkflow.detailRoleId;
+                }
               }
               // Photographs reach storage on selection — never held in memory only.
               return uploadPhoto(
@@ -208,7 +249,7 @@ export function PhotosPanel({
         await refresh();
       }
     },
-    [organisationId, reportId, workflow, snapshot, coverPhotoId, applyProgress, refresh],
+    [organisationId, reportId, workflow, inventoryWorkflow, inventoryUploadMode, photos, snapshot, coverPhotoId, applyProgress, refresh],
   );
 
   const addFiles = useCallback(
@@ -422,15 +463,17 @@ export function PhotosPanel({
         <p className="eyebrow">Step one</p>
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
 
-        {fields.length > 0 ? (
+        {zoneFields.length > 0 ? (
           <div className="mt-4 rounded-lg border border-border bg-surface p-3.5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold">
-                  {keepWalking ? "Current zone" : "Applied to new photographs"}
+                  {inventoryWorkflow ? "Current room" : keepWalking ? "Current zone" : "Applied to new photographs"}
                 </h3>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {keepWalking
+                  {inventoryWorkflow
+                    ? "Set the room before uploading. The first three room photographs become overviews; the rest become inventory items."
+                    : keepWalking
                     ? "Set once, then keep shooting. Every photograph takes these values until you change them."
                     : "These values are recorded against each photograph as it uploads."}
                 </p>
@@ -439,7 +482,7 @@ export function PhotosPanel({
             </div>
             <div className="mt-3">
               <CaptureFieldsForm
-                fields={fields}
+                fields={zoneFields}
                 values={zoneValues}
                 onChange={(fieldId, value) =>
                   setZoneValues((current) => ({ ...current, [fieldId]: value }))
@@ -448,12 +491,28 @@ export function PhotosPanel({
                 compact
               />
             </div>
+            {inventoryWorkflow ? (
+              <label className="mt-3 block text-sm font-medium text-foreground">
+                Next photographs
+                <select
+                  value={inventoryUploadMode}
+                  onChange={(event) =>
+                    setInventoryUploadMode(event.target.value as "auto" | "overview" | "detail")
+                  }
+                  className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
+                >
+                  <option value="auto">Auto — first 3 room photos, then items</option>
+                  <option value="overview">Room overview photos only</option>
+                  <option value="detail">Inventory item photos only</option>
+                </select>
+              </label>
+            ) : null}
           </div>
         ) : null}
 
         {workflow ? (
           <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted-foreground">
-            First exterior photograph is used on the title page. Mark up to {workflow.maxOverviewPhotos ?? 3} wide-angle room photographs as overviews; those photographs stay in the report and are not analysed.
+            First exterior photograph is used on the title page. Each room can have up to {workflow.maxOverviewPhotos ?? 3} wide-angle overview photographs before the item photographs are analysed.
           </p>
         ) : null}
 
