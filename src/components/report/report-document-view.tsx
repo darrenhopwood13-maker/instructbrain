@@ -20,6 +20,15 @@ import {
 } from "@/lib/report/grouping";
 import { itemLabel, itemLabels } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
+import {
+  inventoryCheckoutComment,
+  inventoryConditionLabel,
+  inventoryCoverPhoto,
+  inventoryItemLabel,
+  inventoryLayout,
+  inventoryRooms,
+  isInventoryLayout,
+} from "@/lib/report/inventory-layout";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
   NOT_ASSESSED_ID,
@@ -82,6 +91,10 @@ export function ReportDocumentView({
   // Several schedule sections collapse into one set of results.
   let resultsRendered = false;
 
+  if (isInventoryLayout(document)) {
+    return <InventoryDocument document={document} print={print} />;
+  }
+
   return (
     <article
       className="report-document space-y-10"
@@ -122,6 +135,196 @@ export function ReportDocumentView({
         );
       })}
     </article>
+  );
+}
+
+function InventoryDocument({ document, print }: { document: ReportDocument; print: boolean }) {
+  const rooms = inventoryRooms(document);
+  const layout = inventoryLayout(document);
+  const cover = inventoryCoverPhoto(document);
+  const remainingPhotos = document.photos.filter((photo) => {
+    if (photo.id === cover?.id) return false;
+    if (rooms.some((room) => room.overviewPhotos.some((overview) => overview.id === photo.id))) {
+      return false;
+    }
+    return !document.findings.some((finding) =>
+      finding.photos.some((attachment) => attachment.photo.id === photo.id),
+    );
+  });
+
+  return (
+    <article className="report-document inventory-document space-y-8">
+      <section aria-label="Cover" className="break-after-page">
+        <div className="border-b-4 border-brand-blue pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {document.organisation?.logoUrl ? (
+                <img
+                  src={document.organisation.logoUrl}
+                  alt={`${document.organisation.name} logo`}
+                  className="h-12 w-auto object-contain"
+                />
+              ) : null}
+              <p className="editorial-title text-lg font-semibold">
+                {document.organisation?.name ?? "instructBrain"}
+              </p>
+            </div>
+            <p className="eyebrow">{definitionLabel(document.snapshot)}</p>
+          </div>
+        </div>
+
+        <div className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+          <div>
+            <h1 className="editorial-title text-3xl font-semibold leading-tight sm:text-4xl">
+              {document.report.title}
+            </h1>
+            {document.report.subtitle ? (
+              <p className="mt-2 text-lg text-muted-foreground">{document.report.subtitle}</p>
+            ) : null}
+            <dl className="mt-8 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+              <Pair label="Property" value={document.project?.name ?? "Not recorded"} />
+              <Pair label="Client" value={document.project?.clientName ?? "Not recorded"} />
+              <Pair label="Address" value={document.project?.address ?? "Not recorded"} />
+              <Pair label="Report reference" value={document.report.reference ?? "Not recorded"} />
+              <Pair label="Report date" value={formatDocumentDate(document.report.reportDate)} />
+              <Pair label="Author" value={document.author ?? "Not recorded"} />
+            </dl>
+          </div>
+          {cover ? (
+            <img
+              src={cover.url ?? cover.thumbUrl ?? ""}
+              alt={`Title page photograph — ${document.project?.name ?? document.report.title}`}
+              className="h-64 w-full rounded-lg border border-border object-cover"
+            />
+          ) : null}
+        </div>
+      </section>
+
+      <section aria-labelledby="inventory-index" className="break-after-page">
+        <h2 id="inventory-index" className="editorial-title text-2xl font-semibold">
+          Index
+        </h2>
+        <div className="mt-4 divide-y divide-border border-y border-border">
+          {rooms.length === 0 ? (
+            <p className="py-3 text-sm text-muted-foreground">No rooms have been recorded yet.</p>
+          ) : (
+            rooms.map((room, index) => (
+              <div key={room.key} className="grid grid-cols-[3rem_minmax(0,1fr)_6rem] gap-3 py-3 text-sm">
+                <span className="font-semibold tabular-nums">{String(index + 1).padStart(2, "0")}</span>
+                <span className="font-medium">{room.label}</span>
+                <span className="text-right text-muted-foreground">
+                  {room.findings.length} item{room.findings.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section aria-labelledby="inventory-schedule">
+        <h2 id="inventory-schedule" className="editorial-title text-2xl font-semibold">
+          Inventory schedule
+        </h2>
+        <div className="mt-5 space-y-8">
+          {rooms.map((room) => (
+            <section key={room.key} className="break-before-page">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-2">
+                <h3 className="editorial-title text-xl font-semibold">{room.label}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {room.findings.length} item{room.findings.length === 1 ? "" : "s"}
+                </p>
+              </div>
+
+              {room.overviewPhotos.length > 0 ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {room.overviewPhotos.map((photo) => (
+                    <PhotoFigure
+                      key={photo.id}
+                      attachment={{ photo, role: "overview", region: null }}
+                      useFullResolution={print}
+                      caption={`Room overview photograph ${photo.sequence}`}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No room overview photographs have been selected for this room.
+                </p>
+              )}
+
+              <div className="mt-5 overflow-hidden rounded-lg border border-border">
+                <div className="hidden grid-cols-[9rem_minmax(0,1.7fr)_minmax(8rem,0.75fr)_minmax(10rem,1fr)] bg-surface-sunken text-xs font-semibold uppercase text-muted-foreground sm:grid">
+                  <div className="border-r border-border p-3">{layout?.columns?.item ?? "Item"}</div>
+                  <div className="border-r border-border p-3">
+                    {layout?.columns?.description ?? "Description"}
+                  </div>
+                  <div className="border-r border-border p-3">
+                    {layout?.columns?.condition ?? "Condition"}
+                  </div>
+                  <div className="p-3">{layout?.columns?.checkoutComment ?? "Check Out Comment"}</div>
+                </div>
+                {room.findings.length === 0 ? (
+                  <p className="p-4 text-sm text-muted-foreground">No inventory items recorded in this room yet.</p>
+                ) : (
+                  room.findings.map((finding) => (
+                    <div
+                      key={finding.id}
+                      className="grid gap-0 border-t border-border text-sm sm:grid-cols-[9rem_minmax(0,1.7fr)_minmax(8rem,0.75fr)_minmax(10rem,1fr)]"
+                    >
+                      <div className="border-border p-3 font-semibold sm:border-r">
+                        <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
+                        {inventoryItemLabel(finding)}
+                      </div>
+                      <div className="border-border p-3 sm:border-r">
+                        <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
+                          Description
+                        </span>
+                        {finding.findingText || "Not recorded"}
+                      </div>
+                      <div className="border-border p-3 sm:border-r">
+                        <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
+                          Condition
+                        </span>
+                        {inventoryConditionLabel(document, finding)}
+                      </div>
+                      <div className="p-3">
+                        <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
+                          Check Out Comment
+                        </span>
+                        {inventoryCheckoutComment(document, finding) || ""}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      {remainingPhotos.length > 0 ? <InventoryAppendix photos={remainingPhotos} print={print} /> : null}
+    </article>
+  );
+}
+
+function InventoryAppendix({ photos, print }: { photos: ReportDocument["photos"]; print: boolean }) {
+  return (
+    <section aria-labelledby="inventory-appendix" className="break-before-page">
+      <h2 id="inventory-appendix" className="editorial-title text-xl font-semibold">
+        Appendix — photographs
+      </h2>
+      <ul className="mt-4 grid gap-5 sm:grid-cols-3">
+        {photos.map((photo) => (
+          <li key={photo.id} className="break-inside-avoid">
+            <PhotoFigure
+              attachment={{ photo, role: "appendix", region: null }}
+              useFullResolution={print}
+              caption={`Photograph ${photo.sequence}`}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
