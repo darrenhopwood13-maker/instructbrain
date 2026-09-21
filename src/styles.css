@@ -743,6 +743,11 @@
     margin: 18mm 14mm 16mm 14mm;
   }
 
+  @page inventory-report {
+    size: letter landscape;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+
   html,
   body {
     background: #ffffff !important;
@@ -792,6 +797,32 @@
   .report-document img {
     max-height: 90mm;
     object-fit: contain;
+    break-inside: avoid;
+  }
+
+  .inventory-print-surface {
+    page: inventory-report;
+  }
+
+  .inventory-print-main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .inventory-print-surface .print-running-header {
+    font-size: 7pt;
+  }
+
+  .inventory-document {
+    font-size: 8.5pt;
+  }
+
+  .inventory-document img {
+    max-height: 42mm;
+  }
+
+  .inventory-document table,
+  .inventory-document [class*="grid-cols-[9rem"] {
     break-inside: avoid;
   }
 

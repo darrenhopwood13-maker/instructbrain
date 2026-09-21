@@ -149,7 +149,7 @@ function snapshotKey(
 async function loadReport(client: AnyClient, reportId: string) {
   const { data, error } = await table(client, "reports")
     .select(
-      "id, organisation_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
+      "id, organisation_id, cover_photo_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -158,6 +158,7 @@ async function loadReport(client: AnyClient, reportId: string) {
   return data as {
     id: string;
     organisation_id: string;
+    cover_photo_id: string | null;
     survey_type_snapshot: unknown;
     brief: unknown;
     project: { name: string | null; client_name: string | null; address: string | null } | null;
@@ -336,6 +337,7 @@ export async function analysePhotoForReport(
   const firstSequence = photo.sequence === 1;
   if (
     photoExcludesFromAnalysis(primarySnapshot, photo.capture_fields, {
+      isCover: photo.id === report.cover_photo_id,
       isFirstPhoto: firstSequence,
     })
   ) {

@@ -48,12 +48,12 @@ export function PhotoGrid({
   const workflow = snapshot ? photoWorkflowOf(snapshot) : null;
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {photos.map((photo, index) => {
+      {photos.map((photo) => {
         const capture = captureLabel(photo);
         const isSelected = selected.has(photo.id);
         const url = urls[photo.id];
         const role = snapshot
-          ? photoRoleOf(snapshot, photo.capture_fields, { isFirstPhoto: index === 0 })
+          ? photoRoleOf(snapshot, photo.capture_fields, { isFirstPhoto: photo.sequence === 1 })
           : null;
         const explicitRole = workflow ? (photo.capture_fields?.[workflow.roleField] ?? "") : "";
         return (

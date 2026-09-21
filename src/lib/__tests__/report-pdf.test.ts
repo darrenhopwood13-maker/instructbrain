@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { PDFDocument } from "pdf-lib";
 import { buildReportPdf, pdfFilename, selectFindings } from "@/lib/report/pdf.server";
 import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { NOT_ASSESSED_ID } from "@/lib/survey-types";
 import { buildCompliancePack, type PackData } from "@/lib/compliance/pack.server";
+import { propertyInventoryDefinition, snapshotOf } from "@/lib/survey-definitions";
 
 function finding(overrides: Partial<DocFinding>): DocFinding {
   return {
@@ -115,6 +117,63 @@ describe("report PDF", () => {
 
   it("names the file after the report reference", () => {
     expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
+  });
+
+  it("uses the landscape room-schedule format for property inventory reports", async () => {
+    const inventoryDocument: ReportDocument = {
+      ...document,
+      report: {
+        ...document.report,
+        id: "inventory-1",
+        title: "Property inventory",
+        reference: "INV-001",
+        coverPhotoId: "p1",
+      },
+      project: {
+        id: "project-1",
+        name: "Flat 4",
+        reference: "F4",
+        clientName: "Example Client",
+        address: "1 Example Street",
+        principalContractor: null,
+      },
+      snapshot: snapshotOf(propertyInventoryDefinition),
+      photos: [
+        { id: "p1", sequence: 1, filename: "exterior.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: {} },
+        { id: "p2", sequence: 2, filename: "kitchen-wide-1.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "room_overview" } },
+        { id: "p3", sequence: 3, filename: "kitchen-wide-2.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "room_overview" } },
+        { id: "p4", sequence: 4, filename: "kitchen-wide-3.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "room_overview" } },
+        { id: "p5", sequence: 5, filename: "chairs.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "inventory_detail" } },
+      ],
+      findings: [
+        finding({
+          id: "inv-f1",
+          ref: "1",
+          statusId: "condition_good",
+          findingText: "Two timber dining chairs. Light surface marks; serviceable.",
+          remedialText: "",
+          captureFields: {
+            room: "Kitchen",
+            count: "2",
+            checkout_comment: "No further comment.",
+          },
+          photos: [
+            {
+              photo: { id: "p5", sequence: 5, filename: "chairs.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "inventory_detail" } },
+              role: "primary",
+              region: null,
+            },
+          ],
+        }),
+      ],
+    } as ReportDocument;
+
+    const built = await buildReportPdf(inventoryDocument, { variant: "full", includePhotos: false });
+    expect(textOf(built.bytes.slice(0, 5))).toBe("%PDF-");
+    const pdf = await PDFDocument.load(built.bytes);
+    expect(Math.round(pdf.getPage(0).getWidth())).toBe(792);
+    expect(Math.round(pdf.getPage(0).getHeight())).toBe(612);
+    expect(pdf.getPageCount()).toBeGreaterThanOrEqual(3);
   });
 });
 

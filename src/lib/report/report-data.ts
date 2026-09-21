@@ -304,6 +304,7 @@ export async function updateReportFields(
 export type FindingPatch = Partial<{
   finding_text: string;
   remedial_text: string;
+  capture_fields: Record<string, string>;
   status: string;
   severity: string | null;
   assigned_trade: string | null;

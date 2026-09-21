@@ -475,7 +475,7 @@ async function drawFinding(
   if (fetcher) {
     for (const attached of finding.photos.slice(0, 3)) {
       const image = await embedPhoto(writer, fetcher, attached.photo);
-      if (image) drawImage(writer, image, CONTENT_WIDTH * 0.62, 260);
+      if (image) drawImage(writer, image, writer.contentWidth * 0.62, 260);
     }
   }
 }
