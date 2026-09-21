@@ -15,6 +15,7 @@ import {
 } from "@/lib/survey-types";
 import {
   inventoryAppendixEntries,
+  inventoryItemTableLabel,
   inventoryItemWithPhotoLabel,
   inventoryRooms,
 } from "@/lib/report/inventory-layout";
@@ -141,6 +142,7 @@ describe("property inventory", () => {
     expect(appendix.map((entry) => entry.photo.sequence)).toEqual([5, 9]);
     expect(appendix.map((entry) => entry.room)).toEqual(["Living room", "Kitchen"]);
     expect(inventoryItemWithPhotoLabel(document.findings[0]!)).toBe("Item 2 · Photo 9");
+    expect(inventoryItemTableLabel(document.findings[0]!)).toBe("Kitchen item (Photo 9)");
   });
 
   it("does not leak its header requirement into the other templates", () => {

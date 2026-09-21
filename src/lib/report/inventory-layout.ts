@@ -119,6 +119,11 @@ export function inventoryPhotoReference(finding: DocFinding): string {
     : `Photos ${sequences.join(", ")}`;
 }
 
+export function inventoryPhotoReferenceSuffix(finding: DocFinding): string {
+  const references = inventoryPhotoReference(finding);
+  return references === "Photo not linked" ? "" : ` (${references})`;
+}
+
 export function inventoryAppendixEntries(document: ReportDocument): InventoryAppendixEntry[] {
   const layout = inventoryLayout(document);
   if (!layout) return [];
@@ -160,6 +165,27 @@ export function inventoryItemLabel(finding: DocFinding): string {
 
 export function inventoryItemWithPhotoLabel(finding: DocFinding): string {
   return `${inventoryItemLabel(finding)} · ${inventoryPhotoReference(finding)}`;
+}
+
+function firstSentenceFragment(value: string): string {
+  const first = value
+    .replace(/^not assessed automatically:\s*/i, "")
+    .split(/[.;\n]/)[0]
+    ?.replace(/\s+/g, " ")
+    .trim();
+  if (!first) return "";
+  return first.length > 54 ? `${first.slice(0, 51).trim()}...` : first;
+}
+
+export function inventoryItemTableLabel(finding: DocFinding): string {
+  const explicit =
+    finding.captureFields["item"]?.trim() ||
+    finding.captureFields["item_name"]?.trim() ||
+    finding.captureFields["object"]?.trim();
+  const inferred = firstSentenceFragment(finding.findingText);
+  const base = explicit || inferred || "Unidentified item";
+  const label = finding.statusId === "not_assessed" ? "Unidentified item" : base;
+  return `${label}${inventoryPhotoReferenceSuffix(finding)}`;
 }
 
 export function inventoryCheckoutComment(document: ReportDocument, finding: DocFinding): string {

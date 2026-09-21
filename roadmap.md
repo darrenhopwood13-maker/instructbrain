@@ -11,3 +11,4 @@
 - [x] Add focused tests and rerun the suite.
 - [x] Preserve each photograph's selection-order number through slow uploads and retries.
 - [x] Verify every Property inventory PDF page is landscape.
+- [x] Tighten Property inventory PDF to the uploaded sample structure: centred cover, fuller index, room tables, rear photos and backing pages.

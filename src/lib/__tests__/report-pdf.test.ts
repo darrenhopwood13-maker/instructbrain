@@ -144,6 +144,10 @@ describe("report PDF", () => {
         { id: "p3", sequence: 3, filename: "kitchen-wide-2.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "room_overview" } },
         { id: "p4", sequence: 4, filename: "kitchen-wide-3.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "room_overview" } },
         { id: "p5", sequence: 5, filename: "chairs.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Kitchen", _photo_role: "inventory_detail" } },
+        { id: "p6", sequence: 6, filename: "living-wide-1.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Living room", _photo_role: "room_overview" } },
+        { id: "p7", sequence: 7, filename: "living-wide-2.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Living room", _photo_role: "room_overview" } },
+        { id: "p8", sequence: 8, filename: "living-wide-3.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Living room", _photo_role: "room_overview" } },
+        { id: "p9", sequence: 9, filename: "couch.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Living room", _photo_role: "inventory_detail" } },
       ],
       findings: [
         finding({
@@ -165,13 +169,32 @@ describe("report PDF", () => {
             },
           ],
         }),
+        finding({
+          id: "inv-f2",
+          ref: "2",
+          sequence: 2,
+          statusId: "condition_used",
+          findingText: "Couch with loose cushions. Minor wear visible to the seat fabric.",
+          remedialText: "",
+          captureFields: {
+            room: "Living room",
+            checkout_comment: "",
+          },
+          photos: [
+            {
+              photo: { id: "p9", sequence: 9, filename: "couch.jpg", capturedAt: null, url: null, thumbUrl: null, captureFields: { room: "Living room", _photo_role: "inventory_detail" } },
+              role: "primary",
+              region: null,
+            },
+          ],
+        }),
       ],
     } as ReportDocument;
 
     const built = await buildReportPdf(inventoryDocument, { variant: "full", includePhotos: false });
     expect(textOf(built.bytes.slice(0, 5))).toBe("%PDF-");
     const pdf = await PDFDocument.load(built.bytes);
-    expect(pdf.getPageCount()).toBeGreaterThanOrEqual(3);
+    expect(pdf.getPageCount()).toBeGreaterThanOrEqual(10);
     for (const page of pdf.getPages()) {
       expect(Math.round(page.getWidth())).toBe(792);
       expect(Math.round(page.getHeight())).toBe(612);
