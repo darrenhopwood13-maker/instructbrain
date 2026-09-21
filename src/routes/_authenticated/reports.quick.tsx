@@ -102,6 +102,7 @@ function CustomReport() {
   const { type: typeParam } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
+  const { user } = useSession();
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
