@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runUploadQueue } from "@/lib/photos/upload-queue";
+import { assignUploadSequences, runUploadQueue } from "@/lib/photos/upload-queue";
 import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 
@@ -26,6 +26,29 @@ describe("upload order", () => {
     for (const [index, name] of files.entries()) {
       expect(assigned.find((entry) => entry.name === name)?.sequence).toBe(base + index);
     }
+  });
+
+  it("keeps a failed photograph's reserved number when it is retried", () => {
+    const selected = [
+      { name: "slow.jpg", sequence: null as number | null },
+      { name: "fast.jpg", sequence: null as number | null },
+    ];
+
+    assignUploadSequences(selected, 12);
+    expect(selected.map((item) => item.sequence)).toEqual([12, 13]);
+
+    assignUploadSequences([selected[0]!], 14);
+    expect(selected.map((item) => item.sequence)).toEqual([12, 13]);
+  });
+
+  it("numbers only newly selected photographs after numbers already reserved in the session", () => {
+    const nextBatch = [
+      { name: "kitchen-1.jpg", sequence: null as number | null },
+      { name: "kitchen-2.jpg", sequence: null as number | null },
+    ];
+
+    assignUploadSequences(nextBatch, 8);
+    expect(nextBatch.map((item) => item.sequence)).toEqual([8, 9]);
   });
 });
 
