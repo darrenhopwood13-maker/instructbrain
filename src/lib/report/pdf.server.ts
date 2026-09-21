@@ -21,7 +21,7 @@ import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
-  inventoryItemWithPhotoLabel,
+  inventoryItemTableLabel,
   inventoryLayout,
   inventoryRooms,
   isInventoryLayout,
@@ -302,29 +302,108 @@ function estimatedTextHeight(text: string, font: PDFFont, size: number, width: n
   return wrap(text, font, size, width).length * (size + 3);
 }
 
-function drawInventoryHeader(writer: Writer, title = "Property inventory"): void {
-  writer.cursor.page.drawRectangle({
-    x: 0,
-    y: writer.pageSize.height - 44,
-    width: writer.pageSize.width,
-    height: 44,
-    color: rgb(0.14, 0.25, 0.48),
+function drawCenteredText(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  y: number,
+  size: number,
+  pageWidth: number,
+  colour = INK,
+  maxWidth = pageWidth - 120,
+): number {
+  const lines = wrap(text, font, size, maxWidth);
+  const lineHeight = size + 6;
+  lines.forEach((line, index) => {
+    const width = font.widthOfTextAtSize(line, size);
+    page.drawText(line, {
+      x: (pageWidth - width) / 2,
+      y: y - index * lineHeight,
+      size,
+      font,
+      color: colour,
+    });
   });
+  return y - lines.length * lineHeight;
+}
+
+function drawInventoryHeader(writer: Writer, title = "Property inventory"): void {
   writer.cursor.page.drawText(sanitise(title), {
     x: writer.margin,
-    y: writer.pageSize.height - 28,
-    size: 12,
+    y: writer.pageSize.height - writer.margin - 3,
+    size: 14,
     font: writer.bold,
-    color: rgb(1, 1, 1),
+    color: INK,
   });
-  writer.cursor.page.drawText("An instructSite Company", {
-    x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize("An instructSite Company", 9),
-    y: writer.pageSize.height - 26,
-    size: 9,
+  const brand = "instructBrain · An instructSite Company";
+  writer.cursor.page.drawText(brand, {
+    x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(brand, 8),
+    y: writer.pageSize.height - writer.margin - 1,
+    size: 8,
     font: writer.regular,
-    color: rgb(1, 1, 1),
+    color: MUTED,
   });
-  writer.cursor.y = writer.pageSize.height - 68;
+  writer.cursor.page.drawLine({
+    start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 16 },
+    end: { x: writer.pageSize.width - writer.margin, y: writer.pageSize.height - writer.margin - 16 },
+    thickness: 0.85,
+    color: ACCENT,
+  });
+  writer.cursor.y = writer.pageSize.height - writer.margin - 34;
+}
+
+type InventoryIndexEntry = { label: string; page: number; detail?: string };
+
+function drawInventoryIndexPage(
+  writer: Writer,
+  page: PDFPage,
+  entries: InventoryIndexEntry[],
+): void {
+  page.drawText("Index", {
+    x: writer.margin,
+    y: writer.pageSize.height - writer.margin - 3,
+    size: 16,
+    font: writer.bold,
+    color: INK,
+  });
+  page.drawLine({
+    start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 18 },
+    end: { x: writer.pageSize.width - writer.margin, y: writer.pageSize.height - writer.margin - 18 },
+    thickness: 0.85,
+    color: ACCENT,
+  });
+
+  let y = writer.pageSize.height - writer.margin - 58;
+  for (const [index, entry] of entries.entries()) {
+    if (y < writer.margin + 24) break;
+    const number = String(index + 1).padStart(2, "0");
+    const pageLabel = String(entry.page);
+    page.drawText(number, { x: writer.margin, y, size: 9, font: writer.bold, color: ACCENT });
+    page.drawText(sanitise(entry.label), {
+      x: writer.margin + 38,
+      y,
+      size: 10,
+      font: writer.bold,
+      color: INK,
+    });
+    if (entry.detail) {
+      page.drawText(sanitise(entry.detail), {
+        x: writer.margin + 255,
+        y,
+        size: 8,
+        font: writer.regular,
+        color: MUTED,
+      });
+    }
+    page.drawText(pageLabel, {
+      x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(pageLabel, 9),
+      y,
+      size: 9,
+      font: writer.regular,
+      color: MUTED,
+    });
+    y -= 24;
+  }
 }
 
 async function drawInventoryOverviewPhotos(
@@ -405,63 +484,78 @@ async function drawInventoryAppendix(
   writer: Writer,
   document: ReportDocument,
   fetcher: PhotoFetcher | null,
-): Promise<void> {
+): Promise<InventoryIndexEntry | null> {
   const entries = inventoryAppendixEntries(document);
-  if (entries.length === 0) return;
+  if (entries.length === 0) return null;
 
-  newPage(writer);
-  drawInventoryHeader(writer, "Photograph appendix");
-  drawText(writer, "Inventory item photographs in upload order.", { size: 9, colour: MUTED, gapAfter: 6 });
+  let firstPage: number | null = null;
+  const gap = 16;
+  const cardWidth = (writer.contentWidth - gap) / 2;
+  const cardHeight = 205;
+  const imageHeight = 150;
 
-  for (const entry of entries) {
-    const { photo, findings, room } = entry;
-    const linkedItems = findings.map((finding) => itemLabel(finding.ref)).join(", ") || "No item linked";
-    ensure(writer, 260);
-    writer.cursor.page.drawText(sanitise(`Photo ${photo.sequence} - ${room}`), {
-      x: writer.margin,
-      y: writer.cursor.y - 10,
-      size: 10,
-      font: writer.bold,
-      color: INK,
-    });
-    writer.cursor.page.drawText(sanitise(linkedItems), {
-      x: writer.margin + 160,
-      y: writer.cursor.y - 10,
-      size: 9,
-      font: writer.regular,
-      color: MUTED,
-    });
-    writer.cursor.y -= 20;
+  for (let index = 0; index < entries.length; index += 4) {
+    newPage(writer);
+    if (firstPage === null) firstPage = writer.cursor.pageNumber;
+    drawInventoryHeader(writer, "Photographs");
+    drawText(writer, "Inventory item photographs in upload order.", { size: 9, colour: MUTED, gapAfter: 4 });
+    const pageTop = writer.cursor.y;
+    for (const [slot, entry] of entries.slice(index, index + 4).entries()) {
+      const column = slot % 2;
+      const row = Math.floor(slot / 2);
+      const x = writer.margin + column * (cardWidth + gap);
+      const top = pageTop - row * (cardHeight + 18);
+      if (top - cardHeight < writer.margin + 24) continue;
+      const { photo, findings, room } = entry;
+      const linkedItems = findings.map((finding) => inventoryItemTableLabel(finding)).join(", ") || "No item linked";
+      writer.cursor.page.drawText(sanitise(`Photo ${photo.sequence} - ${room}`), {
+        x,
+        y: top - 10,
+        size: 10,
+        font: writer.bold,
+        color: INK,
+      });
+      writer.cursor.page.drawText(sanitise(linkedItems), {
+        x,
+        y: top - 24,
+        size: 9,
+        font: writer.regular,
+        color: MUTED,
+      });
 
-    const boxWidth = Math.min(360, writer.contentWidth);
-    const boxHeight = 210;
-    writer.cursor.page.drawRectangle({
-      x: writer.margin,
-      y: writer.cursor.y - boxHeight,
-      width: boxWidth,
-      height: boxHeight,
-      borderColor: RULE,
-      borderWidth: 0.75,
-    });
-    if (fetcher) {
-      const image = await embedPhoto(writer, fetcher, photo);
-      if (image) drawImageAt(writer.cursor.page, image, writer.margin + 6, writer.cursor.y - 6, boxWidth - 12, boxHeight - 12);
+      writer.cursor.page.drawRectangle({
+        x,
+        y: top - 36 - imageHeight,
+        width: cardWidth,
+        height: imageHeight,
+        borderColor: RULE,
+        borderWidth: 0.75,
+      });
+      if (fetcher) {
+        const image = await embedPhoto(writer, fetcher, photo);
+        if (image) drawImageAt(writer.cursor.page, image, x + 6, top - 42, cardWidth - 12, imageHeight - 12);
+      }
     }
-    writer.cursor.y -= boxHeight + 18;
   }
+  return firstPage === null
+    ? null
+    : { label: "Photographs", page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
 }
 
-function drawInventoryBackingPages(writer: Writer, document: ReportDocument): void {
+function drawInventoryBackingPages(writer: Writer, document: ReportDocument): InventoryIndexEntry[] {
   const pages = inventoryLayout(document)?.backingPages ?? [];
-  if (pages.length === 0) return;
+  if (pages.length === 0) return [];
 
-  for (const page of pages) {
+  const entries: InventoryIndexEntry[] = [];
+  for (const pageDefinition of pages) {
     newPage(writer);
-    drawInventoryHeader(writer, page.title);
-    for (const paragraph of page.body) {
+    entries.push({ label: pageDefinition.title, page: writer.cursor.pageNumber });
+    drawInventoryHeader(writer, pageDefinition.title);
+    for (const paragraph of pageDefinition.body) {
       drawText(writer, paragraph, { size: 10, lineGap: 4, gapAfter: 8 });
     }
   }
+  return entries;
 }
 
 /* ------------------------------------------------------------------ */
@@ -607,108 +701,67 @@ async function buildInventoryReportPdf(
   doc.setProducer("instructBrain");
   doc.setCreator("instructBrain");
 
-  writer.cursor.page.drawRectangle({
-    x: 0,
-    y: LANDSCAPE_LETTER.height - 60,
-    width: LANDSCAPE_LETTER.width,
-    height: 60,
-    color: rgb(0.14, 0.25, 0.48),
-  });
-  writer.cursor.page.drawText(sanitise(document.organisation?.name ?? "instructBrain"), {
-    x: margin,
-    y: LANDSCAPE_LETTER.height - 35,
-    size: 15,
-    font: bold,
-    color: rgb(1, 1, 1),
-  });
-  writer.cursor.page.drawText("An instructSite Company", {
-    x: LANDSCAPE_LETTER.width - margin - regular.widthOfTextAtSize("An instructSite Company", 9),
-    y: LANDSCAPE_LETTER.height - 34,
-    size: 9,
-    font: regular,
-    color: rgb(1, 1, 1),
-  });
-  writer.cursor.y = LANDSCAPE_LETTER.height - 105;
-
   const cover = inventoryCoverPhoto(document);
-  const titleWidth = cover && fetcher ? writer.contentWidth * 0.48 : writer.contentWidth;
-  drawText(writer, document.report.title, { size: 27, bold: true, lineGap: 7, width: titleWidth });
-  if (document.report.subtitle) {
-    drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, width: titleWidth, gapAfter: 10 });
+  const coverPage = writer.cursor.page;
+  const organisationName = document.organisation?.name ?? "instructBrain";
+  let coverY = 430;
+  coverY = drawCenteredText(coverPage, bold, organisationName.toUpperCase(), coverY, 27, LANDSCAPE_LETTER.width);
+  coverPage.drawLine({
+    start: { x: LANDSCAPE_LETTER.width / 2 - 88, y: coverY - 12 },
+    end: { x: LANDSCAPE_LETTER.width / 2 + 88, y: coverY - 12 },
+    thickness: 0.85,
+    color: ACCENT,
+  });
+  coverY -= 66;
+  coverY = drawCenteredText(coverPage, bold, "INVENTORY", coverY, 21, LANDSCAPE_LETTER.width);
+  coverY -= 10;
+  coverY = drawCenteredText(coverPage, regular, "AT", coverY, 14, LANDSCAPE_LETTER.width, MUTED);
+  const address = document.project?.address ?? document.project?.name ?? "Property not recorded";
+  coverY -= 15;
+  coverY = drawCenteredText(coverPage, regular, address, coverY, 16, LANDSCAPE_LETTER.width);
+  if (document.project?.reference) {
+    coverY = drawCenteredText(coverPage, regular, document.project.reference, coverY - 5, 12, LANDSCAPE_LETTER.width, MUTED);
   }
-  const facts: Array<[string, string]> = [
-    ["Property", document.project?.name ?? ""],
-    ["Client", document.project?.clientName ?? ""],
-    ["Address", document.project?.address ?? ""],
-    ["Reference", document.report.reference ?? ""],
-    ["Report date", formatDocumentDate(document.report.reportDate)],
-    ["Author", document.author ?? ""],
-  ];
-  for (const [label, value] of facts) {
-    if (!value) continue;
-    writer.cursor.page.drawText(label, {
-      x: margin,
-      y: writer.cursor.y - 9,
+  if (document.project?.clientName) {
+    drawCenteredText(coverPage, regular, `Client:  ${document.project.clientName}`, coverY - 7, 12, LANDSCAPE_LETTER.width, MUTED);
+  }
+  coverPage.drawText(formatDocumentDate(document.report.reportDate), {
+    x: LANDSCAPE_LETTER.width / 2 - regular.widthOfTextAtSize(formatDocumentDate(document.report.reportDate), 11) / 2,
+    y: 95,
+    size: 11,
+    font: regular,
+    color: INK,
+  });
+  const footerLine = [document.organisation?.address, document.report.reference ? `Ref: ${document.report.reference}` : null]
+    .filter((value): value is string => !!value)
+    .join(" — ");
+  if (footerLine) {
+    coverPage.drawText(sanitise(footerLine).slice(0, 110), {
+      x: LANDSCAPE_LETTER.width / 2 - regular.widthOfTextAtSize(sanitise(footerLine).slice(0, 110), 8) / 2,
+      y: 62,
       size: 8,
-      font: bold,
+      font: regular,
       color: MUTED,
     });
-    writer.cursor.page.drawText(sanitise(value), {
-      x: margin + 92,
-      y: writer.cursor.y - 9,
-      size: 10,
-      font: regular,
-      color: INK,
-    });
-    writer.cursor.y -= 18;
   }
   if (cover && fetcher) {
     const image = await embedPhoto(writer, fetcher, cover);
     if (image) {
       drawImageAt(
-        writer.cursor.page,
+        coverPage,
         image,
-        margin + writer.contentWidth * 0.54,
-        470,
-        writer.contentWidth * 0.46,
-        310,
+        LANDSCAPE_LETTER.width - margin - 150,
+        166,
+        150,
+        82,
       );
     }
   }
 
   const rooms = inventoryRooms(document);
   newPage(writer);
-  drawInventoryHeader(writer, "Index");
-  if (rooms.length === 0) {
-    drawText(writer, "No rooms have been recorded yet.", { size: 10, colour: MUTED });
-  } else {
-    for (const [index, room] of rooms.entries()) {
-      ensure(writer, 24);
-      writer.cursor.page.drawText(String(index + 1).padStart(2, "0"), {
-        x: margin,
-        y: writer.cursor.y - 10,
-        size: 10,
-        font: bold,
-        color: ACCENT,
-      });
-      writer.cursor.page.drawText(sanitise(room.label), {
-        x: margin + 38,
-        y: writer.cursor.y - 10,
-        size: 11,
-        font: bold,
-        color: INK,
-      });
-      const count = `${room.findings.length} item${room.findings.length === 1 ? "" : "s"}`;
-      writer.cursor.page.drawText(count, {
-        x: LANDSCAPE_LETTER.width - margin - regular.widthOfTextAtSize(count, 9),
-        y: writer.cursor.y - 10,
-        size: 9,
-        font: regular,
-        color: MUTED,
-      });
-      writer.cursor.y -= 24;
-    }
-  }
+  const indexPage = writer.cursor.page;
+  const indexEntries: InventoryIndexEntry[] = [];
 
   const layout = inventoryLayout(document);
   const labels: [string, string, string, string] = [
@@ -721,6 +774,11 @@ async function buildInventoryReportPdf(
 
   for (const room of rooms) {
     newPage(writer);
+    indexEntries.push({
+      label: room.label,
+      page: writer.cursor.pageNumber,
+      detail: `${room.findings.length} item${room.findings.length === 1 ? "" : "s"}`,
+    });
     drawInventoryHeader(writer, room.label);
     drawText(writer, `${room.findings.length} item${room.findings.length === 1 ? "" : "s"}`, {
       size: 9,
@@ -735,7 +793,7 @@ async function buildInventoryReportPdf(
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
-        inventoryItemWithPhotoLabel(finding),
+        inventoryItemTableLabel(finding),
         finding.findingText || "Not recorded",
         inventoryConditionLabel(document, finding),
         inventoryCheckoutComment(document, finding),
@@ -785,8 +843,13 @@ async function buildInventoryReportPdf(
     }
   }
 
-  await drawInventoryAppendix(writer, document, fetcher);
-  drawInventoryBackingPages(writer, document);
+  const appendixEntry = await drawInventoryAppendix(writer, document, fetcher);
+  if (appendixEntry) indexEntries.push(appendixEntry);
+  indexEntries.push(...drawInventoryBackingPages(writer, document));
+  if (indexEntries.length === 0) {
+    indexEntries.push({ label: "No rooms have been recorded yet.", page: 2 });
+  }
+  drawInventoryIndexPage(writer, indexPage, indexEntries);
 
   drawFooters(writer);
   const bytes = await doc.save();

@@ -25,6 +25,7 @@ import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
+  inventoryItemTableLabel,
   inventoryItemWithPhotoLabel,
   inventoryLayout,
   inventoryRooms,
@@ -283,7 +284,7 @@ function InventoryDocument({
                     >
                       <div className="border-border p-3 font-semibold sm:border-r">
                         <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
-                        {inventoryItemWithPhotoLabel(finding)}
+                        {inventoryItemTableLabel(finding)}
                       </div>
                       <div className="border-border p-3 sm:border-r">
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
