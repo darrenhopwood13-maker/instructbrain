@@ -120,6 +120,19 @@ function NewReport() {
         ...(asksForHeader ? { subtitle, reportDate } : {}),
         definition: snapshotOf(selected),
         authorId: userId,
+        // A brief is only written when the user tightened the output; an
+        // untouched project report keeps its template behaviour exactly.
+        ...(findingsPerPhoto === "one"
+          ? {
+              brief: {
+                ...EMPTY_BRIEF,
+                findingsPerPhoto,
+                surveyTypes: [
+                  { id: selected.id, label: definitionLabel(snapshotOf(selected)) },
+                ],
+              } satisfies ReportBrief,
+            }
+          : {}),
       });
       // Optional title-page photo and per-report logo, chosen at creation.
       await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
