@@ -203,10 +203,10 @@ export async function photoAnalysisStates(
     analysed = new Set(((linkRows ?? []) as Array<{ photo_id: string }>).map((row) => row.photo_id));
   }
 
-  return photos.map((photo, index) => {
+  return photos.map((photo) => {
     const excluded = photoExcludesFromAnalysis(snapshot, photo.capture_fields, {
       isCover: photo.id === coverPhotoId,
-      isFirstPhoto: index === 0,
+      isFirstPhoto: photo.sequence === 1,
     });
     return {
       photoId: photo.id,
