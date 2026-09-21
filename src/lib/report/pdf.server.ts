@@ -49,6 +49,7 @@ export type BuiltPdf = { bytes: Uint8Array; filename: string };
 const A4 = { width: 595.28, height: 841.89 };
 const LANDSCAPE_LETTER = { width: 792, height: 612 };
 const MARGIN = 48;
+const CONTENT_WIDTH = A4.width - MARGIN * 2;
 
 const INK = rgb(0.06, 0.11, 0.2);
 const MUTED = rgb(0.35, 0.39, 0.47);
@@ -531,6 +532,9 @@ export async function buildReportPdf(
     bold,
     cursor: { page, y: A4.height - MARGIN, pageNumber: 1 },
     footer: [document.report.reference, document.report.title].filter(Boolean).join(" · "),
+    pageSize: A4,
+    margin: MARGIN,
+    contentWidth: CONTENT_WIDTH,
   };
 
   const findings = selectFindings(document, options);
