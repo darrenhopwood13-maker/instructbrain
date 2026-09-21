@@ -60,7 +60,8 @@ async function allocateRef(
   };
 }
 
-import { PHOTO_BUCKET, analysisSourcePath } from "@/lib/photos/storage-paths";
+import { analysisSourcePath } from "@/lib/photos/storage-paths";
+import { loadAnalysableImage } from "@/lib/photos/analysis-image.server";
 import { NOT_ASSESSED_ID, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export { AiBudgetExceededError, AiNotConfiguredError };
@@ -362,11 +363,11 @@ export async function analysePhotoForReport(
   } else {
     let imageUrl: string | null = null;
     try {
-      // Invariant 3: the full-resolution object. analysisSourcePath throws on a thumbnail.
+      // Invariant 3: the full-resolution object. analysisSourcePath throws on a
+      // thumbnail. The bytes travel with the request — see analysis-image.server.
       const path = analysisSourcePath(photo);
-      const { data, error } = await client.storage.from(PHOTO_BUCKET).createSignedUrl(path, 900);
-      if (error || !data?.signedUrl) throw error ?? new Error("the image could not be opened.");
-      imageUrl = data.signedUrl;
+      const image = await loadAnalysableImage(client, path);
+      imageUrl = image.dataUrl;
     } catch (error) {
       failure = error instanceof Error ? error.message : "the image could not be opened.";
     }

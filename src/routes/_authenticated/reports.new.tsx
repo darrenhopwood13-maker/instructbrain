@@ -16,6 +16,8 @@ import { useOrganisations } from "@/lib/use-organisations";
 import { useSession } from "@/lib/auth";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
+  allowsMultipleFindingsPerPhoto,
+  asksForDocumentHeader,
   captureFieldsOf,
   categoryGroupsOf,
   definitionLabel,
@@ -28,6 +30,13 @@ import {
 import { StatusPill } from "@/components/status-pill";
 import { TemplateSelect } from "@/components/template-select";
 import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
+import { DocumentHeaderFields } from "@/components/report/document-header-fields";
+import {
+  EMPTY_BRIEF,
+  findingsPerPhotoById,
+  type FindingsPerPhoto,
+  type ReportBrief,
+} from "@/lib/report/brief";
 import { applyBranding } from "@/lib/report/branding";
 import { toast } from "sonner";
 
@@ -77,12 +86,17 @@ function NewReport() {
   const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
 
 
   const selected = systemDefinitions.find((definition) => definition.id === selectedId);
-  // Only the inventory type asks for its own document header; the others stay
-  // on the fast, auto-titled path.
-  const asksForHeader = selected?.id === "property_inventory";
+  // Whether a report writes its own document header comes from the template
+  // itself, never from a discipline named here.
+  const asksForHeader = selected ? asksForDocumentHeader(snapshotOf(selected)) : false;
+  // Only a template that allows several findings per photograph can be tightened.
+  const multiFindingTemplate = selected
+    ? allowsMultipleFindingsPerPhoto(snapshotOf(selected))
+    : false;
   const projectList = projects.data ?? [];
   const project = useMemo(
     () => projectList.find((item) => item.id === (projectId || projectParam)),
@@ -106,6 +120,19 @@ function NewReport() {
         ...(asksForHeader ? { subtitle, reportDate } : {}),
         definition: snapshotOf(selected),
         authorId: userId,
+        // A brief is only written when the user tightened the output; an
+        // untouched project report keeps its template behaviour exactly.
+        ...(findingsPerPhoto === "one"
+          ? {
+              brief: {
+                ...EMPTY_BRIEF,
+                findingsPerPhoto,
+                surveyTypes: [
+                  { id: selected.id, label: definitionLabel(snapshotOf(selected)) },
+                ],
+              } satisfies ReportBrief,
+            }
+          : {}),
       });
       // Optional title-page photo and per-report logo, chosen at creation.
       await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
@@ -208,48 +235,38 @@ function NewReport() {
         </div>
 
         {asksForHeader ? (
-          <div className="space-y-4 rounded-xl border border-border bg-surface-raised p-4">
-            <p className="eyebrow">Document header</p>
+          <DocumentHeaderFields
+            title={title}
+            subtitle={subtitle}
+            reportDate={reportDate}
+            authorLabel={user?.email ?? "The signed-in account"}
+            titlePlaceholder={selected ? definitionLabel(snapshotOf(selected)) : "Report title"}
+            onTitle={setTitle}
+            onSubtitle={setSubtitle}
+            onReportDate={setReportDate}
+            disabled={mutation.isPending}
+          />
+        ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="report-title">Main title</Label>
-              <Input
-                id="report-title"
-                autoComplete="off"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Property inventory"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="report-subtitle">Subtitle</Label>
-              <Input
-                id="report-subtitle"
-                autoComplete="off"
-                value={subtitle}
-                onChange={(event) => setSubtitle(event.target.value)}
-                placeholder="Address or occupancy detail"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="report-date">Report date</Label>
-              <Input
-                id="report-date"
-                type="date"
-                value={reportDate}
-                onChange={(event) => setReportDate(event.target.value)}
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Author</p>
-              <p className="text-sm text-muted-foreground">
-                {user?.email ?? "The signed-in account"} — recorded automatically on the report.
-              </p>
-            </div>
+        {multiFindingTemplate ? (
+          <div className="space-y-2">
+            <Label htmlFor="findings-per-photo">Findings per photograph</Label>
+            <select
+              id="findings-per-photo"
+              value={findingsPerPhoto}
+              onChange={(event) =>
+                setFindingsPerPhoto(findingsPerPhotoById(event.target.value))
+              }
+              className="h-11 w-full rounded-md border border-border bg-surface-raised px-3 text-sm"
+            >
+              <option value="template">Follow the template — every item found</option>
+              <option value="one">One finding per photograph</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              {findingsPerPhoto === "one"
+                ? "Each photograph gets one combined entry, so a single photograph cannot produce several near-identical items."
+                : "A photograph showing several separate items produces a separate entry for each."}
+            </p>
           </div>
         ) : null}
       </section>

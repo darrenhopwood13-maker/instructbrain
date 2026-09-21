@@ -22,9 +22,12 @@ import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import {
   allowsMultipleFindingsPerPhoto,
+  asksForDocumentHeader,
   definitionLabel,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import { DocumentHeaderFields } from "@/components/report/document-header-fields";
+import { useSession } from "@/lib/auth";
 import {
   DEFAULT_TONE_ID,
   REPORT_PRESETS,
@@ -99,6 +102,7 @@ function CustomReport() {
   const { type: typeParam } = Route.useSearch();
   const queryClient = useQueryClient();
   const { organisationId, userId } = useOrganisations();
+  const { user } = useSession();
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
@@ -117,6 +121,9 @@ function CustomReport() {
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
+  const [docTitle, setDocTitle] = useState("");
+  const [docSubtitle, setDocSubtitle] = useState("");
+  const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [templateName, setTemplateName] = useState("");
   const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
@@ -233,6 +240,11 @@ function CustomReport() {
   const multiFindingTemplate = chosenDefinition
     ? allowsMultipleFindingsPerPhoto(snapshotOf(chosenDefinition))
     : false;
+  // Whether this template writes its own document header comes from the
+  // template itself, never from a discipline named here.
+  const asksForHeader = chosenDefinition
+    ? asksForDocumentHeader(snapshotOf(chosenDefinition))
+    : false;
   const stripped = identifier || minimal;
   const focusMissing = minimal && sanitiseSpecialRequest(specialRequest) === "";
 
@@ -285,8 +297,12 @@ function CustomReport() {
         organisationId,
         projectId: null,
         isQuick: true,
-        title: `${definitionLabel(frozen)} — ${todayLabel()}`,
+        title:
+          asksForHeader && docTitle.trim() !== ""
+            ? docTitle
+            : `${definitionLabel(frozen)} — ${todayLabel()}`,
         reference: "",
+        ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
         definition: frozen,
         authorId: userId,
         brief,
@@ -635,6 +651,22 @@ function CustomReport() {
                   </p>
                 </div>
               )}
+
+              {asksForHeader ? (
+                <DocumentHeaderFields
+                  title={docTitle}
+                  subtitle={docSubtitle}
+                  reportDate={docDate}
+                  authorLabel={user?.email ?? "The signed-in account"}
+                  titlePlaceholder={
+                    chosenDefinition ? definitionLabel(snapshotOf(chosenDefinition)) : "Report title"
+                  }
+                  onTitle={setDocTitle}
+                  onSubtitle={setDocSubtitle}
+                  onReportDate={setDocDate}
+                  disabled={start.isPending}
+                />
+              ) : null}
 
               {multiFindingTemplate ? (
                 <div>

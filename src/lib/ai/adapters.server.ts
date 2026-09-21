@@ -7,6 +7,7 @@
  */
 import type { AiConfig, AnalysisTier } from "@/lib/ai/config";
 import { envelopeJsonSchema } from "@/lib/ai/observation";
+import { dataUrlParts } from "@/lib/photos/analysis-image.server";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export class AiProviderError extends Error {
@@ -16,8 +17,15 @@ export class AiProviderError extends Error {
     super(message);
     this.name = "AiProviderError";
     this.status = status;
+    // 400 is worth one more attempt: a provider occasionally rejects a large
+    // image request that succeeds on the retry. A persistent 400 still ends as
+    // not_assessed — invariant 1 is untouched either way.
     this.retryable =
-      retryable ?? (status === 429 || (typeof status === "number" && status >= 500));
+      retryable ??
+      (status === 429 ||
+        status === 400 ||
+        status === 408 ||
+        (typeof status === "number" && status >= 500));
   }
 }
 
@@ -25,7 +33,11 @@ export type AdapterRequest = {
   snapshot: SurveyTypeSnapshot;
   systemPrompt: string;
   userPrompt: string;
-  /** Full-resolution source, resolved by analysisSourcePath. Never a thumbnail. */
+  /**
+   * Full-resolution source, resolved by analysisSourcePath. Never a thumbnail.
+   * Normally a `data:` URL carrying the stored bytes inline, so the provider
+   * never has to fetch anything itself.
+   */
   imageUrl: string;
   model: string;
   tier: AnalysisTier;
@@ -162,7 +174,19 @@ async function anthropic(request: AdapterRequest): Promise<AdapterResponse> {
           {
             role: "user",
             content: [
-              { type: "image", source: { type: "url", url: request.imageUrl } },
+              (() => {
+                const inline = dataUrlParts(request.imageUrl);
+                return inline
+                  ? {
+                      type: "image",
+                      source: {
+                        type: "base64",
+                        media_type: inline.mimeType,
+                        data: inline.data,
+                      },
+                    }
+                  : { type: "image", source: { type: "url", url: request.imageUrl } };
+              })(),
               { type: "text", text: request.userPrompt },
             ],
           },
@@ -198,6 +222,8 @@ async function fetchAsBase64(
   url: string,
   timeoutMs: number,
 ): Promise<{ data: string; mimeType: string }> {
+  const inline = dataUrlParts(url);
+  if (inline) return { data: inline.data, mimeType: inline.mimeType };
   const response = await post(url, { method: "GET" }, timeoutMs);
   if (!response.ok) {
     throw new AiProviderError(`the photograph could not be read (${response.status}).`);

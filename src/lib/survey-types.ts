@@ -72,6 +72,12 @@ export type SurveyDefinition = {
   requiresLifecycle?: boolean;
   supportsDistribution?: boolean;
   defaultDistributionGrouping?: string;
+  /**
+   * Whether this type writes its own document header (title, subtitle, date)
+   * rather than taking the automatic one. Data, not code: no route decides
+   * this by naming a discipline.
+   */
+  asksForDocumentHeader?: boolean;
 };
 
 /** A definition frozen into a report at creation. Same shape, by design. */
@@ -321,6 +327,13 @@ export function allowsMultipleFindingsPerPhoto(
 ): boolean {
   if (snapshot?.findingsPerPhoto !== "multiple") return false;
   return brief?.findingsPerPhoto !== "one";
+}
+
+/** Whether this type writes its own document header rather than an automatic one. */
+export function asksForDocumentHeader(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): boolean {
+  return snapshot?.asksForDocumentHeader === true;
 }
 
 export function aiGuidanceOf(
