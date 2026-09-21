@@ -386,7 +386,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     focus:
       "Furniture, appliances, soft furnishings, floor and wall coverings, light fittings, sanitaryware, kitchen units, window dressings and loose contents.",
     multiFindingGuidance:
-      "A single photograph usually shows several separate objects. Return one entry per distinct object worth recording. Do not merge unrelated objects into one entry, and do not split one object into several.",
+      "Return one entry per item worth recording, and no more. Where several of the same item appear in one photograph, record them once and set the quantity — never one entry per copy. Group small like-for-like contents that would be listed together (crockery, cushions, books, tools) into a single entry with a quantity. Do not split one object into several entries, do not record the same object twice, and do not pad the list with items already recorded from another photograph of the same room.",
     descriptionGuidance:
       "Write the entry as: the object and a very brief description, then one short sentence on its condition. For example 'Oak dining table, approximately 1.8m, seats six. Light surface scratches to the top; joints sound.' Do not exceed two sentences.",
     remedialGuidance:
@@ -394,7 +394,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     failCriteria:
       "Choose the condition value that actually describes the object. Chips, tears, stains, missing parts, cracked glass or a non-functioning component read as damaged or broken.",
     excludeCriteria:
-      "Do not record fabric of the building itself, construction work in progress, or objects too small or too obscured to identify. Everyday dust or a temporarily untidy surface is not a condition issue.",
+      "Do not record fabric of the building itself, construction work in progress, or objects too small or too obscured to identify. Do not record trivia — consumables, rubbish, part-used packets, individual small ornaments — unless the photograph is plainly of that item. Everyday dust or a temporarily untidy surface is not a condition issue.",
     peopleGuidance:
       "Describe objects and their condition only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
     tradeGuidance:
