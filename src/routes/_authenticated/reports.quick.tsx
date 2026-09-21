@@ -20,6 +20,7 @@ import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
+import { snapshotFiles } from "@/lib/photos/file-snapshot";
 import {
   allowsMultipleFindingsPerPhoto,
   asksForDocumentHeader,
@@ -356,11 +357,13 @@ function CustomReport() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const receive = (list: FileList | null) => {
+  const receive = async (list: FileList | null) => {
     const files = list ? Array.from(list) : [];
     if (files.length === 0) return;
     if (reportId) return;
-    start.mutate(files);
+    // Hold the bytes now: the report is created first, and a camera/gallery
+    // file reference can be revoked before the capture panel mounts.
+    start.mutate(await snapshotFiles(files));
   };
 
   const capturing = reportId !== null && snapshot !== null;
@@ -441,7 +444,7 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              receive(event.target.files);
+              void receive(event.target.files);
               event.target.value = "";
             }}
           />
@@ -452,7 +455,7 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              receive(event.target.files);
+              void receive(event.target.files);
               event.target.value = "";
             }}
           />

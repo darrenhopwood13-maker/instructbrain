@@ -44,6 +44,7 @@ import {
   runUploadQueue,
   type TaskProgress,
 } from "@/lib/photos/upload-queue";
+import { snapshotFiles } from "@/lib/photos/file-snapshot";
 import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
@@ -274,7 +275,7 @@ export function PhotosPanel({
   );
 
   const addFiles = useCallback(
-    (fileList: FileList | null) => {
+    async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
       let selected = Array.from(fileList);
       // The database enforces the cap too; this only avoids doomed uploads.
@@ -288,6 +289,10 @@ export function PhotosPanel({
         selected = selected.slice(0, remainingPhotos);
         if (selected.length === 0) return;
       }
+      // Bytes are taken into memory in selection order, before anything is
+      // queued: an Android camera/gallery reference can be revoked while a
+      // large batch waits its turn.
+      selected = await snapshotFiles(selected);
       const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
@@ -321,7 +326,7 @@ export function PhotosPanel({
     seededRef.current = true;
     const transfer = new DataTransfer();
     for (const file of initialFiles) transfer.items.add(file);
-    addFiles(transfer.files);
+    void addFiles(transfer.files);
   }, [ready, organisationId, initialFiles, addFiles]);
 
 
@@ -545,7 +550,7 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            addFiles(event.target.files);
+            void addFiles(event.target.files);
             event.target.value = "";
           }}
         />
@@ -557,10 +562,12 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            addFiles(event.target.files);
+            void addFiles(event.target.files);
             event.target.value = "";
           }}
         />
+
+
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
           <Button
