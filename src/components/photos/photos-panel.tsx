@@ -326,7 +326,7 @@ export function PhotosPanel({
     seededRef.current = true;
     const transfer = new DataTransfer();
     for (const file of initialFiles) transfer.items.add(file);
-    addFiles(transfer.files);
+    void addFiles(transfer.files);
   }, [ready, organisationId, initialFiles, addFiles]);
 
 
@@ -550,7 +550,7 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            addFiles(event.target.files);
+            void addFiles(event.target.files);
             event.target.value = "";
           }}
         />
@@ -562,10 +562,12 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            addFiles(event.target.files);
+            void addFiles(event.target.files);
             event.target.value = "";
           }}
         />
+
+
 
         <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
           <Button
