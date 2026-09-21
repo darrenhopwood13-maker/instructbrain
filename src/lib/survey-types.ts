@@ -72,6 +72,12 @@ export type SurveyDefinition = {
   requiresLifecycle?: boolean;
   supportsDistribution?: boolean;
   defaultDistributionGrouping?: string;
+  /**
+   * Whether this type writes its own document header (title, subtitle, date)
+   * rather than taking the automatic one. Data, not code: no route decides
+   * this by naming a discipline.
+   */
+  asksForDocumentHeader?: boolean;
 };
 
 /** A definition frozen into a report at creation. Same shape, by design. */

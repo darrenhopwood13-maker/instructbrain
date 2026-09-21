@@ -354,7 +354,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 1,
+  version: 2,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
