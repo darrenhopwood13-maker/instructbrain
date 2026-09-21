@@ -3,6 +3,7 @@ import { nextRef } from "@/lib/finding-refs";
 import { humanisePlanError } from "@/lib/plans";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
+import { isUnreadableFileError } from "@/lib/photos/file-snapshot";
 import {
   createAnalysisDerivative,
   modelReadableFromBytes,
@@ -219,7 +220,17 @@ export async function uploadPhoto(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
 ): Promise<UploadOutcome> {
-  const bytes = await file.arrayBuffer();
+  let bytes: ArrayBuffer;
+  try {
+    bytes = await file.arrayBuffer();
+  } catch (error) {
+    if (isUnreadableFileError(error)) {
+      throw new Error(
+        "Your phone released this photograph before it uploaded. Add it again from the gallery.",
+      );
+    }
+    throw error;
+  }
   const provenance = await readProvenanceFromFile(file); // step 1 — before anything else
   const checksum = await sha256Hex(bytes);
   onProgress(0.05);
