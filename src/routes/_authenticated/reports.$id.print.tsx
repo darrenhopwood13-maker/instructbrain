@@ -74,7 +74,7 @@ function PrintReport() {
   const inventory = isInventoryLayout(outputDocument);
 
   return (
-    <div className="paper print-surface min-h-dvh">
+    <div className={inventory ? "paper print-surface inventory-print-surface min-h-dvh" : "paper print-surface min-h-dvh"}>
       <div className="print-running-header" aria-hidden="true">
         <span>
           <span className="font-semibold">instructBrain</span>
@@ -98,7 +98,7 @@ function PrintReport() {
         </Button>
       </div>
 
-      <main className={inventory ? "mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-4xl px-6 py-8"}>
+      <main className={inventory ? "inventory-print-main mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-4xl px-6 py-8"}>
         <ReportDocumentView document={outputDocument} print view={view} />
       </main>
     </div>

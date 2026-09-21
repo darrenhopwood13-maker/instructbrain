@@ -5,12 +5,41 @@ import {
   snapshotOf,
   systemDefinitions,
 } from "@/lib/survey-definitions";
-import { asksForDocumentHeader } from "@/lib/survey-types";
+import {
+  asksForDocumentHeader,
+  photoExcludesFromAnalysis,
+  photoRoleLabel,
+  photoWorkflowOf,
+  reportLayoutOf,
+} from "@/lib/survey-types";
 
 describe("property inventory", () => {
-  it("is version 2 and asks for its own document header", () => {
-    expect(propertyInventoryDefinition.version).toBe(2);
+  it("is version 3 and asks for its own document header", () => {
+    expect(propertyInventoryDefinition.version).toBe(3);
     expect(asksForDocumentHeader(propertyInventoryDefinition)).toBe(true);
+  });
+
+  it("carries its room inventory workflow and layout in the snapshot", () => {
+    const snapshot = snapshotOf(propertyInventoryDefinition);
+    const workflow = photoWorkflowOf(snapshot);
+    const layout = reportLayoutOf(snapshot);
+
+    expect(workflow?.kind).toBe("inventory_room_schedule");
+    expect(workflow?.sectionField).toBe("room");
+    expect(workflow?.maxOverviewPhotos).toBe(3);
+    expect(photoRoleLabel(snapshot, {}, { isFirstPhoto: true })).toBe("Exterior / title page");
+    expect(photoExcludesFromAnalysis(snapshot, {}, { isFirstPhoto: true })).toBe(true);
+    expect(photoExcludesFromAnalysis(snapshot, { _photo_role: "room_overview" })).toBe(true);
+    expect(photoExcludesFromAnalysis(snapshot, { _photo_role: "inventory_detail" })).toBe(false);
+    expect(photoExcludesFromAnalysis(snapshot, {}, { isCover: true })).toBe(true);
+
+    expect(layout?.kind).toBe("inventory_room_schedule");
+    expect(layout?.columns).toMatchObject({
+      item: "Item",
+      description: "Description",
+      condition: "Condition",
+      checkoutComment: "Check Out Comment",
+    });
   });
 
   it("does not leak its header requirement into the other templates", () => {

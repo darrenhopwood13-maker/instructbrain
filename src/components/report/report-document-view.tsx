@@ -92,7 +92,14 @@ export function ReportDocumentView({
   let resultsRendered = false;
 
   if (isInventoryLayout(document)) {
-    return <InventoryDocument document={document} print={print} />;
+    return (
+      <InventoryDocument
+        document={document}
+        editable={editable}
+        print={print}
+        {...(onFindingPatch ? { onFindingPatch } : {})}
+      />
+    );
   }
 
   return (
@@ -138,10 +145,20 @@ export function ReportDocumentView({
   );
 }
 
-function InventoryDocument({ document, print }: { document: ReportDocument; print: boolean }) {
+function InventoryDocument({
+  document,
+  editable,
+  print,
+  onFindingPatch,
+}: {
+  document: ReportDocument;
+  editable: boolean;
+  print: boolean;
+} & Pick<Handlers, "onFindingPatch">) {
   const rooms = inventoryRooms(document);
   const layout = inventoryLayout(document);
   const cover = inventoryCoverPhoto(document);
+  const readOnly = !editable || !onFindingPatch;
   const remainingPhotos = document.photos.filter((photo) => {
     if (photo.id === cover?.id) return false;
     if (rooms.some((room) => room.overviewPhotos.some((overview) => overview.id === photo.id))) {
@@ -291,7 +308,12 @@ function InventoryDocument({ document, print }: { document: ReportDocument; prin
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
                           Check Out Comment
                         </span>
-                        {inventoryCheckoutComment(document, finding) || ""}
+                        <InventoryCheckoutComment
+                          document={document}
+                          finding={finding}
+                          readOnly={readOnly}
+                          onFindingPatch={onFindingPatch}
+                        />
                       </div>
                     </div>
                   ))
@@ -304,6 +326,40 @@ function InventoryDocument({ document, print }: { document: ReportDocument; prin
 
       {remainingPhotos.length > 0 ? <InventoryAppendix photos={remainingPhotos} print={print} /> : null}
     </article>
+  );
+}
+
+function InventoryCheckoutComment({
+  document,
+  finding,
+  readOnly,
+  onFindingPatch,
+}: {
+  document: ReportDocument;
+  finding: DocFinding;
+  readOnly: boolean;
+} & Pick<Handlers, "onFindingPatch">) {
+  const field = inventoryLayout(document)?.checkoutCommentField;
+  const value = inventoryCheckoutComment(document, finding);
+  if (!field) return <>{value}</>;
+
+  if (readOnly) return <>{value}</>;
+
+  return (
+    <InlineField
+      label="Check Out Comment"
+      value={value}
+      multiline
+      rows={2}
+      className="[&_label]:sr-only [&_p]:min-h-4"
+      onSave={async (next) =>
+        onFindingPatch?.(
+          finding,
+          { capture_fields: { ...finding.captureFields, [field]: next } },
+          { capture_fields: finding.captureFields },
+        )
+      }
+    />
   );
 }
 
