@@ -62,7 +62,7 @@ async function allocateRef(
 
 import { analysisSourcePath } from "@/lib/photos/storage-paths";
 import { loadAnalysableImage } from "@/lib/photos/analysis-image.server";
-import { NOT_ASSESSED_ID, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { NOT_ASSESSED_ID, photoExcludesFromAnalysis, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 export { AiBudgetExceededError, AiNotConfiguredError };
 
@@ -169,12 +169,13 @@ export async function photoAnalysisStates(
   client: AnyClient,
   reportId: string,
 ): Promise<PhotoAnalysisState[]> {
-  const [{ data: photoRows, error }, { data: coverRows }] = await Promise.all([
+  const [{ data: photoRows, error }, { data: coverRows }, report] = await Promise.all([
     table(client, "photos")
-      .select("id, original_filename, sequence")
+      .select("id, original_filename, sequence, capture_fields")
       .eq("report_id", reportId)
       .order("sequence", { ascending: true }),
     table(client, "reports").select("cover_photo_id").eq("id", reportId).limit(1),
+    loadReport(client, reportId),
   ]);
   if (error) throw new Error(error.message);
   // A dedicated cover photograph carries no finding and is never analysed.
@@ -185,7 +186,9 @@ export async function photoAnalysisStates(
     id: string;
     original_filename: string | null;
     sequence: number | null;
+    capture_fields: Record<string, string> | null;
   }>;
+  const snapshot = coerceSnapshot(report.survey_type_snapshot);
 
   const { data: findingRows } = await table(client, "findings")
     .select("id")
@@ -200,12 +203,18 @@ export async function photoAnalysisStates(
     analysed = new Set(((linkRows ?? []) as Array<{ photo_id: string }>).map((row) => row.photo_id));
   }
 
-  return photos.map((photo) => ({
-    photoId: photo.id,
-    filename: photo.original_filename,
-    sequence: photo.sequence,
-    analysed: analysed.has(photo.id) || photo.id === coverPhotoId,
-  }));
+  return photos.map((photo, index) => {
+    const excluded = photoExcludesFromAnalysis(snapshot, photo.capture_fields, {
+      isCover: photo.id === coverPhotoId,
+      isFirstPhoto: index === 0,
+    });
+    return {
+      photoId: photo.id,
+      filename: photo.original_filename,
+      sequence: photo.sequence,
+      analysed: analysed.has(photo.id) || excluded,
+    };
+  });
 }
 
 async function readCache(
@@ -323,6 +332,25 @@ export async function analysePhotoForReport(
   if (photoError) throw new Error(photoError.message);
   if (!photoRow) throw new Error("That photograph could not be found on this report.");
   const photo = photoRow as PhotoRecord;
+
+  const firstSequence = photo.sequence === 1;
+  if (
+    photoExcludesFromAnalysis(primarySnapshot, photo.capture_fields, {
+      isFirstPhoto: firstSequence,
+    })
+  ) {
+    return {
+      photoId: photo.id,
+      filename: photo.original_filename,
+      findingsCreated: 0,
+      notAssessed: 0,
+      confidential: 0,
+      cached: false,
+      tier: "skipped",
+      costUsd: 0,
+      error: null,
+    };
+  }
 
   // A report may cover several survey types. The type recorded on the
   // photograph decides which snapshot assesses it — and only a type the
