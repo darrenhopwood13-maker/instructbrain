@@ -329,6 +329,13 @@ export function allowsMultipleFindingsPerPhoto(
   return brief?.findingsPerPhoto !== "one";
 }
 
+/** Whether this type writes its own document header rather than an automatic one. */
+export function asksForDocumentHeader(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): boolean {
+  return snapshot?.asksForDocumentHeader === true;
+}
+
 export function aiGuidanceOf(
   snapshot: SurveyTypeSnapshot | null | undefined,
 ): Array<{ key: string; label: string; text: string }> {
