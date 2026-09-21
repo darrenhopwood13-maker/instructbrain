@@ -9,3 +9,5 @@
 - [x] Add definition-driven backing pages for Property inventory.
 - [x] Add the external-Supabase Property inventory v4 definition migration.
 - [x] Add focused tests and rerun the suite.
+- [ ] Preserve each photograph's selection-order number through slow uploads and retries.
+- [ ] Verify every Property inventory PDF page is landscape.
