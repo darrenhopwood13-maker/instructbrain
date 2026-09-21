@@ -391,39 +391,20 @@ function InventoryAppendix({
 }
 
 function InventoryBackingPages({ document }: { document: ReportDocument }) {
-  const organisation = document.organisation?.name ?? "instructBrain";
+  const pages = inventoryLayout(document)?.backingPages ?? [];
+  if (pages.length === 0) return null;
   return (
     <section aria-label="Inventory notes" className="break-before-page space-y-8">
-      <div>
-        <h2 className="editorial-title text-xl font-semibold">Inventory guidance notes</h2>
-        <div className="mt-4 grid gap-4 text-sm leading-6 sm:grid-cols-2">
-          <p>
-            This inventory records the visible contents, fixtures and fittings photographed at the
-            time of inspection. Each room section shows the room overview photographs first, followed
-            by the item schedule recorded for that room.
-          </p>
-          <p>
-            Item photographs are reproduced at the rear of the report in upload order. The photograph
-            number shown in the table links the schedule entry to the matching photograph.
-          </p>
-          <p>
-            The Check Out Comment column is left available for end-of-tenancy or close-out notes. It
-            should be completed by a person before it is relied on as a check-out record.
-          </p>
-          <p>
-            Any item marked Not assessed was not resolved automatically and requires human review
-            before the report is issued.
-          </p>
+      {pages.map((page) => (
+        <div key={page.title} className="break-inside-avoid">
+          <h2 className="editorial-title text-xl font-semibold">{page.title}</h2>
+          <div className="mt-4 grid gap-4 text-sm leading-6 sm:grid-cols-2">
+            {page.body.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
         </div>
-      </div>
-      <div>
-        <h2 className="editorial-title text-xl font-semibold">Schedule of condition</h2>
-        <p className="mt-4 text-sm leading-6">
-          The condition wording is based on the photographs supplied and the information recorded on
-          site. This document is branded by {organisation} as part of the instructSite family and is
-          intended as a professional record of the photographed inventory.
-        </p>
-      </div>
+      ))}
     </section>
   );
 }
