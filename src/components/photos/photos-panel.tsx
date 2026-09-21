@@ -179,14 +179,12 @@ export function PhotosPanel({
               ) {
                 captureFields[workflow.roleField] = workflow.firstPhotoRoleId;
               }
-              return (
               // Photographs reach storage on selection — never held in memory only.
-              uploadPhoto(
+              return uploadPhoto(
                 item.file,
                 { organisationId, reportId, captureFields },
                 sequence,
                 report,
-              )
               );
             },
           })),
