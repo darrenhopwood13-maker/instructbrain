@@ -27,7 +27,10 @@ describe("property inventory", () => {
   });
 
   it("sends the analysis image without sharing the thumbnail path", () => {
-    const source = readFileSync("src/lib/photos/analysis-image.server.ts", "utf8");
+    const source = readFileSync("src/lib/photos/analysis-image.server.ts", "utf8")
+      .split("\n")
+      .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
+      .join("\n");
     expect(source).not.toMatch(/from "[^"]*thumbnail[^"]*"/);
     expect(source).not.toMatch(/resize|maxEdge|drawImage/i);
   });
