@@ -274,7 +274,7 @@ export function PhotosPanel({
   );
 
   const addFiles = useCallback(
-    (fileList: FileList | null) => {
+    async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
       let selected = Array.from(fileList);
       // The database enforces the cap too; this only avoids doomed uploads.
