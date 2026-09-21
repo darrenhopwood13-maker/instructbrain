@@ -3,10 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
+import { Button } from "@/components/ui/button";
 import { reportDocumentQuery } from "@/lib/report/report-data";
 import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { formatDocumentDate } from "@/lib/report/document";
 import { safeResultView } from "@/lib/report/grouping";
+import { isInventoryLayout } from "@/lib/report/inventory-layout";
 
 /**
  * The print surface. The browser's own print engine paginates and writes the
@@ -68,6 +70,9 @@ function PrintReport() {
       : `Draft — ${formatDocumentDate(document.report.reportDate)}`,
   ].join(" · ");
 
+  const outputDocument = translation.document ?? document;
+  const inventory = isInventoryLayout(outputDocument);
+
   return (
     <div className="paper print-surface min-h-dvh">
       <div className="print-running-header" aria-hidden="true">
@@ -85,17 +90,16 @@ function PrintReport() {
           Use your browser&rsquo;s print dialog to save this as a PDF. Turn on
           &ldquo;Headers and footers&rdquo; to number the pages.
         </p>
-        <button
+        <Button
           type="button"
           onClick={() => window.print()}
-          className="rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-primary-foreground"
         >
           Print or save as PDF
-        </button>
+        </Button>
       </div>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <ReportDocumentView document={translation.document ?? document} print view={view} />
+      <main className={inventory ? "mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-4xl px-6 py-8"}>
+        <ReportDocumentView document={outputDocument} print view={view} />
       </main>
     </div>
 

@@ -32,8 +32,8 @@ export function inventoryCoverPhoto(document: ReportDocument): DocPhoto | null {
   if (chosen) return chosen;
   const workflowCover = workflow
     ? document.photos.find(
-        (photo, index) =>
-          photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: index === 0 })
+        (photo) =>
+          photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 })
             ?.countsAsCover === true,
       )
     : null;
