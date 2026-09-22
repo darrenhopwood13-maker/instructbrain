@@ -138,22 +138,26 @@ export function ReportActions({
       }),
   });
 
-  /** The same file the emails carry, saved straight to the device. */
+  /** The same file the emails carry, saved wherever the person chooses. */
   const pdf = useMutation({
-    mutationFn: () => buildPdf({ data: { reportId: document.report.id, view: resultView } }),
+    mutationFn: async (mode: "save" | "share") => {
+      const result = await buildPdf({ data: { reportId: document.report.id, view: resultView } });
+      const bytes = pdfBytesFromBase64(result.content);
+      const outcome =
+        mode === "share"
+          ? await sharePdfBytes(bytes, result.filename, document.report.title)
+          : await savePdfBytes(bytes, result.filename);
+      return { filename: result.filename, outcome };
+    },
     onSuccess: (result) => {
-      const binary = atob(result.content);
-      const bytes = new Uint8Array(binary.length);
-      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      const anchor = window.document.createElement("a");
-      anchor.href = url;
-      anchor.download = result.filename;
-      window.document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-      toast.success("PDF downloaded", { description: result.filename });
+      if (result.outcome === "cancelled") return;
+      const description =
+        result.outcome === "saved"
+          ? `Saved as ${result.filename}`
+          : result.outcome === "shared"
+            ? result.filename
+            : `${result.filename} is in your downloads.`;
+      toast.success(result.outcome === "shared" ? "PDF shared" : "PDF saved", { description });
     },
     onError: (error) =>
       toast.error("The PDF could not be built", {
