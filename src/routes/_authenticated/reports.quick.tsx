@@ -102,10 +102,16 @@ function todayLabel(): string {
 }
 
 function CustomReport() {
-  const { type: typeParam } = Route.useSearch();
+  const { type: typeParam, project: projectParam } = Route.useSearch();
   const queryClient = useQueryClient();
-  const { organisationId, userId } = useOrganisations();
+  const { organisationId, organisationIds, userId } = useOrganisations();
   const { user } = useSession();
+  const usage = usePlanUsage(organisationId);
+  const projects = useQuery(projectsQuery(organisationIds));
+  // One start screen for every report. A report belongs to a project only when
+  // the person picks one — otherwise it is a standalone report.
+  const [projectId, setProjectId] = useState<string>(projectParam ?? "");
+  const project = (projects.data ?? []).find((item) => item.id === projectId) ?? null;
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
