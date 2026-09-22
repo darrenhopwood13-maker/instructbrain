@@ -28,6 +28,8 @@ import { CaptureFieldsForm } from "@/components/photos/capture-fields-form";
 import { PhotoGrid } from "@/components/photos/photo-grid";
 import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
 import { RoomOrganiser } from "@/components/photos/room-organiser";
+import { ReadinessChecklist } from "@/components/photos/readiness-checklist";
+import { inventoryReadiness } from "@/lib/photos/inventory-readiness";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
@@ -724,6 +726,10 @@ export function PhotosPanel({
               }}
             />
           ) : null}
+
+          <ReadinessChecklist
+            steps={inventoryReadiness(inventoryWorkflow, photos, coverPhotoId)}
+          />
         </>
 
       )}
