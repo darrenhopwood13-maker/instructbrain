@@ -53,16 +53,17 @@ import {
   saveReportTemplate,
 } from "@/lib/report/templates.functions";
 
-type CustomReportSearch = { type?: string | undefined };
+type CustomReportSearch = { type?: string | undefined; project?: string | undefined };
 
 export const Route = createFileRoute("/_authenticated/reports/quick")({
   validateSearch: (search: Record<string, unknown>): CustomReportSearch => ({
     type: typeof search["type"] === "string" ? search["type"] : undefined,
+    project: typeof search["project"] === "string" ? search["project"] : undefined,
   }),
   head: () => {
-    const title = "Custom report — instructBrain";
+    const title = "Start a report — instructBrain";
     const description =
-      "Choose a preset and tone, add a special request, then shoot. Photographs upload as you take them and the AI drafts the findings.";
+      "Pick the report template, take the photographs and the AI drafts the findings. One start screen for every report.";
     return {
       meta: [
         { title },
