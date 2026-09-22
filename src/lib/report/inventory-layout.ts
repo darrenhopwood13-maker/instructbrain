@@ -100,8 +100,8 @@ export function inventoryRooms(document: ReportDocument): InventoryRoomSection[]
       ...room,
       overviewPhotos: room.overviewPhotos.sort((a, b) => a.sequence - b.sequence).slice(0, 3),
       findings: room.findings.sort((a, b) => {
-        const aSeq = inventoryFindingPhotos(a)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
-        const bSeq = inventoryFindingPhotos(b)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+        const aSeq = inventoryFindingPhotos(a, document.snapshot)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+        const bSeq = inventoryFindingPhotos(b, document.snapshot)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
         return aSeq === bSeq ? a.sequence - b.sequence : aSeq - bSeq;
       }),
     }))

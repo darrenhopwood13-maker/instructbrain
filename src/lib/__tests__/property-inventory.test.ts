@@ -228,10 +228,24 @@ describe("property inventory", () => {
       ref: "1",
       sequence: 1,
       statusId: "condition_good",
+      severityId: null,
+      categoryId: null,
       findingText: "Old item",
+      remedialText: "",
       captureFields: { room: "Kitchen" },
+      assignedTrade: null,
+      suggestedTrade: null,
+      tradeReasoning: null,
+      tradeConfidence: null,
+      dueDate: null,
+      lifecycleState: "open",
+      isConfidential: false,
+      confirmedAt: null,
+      likelyCause: null,
+      regulatoryReference: null,
+      abstainReason: null,
       photos: [{ photo: overviewPhoto, role: "primary", region: null }],
-    } as DocFinding;
+    } satisfies DocFinding;
     const document = {
       report: { coverPhotoId: null },
       snapshot,
@@ -253,6 +267,9 @@ describe("property inventory", () => {
     expect(other).toBeDefined();
     if (!other) return;
     expect(reportPrintPageClass({ snapshot: snapshotOf(other) })).toBe("");
+    expect(readFileSync("src/routes/shared.$token.tsx", "utf8")).toContain(
+      "reportPrintPageClass(query.data)",
+    );
   });
 
   it("does not leak its header requirement into the other templates", () => {
