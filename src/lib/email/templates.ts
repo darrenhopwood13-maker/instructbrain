@@ -10,6 +10,7 @@
  */
 
 import { itemLabel } from "@/lib/item-label";
+import { BRAND_CREDIT } from "@/lib/brand";
 
 export type EmailTemplateName =
   | "INVITE"

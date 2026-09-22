@@ -17,6 +17,7 @@ import { ComplianceTicker, PhotoToReport } from "@/components/landing/photo-to-r
 import { Reveal } from "@/components/landing/reveal";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
+import { BRAND_CREDIT } from "@/lib/brand";
 
 // Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
 const TITLE = "instructBrain — construction reports from site photographs";
