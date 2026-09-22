@@ -774,6 +774,8 @@ async function buildInventoryReportPdf(
   ];
   const columns: [number, number, number, number] = [92, 336, 124, writer.contentWidth - 92 - 336 - 124];
 
+  const photoGroups = inventoryRoomPhotoGroups(document);
+
   for (const room of rooms) {
     newPage(writer);
     indexEntries.push({
@@ -791,7 +793,6 @@ async function buildInventoryReportPdf(
     drawInventoryTableHeader(writer, columns, labels);
     if (room.findings.length === 0) {
       drawText(writer, "No inventory items recorded in this room yet.", { size: 10, colour: MUTED });
-      continue;
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
