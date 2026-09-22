@@ -483,6 +483,7 @@ function drawInventoryTableHeader(
 
 async function drawInventoryPhotoPages(
   writer: Writer,
+  document: ReportDocument,
   entries: InventoryAppendixEntry[],
   fetcher: PhotoFetcher | null,
   heading: string,
@@ -509,7 +510,7 @@ async function drawInventoryPhotoPages(
       const top = pageTop - row * (cardHeight + 18);
       if (top - cardHeight < writer.margin + 24) continue;
       const { photo, findings, room } = entry;
-      const linkedItems = findings.map((finding) => inventoryItemTableLabel(finding)).join(", ") || "No item linked";
+      const linkedItems = findings.map((finding) => inventoryItemTableLabel(finding, document)).join(", ") || "No item linked";
       writer.cursor.page.drawText(sanitise(`Photo ${photo.sequence} - ${room}`), {
         x,
         y: top - 10,
@@ -796,7 +797,7 @@ async function buildInventoryReportPdf(
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
-        inventoryItemTableLabel(finding),
+        inventoryItemTableLabel(finding, document),
         finding.findingText || "Not recorded",
         inventoryConditionLabel(document, finding),
         inventoryCheckoutComment(document, finding),
@@ -849,6 +850,7 @@ async function buildInventoryReportPdf(
     if (group) {
       const photoEntry = await drawInventoryPhotoPages(
         writer,
+        document,
         group.entries,
         fetcher,
         `${room.label} - photographs`,
@@ -860,6 +862,7 @@ async function buildInventoryReportPdf(
 
   const remainder = await drawInventoryPhotoPages(
     writer,
+    document,
     photoGroups.unallocated,
     fetcher,
     "Photographs not in a room",

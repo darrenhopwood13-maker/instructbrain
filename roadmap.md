@@ -14,3 +14,5 @@
 - [x] Tighten Property inventory PDF to the uploaded sample structure: centred cover, fuller index, room tables, rear photos and backing pages.
 - [x] Create rooms one by one from a suggested list, add selected photographs to a chosen room, pick three room overview photographs.
 - [x] Show every photograph in its own room section, under that room's overview photographs.
+- [x] Keep each inventory row with its photograph when room allocation changes after analysis.
+- [x] Apply landscape Property inventory print formatting to public shared links.

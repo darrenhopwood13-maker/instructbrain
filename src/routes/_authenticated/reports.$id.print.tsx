@@ -9,6 +9,7 @@ import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { formatDocumentDate } from "@/lib/report/document";
 import { safeResultView } from "@/lib/report/grouping";
 import { isInventoryLayout } from "@/lib/report/inventory-layout";
+import { reportPrintPageClass } from "@/lib/report/print-layout";
 
 /**
  * The print surface. The browser's own print engine paginates and writes the
@@ -76,7 +77,7 @@ function PrintReport() {
   const inventory = isInventoryLayout(outputDocument);
 
   return (
-    <div className={inventory ? "paper print-surface inventory-print-surface min-h-dvh" : "paper print-surface min-h-dvh"}>
+    <div className={`paper print-surface min-h-dvh ${reportPrintPageClass(outputDocument)}`}>
       <div className="print-running-header" aria-hidden="true">
         <span>
           <span className="font-semibold">instructBrain</span>

@@ -284,7 +284,7 @@ function InventoryDocument({
                     >
                       <div className="border-border p-3 font-semibold sm:border-r">
                         <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
-                        {inventoryItemTableLabel(finding)}
+                        {inventoryItemTableLabel(finding, document)}
                       </div>
                       <div className="border-border p-3 sm:border-r">
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
@@ -317,6 +317,7 @@ function InventoryDocument({
                 entries={photoGroups.rooms.find((group) => group.key === room.key)?.entries ?? []}
                 heading={`${room.label} — photographs`}
                 print={print}
+                document={document}
               />
             </section>
           ))}
@@ -327,6 +328,7 @@ function InventoryDocument({
         entries={photoGroups.unallocated}
         heading="Photographs not in a room"
         print={print}
+        document={document}
       />
 
       <InventoryBackingPages document={document} />
@@ -372,10 +374,12 @@ function InventoryPhotoBlock({
   entries,
   heading,
   print,
+  document,
 }: {
   entries: ReturnType<typeof inventoryRoomPhotoGroups>["unallocated"];
   heading: string;
   print: boolean;
+  document: ReportDocument;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -391,7 +395,7 @@ function InventoryPhotoBlock({
             />
             {findings.length > 0 ? (
               <p className="mt-2 text-xs font-medium text-muted-foreground">
-                {findings.map((finding) => inventoryItemWithPhotoLabel(finding)).join(" · ")}
+                {findings.map((finding) => inventoryItemWithPhotoLabel(finding, document)).join(" · ")}
               </p>
             ) : null}
           </li>
