@@ -553,26 +553,28 @@ function CustomReport() {
 
       {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="brief-heading" className="text-sm font-semibold">
-              Options
-            </h2>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              aria-expanded={briefOpen}
-              aria-controls="brief-panel"
-              onClick={() => setBriefOpen((open) => !open)}
-            >
+          {/* One control, not a heading and a button saying the same word. */}
+          <h2 id="brief-heading" className="sr-only">
+            Options
+          </h2>
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-h-11 w-full justify-between"
+            aria-expanded={briefOpen}
+            aria-controls="brief-panel"
+            onClick={() => setBriefOpen((open) => !open)}
+          >
+            <span className="flex items-center gap-2">
               <Sparkles aria-hidden="true" className="size-4" />
               {briefOpen ? "Hide options" : "Options"}
-            </Button>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
-            {brief.specialRequest ? " · special request set" : ""}
-          </p>
+            </span>
+            <span className="truncate text-xs font-normal">
+              {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
+              {brief.specialRequest ? " · special request" : ""}
+              {project ? ` · ${project.name}` : ""}
+            </span>
+          </Button>
 
 
           {briefOpen ? (
@@ -580,6 +582,8 @@ function CustomReport() {
               id="brief-panel"
               className="mt-4 space-y-6 rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
             >
+              <h3 className="eyebrow">How it reads</h3>
+
               {templates.data && templates.data.length > 0 ? (
                 <div>
                   <label htmlFor="saved-template" className="text-sm font-semibold">
