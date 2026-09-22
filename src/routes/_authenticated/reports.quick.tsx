@@ -513,6 +513,28 @@ function CustomReport() {
               Add photos from the gallery
             </Button>
           </div>
+          {start.isError && heldCount > 0 ? (
+            <div
+              role="status"
+              className="mt-4 rounded-xl border border-border bg-surface p-3 text-sm"
+            >
+              <p>
+                {heldCount === 1
+                  ? "Your photograph is still held here."
+                  : `Your ${heldCount} photographs are still held here.`}{" "}
+                Nothing was lost.
+              </p>
+              <Button
+                type="button"
+                className="mt-3 min-h-11 w-full"
+                disabled={start.isPending}
+                onClick={retryStart}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : null}
+
         </section>
       ) : null}
 
