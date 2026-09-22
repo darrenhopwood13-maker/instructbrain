@@ -27,6 +27,8 @@ import { EmptyState } from "@/components/empty-state";
 import { CaptureFieldsForm } from "@/components/photos/capture-fields-form";
 import { PhotoGrid } from "@/components/photos/photo-grid";
 import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
+import { RoomOrganiser } from "@/components/photos/room-organiser";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import {
