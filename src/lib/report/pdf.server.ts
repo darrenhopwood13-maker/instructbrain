@@ -10,6 +10,7 @@
  * embedded as they are — nothing in this file touches the analysis path.
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import { BRAND_CREDIT } from "@/lib/brand";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";

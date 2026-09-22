@@ -761,7 +761,7 @@ function LandingFooter() {
         </nav>
       </div>
       <p className="shell-container mt-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} instructBrain. An instructSite company.
+        © {new Date().getFullYear()} {BRAND_CREDIT}
       </p>
     </footer>
   );
