@@ -212,6 +212,31 @@ function ReportWorkspace() {
   const doc = document.data ?? null;
   const locked = doc?.report.status === "issued";
 
+  // What is still outstanding, in plain words, so nothing is discovered only
+  // when the report will not issue.
+  const findingList = findings.data ?? [];
+  const toConfirm = findingList.filter((finding) => !finding.confirmed).length;
+  const blockers = doc ? issueBlockers(doc) : null;
+  const stepNote = locked
+    ? "Issued. Reopen it to make changes."
+    : findingList.length === 0
+      ? "Add photographs, then draft the findings."
+      : blockers?.blocked
+        ? `Not ready to issue yet: ${[
+            blockers.notAssessed.length > 0
+              ? `${blockers.notAssessed.length} still not assessed`
+              : null,
+            blockers.tradeMissing.length > 0
+              ? `${blockers.tradeMissing.length} with no responsible trade`
+              : null,
+            blockers.unconfirmed.length > 0
+              ? `${blockers.unconfirmed.length} not confirmed by a person`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(", ")}.`
+        : "Everything is assessed and confirmed — ready to issue.";
+
   return (
     <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
