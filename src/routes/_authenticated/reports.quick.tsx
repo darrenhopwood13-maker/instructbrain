@@ -387,7 +387,11 @@ function CustomReport() {
     if (reportId) return;
     // Hold the bytes now: the report is created first, and a camera/gallery
     // file reference can be revoked before the capture panel mounts.
-    start.mutate(await snapshotFiles(files));
+    const held = await snapshotFiles(files);
+    heldFilesRef.current = held;
+    setHeldCount(held.length);
+    start.mutate(held);
+
   };
 
   const capturing = reportId !== null && snapshot !== null;
