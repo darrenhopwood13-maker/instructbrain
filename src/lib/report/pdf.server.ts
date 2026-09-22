@@ -17,14 +17,15 @@ import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor } from "@/lib/report/sections";
 import {
-  inventoryAppendixEntries,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
   inventoryItemTableLabel,
   inventoryLayout,
+  inventoryRoomPhotoGroups,
   inventoryRooms,
   isInventoryLayout,
+  type InventoryAppendixEntry,
 } from "@/lib/report/inventory-layout";
 
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
@@ -480,12 +481,13 @@ function drawInventoryTableHeader(
   writer.cursor.y -= height;
 }
 
-async function drawInventoryAppendix(
+async function drawInventoryPhotoPages(
   writer: Writer,
-  document: ReportDocument,
+  entries: InventoryAppendixEntry[],
   fetcher: PhotoFetcher | null,
+  heading: string,
+  caption: string,
 ): Promise<InventoryIndexEntry | null> {
-  const entries = inventoryAppendixEntries(document);
   if (entries.length === 0) return null;
 
   let firstPage: number | null = null;
@@ -497,8 +499,8 @@ async function drawInventoryAppendix(
   for (let index = 0; index < entries.length; index += 4) {
     newPage(writer);
     if (firstPage === null) firstPage = writer.cursor.pageNumber;
-    drawInventoryHeader(writer, "Photographs");
-    drawText(writer, "Inventory item photographs in upload order.", { size: 9, colour: MUTED, gapAfter: 4 });
+    drawInventoryHeader(writer, heading);
+    drawText(writer, caption, { size: 9, colour: MUTED, gapAfter: 4 });
     const pageTop = writer.cursor.y;
     for (const [slot, entry] of entries.slice(index, index + 4).entries()) {
       const column = slot % 2;
@@ -539,7 +541,7 @@ async function drawInventoryAppendix(
   }
   return firstPage === null
     ? null
-    : { label: "Photographs", page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
+    : { label: heading, page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
 }
 
 function drawInventoryBackingPages(writer: Writer, document: ReportDocument): InventoryIndexEntry[] {
@@ -772,6 +774,8 @@ async function buildInventoryReportPdf(
   ];
   const columns: [number, number, number, number] = [92, 336, 124, writer.contentWidth - 92 - 336 - 124];
 
+  const photoGroups = inventoryRoomPhotoGroups(document);
+
   for (const room of rooms) {
     newPage(writer);
     indexEntries.push({
@@ -789,7 +793,6 @@ async function buildInventoryReportPdf(
     drawInventoryTableHeader(writer, columns, labels);
     if (room.findings.length === 0) {
       drawText(writer, "No inventory items recorded in this room yet.", { size: 10, colour: MUTED });
-      continue;
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
@@ -841,10 +844,28 @@ async function buildInventoryReportPdf(
       });
       writer.cursor.y -= rowHeight;
     }
+
+    const group = photoGroups.rooms.find((entry) => entry.key === room.key);
+    if (group) {
+      const photoEntry = await drawInventoryPhotoPages(
+        writer,
+        group.entries,
+        fetcher,
+        `${room.label} - photographs`,
+        "Photographs for this room, numbered to match the items above.",
+      );
+      if (photoEntry) indexEntries.push(photoEntry);
+    }
   }
 
-  const appendixEntry = await drawInventoryAppendix(writer, document, fetcher);
-  if (appendixEntry) indexEntries.push(appendixEntry);
+  const remainder = await drawInventoryPhotoPages(
+    writer,
+    photoGroups.unallocated,
+    fetcher,
+    "Photographs not in a room",
+    "These photographs have not been allocated to a room.",
+  );
+  if (remainder) indexEntries.push(remainder);
   indexEntries.push(...drawInventoryBackingPages(writer, document));
   if (indexEntries.length === 0) {
     indexEntries.push({ label: "No rooms have been recorded yet.", page: 2 });

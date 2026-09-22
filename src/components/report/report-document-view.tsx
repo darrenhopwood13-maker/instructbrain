@@ -21,7 +21,7 @@ import {
 import { itemLabel, itemLabels } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import {
-  inventoryAppendixEntries,
+  inventoryRoomPhotoGroups,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
@@ -161,7 +161,7 @@ function InventoryDocument({
   const layout = inventoryLayout(document);
   const cover = inventoryCoverPhoto(document);
   const readOnly = !editable || !onFindingPatch;
-  const appendixEntries = inventoryAppendixEntries(document);
+  const photoGroups = inventoryRoomPhotoGroups(document);
 
   return (
     <article className="report-document inventory-document space-y-8">
@@ -310,15 +310,24 @@ function InventoryDocument({
                         />
                       </div>
                     </div>
-                  ))
-                )}
+                ))
+              )}
               </div>
+              <InventoryPhotoBlock
+                entries={photoGroups.rooms.find((group) => group.key === room.key)?.entries ?? []}
+                heading={`${room.label} — photographs`}
+                print={print}
+              />
             </section>
           ))}
         </div>
       </section>
 
-      {appendixEntries.length > 0 ? <InventoryAppendix entries={appendixEntries} print={print} /> : null}
+      <InventoryPhotoBlock
+        entries={photoGroups.unallocated}
+        heading="Photographs not in a room"
+        print={print}
+      />
 
       <InventoryBackingPages document={document} />
     </article>
@@ -359,18 +368,19 @@ function InventoryCheckoutComment({
   );
 }
 
-function InventoryAppendix({
+function InventoryPhotoBlock({
   entries,
+  heading,
   print,
 }: {
-  entries: ReturnType<typeof inventoryAppendixEntries>;
+  entries: ReturnType<typeof inventoryRoomPhotoGroups>["unallocated"];
+  heading: string;
   print: boolean;
 }) {
+  if (entries.length === 0) return null;
   return (
-    <section aria-labelledby="inventory-appendix" className="break-before-page">
-      <h2 id="inventory-appendix" className="editorial-title text-xl font-semibold">
-        Appendix — item photographs
-      </h2>
+    <section aria-label={heading} className="break-before-page">
+      <h2 className="editorial-title text-xl font-semibold">{heading}</h2>
       <ul className="mt-4 grid gap-5 sm:grid-cols-3">
         {entries.map(({ photo, findings, room }) => (
           <li key={photo.id} className="break-inside-avoid rounded-lg border border-border p-2">

@@ -80,6 +80,39 @@ export function groupPhotosByRoom<T extends RoomPhoto>(
   return { rooms, unallocated };
 }
 
+export type RoomListEntry<T extends RoomPhoto = RoomPhoto> = {
+  key: string;
+  label: string;
+  /** Null while the room has been created but holds no photographs yet. */
+  room: RoomGroup<T> | null;
+};
+
+/**
+ * Rooms the user has created, including ones that are still empty. Empty rooms
+ * have no photographs to store, so their titles are kept as drafts until a
+ * photograph is allocated to them.
+ */
+export function mergeDraftRooms<T extends RoomPhoto>(
+  rooms: RoomGroup<T>[],
+  drafts: string[],
+): RoomListEntry<T>[] {
+  const used = new Set(rooms.map((room) => room.key));
+  const entries: RoomListEntry<T>[] = rooms.map((room) => ({
+    key: room.key,
+    label: room.label,
+    room,
+  }));
+  for (const draft of drafts) {
+    const label = draft.trim();
+    if (label === "") continue;
+    const key = label.toLowerCase();
+    if (used.has(key)) continue;
+    used.add(key);
+    entries.push({ key, label, room: null });
+  }
+  return entries;
+}
+
 export function maxOverviewPhotos(workflow: PhotoWorkflow): number {
   return workflow.maxOverviewPhotos ?? 3;
 }

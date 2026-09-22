@@ -354,7 +354,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 4,
+  version: 5,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
@@ -411,6 +411,24 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     overviewRoleId: "room_overview",
     detailRoleId: "inventory_detail",
     maxOverviewPhotos: 3,
+    sectionSuggestions: [
+      "Porch",
+      "Hallway",
+      "Storage cupboard",
+      "Living room",
+      "Dining room",
+      "Kitchen",
+      "Conservatory",
+      "Stairs",
+      "Landing",
+      "Bathroom",
+      "Bedroom",
+      "Ensuite",
+      "Toilet",
+      "Loft room",
+      "Garage",
+      "Garden",
+    ],
     roles: [
       {
         id: "exterior_cover",

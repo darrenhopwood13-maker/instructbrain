@@ -58,6 +58,8 @@ export type PhotoWorkflow = {
   overviewRoleId?: string;
   detailRoleId?: string;
   maxOverviewPhotos?: number;
+  /** Suggested section (e.g. room) titles offered by the template, never hardcoded. */
+  sectionSuggestions?: string[];
 };
 
 export type ReportLayout = {
@@ -433,6 +435,13 @@ export function photoWorkflowOf(
     ...(typeof raw["detailRoleId"] === "string" ? { detailRoleId: raw["detailRoleId"] } : {}),
     ...(Number.isFinite(Number(raw["maxOverviewPhotos"]))
       ? { maxOverviewPhotos: Math.max(1, Number(raw["maxOverviewPhotos"])) }
+      : {}),
+    ...(Array.isArray(raw["sectionSuggestions"])
+      ? {
+          sectionSuggestions: raw["sectionSuggestions"]
+            .filter((value): value is string => typeof value === "string" && value.trim() !== "")
+            .map((value) => value.trim()),
+        }
       : {}),
   };
 }

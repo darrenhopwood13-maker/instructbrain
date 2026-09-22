@@ -7,6 +7,7 @@ import {
   markAsRoomHeaderFields,
   renameRoomFields,
   reorderedRoomLabels,
+  mergeDraftRooms,
   ROOM_ORDER_FIELD,
   type RoomPhoto,
 } from "@/lib/photos/rooms";
@@ -99,6 +100,18 @@ describe("sorting photographs into rooms", () => {
       "Kitchen",
       "Dining room",
     ]);
+  });
+
+  it("keeps empty rooms the user created before allocating photographs", () => {
+    const { rooms } = groupPhotosByRoom(
+      [photo("a", 1, { room: "Kitchen", _photo_role: "inventory_detail" })],
+      workflow,
+    );
+    const entries = mergeDraftRooms(rooms, ["Kitchen", "Porch", "Landing"]);
+
+    expect(entries.map((entry) => entry.label)).toEqual(["Kitchen", "Porch", "Landing"]);
+    expect(entries[0]?.room).not.toBeNull();
+    expect(entries[1]?.room).toBeNull();
   });
 });
 

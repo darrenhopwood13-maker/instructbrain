@@ -17,14 +17,22 @@ import {
   inventoryAppendixEntries,
   inventoryItemTableLabel,
   inventoryItemWithPhotoLabel,
+  inventoryRoomPhotoGroups,
   inventoryRooms,
 } from "@/lib/report/inventory-layout";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 
 describe("property inventory", () => {
-  it("is version 4 and asks for its own document header", () => {
-    expect(propertyInventoryDefinition.version).toBe(4);
+  it("is version 5 and asks for its own document header", () => {
+    expect(propertyInventoryDefinition.version).toBe(5);
     expect(asksForDocumentHeader(propertyInventoryDefinition)).toBe(true);
+  });
+
+  it("offers room title suggestions from the definition, not from shared code", () => {
+    const workflow = photoWorkflowOf(snapshotOf(propertyInventoryDefinition));
+    expect(workflow?.sectionSuggestions).toContain("Living room");
+    expect(workflow?.sectionSuggestions).toContain("Ensuite");
+    expect(workflow?.sectionSuggestions?.length ?? 0).toBeGreaterThan(8);
   });
 
   it("carries its room inventory workflow and layout in the snapshot", () => {
@@ -141,6 +149,14 @@ describe("property inventory", () => {
     const appendix = inventoryAppendixEntries(document);
     expect(appendix.map((entry) => entry.photo.sequence)).toEqual([5, 9]);
     expect(appendix.map((entry) => entry.room)).toEqual(["Living room", "Kitchen"]);
+
+    const groups = inventoryRoomPhotoGroups(document);
+    expect(groups.rooms.map((group) => group.label)).toEqual(["Living room", "Kitchen"]);
+    expect(groups.rooms.map((group) => group.entries.map((entry) => entry.photo.sequence))).toEqual([
+      [5],
+      [9],
+    ]);
+    expect(groups.unallocated).toEqual([]);
     expect(inventoryItemWithPhotoLabel(document.findings[0]!)).toBe("Item 2 · Photo 9");
     expect(inventoryItemTableLabel(document.findings[0]!)).toBe("Kitchen item (Photo 9)");
   });
