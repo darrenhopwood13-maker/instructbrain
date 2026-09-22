@@ -310,15 +310,24 @@ function InventoryDocument({
                         />
                       </div>
                     </div>
-                  ))
-                )}
+                ))
+              )}
               </div>
+              <InventoryPhotoBlock
+                entries={photoGroups.rooms.find((group) => group.key === room.key)?.entries ?? []}
+                heading={`${room.label} — photographs`}
+                print={print}
+              />
             </section>
           ))}
         </div>
       </section>
 
-      {appendixEntries.length > 0 ? <InventoryAppendix entries={appendixEntries} print={print} /> : null}
+      <InventoryPhotoBlock
+        entries={photoGroups.unallocated}
+        heading="Photographs not in a room"
+        print={print}
+      />
 
       <InventoryBackingPages document={document} />
     </article>
