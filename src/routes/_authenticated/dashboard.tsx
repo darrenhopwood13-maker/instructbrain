@@ -21,9 +21,6 @@ import {
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
-import { TemplateSelect } from "@/components/template-select";
-
-type Mode = "project" | "quick";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
