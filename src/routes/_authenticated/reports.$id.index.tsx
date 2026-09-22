@@ -30,7 +30,7 @@ import {
   type FindingPatch,
   type ReportPatch,
 } from "@/lib/report/report-data";
-import { formatDocumentDate, type DocFinding } from "@/lib/report/document";
+import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionLabel, tradesOf } from "@/lib/survey-types";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
