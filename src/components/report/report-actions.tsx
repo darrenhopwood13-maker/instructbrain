@@ -48,6 +48,12 @@ import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
+import {
+  canSharePdf,
+  pdfBytesFromBase64,
+  savePdfBytes,
+  sharePdfBytes,
+} from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
 import type { ResultView } from "@/lib/report/grouping";
 
