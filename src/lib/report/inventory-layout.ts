@@ -69,18 +69,29 @@ export function inventoryRooms(document: ReportDocument): InventoryRoomSection[]
     return next;
   };
 
+  const cover = inventoryCoverPhoto(document);
   for (const photo of document.photos) {
+    if (photo.id === cover?.id) continue;
+    const label = sectionValue(photo.captureFields, sectionField);
+    if (label === UNRECORDED_SECTION) continue;
     const role = photoRoleOf(document.snapshot, photo.captureFields);
-    if (role?.id !== overviewRoleId) continue;
+    if (role?.countsAsCover === true) continue;
     const room = add(sectionValue(photo.captureFields, sectionField));
-    room.overviewPhotos.push(photo);
+    if (role?.id === overviewRoleId) room.overviewPhotos.push(photo);
     room.firstSequence = Math.min(room.firstSequence, photo.sequence);
   }
 
   for (const finding of document.findings) {
-    const room = add(sectionValue(finding.captureFields, sectionField));
+    const currentPhotos = inventoryFindingPhotos(finding, document.snapshot);
+    const currentPhoto = currentPhotos[0];
+    if (finding.photos.length > 0 && !currentPhoto) continue;
+    const room = add(
+      currentPhoto
+        ? sectionValue(currentPhoto.captureFields, sectionField)
+        : sectionValue(finding.captureFields, sectionField),
+    );
     room.findings.push(finding);
-    const firstPhotoSequence = inventoryFindingPhotos(finding)[0]?.sequence ?? Number.MAX_SAFE_INTEGER;
+    const firstPhotoSequence = currentPhoto?.sequence ?? Number.MAX_SAFE_INTEGER;
     room.firstSequence = Math.min(room.firstSequence, firstPhotoSequence, finding.sequence);
   }
 
@@ -97,20 +108,31 @@ export function inventoryRooms(document: ReportDocument): InventoryRoomSection[]
     .sort((a, b) => a.firstSequence - b.firstSequence || a.label.localeCompare(b.label, "en-GB"));
 }
 
-export function inventoryFindingPhotos(finding: DocFinding): DocPhoto[] {
+export function inventoryFindingPhotos(
+  finding: DocFinding,
+  snapshot?: ReportDocument["snapshot"],
+): DocPhoto[] {
   const seen = new Set<string>();
   return finding.photos
     .map((attachment) => attachment.photo)
     .filter((photo) => {
       if (seen.has(photo.id)) return false;
       seen.add(photo.id);
+      if (snapshot) {
+        const role = photoRoleOf(snapshot, photo.captureFields);
+        const layout = reportLayoutOf(snapshot);
+        if (role?.countsAsCover === true || role?.id === layout?.overviewRoleId) return false;
+      }
       return true;
     })
     .sort((a, b) => a.sequence - b.sequence);
 }
 
-export function inventoryPhotoReference(finding: DocFinding): string {
-  const sequences = inventoryFindingPhotos(finding)
+export function inventoryPhotoReference(
+  finding: DocFinding,
+  snapshot?: ReportDocument["snapshot"],
+): string {
+  const sequences = inventoryFindingPhotos(finding, snapshot)
     .map((photo) => photo.sequence)
     .filter((sequence) => Number.isFinite(sequence));
   if (sequences.length === 0) return "Photo not linked";
@@ -119,8 +141,11 @@ export function inventoryPhotoReference(finding: DocFinding): string {
     : `Photos ${sequences.join(", ")}`;
 }
 
-export function inventoryPhotoReferenceSuffix(finding: DocFinding): string {
-  const references = inventoryPhotoReference(finding);
+export function inventoryPhotoReferenceSuffix(
+  finding: DocFinding,
+  snapshot?: ReportDocument["snapshot"],
+): string {
+  const references = inventoryPhotoReference(finding, snapshot);
   return references === "Photo not linked" ? "" : ` (${references})`;
 }
 
@@ -131,7 +156,7 @@ export function inventoryAppendixEntries(document: ReportDocument): InventoryApp
   const cover = inventoryCoverPhoto(document);
   const findingsByPhoto = new Map<string, DocFinding[]>();
   for (const finding of document.findings) {
-    for (const photo of inventoryFindingPhotos(finding)) {
+    for (const photo of inventoryFindingPhotos(finding, document.snapshot)) {
       const existing = findingsByPhoto.get(photo.id) ?? [];
       existing.push(finding);
       findingsByPhoto.set(photo.id, existing);
@@ -147,9 +172,7 @@ export function inventoryAppendixEntries(document: ReportDocument): InventoryApp
     .sort((a, b) => a.sequence - b.sequence)
     .map((photo) => {
       const findings = (findingsByPhoto.get(photo.id) ?? []).sort((a, b) => a.sequence - b.sequence);
-      const room =
-        findings[0]?.captureFields[layout.sectionField ?? ""] ??
-        sectionValue(photo.captureFields, layout.sectionField);
+      const room = sectionValue(photo.captureFields, layout.sectionField);
       return { photo, findings, room: room || UNRECORDED_SECTION };
     });
 }
@@ -204,8 +227,11 @@ export function inventoryItemLabel(finding: DocFinding): string {
   return count ? `${itemLabel(finding.ref)} · Qty ${count}` : itemLabel(finding.ref);
 }
 
-export function inventoryItemWithPhotoLabel(finding: DocFinding): string {
-  return `${inventoryItemLabel(finding)} · ${inventoryPhotoReference(finding)}`;
+export function inventoryItemWithPhotoLabel(
+  finding: DocFinding,
+  document?: Pick<ReportDocument, "snapshot">,
+): string {
+  return `${inventoryItemLabel(finding)} · ${inventoryPhotoReference(finding, document?.snapshot)}`;
 }
 
 function firstSentenceFragment(value: string): string {
@@ -218,7 +244,10 @@ function firstSentenceFragment(value: string): string {
   return first.length > 54 ? `${first.slice(0, 51).trim()}...` : first;
 }
 
-export function inventoryItemTableLabel(finding: DocFinding): string {
+export function inventoryItemTableLabel(
+  finding: DocFinding,
+  document?: Pick<ReportDocument, "snapshot">,
+): string {
   const explicit =
     finding.captureFields["item"]?.trim() ||
     finding.captureFields["item_name"]?.trim() ||
@@ -226,7 +255,7 @@ export function inventoryItemTableLabel(finding: DocFinding): string {
   const inferred = firstSentenceFragment(finding.findingText);
   const base = explicit || inferred || "Unidentified item";
   const label = finding.statusId === "not_assessed" ? "Unidentified item" : base;
-  return `${label}${inventoryPhotoReferenceSuffix(finding)}`;
+  return `${label}${inventoryPhotoReferenceSuffix(finding, document?.snapshot)}`;
 }
 
 export function inventoryCheckoutComment(document: ReportDocument, finding: DocFinding): string {

@@ -284,7 +284,7 @@ function InventoryDocument({
                     >
                       <div className="border-border p-3 font-semibold sm:border-r">
                         <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
-                        {inventoryItemTableLabel(finding)}
+                        {inventoryItemTableLabel(finding, document)}
                       </div>
                       <div className="border-border p-3 sm:border-r">
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
@@ -391,7 +391,7 @@ function InventoryPhotoBlock({
             />
             {findings.length > 0 ? (
               <p className="mt-2 text-xs font-medium text-muted-foreground">
-                {findings.map((finding) => inventoryItemWithPhotoLabel(finding)).join(" · ")}
+                {findings.map((finding) => inventoryItemWithPhotoLabel(finding, { snapshot: findings[0]?.photos[0]?.photo ? undefined as never : undefined })).join(" · ")}
               </p>
             ) : null}
           </li>
