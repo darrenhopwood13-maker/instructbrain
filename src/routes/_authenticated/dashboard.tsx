@@ -6,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
+import { FieldAppCard } from "@/components/field/field-app-card";
+import { SiteQueue } from "@/components/field/site-queue";
 import {
   Collapsible,
   CollapsibleContent,
@@ -170,6 +172,11 @@ function Dashboard() {
           </div>
         </div>
       </section>
+
+      <SiteQueue organisationIds={organisationIds} />
+      <FieldAppCard />
+
+
 
       {overdueItems.length > 0 ? (
         <CollapsibleSection

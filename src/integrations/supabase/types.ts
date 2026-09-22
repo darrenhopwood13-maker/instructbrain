@@ -1408,6 +1408,7 @@ export type Database = {
           report_date: string
           scope_text: string | null
           status: string
+          submitted_at: string | null
           subtitle: string | null
           survey_type_id: string | null
           survey_type_ids: Json
@@ -1436,6 +1437,7 @@ export type Database = {
           report_date?: string
           scope_text?: string | null
           status?: string
+          submitted_at?: string | null
           subtitle?: string | null
           survey_type_id?: string | null
           survey_type_ids?: Json
@@ -1464,6 +1466,7 @@ export type Database = {
           report_date?: string
           scope_text?: string | null
           status?: string
+          submitted_at?: string | null
           subtitle?: string | null
           survey_type_id?: string | null
           survey_type_ids?: Json
