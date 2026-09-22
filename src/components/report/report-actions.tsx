@@ -81,6 +81,10 @@ export function ReportActions({
   const [shareOpen, setShareOpen] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
   const buildPdf = useServerFn(downloadReportPdf);
+  // Only phones and tablets can hand a file to a share sheet; decided after
+  // hydration so the server and the browser render the same markup.
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => setCanShare(canSharePdf()), []);
 
 
   const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
