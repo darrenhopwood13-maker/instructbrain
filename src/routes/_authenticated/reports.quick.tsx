@@ -21,6 +21,7 @@ import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { snapshotFiles } from "@/lib/photos/file-snapshot";
+import { describeStartFailure, withNetworkRetry } from "@/lib/network-error";
 import {
   allowsMultipleFindingsPerPhoto,
   asksForDocumentHeader,
@@ -294,33 +295,50 @@ function CustomReport() {
       }
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
       const frozen = snapshotOf(primary);
-      const id = await createReport({
-        organisationId,
-        projectId: null,
-        isQuick: true,
-        title:
-          asksForHeader && docTitle.trim() !== ""
-            ? docTitle
-            : `${definitionLabel(frozen)} — ${todayLabel()}`,
-        reference: "",
-        ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
-        definition: frozen,
-        authorId: userId,
-        brief,
-        surveyTypeIds: [primary.id],
-      });
-      // Optional title-page photo and per-report logo, chosen at creation.
-      await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
+      // A momentary signal drop must not cost the photographs already chosen.
+      const id = await withNetworkRetry(() =>
+        createReport({
+          organisationId,
+          projectId: null,
+          isQuick: true,
+          title:
+            asksForHeader && docTitle.trim() !== ""
+              ? docTitle
+              : `${definitionLabel(frozen)} — ${todayLabel()}`,
+          reference: "",
+          ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
+          definition: frozen,
+          authorId: userId,
+          brief,
+          surveyTypeIds: [primary.id],
+        }),
+      );
+      // Optional title-page photo and per-report logo. The report already
+      // exists, so a failure here is a warning — never a discarded report.
+      try {
+        await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
+      } catch {
+        toast.warning("Your title page photo did not save", {
+          description: "The report is saved. Pick any uploaded photograph as the title page.",
+        });
+      }
       return { id, frozen, files };
     },
     onSuccess: async ({ id, frozen, files }) => {
+      heldFilesRef.current = [];
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
       setReportId(id);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(describeStartFailure(error)),
   });
+
+  const heldCount = heldFilesRef.current.length;
+  const retryStart = () => {
+    if (heldFilesRef.current.length === 0) return;
+    start.mutate(heldFilesRef.current);
+  };
 
   const saveTemplate = useMutation({
     mutationFn: async () => {
