@@ -498,8 +498,8 @@ async function drawInventoryPhotoPages(
   for (let index = 0; index < entries.length; index += 4) {
     newPage(writer);
     if (firstPage === null) firstPage = writer.cursor.pageNumber;
-    drawInventoryHeader(writer, "Photographs");
-    drawText(writer, "Inventory item photographs in upload order.", { size: 9, colour: MUTED, gapAfter: 4 });
+    drawInventoryHeader(writer, heading);
+    drawText(writer, caption, { size: 9, colour: MUTED, gapAfter: 4 });
     const pageTop = writer.cursor.y;
     for (const [slot, entry] of entries.slice(index, index + 4).entries()) {
       const column = slot % 2;
@@ -540,7 +540,7 @@ async function drawInventoryPhotoPages(
   }
   return firstPage === null
     ? null
-    : { label: "Photographs", page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
+    : { label: heading, page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
 }
 
 function drawInventoryBackingPages(writer: Writer, document: ReportDocument): InventoryIndexEntry[] {
