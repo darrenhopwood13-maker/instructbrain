@@ -171,6 +171,11 @@ function Dashboard() {
         </div>
       </section>
 
+      <SiteQueue organisationIds={organisationIds} />
+      <FieldAppCard />
+
+
+
       {overdueItems.length > 0 ? (
         <CollapsibleSection
           id="overdue-heading"
