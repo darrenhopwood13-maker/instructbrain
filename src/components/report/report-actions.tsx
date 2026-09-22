@@ -11,7 +11,6 @@ import {
   Loader2,
   Lock,
   MoreHorizontal,
-  Printer,
   Send,
   Share2,
   Sparkles,
@@ -93,8 +92,8 @@ export function ReportActions({
   // The report itself is the authority on which organisation owns it.
   const orgId = document.organisation?.id ?? organisationId ?? null;
 
-  const openPrint = (auto: boolean) => {
-    const url = auto ? `${printUrl}&auto=1` : printUrl;
+  const openPrint = () => {
+    const url = printUrl;
     const opened = window.open(url, "_blank", "noopener");
     if (!opened) {
       // Popup blocked, or a mobile browser refused the new tab: go there in
@@ -186,35 +185,25 @@ export function ReportActions({
           reportId={document.report.id}
           value={document.report.outputLanguage}
         />
+        {/* One way to take the PDF away: the share sheet on a phone, a save
+            window on a computer. Two overlapping buttons only caused doubt. */}
         <Button
           type="button"
           variant="quiet"
           size="sm"
           className="min-h-11"
           disabled={pdf.isPending}
-          onClick={() => pdf.mutate("save")}
+          onClick={() => pdf.mutate(canShare ? "share" : "save")}
         >
           {pdf.isPending ? (
             <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+          ) : canShare ? (
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
           ) : (
             <Download aria-hidden="true" className="mr-1.5 size-4" />
           )}
-          Download PDF
+          {canShare ? "Save or send PDF" : "Save PDF"}
         </Button>
-
-        {canShare ? (
-          <Button
-            type="button"
-            variant="quiet"
-            size="sm"
-            className="min-h-11"
-            disabled={pdf.isPending}
-            onClick={() => pdf.mutate("share")}
-          >
-            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
-            Share / Save to…
-          </Button>
-        ) : null}
 
 
         {issued ? (
@@ -258,24 +247,19 @@ export function ReportActions({
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuItem
               className="min-h-11"
-              onSelect={() => openLater(() => openPrint(false))}
+              onSelect={() => openLater(() => openPrint())}
             >
               <Eye aria-hidden="true" className="mr-2 size-4" />
               Preview
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="min-h-11"
-              onSelect={() => openLater(() => openPrint(true))}
-            >
-              <Printer aria-hidden="true" className="mr-2 size-4" />
-              Print
-            </DropdownMenuItem>
+            {/* Printing happens from the preview itself, so it is not repeated
+                here. Sharing a read-only link stays a separate, deliberate act. */}
             <DropdownMenuItem
               className="min-h-11"
               onSelect={() => openLater(() => setShareOpen(true))}
             >
-              <Share2 aria-hidden="true" className="mr-2 size-4" />
-              Share
+              <Link2 aria-hidden="true" className="mr-2 size-4" />
+              Share a read-only link
             </DropdownMenuItem>
             <DropdownMenuItem
               className="min-h-11"

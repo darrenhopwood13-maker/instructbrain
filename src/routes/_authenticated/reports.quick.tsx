@@ -15,7 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createReport } from "@/lib/data";
+import { createReport, projectsQuery } from "@/lib/data";
+import { usePlanUsage } from "@/lib/plans";
+import { PlanUsageMeter } from "@/components/plan-usage-meter";
+import { Label } from "@/components/ui/label";
 import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
@@ -53,16 +56,17 @@ import {
   saveReportTemplate,
 } from "@/lib/report/templates.functions";
 
-type CustomReportSearch = { type?: string | undefined };
+type CustomReportSearch = { type?: string | undefined; project?: string | undefined };
 
 export const Route = createFileRoute("/_authenticated/reports/quick")({
   validateSearch: (search: Record<string, unknown>): CustomReportSearch => ({
     type: typeof search["type"] === "string" ? search["type"] : undefined,
+    project: typeof search["project"] === "string" ? search["project"] : undefined,
   }),
   head: () => {
-    const title = "Custom report — instructBrain";
+    const title = "Start a report — instructBrain";
     const description =
-      "Choose a preset and tone, add a special request, then shoot. Photographs upload as you take them and the AI drafts the findings.";
+      "Pick the report template, take the photographs and the AI drafts the findings. One start screen for every report.";
     return {
       meta: [
         { title },
@@ -101,10 +105,16 @@ function todayLabel(): string {
 }
 
 function CustomReport() {
-  const { type: typeParam } = Route.useSearch();
+  const { type: typeParam, project: projectParam } = Route.useSearch();
   const queryClient = useQueryClient();
-  const { organisationId, userId } = useOrganisations();
+  const { organisationId, organisationIds, userId } = useOrganisations();
   const { user } = useSession();
+  const usage = usePlanUsage(organisationId);
+  const projects = useQuery(projectsQuery(organisationIds));
+  // One start screen for every report. A report belongs to a project only when
+  // the person picks one — otherwise it is a standalone report.
+  const [projectId, setProjectId] = useState<string>(projectParam ?? "");
+  const project = (projects.data ?? []).find((item) => item.id === projectId) ?? null;
 
   const loadTemplates = useServerFn(listReportTemplates);
   const storeTemplate = useServerFn(saveReportTemplate);
@@ -304,12 +314,12 @@ function CustomReport() {
       const id = await withNetworkRetry(() =>
         createReport({
           organisationId,
-          projectId: null,
-          isQuick: true,
+          projectId: projectId || null,
+          isQuick: projectId === "",
           title:
             asksForHeader && docTitle.trim() !== ""
               ? docTitle
-              : `${definitionLabel(frozen)} — ${todayLabel()}`,
+              : `${definitionLabel(frozen)} — ${project?.name ?? todayLabel()}`,
           reference: "",
           ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
           definition: frozen,
@@ -399,17 +409,18 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Custom report</h1>
+      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Start a report</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {capturing
           ? "Photographs upload as you take them."
-          : "Your last brief is ready — take a photo to start."}
+          : "Your last set-up is ready — take a photo to start."}
       </p>
 
       {capturing && activeSnapshot ? (
         <p className="mt-4 text-sm">
           <span className="font-semibold">Report template:</span>{" "}
           {definitionLabel(activeSnapshot)} — locked for this report.
+          {project ? ` In ${project.name}.` : ""}
         </p>
       ) : (
         <section aria-labelledby="type-heading" className="mt-5">
@@ -424,12 +435,14 @@ function CustomReport() {
               disabled={start.isPending}
             />
           </div>
+          {/* The template is explained once, here, and nowhere else. */}
           <p className="mt-1 text-xs text-muted-foreground">
-            The report template sets the instructions the AI works to. Tone, report type and what
-            the report includes stay yours to change under Options.
+            The template sets the instructions the AI works to.
           </p>
         </section>
       )}
+
+      {!capturing ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
 
 
       {minimal && !capturing ? (
@@ -540,26 +553,28 @@ function CustomReport() {
 
       {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="brief-heading" className="text-sm font-semibold">
-              Options
-            </h2>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              aria-expanded={briefOpen}
-              aria-controls="brief-panel"
-              onClick={() => setBriefOpen((open) => !open)}
-            >
+          {/* One control, not a heading and a button saying the same word. */}
+          <h2 id="brief-heading" className="sr-only">
+            Options
+          </h2>
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-h-11 w-full justify-between"
+            aria-expanded={briefOpen}
+            aria-controls="brief-panel"
+            onClick={() => setBriefOpen((open) => !open)}
+          >
+            <span className="flex items-center gap-2">
               <Sparkles aria-hidden="true" className="size-4" />
               {briefOpen ? "Hide options" : "Options"}
-            </Button>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
-            {brief.specialRequest ? " · special request set" : ""}
-          </p>
+            </span>
+            <span className="truncate text-xs font-normal">
+              {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
+              {brief.specialRequest ? " · special request" : ""}
+              {project ? ` · ${project.name}` : ""}
+            </span>
+          </Button>
 
 
           {briefOpen ? (
@@ -567,6 +582,8 @@ function CustomReport() {
               id="brief-panel"
               className="mt-4 space-y-6 rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
             >
+              <h3 className="eyebrow">How it reads</h3>
+
               {templates.data && templates.data.length > 0 ? (
                 <div>
                   <label htmlFor="saved-template" className="text-sm font-semibold">
@@ -705,6 +722,51 @@ function CustomReport() {
                 </div>
               )}
 
+              {minimal ? null : (
+                <div>
+                  <label htmlFor="special-request" className="text-sm font-semibold">
+                    Special request
+                  </label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    In your own words. It changes what the AI emphasises — never whether something
+                    passes.
+                  </p>
+                  <textarea
+                    id="special-request"
+                    value={specialRequest}
+                    maxLength={SPECIAL_REQUEST_LIMIT}
+                    rows={3}
+                    onChange={(event) => setSpecialRequest(event.target.value)}
+                    placeholder="Focus on the roof edge detail. Flag anything affecting handover."
+                    className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
+                  />
+                </div>
+              )}
+
+              <h3 className="eyebrow">What it includes</h3>
+
+              <div>
+                <Label htmlFor="report-project">Project (optional)</Label>
+                <select
+                  id="report-project"
+                  value={projectId}
+                  onChange={(event) => setProjectId(event.target.value)}
+                  disabled={start.isPending}
+                  className="mt-2 h-11 w-full rounded-md border border-border bg-surface-raised px-3 text-sm"
+                >
+                  <option value="">Not in a project</option>
+                  {(projects.data ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.reference})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pick a project and this report is filed under it. Leave it as it is for a
+                  standalone report.
+                </p>
+              </div>
+
               {asksForHeader ? (
                 <DocumentHeaderFields
                   title={docTitle}
@@ -808,27 +870,6 @@ function CustomReport() {
                     ))}
                   </div>
                 </fieldset>
-              )}
-
-              {minimal ? null : (
-                <div>
-                  <label htmlFor="special-request" className="text-sm font-semibold">
-                    Special request
-                  </label>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    In your own words. It changes what the AI emphasises — never whether something
-                    passes.
-                  </p>
-                  <textarea
-                    id="special-request"
-                    value={specialRequest}
-                    maxLength={SPECIAL_REQUEST_LIMIT}
-                    rows={3}
-                    onChange={(event) => setSpecialRequest(event.target.value)}
-                    placeholder="Focus on the roof edge detail. Flag anything affecting handover."
-                    className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
-                  />
-                </div>
               )}
 
               <div>

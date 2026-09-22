@@ -30,7 +30,7 @@ import {
   type FindingPatch,
   type ReportPatch,
 } from "@/lib/report/report-data";
-import { formatDocumentDate, type DocFinding } from "@/lib/report/document";
+import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionLabel, tradesOf } from "@/lib/survey-types";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
@@ -212,6 +212,31 @@ function ReportWorkspace() {
   const doc = document.data ?? null;
   const locked = doc?.report.status === "issued";
 
+  // What is still outstanding, in plain words, so nothing is discovered only
+  // when the report will not issue.
+  const findingList = findings.data ?? [];
+  const toConfirm = findingList.filter((finding) => !finding.confirmed).length;
+  const blockers = doc ? issueBlockers(doc) : null;
+  const stepNote = locked
+    ? "Issued. Reopen it to make changes."
+    : findingList.length === 0
+      ? "Add photographs, then draft the findings."
+      : blockers?.blocked
+        ? `Not ready to issue yet: ${[
+            blockers.notAssessed.length > 0
+              ? `${blockers.notAssessed.length} still not assessed`
+              : null,
+            blockers.tradeMissing.length > 0
+              ? `${blockers.tradeMissing.length} with no responsible trade`
+              : null,
+            blockers.unconfirmed.length > 0
+              ? `${blockers.unconfirmed.length} not confirmed by a person`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(", ")}.`
+        : "Everything is assessed and confirmed — ready to issue.";
+
   return (
     <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
@@ -294,12 +319,25 @@ function ReportWorkspace() {
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 
+      {/* Numbered steps, each showing what is still outstanding, so progress is
+          readable at a glance instead of hidden behind three equal tabs. */}
       <Tabs defaultValue={tab ?? "photos"} className="mt-10">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="photos">Photos</TabsTrigger>
-          <TabsTrigger value="review">Review</TabsTrigger>
-          <TabsTrigger value="output">Report</TabsTrigger>
+          <TabsTrigger value="photos">1 · Photos</TabsTrigger>
+          <TabsTrigger value="review">
+            2 · Review
+            {toConfirm > 0 ? (
+              <span className="ml-1.5 rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
+                {toConfirm}
+              </span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="output">3 · Issue</TabsTrigger>
         </TabsList>
+
+        <p role="status" className="mt-3 text-sm text-muted-foreground">
+          {stepNote}
+        </p>
 
         <TabsContent value="photos" className="mt-10">
           <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />

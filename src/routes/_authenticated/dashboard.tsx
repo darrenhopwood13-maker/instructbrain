@@ -21,9 +21,6 @@ import {
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
-import { TemplateSelect } from "@/components/template-select";
-
-type Mode = "project" | "quick";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -124,21 +121,9 @@ function Dashboard() {
   const recent = useQuery(recentReportsQuery(organisationIds));
   const overdue = useQuery(orgOverdueItemsQuery(organisationIds));
   const projects = useQuery(projectsQuery(organisationIds));
-  const [mode, setMode] = useState<Mode | null>(null);
   const [pickProject, setPickProject] = useState(false);
 
-  const chooseMode = (next: Mode) => setMode((current) => (current === next ? null : next));
-
-  const chooseType = (surveyTypeId: string) => {
-    if (mode === "quick") {
-      void navigate({ to: "/reports/quick", search: { type: surveyTypeId } });
-    } else if (mode === "project") {
-      void navigate({ to: "/reports/new", search: { type: surveyTypeId } });
-    }
-  };
-
   const openCompliance = () => {
-    setMode(null);
     const projectId = complianceProjectId(recent.data ?? []);
     if (projectId) {
       void navigate({
@@ -160,30 +145,21 @@ function Dashboard() {
           Choose what you are making
         </h2>
         <div className="mx-auto max-w-3xl">
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => {
-                setMode(null);
                 void navigate({ to: "/reports/quick", search: {} });
               }}
               className="ib-btn-3d"
             >
               <Camera aria-hidden="true" />
-              Custom report
+              Start a report
               <span className="obj">
                 <ArrowRight aria-hidden="true" />
                 <img src="/3d/hard-hat-t.png" alt="" />
               </span>
             </button>
-            <ActionTile
-              active={mode === "project"}
-              label="Project report"
-              icon={ClipboardList}
-              obj="/3d/blueprints-t.png"
-              onSelect={() => chooseMode("project")}
-              orange
-            />
             <ActionTile
               active={false}
               label="Compliance reports"
@@ -193,22 +169,6 @@ function Dashboard() {
             />
           </div>
         </div>
-
-        {mode ? (
-          <div className="mx-auto mt-8 max-w-3xl">
-            <label htmlFor="dashboard-template" className="eyebrow block">
-              Report template
-            </label>
-            <div className="mt-2">
-              <TemplateSelect
-                id="dashboard-template"
-                value=""
-                onChange={chooseType}
-                className="h-11 w-full bg-surface-raised text-sm"
-              />
-            </div>
-          </div>
-        ) : null}
       </section>
 
       {overdueItems.length > 0 ? (

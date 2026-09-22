@@ -131,7 +131,7 @@ export function CoverBrandingFields({
             onClick={() => coverInputRef.current?.click()}
           >
             <ImagePlus aria-hidden="true" />
-            Choose a cover photo
+            Choose from Photos
           </Button>
         )}
       </div>
