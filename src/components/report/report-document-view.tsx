@@ -1,4 +1,5 @@
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
+import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
@@ -143,9 +144,23 @@ export function ReportDocumentView({
           </Fragment>
         );
       })}
+      <BrandCredit />
     </article>
   );
 }
+
+/**
+ * One discreet credit at the foot of the document. The organisation's own name
+ * and logo remain the prominent branding above it.
+ */
+function BrandCredit() {
+  return (
+    <p className="mt-10 border-t border-border pt-3 text-center text-[0.6875rem] text-muted-foreground">
+      {BRAND_CREDIT}
+    </p>
+  );
+}
+
 
 function InventoryDocument({
   document,
@@ -332,6 +347,7 @@ function InventoryDocument({
       />
 
       <InventoryBackingPages document={document} />
+      <BrandCredit />
     </article>
   );
 }

@@ -1,0 +1,26 @@
+{
+  "id": "/field",
+  "name": "instructBrain Field",
+  "short_name": "instructBrain",
+  "description": "Capture site photographs and send the report to the dashboard.",
+  "start_url": "/field",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#24417B",
+  "theme_color": "#24417B",
+  "icons": [
+    {
+      "src": "/icons/instructbrain-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/instructbrain-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

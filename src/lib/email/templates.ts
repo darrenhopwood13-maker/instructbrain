@@ -10,6 +10,7 @@
  */
 
 import { itemLabel } from "@/lib/item-label";
+import { BRAND_CREDIT } from "@/lib/brand";
 
 export type EmailTemplateName =
   | "INVITE"
@@ -165,7 +166,7 @@ function shell(title: string, body: string): string {
 </td></tr>
 <tr><td style="padding:24px 0 8px;">${body}</td></tr>
 <tr><td style="padding-top:20px;border-top:1px solid ${RULE};font-size:12px;line-height:1.6;color:${MUTED};">
-An instructSite company.<br />This message was sent by a person using instructBrain. Nothing is sent automatically.
+${esc(BRAND_CREDIT)}<br />This message was sent by a person using instructBrain. Nothing is sent automatically.
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -228,7 +229,7 @@ function itemTable(items: ExtractItem[]): string {
 }
 
 function textShell(lines: string[]): string {
-  return ["instructBrain", "", ...lines, "", "—", "An instructSite company.", "This message was sent by a person using instructBrain. Nothing is sent automatically."].join(
+  return ["instructBrain", "", ...lines, "", "—", BRAND_CREDIT, "This message was sent by a person using instructBrain. Nothing is sent automatically."].join(
     "\n",
   );
 }

@@ -17,6 +17,7 @@ import { ComplianceTicker, PhotoToReport } from "@/components/landing/photo-to-r
 import { Reveal } from "@/components/landing/reveal";
 import { useSession } from "@/lib/auth";
 import { absoluteUrl } from "@/lib/site-url";
+import { BRAND_CREDIT } from "@/lib/brand";
 
 // Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
 const TITLE = "instructBrain — construction reports from site photographs";
@@ -97,9 +98,6 @@ function Landing() {
 function Wordmark() {
   return (
     <span className="block min-w-0">
-      <span className="block truncate text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-brand-accent-ink">
-        An instructSite company
-      </span>
       <span className="wordmark block truncate text-lg leading-tight">
         <span className="text-brand-accent">instruct</span>
         <span className="text-foreground">Brain</span>
@@ -764,7 +762,7 @@ function LandingFooter() {
         </nav>
       </div>
       <p className="shell-container mt-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} instructBrain. An instructSite company.
+        © {new Date().getFullYear()} {BRAND_CREDIT}
       </p>
     </footer>
   );
