@@ -58,6 +58,8 @@ export type PhotoWorkflow = {
   overviewRoleId?: string;
   detailRoleId?: string;
   maxOverviewPhotos?: number;
+  /** Suggested section (e.g. room) titles offered by the template, never hardcoded. */
+  sectionSuggestions?: string[];
 };
 
 export type ReportLayout = {
