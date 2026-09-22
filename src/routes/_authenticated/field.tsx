@@ -110,7 +110,6 @@ function FieldCockpit() {
                 <Link
                   to="/reports/$id"
                   params={{ id: report.id }}
-                  search={{ tab: "photos" }}
                   className="flex min-h-11 items-start justify-between gap-3"
                 >
                   <span className="min-w-0">
