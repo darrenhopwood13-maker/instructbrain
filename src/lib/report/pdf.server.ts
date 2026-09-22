@@ -480,12 +480,13 @@ function drawInventoryTableHeader(
   writer.cursor.y -= height;
 }
 
-async function drawInventoryAppendix(
+async function drawInventoryPhotoPages(
   writer: Writer,
-  document: ReportDocument,
+  entries: InventoryAppendixEntry[],
   fetcher: PhotoFetcher | null,
+  heading: string,
+  caption: string,
 ): Promise<InventoryIndexEntry | null> {
-  const entries = inventoryAppendixEntries(document);
   if (entries.length === 0) return null;
 
   let firstPage: number | null = null;
