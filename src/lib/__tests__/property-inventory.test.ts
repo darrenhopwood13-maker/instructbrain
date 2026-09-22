@@ -251,7 +251,7 @@ describe("property inventory", () => {
       snapshot,
       photos: [overviewPhoto],
       findings: [staleFinding],
-    } as ReportDocument;
+    } as unknown as ReportDocument;
 
     const rooms = inventoryRooms(document);
     expect(rooms[0]?.overviewPhotos.map((photo) => photo.id)).toEqual(["overview-after-analysis"]);
