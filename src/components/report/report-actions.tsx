@@ -11,7 +11,6 @@ import {
   Loader2,
   Lock,
   MoreHorizontal,
-  Printer,
   Send,
   Share2,
   Sparkles,
@@ -93,8 +92,8 @@ export function ReportActions({
   // The report itself is the authority on which organisation owns it.
   const orgId = document.organisation?.id ?? organisationId ?? null;
 
-  const openPrint = (auto: boolean) => {
-    const url = auto ? `${printUrl}&auto=1` : printUrl;
+  const openPrint = () => {
+    const url = printUrl;
     const opened = window.open(url, "_blank", "noopener");
     if (!opened) {
       // Popup blocked, or a mobile browser refused the new tab: go there in
@@ -248,7 +247,7 @@ export function ReportActions({
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuItem
               className="min-h-11"
-              onSelect={() => openLater(() => openPrint(false))}
+              onSelect={() => openLater(() => openPrint())}
             >
               <Eye aria-hidden="true" className="mr-2 size-4" />
               Preview
