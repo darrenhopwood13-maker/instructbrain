@@ -294,12 +294,25 @@ function ReportWorkspace() {
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 
+      {/* Numbered steps, each showing what is still outstanding, so progress is
+          readable at a glance instead of hidden behind three equal tabs. */}
       <Tabs defaultValue={tab ?? "photos"} className="mt-10">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="photos">Photos</TabsTrigger>
-          <TabsTrigger value="review">Review</TabsTrigger>
-          <TabsTrigger value="output">Report</TabsTrigger>
+          <TabsTrigger value="photos">1 · Photos</TabsTrigger>
+          <TabsTrigger value="review">
+            2 · Review
+            {toConfirm > 0 ? (
+              <span className="ml-1.5 rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
+                {toConfirm}
+              </span>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="output">3 · Issue</TabsTrigger>
         </TabsList>
+
+        <p role="status" className="mt-3 text-sm text-muted-foreground">
+          {stepNote}
+        </p>
 
         <TabsContent value="photos" className="mt-10">
           <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
