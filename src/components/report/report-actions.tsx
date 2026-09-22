@@ -253,19 +253,14 @@ export function ReportActions({
               <Eye aria-hidden="true" className="mr-2 size-4" />
               Preview
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="min-h-11"
-              onSelect={() => openLater(() => openPrint(true))}
-            >
-              <Printer aria-hidden="true" className="mr-2 size-4" />
-              Print
-            </DropdownMenuItem>
+            {/* Printing happens from the preview itself, so it is not repeated
+                here. Sharing a read-only link stays a separate, deliberate act. */}
             <DropdownMenuItem
               className="min-h-11"
               onSelect={() => openLater(() => setShareOpen(true))}
             >
-              <Share2 aria-hidden="true" className="mr-2 size-4" />
-              Share
+              <Link2 aria-hidden="true" className="mr-2 size-4" />
+              Share a read-only link
             </DropdownMenuItem>
             <DropdownMenuItem
               className="min-h-11"
