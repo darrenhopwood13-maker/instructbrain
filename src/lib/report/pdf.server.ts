@@ -262,11 +262,20 @@ function drawImageAt(
 
 function drawFooters(writer: Writer): void {
   const pages = writer.doc.getPages();
+  const credit = sanitise(BRAND_CREDIT);
   pages.forEach((sheet, index) => {
     sheet.drawText(sanitise(writer.footer).slice(0, 90), {
       x: writer.margin,
       y: writer.margin - 18,
       size: 8,
+      font: writer.regular,
+      color: MUTED,
+    });
+    // One discreet credit, centred, identical on every page.
+    sheet.drawText(credit, {
+      x: writer.pageSize.width / 2 - writer.regular.widthOfTextAtSize(credit, 7) / 2,
+      y: writer.margin - 18,
+      size: 7,
       font: writer.regular,
       color: MUTED,
     });
@@ -336,14 +345,8 @@ function drawInventoryHeader(writer: Writer, title = "Property inventory"): void
     font: writer.bold,
     color: INK,
   });
-  const brand = "instructBrain · An instructSite Company";
-  writer.cursor.page.drawText(brand, {
-    x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(brand, 8),
-    y: writer.pageSize.height - writer.margin - 1,
-    size: 8,
-    font: writer.regular,
-    color: MUTED,
-  });
+  // No product branding across the top: the page header carries the report or
+  // room title only. The credit sits once in the page footer.
   writer.cursor.page.drawLine({
     start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 16 },
     end: { x: writer.pageSize.width - writer.margin, y: writer.pageSize.height - writer.margin - 16 },
