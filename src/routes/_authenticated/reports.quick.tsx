@@ -722,6 +722,51 @@ function CustomReport() {
                 </div>
               )}
 
+              {minimal ? null : (
+                <div>
+                  <label htmlFor="special-request" className="text-sm font-semibold">
+                    Special request
+                  </label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    In your own words. It changes what the AI emphasises — never whether something
+                    passes.
+                  </p>
+                  <textarea
+                    id="special-request"
+                    value={specialRequest}
+                    maxLength={SPECIAL_REQUEST_LIMIT}
+                    rows={3}
+                    onChange={(event) => setSpecialRequest(event.target.value)}
+                    placeholder="Focus on the roof edge detail. Flag anything affecting handover."
+                    className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
+                  />
+                </div>
+              )}
+
+              <h3 className="eyebrow">What it includes</h3>
+
+              <div>
+                <Label htmlFor="report-project">Project (optional)</Label>
+                <select
+                  id="report-project"
+                  value={projectId}
+                  onChange={(event) => setProjectId(event.target.value)}
+                  disabled={start.isPending}
+                  className="mt-2 h-11 w-full rounded-md border border-border bg-surface-raised px-3 text-sm"
+                >
+                  <option value="">Not in a project</option>
+                  {(projects.data ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.reference})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pick a project and this report is filed under it. Leave it as it is for a
+                  standalone report.
+                </p>
+              </div>
+
               {asksForHeader ? (
                 <DocumentHeaderFields
                   title={docTitle}
@@ -825,27 +870,6 @@ function CustomReport() {
                     ))}
                   </div>
                 </fieldset>
-              )}
-
-              {minimal ? null : (
-                <div>
-                  <label htmlFor="special-request" className="text-sm font-semibold">
-                    Special request
-                  </label>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    In your own words. It changes what the AI emphasises — never whether something
-                    passes.
-                  </p>
-                  <textarea
-                    id="special-request"
-                    value={specialRequest}
-                    maxLength={SPECIAL_REQUEST_LIMIT}
-                    rows={3}
-                    onChange={(event) => setSpecialRequest(event.target.value)}
-                    placeholder="Focus on the roof edge detail. Flag anything affecting handover."
-                    className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm"
-                  />
-                </div>
               )}
 
               <div>
