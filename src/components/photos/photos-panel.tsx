@@ -578,7 +578,7 @@ export function PhotosPanel({
             disabled={busy || atPhotoCap}
           >
             <ImagePlus aria-hidden="true" />
-            Add photographs
+            Choose from Photos
           </Button>
           <Button
             variant="quiet"

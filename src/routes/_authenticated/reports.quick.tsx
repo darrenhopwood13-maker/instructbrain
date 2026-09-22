@@ -510,7 +510,7 @@ function CustomReport() {
               onClick={() => pickerRef.current?.click()}
             >
               <ImagePlus aria-hidden="true" className="size-4" />
-              Add photos from the gallery
+              Choose from Photos
             </Button>
           </div>
           {start.isError && heldCount > 0 ? (
