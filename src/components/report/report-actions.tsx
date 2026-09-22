@@ -188,7 +188,7 @@ export function ReportActions({
           size="sm"
           className="min-h-11"
           disabled={pdf.isPending}
-          onClick={() => pdf.mutate()}
+          onClick={() => pdf.mutate("save")}
         >
           {pdf.isPending ? (
             <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
@@ -197,6 +197,21 @@ export function ReportActions({
           )}
           Download PDF
         </Button>
+
+        {canShare ? (
+          <Button
+            type="button"
+            variant="quiet"
+            size="sm"
+            className="min-h-11"
+            disabled={pdf.isPending}
+            onClick={() => pdf.mutate("share")}
+          >
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
+            Share / Save to…
+          </Button>
+        ) : null}
+
 
         {issued ? (
           <Button
