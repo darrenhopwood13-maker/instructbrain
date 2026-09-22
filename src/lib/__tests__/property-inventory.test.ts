@@ -21,6 +21,7 @@ import {
   inventoryRooms,
 } from "@/lib/report/inventory-layout";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
+import { reportPrintPageClass } from "@/lib/report/print-layout";
 
 describe("property inventory", () => {
   it("is version 5 and asks for its own document header", () => {
@@ -159,6 +160,99 @@ describe("property inventory", () => {
     expect(groups.unallocated).toEqual([]);
     expect(inventoryItemWithPhotoLabel(document.findings[0]!)).toBe("Item 2 · Photo 9");
     expect(inventoryItemTableLabel(document.findings[0]!)).toBe("Kitchen item (Photo 9)");
+  });
+
+  it("uses the photograph's current room after analysis and keeps its row with its photograph", () => {
+    const snapshot = snapshotOf(propertyInventoryDefinition);
+    const movedPhoto: DocPhoto = {
+      id: "moved-item",
+      sequence: 8,
+      filename: "chair.jpg",
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: { room: "Living room", _photo_role: "inventory_detail" },
+    };
+    const finding = {
+      id: "finding-1",
+      ref: "1",
+      sequence: 1,
+      statusId: "condition_good",
+      severityId: null,
+      categoryId: null,
+      findingText: "Chair",
+      remedialText: "",
+      captureFields: { room: "Kitchen" },
+      assignedTrade: null,
+      suggestedTrade: null,
+      tradeReasoning: null,
+      tradeConfidence: null,
+      dueDate: null,
+      lifecycleState: "open",
+      isConfidential: false,
+      confirmedAt: null,
+      likelyCause: null,
+      regulatoryReference: null,
+      abstainReason: null,
+      photos: [{ photo: movedPhoto, role: "primary", region: null }],
+    } as DocFinding;
+    const document = {
+      report: { coverPhotoId: null },
+      snapshot,
+      photos: [movedPhoto],
+      findings: [finding],
+    } as ReportDocument;
+
+    expect(inventoryRooms(document).map((room) => [room.label, room.findings.map((item) => item.id)])).toEqual([
+      ["Living room", ["finding-1"]],
+    ]);
+    expect(inventoryRoomPhotoGroups(document).rooms[0]?.entries[0]?.findings.map((item) => item.id)).toEqual([
+      "finding-1",
+    ]);
+    expect(inventoryItemTableLabel(finding, document)).toBe("Chair (Photo 8)");
+  });
+
+  it("moves a previously analysed photograph into the room overview without leaving an item row", () => {
+    const snapshot = snapshotOf(propertyInventoryDefinition);
+    const overviewPhoto: DocPhoto = {
+      id: "overview-after-analysis",
+      sequence: 4,
+      filename: "room.jpg",
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: { room: "Kitchen", _photo_role: "room_overview" },
+    };
+    const staleFinding = {
+      id: "stale-finding",
+      ref: "1",
+      sequence: 1,
+      statusId: "condition_good",
+      findingText: "Old item",
+      captureFields: { room: "Kitchen" },
+      photos: [{ photo: overviewPhoto, role: "primary", region: null }],
+    } as DocFinding;
+    const document = {
+      report: { coverPhotoId: null },
+      snapshot,
+      photos: [overviewPhoto],
+      findings: [staleFinding],
+    } as ReportDocument;
+
+    const rooms = inventoryRooms(document);
+    expect(rooms[0]?.overviewPhotos.map((photo) => photo.id)).toEqual(["overview-after-analysis"]);
+    expect(rooms[0]?.findings).toEqual([]);
+    expect(inventoryAppendixEntries(document)).toEqual([]);
+  });
+
+  it("uses landscape print pages for inventory snapshots only", () => {
+    expect(reportPrintPageClass({ snapshot: snapshotOf(propertyInventoryDefinition) })).toBe(
+      "inventory-print-surface",
+    );
+    const other = systemDefinitions.find((definition) => definition.id !== propertyInventoryDefinition.id);
+    expect(other).toBeDefined();
+    if (!other) return;
+    expect(reportPrintPageClass({ snapshot: snapshotOf(other) })).toBe("");
   });
 
   it("does not leak its header requirement into the other templates", () => {
