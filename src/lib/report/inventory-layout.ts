@@ -154,6 +154,47 @@ export function inventoryAppendixEntries(document: ReportDocument): InventoryApp
     });
 }
 
+export type InventoryRoomPhotoGroup = {
+  key: string;
+  label: string;
+  entries: InventoryAppendixEntry[];
+};
+
+/**
+ * Item photographs grouped into the room they belong to, so each room's
+ * photographs can be shown inside that room's own section of the report.
+ */
+export function inventoryRoomPhotoGroups(document: ReportDocument): {
+  rooms: InventoryRoomPhotoGroup[];
+  unallocated: InventoryAppendixEntry[];
+} {
+  const entries = inventoryAppendixEntries(document);
+  const order = inventoryRooms(document).map((room) => room.key);
+  const map = new Map<string, InventoryRoomPhotoGroup>();
+  const unallocated: InventoryAppendixEntry[] = [];
+
+  for (const entry of entries) {
+    const label = entry.room.trim();
+    if (label === "" || label === UNRECORDED_SECTION) {
+      unallocated.push(entry);
+      continue;
+    }
+    const key = label.toLowerCase();
+    const group = map.get(key) ?? { key, label, entries: [] };
+    group.entries.push(entry);
+    map.set(key, group);
+  }
+
+  const rooms = [...map.values()].sort((a, b) => {
+    const aIndex = order.indexOf(a.key);
+    const bIndex = order.indexOf(b.key);
+    return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) - (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+  });
+  for (const room of rooms) room.entries.sort((a, b) => a.photo.sequence - b.photo.sequence);
+  unallocated.sort((a, b) => a.photo.sequence - b.photo.sequence);
+  return { rooms, unallocated };
+}
+
 export function inventoryConditionLabel(document: ReportDocument, finding: DocFinding): string {
   return resolveStatus(document.snapshot, finding.statusId).label;
 }
