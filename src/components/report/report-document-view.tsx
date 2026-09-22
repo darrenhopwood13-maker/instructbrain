@@ -317,6 +317,7 @@ function InventoryDocument({
                 entries={photoGroups.rooms.find((group) => group.key === room.key)?.entries ?? []}
                 heading={`${room.label} — photographs`}
                 print={print}
+                document={document}
               />
             </section>
           ))}
@@ -327,6 +328,7 @@ function InventoryDocument({
         entries={photoGroups.unallocated}
         heading="Photographs not in a room"
         print={print}
+        document={document}
       />
 
       <InventoryBackingPages document={document} />
@@ -372,10 +374,12 @@ function InventoryPhotoBlock({
   entries,
   heading,
   print,
+  document,
 }: {
   entries: ReturnType<typeof inventoryRoomPhotoGroups>["unallocated"];
   heading: string;
   print: boolean;
+  document: ReportDocument;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -391,7 +395,7 @@ function InventoryPhotoBlock({
             />
             {findings.length > 0 ? (
               <p className="mt-2 text-xs font-medium text-muted-foreground">
-                {findings.map((finding) => inventoryItemWithPhotoLabel(finding, { snapshot: findings[0]?.photos[0]?.photo ? undefined as never : undefined })).join(" · ")}
+                {findings.map((finding) => inventoryItemWithPhotoLabel(finding, document)).join(" · ")}
               </p>
             ) : null}
           </li>

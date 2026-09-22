@@ -6,6 +6,7 @@ import { LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { sharedDocument } from "@/lib/report/shared-document";
 import { getSharedReportMeta } from "@/lib/report/share-meta.functions";
+import { reportPrintPageClass } from "@/lib/report/print-layout";
 import { absoluteUrl } from "@/lib/site-url";
 
 /**
@@ -118,7 +119,9 @@ function SharedReport() {
             <p className="mt-2 text-sm text-muted-foreground">{problem.body}</p>
           </div>
         ) : query.data ? (
-          <div className="paper paper-sheet px-5 py-8 sm:px-10 sm:py-12">
+          <div
+            className={`paper paper-sheet px-5 py-8 sm:px-10 sm:py-12 ${reportPrintPageClass(query.data)}`}
+          >
             <ReportDocumentView document={query.data} print />
           </div>
         ) : null}

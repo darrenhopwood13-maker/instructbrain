@@ -483,6 +483,7 @@ function drawInventoryTableHeader(
 
 async function drawInventoryPhotoPages(
   writer: Writer,
+  document: ReportDocument,
   entries: InventoryAppendixEntry[],
   fetcher: PhotoFetcher | null,
   heading: string,
@@ -849,6 +850,7 @@ async function buildInventoryReportPdf(
     if (group) {
       const photoEntry = await drawInventoryPhotoPages(
         writer,
+        document,
         group.entries,
         fetcher,
         `${room.label} - photographs`,
@@ -860,6 +862,7 @@ async function buildInventoryReportPdf(
 
   const remainder = await drawInventoryPhotoPages(
     writer,
+    document,
     photoGroups.unallocated,
     fetcher,
     "Photographs not in a room",
