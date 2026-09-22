@@ -844,10 +844,28 @@ async function buildInventoryReportPdf(
       });
       writer.cursor.y -= rowHeight;
     }
+
+    const group = photoGroups.rooms.find((entry) => entry.key === room.key);
+    if (group) {
+      const photoEntry = await drawInventoryPhotoPages(
+        writer,
+        group.entries,
+        fetcher,
+        `${room.label} - photographs`,
+        "Photographs for this room, numbered to match the items above.",
+      );
+      if (photoEntry) indexEntries.push(photoEntry);
+    }
   }
 
-  const appendixEntry = await drawInventoryAppendix(writer, document, fetcher);
-  if (appendixEntry) indexEntries.push(appendixEntry);
+  const remainder = await drawInventoryPhotoPages(
+    writer,
+    photoGroups.unallocated,
+    fetcher,
+    "Photographs not in a room",
+    "These photographs have not been allocated to a room.",
+  );
+  if (remainder) indexEntries.push(remainder);
   indexEntries.push(...drawInventoryBackingPages(writer, document));
   if (indexEntries.length === 0) {
     indexEntries.push({ label: "No rooms have been recorded yet.", page: 2 });
