@@ -750,7 +750,7 @@ export function PhotosPanel({
               onClick={() => filePickerRef.current?.click()}
             >
               <ImagePlus aria-hidden="true" className="size-5" />
-              Add photos
+              Choose from Photos
             </Button>
           </div>
         )}
