@@ -273,6 +273,8 @@ function CustomReport() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   // The photographs already chosen are held so a dropped signal never loses them.
   const heldFilesRef = useRef<File[]>([]);
+  const [heldCount, setHeldCount] = useState(0);
+
 
 
   const applyPreset = (id: string) => {
