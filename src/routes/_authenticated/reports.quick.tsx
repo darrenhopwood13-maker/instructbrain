@@ -15,7 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createReport } from "@/lib/data";
+import { createReport, projectsQuery } from "@/lib/data";
+import { usePlanUsage } from "@/lib/plans";
+import { PlanUsageMeter } from "@/components/plan-usage-meter";
+import { Label } from "@/components/ui/label";
 import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
