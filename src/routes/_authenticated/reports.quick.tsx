@@ -329,6 +329,7 @@ function CustomReport() {
     },
     onSuccess: async ({ id, frozen, files }) => {
       heldFilesRef.current = [];
+      setHeldCount(0);
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
@@ -337,11 +338,11 @@ function CustomReport() {
     onError: (error: Error) => toast.error(describeStartFailure(error)),
   });
 
-  const heldCount = heldFilesRef.current.length;
   const retryStart = () => {
     if (heldFilesRef.current.length === 0) return;
     start.mutate(heldFilesRef.current);
   };
+
 
   const saveTemplate = useMutation({
     mutationFn: async () => {
