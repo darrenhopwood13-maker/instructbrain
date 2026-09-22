@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -48,6 +48,12 @@ import { isShareLinkLive, shareLinkState, shareUrlForToken } from "@/lib/report/
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
+import {
+  canSharePdf,
+  pdfBytesFromBase64,
+  savePdfBytes,
+  sharePdfBytes,
+} from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
 import type { ResultView } from "@/lib/report/grouping";
 
@@ -75,6 +81,10 @@ export function ReportActions({
   const [shareOpen, setShareOpen] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
   const buildPdf = useServerFn(downloadReportPdf);
+  // Only phones and tablets can hand a file to a share sheet; decided after
+  // hydration so the server and the browser render the same markup.
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => setCanShare(canSharePdf()), []);
 
 
   const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
@@ -138,22 +148,26 @@ export function ReportActions({
       }),
   });
 
-  /** The same file the emails carry, saved straight to the device. */
+  /** The same file the emails carry, saved wherever the person chooses. */
   const pdf = useMutation({
-    mutationFn: () => buildPdf({ data: { reportId: document.report.id, view: resultView } }),
+    mutationFn: async (mode: "save" | "share") => {
+      const result = await buildPdf({ data: { reportId: document.report.id, view: resultView } });
+      const bytes = pdfBytesFromBase64(result.content);
+      const outcome =
+        mode === "share"
+          ? await sharePdfBytes(bytes, result.filename, document.report.title)
+          : await savePdfBytes(bytes, result.filename);
+      return { filename: result.filename, outcome };
+    },
     onSuccess: (result) => {
-      const binary = atob(result.content);
-      const bytes = new Uint8Array(binary.length);
-      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      const anchor = window.document.createElement("a");
-      anchor.href = url;
-      anchor.download = result.filename;
-      window.document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-      toast.success("PDF downloaded", { description: result.filename });
+      if (result.outcome === "cancelled") return;
+      const description =
+        result.outcome === "saved"
+          ? `Saved as ${result.filename}`
+          : result.outcome === "shared"
+            ? result.filename
+            : `${result.filename} is in your downloads.`;
+      toast.success(result.outcome === "shared" ? "PDF shared" : "PDF saved", { description });
     },
     onError: (error) =>
       toast.error("The PDF could not be built", {
@@ -178,7 +192,7 @@ export function ReportActions({
           size="sm"
           className="min-h-11"
           disabled={pdf.isPending}
-          onClick={() => pdf.mutate()}
+          onClick={() => pdf.mutate("save")}
         >
           {pdf.isPending ? (
             <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
@@ -187,6 +201,21 @@ export function ReportActions({
           )}
           Download PDF
         </Button>
+
+        {canShare ? (
+          <Button
+            type="button"
+            variant="quiet"
+            size="sm"
+            className="min-h-11"
+            disabled={pdf.isPending}
+            onClick={() => pdf.mutate("share")}
+          >
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
+            Share / Save to…
+          </Button>
+        ) : null}
+
 
         {issued ? (
           <Button
