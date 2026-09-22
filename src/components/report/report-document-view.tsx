@@ -1,4 +1,5 @@
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
+import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
