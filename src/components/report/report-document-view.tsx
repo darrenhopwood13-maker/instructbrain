@@ -21,7 +21,7 @@ import {
 import { itemLabel, itemLabels } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import {
-  inventoryAppendixEntries,
+  inventoryRoomPhotoGroups,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
