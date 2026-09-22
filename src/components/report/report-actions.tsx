@@ -186,35 +186,25 @@ export function ReportActions({
           reportId={document.report.id}
           value={document.report.outputLanguage}
         />
+        {/* One way to take the PDF away: the share sheet on a phone, a save
+            window on a computer. Two overlapping buttons only caused doubt. */}
         <Button
           type="button"
           variant="quiet"
           size="sm"
           className="min-h-11"
           disabled={pdf.isPending}
-          onClick={() => pdf.mutate("save")}
+          onClick={() => pdf.mutate(canShare ? "share" : "save")}
         >
           {pdf.isPending ? (
             <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" />
+          ) : canShare ? (
+            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
           ) : (
             <Download aria-hidden="true" className="mr-1.5 size-4" />
           )}
-          Download PDF
+          {canShare ? "Save or send PDF" : "Save PDF"}
         </Button>
-
-        {canShare ? (
-          <Button
-            type="button"
-            variant="quiet"
-            size="sm"
-            className="min-h-11"
-            disabled={pdf.isPending}
-            onClick={() => pdf.mutate("share")}
-          >
-            <Share2 aria-hidden="true" className="mr-1.5 size-4" />
-            Share / Save to…
-          </Button>
-        ) : null}
 
 
         {issued ? (
