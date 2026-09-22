@@ -409,17 +409,18 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Custom report</h1>
+      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Start a report</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {capturing
           ? "Photographs upload as you take them."
-          : "Your last brief is ready — take a photo to start."}
+          : "Your last set-up is ready — take a photo to start."}
       </p>
 
       {capturing && activeSnapshot ? (
         <p className="mt-4 text-sm">
           <span className="font-semibold">Report template:</span>{" "}
           {definitionLabel(activeSnapshot)} — locked for this report.
+          {project ? ` In ${project.name}.` : ""}
         </p>
       ) : (
         <section aria-labelledby="type-heading" className="mt-5">
@@ -434,12 +435,14 @@ function CustomReport() {
               disabled={start.isPending}
             />
           </div>
+          {/* The template is explained once, here, and nowhere else. */}
           <p className="mt-1 text-xs text-muted-foreground">
-            The report template sets the instructions the AI works to. Tone, report type and what
-            the report includes stay yours to change under Options.
+            The template sets the instructions the AI works to.
           </p>
         </section>
       )}
+
+      {!capturing ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
 
 
       {minimal && !capturing ? (
