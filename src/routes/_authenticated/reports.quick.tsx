@@ -314,12 +314,12 @@ function CustomReport() {
       const id = await withNetworkRetry(() =>
         createReport({
           organisationId,
-          projectId: null,
-          isQuick: true,
+          projectId: projectId || null,
+          isQuick: projectId === "",
           title:
             asksForHeader && docTitle.trim() !== ""
               ? docTitle
-              : `${definitionLabel(frozen)} — ${todayLabel()}`,
+              : `${definitionLabel(frozen)} — ${project?.name ?? todayLabel()}`,
           reference: "",
           ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
           definition: frozen,
