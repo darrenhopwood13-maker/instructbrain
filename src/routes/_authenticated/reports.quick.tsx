@@ -271,6 +271,11 @@ function CustomReport() {
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  // The photographs already chosen are held so a dropped signal never loses them.
+  const heldFilesRef = useRef<File[]>([]);
+  const [heldCount, setHeldCount] = useState(0);
+
+
 
   const applyPreset = (id: string) => {
     setPresetId(id);
@@ -326,6 +331,7 @@ function CustomReport() {
     },
     onSuccess: async ({ id, frozen, files }) => {
       heldFilesRef.current = [];
+      setHeldCount(0);
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
       setSnapshot(frozen);
       setInitialFiles(files);
@@ -334,11 +340,11 @@ function CustomReport() {
     onError: (error: Error) => toast.error(describeStartFailure(error)),
   });
 
-  const heldCount = heldFilesRef.current.length;
   const retryStart = () => {
     if (heldFilesRef.current.length === 0) return;
     start.mutate(heldFilesRef.current);
   };
+
 
   const saveTemplate = useMutation({
     mutationFn: async () => {
@@ -381,7 +387,11 @@ function CustomReport() {
     if (reportId) return;
     // Hold the bytes now: the report is created first, and a camera/gallery
     // file reference can be revoked before the capture panel mounts.
-    start.mutate(await snapshotFiles(files));
+    const held = await snapshotFiles(files);
+    heldFilesRef.current = held;
+    setHeldCount(held.length);
+    start.mutate(held);
+
   };
 
   const capturing = reportId !== null && snapshot !== null;
@@ -503,6 +513,28 @@ function CustomReport() {
               Add photos from the gallery
             </Button>
           </div>
+          {start.isError && heldCount > 0 ? (
+            <div
+              role="status"
+              className="mt-4 rounded-xl border border-border bg-surface p-3 text-sm"
+            >
+              <p>
+                {heldCount === 1
+                  ? "Your photograph is still held here."
+                  : `Your ${heldCount} photographs are still held here.`}{" "}
+                Nothing was lost.
+              </p>
+              <Button
+                type="button"
+                className="mt-3 min-h-11 w-full"
+                disabled={start.isPending}
+                onClick={retryStart}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : null}
+
         </section>
       ) : null}
 

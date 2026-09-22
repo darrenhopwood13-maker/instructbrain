@@ -27,6 +27,8 @@ import { EmptyState } from "@/components/empty-state";
 import { CaptureFieldsForm } from "@/components/photos/capture-fields-form";
 import { PhotoGrid } from "@/components/photos/photo-grid";
 import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
+import { RoomOrganiser } from "@/components/photos/room-organiser";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import {
@@ -700,7 +702,29 @@ export function PhotosPanel({
               setEditValues({ ...(photo.capture_fields ?? {}) });
             }}
           />
+
+          {inventoryWorkflow ? (
+            <RoomOrganiser
+              workflow={inventoryWorkflow}
+              photos={photos}
+              urls={urls}
+              selectedIds={selectedPhotos.map((photo) => photo.id)}
+              onClearSelection={() => setSelected(new Set())}
+              onApply={async (ids, patch) => {
+                if (ids.length === 0) return;
+                try {
+                  await updateCaptureFields(ids, patch);
+                  await refresh();
+                } catch (error) {
+                  toast.error("Could not update the rooms", {
+                    description: error instanceof Error ? error.message : "Please try again.",
+                  });
+                }
+              }}
+            />
+          ) : null}
         </>
+
       )}
 
       {/* One-handed controls: primary actions in the lower third on a phone. */}
