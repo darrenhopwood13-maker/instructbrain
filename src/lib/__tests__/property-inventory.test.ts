@@ -164,6 +164,15 @@ describe("property inventory", () => {
 
   it("uses the photograph's current room after analysis and keeps its row with its photograph", () => {
     const snapshot = snapshotOf(propertyInventoryDefinition);
+    const cover: DocPhoto = {
+      id: "cover",
+      sequence: 1,
+      filename: "exterior.jpg",
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: { _photo_role: "exterior_cover" },
+    };
     const movedPhoto: DocPhoto = {
       id: "moved-item",
       sequence: 8,
@@ -197,9 +206,9 @@ describe("property inventory", () => {
       photos: [{ photo: movedPhoto, role: "primary", region: null }],
     } as DocFinding;
     const document = {
-      report: { coverPhotoId: null },
+      report: { coverPhotoId: "cover" },
       snapshot,
-      photos: [movedPhoto],
+      photos: [cover, movedPhoto],
       findings: [finding],
     } as ReportDocument;
 
@@ -214,6 +223,15 @@ describe("property inventory", () => {
 
   it("moves a previously analysed photograph into the room overview without leaving an item row", () => {
     const snapshot = snapshotOf(propertyInventoryDefinition);
+    const cover: DocPhoto = {
+      id: "cover",
+      sequence: 1,
+      filename: "exterior.jpg",
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: { _photo_role: "exterior_cover" },
+    };
     const overviewPhoto: DocPhoto = {
       id: "overview-after-analysis",
       sequence: 4,
@@ -247,9 +265,9 @@ describe("property inventory", () => {
       photos: [{ photo: overviewPhoto, role: "primary", region: null }],
     } satisfies DocFinding;
     const document = {
-      report: { coverPhotoId: null },
+      report: { coverPhotoId: "cover" },
       snapshot,
-      photos: [overviewPhoto],
+      photos: [cover, overviewPhoto],
       findings: [staleFinding],
     } as unknown as ReportDocument;
 
