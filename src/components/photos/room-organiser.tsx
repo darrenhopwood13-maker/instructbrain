@@ -320,7 +320,7 @@ export function RoomOrganiser({
                             variant={isHeader ? "default" : "secondary"}
                             size="sm"
                             className="mt-1 min-h-11 w-full text-xs"
-                            disabled={!isHeader && headerSlotsLeft(entry.room, workflow) <= 0}
+                            disabled={!isHeader && headerSlotsLeft(entry.room ?? undefined, workflow) <= 0}
                             onClick={() =>
                               void (isHeader
                                 ? onApply([photo.id], markAsItemFields(workflow))
