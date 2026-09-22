@@ -17,14 +17,15 @@ import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor } from "@/lib/report/sections";
 import {
-  inventoryAppendixEntries,
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
   inventoryItemTableLabel,
   inventoryLayout,
+  inventoryRoomPhotoGroups,
   inventoryRooms,
   isInventoryLayout,
+  type InventoryAppendixEntry,
 } from "@/lib/report/inventory-layout";
 
 import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
