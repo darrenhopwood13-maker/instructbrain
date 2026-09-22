@@ -7,6 +7,7 @@ import {
   markAsRoomHeaderFields,
   renameRoomFields,
   reorderedRoomLabels,
+  mergeDraftRooms,
   ROOM_ORDER_FIELD,
   type RoomPhoto,
 } from "@/lib/photos/rooms";
