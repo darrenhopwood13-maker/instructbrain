@@ -700,7 +700,29 @@ export function PhotosPanel({
               setEditValues({ ...(photo.capture_fields ?? {}) });
             }}
           />
+
+          {inventoryWorkflow ? (
+            <RoomOrganiser
+              workflow={inventoryWorkflow}
+              photos={photos}
+              urls={urls}
+              selectedIds={selectedPhotos.map((photo) => photo.id)}
+              onClearSelection={() => setSelected(new Set())}
+              onApply={async (ids, patch) => {
+                if (ids.length === 0) return;
+                try {
+                  await updateCaptureFields(ids, patch);
+                  await refresh();
+                } catch (error) {
+                  toast.error("Could not update the rooms", {
+                    description: error instanceof Error ? error.message : "Please try again.",
+                  });
+                }
+              }}
+            />
+          ) : null}
         </>
+
       )}
 
       {/* One-handed controls: primary actions in the lower third on a phone. */}
