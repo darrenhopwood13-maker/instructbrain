@@ -705,6 +705,7 @@ export function PhotosPanel({
 
           {inventoryWorkflow ? (
             <RoomOrganiser
+              reportId={reportId}
               workflow={inventoryWorkflow}
               photos={photos}
               urls={urls}
