@@ -82,6 +82,45 @@ work queues. The QR code is exactly the right way to get from one to the other.
 3. QR card on the dashboard.
 4. Hand-off column, "Send to the dashboard" button, Site queue.
 
+## Report branding, tidied
+
+Right now every inventory page header carries "instructBrain · An instructSite
+Company" in full at the top, and the landing page and emails repeat "An
+instructSite company" in their own wording. That is too loud and inconsistent.
+
+The rule going forward:
+
+- The customer's own organisation name and logo stay the prominent branding on a
+  report — it is their document, not ours.
+- Our line becomes one discreet credit, identical everywhere:
+  **instructBrain — An instructSite Company** — small, muted, at the foot of the
+  page.
+- No "instructSite family" wording anywhere, and nothing from instructSite
+  running across the top of a report page.
+
+Where that lands: inventory page headers keep only the report or room title and
+the rule beneath it; the PDF footer carries the credit once per page; the
+on-screen report document, the print view and the public shared view use the
+same single credit; the landing page footer and the email footer use the exact
+same sentence (the existing email tests updated to the agreed wording).
+
+Copy pass at the same time: sentence-case headings, consistent spacing around
+dashes, consistent capitalisation of "report template", "check-out comment" and
+"room overview photo", and cover, index and backing pages aligned on the same
+margins and type sizes so nothing sits a few points off its neighbour.
+
+## The cockpit has to feel fast
+
+Held as a requirement, not a nicety:
+
+- Opens on the report in progress, capture ready — no loading screen between the
+  person and the camera.
+- Never more than one screen away from Take photo.
+- Big targets, actions in thumb reach, usable one-handed at 375px with the
+  keyboard open.
+- Immediate feedback: a photo appears in the strip the instant it is chosen,
+  with its uploading state on the tile rather than a blocking spinner.
+
 ## Not in this step
 
 Offline capture with a queued upload, push notifications, an app-store build,
