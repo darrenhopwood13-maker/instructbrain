@@ -133,7 +133,7 @@ function Dashboard() {
     if (mode === "quick") {
       void navigate({ to: "/reports/quick", search: { type: surveyTypeId } });
     } else if (mode === "project") {
-      void navigate({ to: "/reports/new", search: { type: surveyTypeId } });
+      void navigate({ to: "/reports/quick", search: { type: surveyTypeId } });
     }
   };
 

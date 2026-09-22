@@ -123,7 +123,7 @@ function ProjectDashboard() {
             </Button>
           ) : (
             <Button variant="brand" className="min-h-11" asChild>
-              <Link to="/reports/new" search={{ project: current.id }}>
+              <Link to="/reports/quick" search={{ project: current.id }}>
                 <Plus aria-hidden="true" />
                 <span className="hidden sm:inline">New report</span>
                 <span className="sr-only sm:hidden">New report</span>
@@ -177,7 +177,7 @@ function ProjectDashboard() {
                 description="Start a report, choose a report template, and upload the photographs taken on site."
                 action={
                   <Button variant="brand" asChild>
-                    <Link to="/reports/new" search={{ project: current.id }}>
+                    <Link to="/reports/quick" search={{ project: current.id }}>
                       Start a report
                     </Link>
                   </Button>
