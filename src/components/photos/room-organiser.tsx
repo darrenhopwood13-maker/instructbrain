@@ -16,7 +16,7 @@ import {
   type AppliedRoom,
 } from "@/components/photos/room-suggestions";
 import { suggestRooms } from "@/lib/photos/rooms.functions";
-import type { RoomProposal } from "@/lib/photos/room-suggest";
+import { roomApplyPlan, type RoomProposal } from "@/lib/photos/room-suggest";
 import {
   AlertDialog,
   AlertDialogAction,
