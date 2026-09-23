@@ -168,19 +168,10 @@ export function RoomOrganiser({
   const applyProposal = async (accepted: AppliedRoom[]) => {
     setApplying(true);
     try {
-      const startAt = entries.length;
-      for (const [index, room] of accepted.entries()) {
-        const overview = room.overviewPhotoIds.slice(0, limit);
-        const items = room.photoIds.filter((id) => !overview.includes(id));
-        if (items.length > 0) {
-          await onApply(items, allocateToRoomFields(workflow, room.label, startAt + index));
-        }
-        if (overview.length > 0) {
-          await onApply(overview, {
-            ...allocateToRoomFields(workflow, room.label, startAt + index),
-            ...markAsRoomHeaderFields(workflow),
-          });
-        }
+      // Built and checked in full before the first write.
+      const batches = roomApplyPlan(accepted, workflow, entries.length);
+      for (const batch of batches) {
+        await onApply(batch.ids, batch.patch);
       }
       setDrafts((current) => [
         ...current,
