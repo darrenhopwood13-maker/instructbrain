@@ -7,6 +7,7 @@ import {
   Copy,
   Download,
   Eye,
+  HardHat,
   Link2,
   Loader2,
   Lock,
@@ -54,6 +55,8 @@ import {
   sharePdfBytes,
 } from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
+import { SendToDashboardControl } from "@/components/field/send-to-dashboard";
+import { reportHandoffQuery } from "@/lib/field/handoff";
 import type { ResultView } from "@/lib/report/grouping";
 
 
@@ -85,6 +88,13 @@ export function ReportActions({
   const [canShare, setCanShare] = useState(false);
   useEffect(() => setCanShare(canSharePdf()), []);
 
+
+  // Whether this report is already in the desk queue decides if the hand-off
+  // is offered in the More menu. Never offered once issued.
+  const handoff = useQuery({
+    ...reportHandoffQuery(document.report.id),
+    enabled: !issued,
+  });
 
   const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
   const blockers = issueBlockers(document);
