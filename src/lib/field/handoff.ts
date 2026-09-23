@@ -50,10 +50,18 @@ export const siteQueueQuery = (organisationIds: string[]) =>
     },
   });
 
-/** Records the hand-off. Called only from an explicit button press. */
-export async function sendReportToDashboard(reportId: string): Promise<void> {
-  const { error } = await (supabase.from("reports" as never) as any)
+/**
+ * Records the hand-off. Called only from an explicit button press. Returns
+ * the updated row so callers (the report screen's More menu) can hide the
+ * action once a report is already in the queue.
+ */
+export async function sendReportToDashboard(
+  reportId: string,
+): Promise<{ submitted_at: string } | null> {
+  const { data, error } = await (supabase.from("reports" as never) as any)
     .update({ submitted_at: new Date().toISOString() })
-    .eq("id", reportId);
+    .eq("id", reportId)
+    .select("submitted_at");
   if (error) throw new Error(error.message);
+  return (data?.[0] as { submitted_at: string } | undefined) ?? null;
 }
