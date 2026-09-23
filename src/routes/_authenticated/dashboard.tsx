@@ -177,10 +177,6 @@ function Dashboard() {
         </div>
       </section>
 
-      <FieldAppCard />
-
-
-
       {overdueItems.length > 0 ? (
         <CollapsibleSection
           id="overdue-heading"
@@ -304,6 +300,8 @@ function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Setup, not daily work: the QR card lives at the foot. */}
+      <FieldAppCard />
     </AppShell>
   );
 }
