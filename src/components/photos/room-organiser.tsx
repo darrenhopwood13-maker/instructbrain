@@ -124,6 +124,83 @@ export function RoomOrganiser({
   const [renaming, setRenaming] = useState<{ key: string; label: string } | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [deleting, setDeleting] = useState<{ key: string; label: string } | null>(null);
+  const [proposal, setProposal] = useState<RoomProposal | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [applying, setApplying] = useState(false);
+
+  const askForSuggestions = useServerFn(suggestRooms);
+
+  const sequences = useMemo(
+    () => Object.fromEntries(photos.map((photo) => [photo.id, photo.sequence])),
+    [photos],
+  );
+
+  const runSuggestions = async () => {
+    setSuggesting(true);
+    try {
+      const result = await askForSuggestions({ data: { reportId } });
+      setProposal(result);
+      if (result.rooms.length === 0) {
+        toast.error("No rooms could be suggested", {
+          description: "Create your rooms as usual — nothing was changed.",
+        });
+        return;
+      }
+      toast.success(
+        `${result.rooms.length} room${result.rooms.length === 1 ? "" : "s"} suggested — nothing is changed until you apply them.`,
+      );
+    } catch (error) {
+      setProposal(null);
+      toast.error("Could not suggest rooms", {
+        description:
+          error instanceof Error ? error.message : "Please try again — nothing was changed.",
+      });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  /**
+   * Applies the rooms the person accepted, in one pass per room. Every write
+   * goes through the same capture-field patches the manual flow uses, so refs,
+   * sequence and storage are untouched.
+   */
+  const applyProposal = async (accepted: AppliedRoom[]) => {
+    setApplying(true);
+    try {
+      const startAt = entries.length;
+      for (const [index, room] of accepted.entries()) {
+        const overview = room.overviewPhotoIds.slice(0, limit);
+        const items = room.photoIds.filter((id) => !overview.includes(id));
+        if (items.length > 0) {
+          await onApply(items, allocateToRoomFields(workflow, room.label, startAt + index));
+        }
+        if (overview.length > 0) {
+          await onApply(overview, {
+            ...allocateToRoomFields(workflow, room.label, startAt + index),
+            ...markAsRoomHeaderFields(workflow),
+          });
+        }
+      }
+      setDrafts((current) => [
+        ...current,
+        ...accepted
+          .map((room) => room.label)
+          .filter(
+            (label) => !current.some((item) => item.toLowerCase() === label.toLowerCase()),
+          ),
+      ]);
+      setProposal(null);
+      onClearSelection();
+      toast.success(`${accepted.length} room${accepted.length === 1 ? "" : "s"} applied`);
+    } catch (error) {
+      toast.error("Could not apply the rooms", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setApplying(false);
+    }
+  };
 
   const allocate = async (room: string, order: number) => {
     if (selectedIds.length === 0) return;
