@@ -7,8 +7,16 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  RoomSuggestionsDialog,
+  type AppliedRoom,
+} from "@/components/photos/room-suggestions";
+import { suggestRooms } from "@/lib/photos/rooms.functions";
+import type { RoomProposal } from "@/lib/photos/room-suggest";
 import {
   AlertDialog,
   AlertDialogAction,
