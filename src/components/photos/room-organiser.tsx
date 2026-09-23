@@ -281,6 +281,16 @@ export function RoomOrganiser({
           </Button>
           <Button
             type="button"
+            variant="secondary"
+            className="min-h-11"
+            disabled={suggesting || photos.length === 0}
+            onClick={() => void runSuggestions()}
+          >
+            <Sparkles aria-hidden="true" className="size-4" />
+            {suggesting ? "Suggesting…" : "Suggest rooms"}
+          </Button>
+          <Button
+            type="button"
             className="min-h-11"
             disabled={selectedIds.length === 0 || entries.length === 0}
             onClick={() => {
