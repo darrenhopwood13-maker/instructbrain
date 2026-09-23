@@ -7,8 +7,16 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, FolderPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  RoomSuggestionsDialog,
+  type AppliedRoom,
+} from "@/components/photos/room-suggestions";
+import { suggestRooms } from "@/lib/photos/rooms.functions";
+import { roomApplyPlan, type RoomProposal } from "@/lib/photos/room-suggest";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -116,6 +124,74 @@ export function RoomOrganiser({
   const [renaming, setRenaming] = useState<{ key: string; label: string } | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [deleting, setDeleting] = useState<{ key: string; label: string } | null>(null);
+  const [proposal, setProposal] = useState<RoomProposal | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [applying, setApplying] = useState(false);
+
+  const askForSuggestions = useServerFn(suggestRooms);
+
+  const sequences = useMemo(
+    () => Object.fromEntries(photos.map((photo) => [photo.id, photo.sequence])),
+    [photos],
+  );
+
+  const runSuggestions = async () => {
+    setSuggesting(true);
+    try {
+      const result = await askForSuggestions({ data: { reportId } });
+      setProposal(result);
+      if (result.rooms.length === 0) {
+        toast.error("No rooms could be suggested", {
+          description: "Create your rooms as usual — nothing was changed.",
+        });
+        return;
+      }
+      toast.success(
+        `${result.rooms.length} room${result.rooms.length === 1 ? "" : "s"} suggested — nothing is changed until you apply them.`,
+      );
+    } catch (error) {
+      setProposal(null);
+      toast.error("Could not suggest rooms", {
+        description:
+          error instanceof Error ? error.message : "Please try again — nothing was changed.",
+      });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  /**
+   * Applies the rooms the person accepted, in one pass per room. Every write
+   * goes through the same capture-field patches the manual flow uses, so refs,
+   * sequence and storage are untouched.
+   */
+  const applyProposal = async (accepted: AppliedRoom[]) => {
+    setApplying(true);
+    try {
+      // Built and checked in full before the first write.
+      const batches = roomApplyPlan(accepted, workflow, entries.length);
+      for (const batch of batches) {
+        await onApply(batch.ids, batch.patch);
+      }
+      setDrafts((current) => [
+        ...current,
+        ...accepted
+          .map((room) => room.label)
+          .filter(
+            (label) => !current.some((item) => item.toLowerCase() === label.toLowerCase()),
+          ),
+      ]);
+      setProposal(null);
+      onClearSelection();
+      toast.success(`${accepted.length} room${accepted.length === 1 ? "" : "s"} applied`);
+    } catch (error) {
+      toast.error("Could not apply the rooms", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setApplying(false);
+    }
+  };
 
   const allocate = async (room: string, order: number) => {
     if (selectedIds.length === 0) return;
@@ -202,6 +278,16 @@ export function RoomOrganiser({
           >
             <Plus aria-hidden="true" className="size-4" />
             Create room
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-h-11"
+            disabled={suggesting || photos.length === 0}
+            onClick={() => void runSuggestions()}
+          >
+            <Sparkles aria-hidden="true" className="size-4" />
+            {suggesting ? "Suggesting…" : "Suggest rooms"}
           </Button>
           <Button
             type="button"
@@ -478,6 +564,18 @@ export function RoomOrganiser({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <RoomSuggestionsDialog
+        open={proposal !== null && proposal.rooms.length > 0}
+        onOpenChange={(next) => {
+          if (!next) setProposal(null);
+        }}
+        proposal={proposal}
+        workflow={workflow}
+        urls={urls}
+        sequences={sequences}
+        applying={applying}
+        onApply={applyProposal}
+      />
     </section>
   );
 }
