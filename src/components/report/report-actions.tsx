@@ -89,16 +89,15 @@ export function ReportActions({
   useEffect(() => setCanShare(canSharePdf()), []);
 
 
+  const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
+  const blockers = issueBlockers(document);
+  const issued = document.report.status === "issued";
   // Whether this report is already in the desk queue decides if the hand-off
   // is offered in the More menu. Never offered once issued.
   const handoff = useQuery({
     ...reportHandoffQuery(document.report.id),
     enabled: !issued,
   });
-
-  const printUrl = `/reports/${document.report.id}/print?view=${resultView}`;
-  const blockers = issueBlockers(document);
-  const issued = document.report.status === "issued";
   // The report itself is the authority on which organisation owns it.
   const orgId = document.organisation?.id ?? organisationId ?? null;
 
@@ -283,6 +282,22 @@ export function ReportActions({
               )}
               Draft summary
             </DropdownMenuItem>
+            {/* The site-to-desk hand-off, available from the report itself as
+                well as the field cockpit — still only ever a button press. */}
+            {handoff.data?.submittedAt == null ? (
+              <SendToDashboardControl
+                report={{ id: document.report.id, title: document.report.title }}
+                trigger={(openSend) => (
+                  <DropdownMenuItem
+                    className="min-h-11"
+                    onSelect={() => openLater(openSend)}
+                  >
+                    <HardHat aria-hidden="true" className="mr-2 size-4" />
+                    Send to the dashboard
+                  </DropdownMenuItem>
+                )}
+              />
+            ) : null}
             {children ? (
               <>
                 <DropdownMenuSeparator />
