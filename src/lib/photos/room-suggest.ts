@@ -9,7 +9,11 @@
  */
 
 import type { PhotoWorkflow } from "@/lib/survey-types";
-import { maxOverviewPhotos } from "@/lib/photos/rooms";
+import {
+  allocateToRoomFields,
+  markAsRoomHeaderFields,
+  maxOverviewPhotos,
+} from "@/lib/photos/rooms";
 
 export type ProposedRoom = {
   label: string;
