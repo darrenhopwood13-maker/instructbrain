@@ -198,3 +198,49 @@ export function mergeProposals(parts: RoomProposal[]): RoomProposal {
   const claimed = new Set(rooms.flatMap((room) => room.photoIds));
   return { rooms, unsure: unsure.filter((id) => !claimed.has(id)) };
 }
+
+export type ApplyBatch = { ids: string[]; patch: Record<string, string> };
+
+/**
+ * The write plan for an accepted proposal, built and validated before anything
+ * is written. If the plan is not sound nothing is attempted, so a bad proposal
+ * can never be half-applied.
+ */
+export function roomApplyPlan(
+  accepted: Array<{ label: string; photoIds: string[]; overviewPhotoIds: string[] }>,
+  workflow: PhotoWorkflow,
+  startAt: number,
+): ApplyBatch[] {
+  const limit = maxOverviewPhotos(workflow);
+  const seen = new Set<string>();
+  const labels = new Set<string>();
+  const batches: ApplyBatch[] = [];
+
+  accepted.forEach((room, index) => {
+    const label = room.label.trim();
+    if (label === "") throw new Error("Every room needs a title.");
+    const key = label.toLowerCase();
+    if (labels.has(key)) throw new Error(`There is more than one room called ${label}.`);
+    labels.add(key);
+    if (room.photoIds.length === 0) throw new Error(`${label} has no photographs.`);
+    for (const id of room.photoIds) {
+      if (seen.has(id)) throw new Error("A photograph cannot be in two rooms.");
+      seen.add(id);
+    }
+
+    const overview = room.overviewPhotoIds
+      .filter((id) => room.photoIds.includes(id))
+      .slice(0, limit);
+    const items = room.photoIds.filter((id) => !overview.includes(id));
+    const allocation = allocateToRoomFields(workflow, label, startAt + index);
+    if (items.length > 0) batches.push({ ids: items, patch: allocation });
+    if (overview.length > 0) {
+      batches.push({
+        ids: overview,
+        patch: { ...allocation, ...markAsRoomHeaderFields(workflow) },
+      });
+    }
+  });
+
+  return batches;
+}
