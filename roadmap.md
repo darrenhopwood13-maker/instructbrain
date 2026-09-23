@@ -16,3 +16,4 @@
 - [x] Show every photograph in its own room section, under that room's overview photographs.
 - [x] Keep each inventory row with its photograph when room allocation changes after analysis.
 - [x] Apply landscape Property inventory print formatting to public shared links.
+- [x] Whole-app QA implemented: QR card fixed (near-black on white tile), bottom bar swaps Organisation for On site (Organisation now in Account menu), Send to the dashboard added to the report screen's More menu, dashboard opens on the site queue with the QR card at the foot, reports-list selection bar neutral, page headings standardised, wordmark uses text-safe ink on light screens, template explanation shows only until the template is known. 232 tests pass.
