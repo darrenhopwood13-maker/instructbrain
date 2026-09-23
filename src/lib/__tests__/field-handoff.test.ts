@@ -30,15 +30,16 @@ vi.mock("@/integrations/supabase/client", () => ({
           eq: chain("eq"),
           order: chain("order"),
           limit: () => Promise.resolve({ data: queueRows, error: null }),
+          maybeSingle: () => Promise.resolve({ data: queueRows[0] ?? null, error: null }),
           update: (values: Record<string, unknown>) => {
             call.update = values;
             return builder;
           },
+          // Awaiting the builder itself (e.g. update().eq().select()) resolves
+          // the queued rows, like PostgREST does.
+          then: (resolve: (value: unknown) => unknown) =>
+            resolve({ data: queueRows, error: null }),
         });
-        (builder as { eq: (...a: unknown[]) => unknown }).eq = (...args: unknown[]) => {
-          call.filters.push(`eq:${args.map(String).join(",")}`);
-          return Promise.resolve({ data: null, error: null });
-        };
         return builder;
       },
     };
