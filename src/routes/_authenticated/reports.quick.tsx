@@ -409,7 +409,7 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Start a report</h1>
+      <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Start a report</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {capturing
           ? "Photographs upload as you take them."
