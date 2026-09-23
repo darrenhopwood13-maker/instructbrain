@@ -103,3 +103,38 @@ describe("the field app manifest", () => {
     expect(root).toContain("apple-touch-icon");
   });
 });
+
+describe("the QR card and the nav swap", () => {
+  it("draws the QR code near-black on a white tile with a quiet zone", () => {
+    const card = readFileSync("src/components/field/field-app-card.tsx", "utf8");
+    // Scannability: dark modules, padded white tile — never navy on navy.
+    expect(card).toContain('dark: "#101828"');
+    expect(card).toContain("bg-white");
+    expect(card).toContain("p-2");
+    expect(card).not.toContain("#24417B");
+    expect(card).toContain("Scan to open the instructBrain field app");
+  });
+
+  it("keeps the hand-off available from the report screen's More menu", () => {
+    const actions = readFileSync("src/components/report/report-actions.tsx", "utf8");
+    expect(actions).toContain("SendToDashboardControl");
+    expect(actions).toContain("Send to the dashboard");
+  });
+
+  it("gives the phone's bottom bar the field cockpit, not organisation settings", () => {
+    const shell = readFileSync("src/components/app-shell.tsx", "utf8");
+    const nav = shell.slice(shell.indexOf("const baseNav"), shell.indexOf("] as const"));
+    expect(nav).toContain('"/field"');
+    expect(nav).toContain('"nav.field"');
+    expect(nav).not.toContain("settings/organisation");
+    // Organisation settings is still reachable — from the Account menu.
+    expect(shell).toContain('to="/settings/organisation"');
+  });
+
+  it("stamps the hand-off only on a button press and returns the row", async () => {
+    const { sendReportToDashboard } = await import("@/lib/field/handoff");
+    const result = await sendReportToDashboard("r1");
+    expect(calls[0]!.updates).toHaveProperty("submitted_at");
+    expect(result).toBeNull();
+  });
+});
