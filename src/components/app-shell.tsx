@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FolderOpen, Building2, Users, UserCog } from "lucide-react";
+import { LayoutDashboard, FolderOpen, HardHat, Users, UserCog } from "lucide-react";
 import type { ReactNode } from "react";
 import { useSession, signOut } from "@/lib/auth";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -58,6 +58,9 @@ function AccountMenu() {
         <DropdownMenuItem asChild>
           <Link to="/settings/account">{t("nav.account")}</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings/organisation">{t("nav.organisation")}</Link>
+        </DropdownMenuItem>
         {isPlatformAdmin ? (
           <DropdownMenuItem asChild>
             <Link to="/admin">{t("nav.admin")}</Link>
@@ -77,11 +80,15 @@ function AccountMenu() {
   );
 }
 
-/** Four evenly sized destinations — Account and Admin live in the top bar menu. */
+/**
+ * Four evenly sized destinations. Organisation settings is a twice-a-year
+ * screen, so it lives in the Account menu and its slot goes to the field
+ * cockpit — one tap to capture when someone arrives on site.
+ */
 const baseNav = [
   { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
-  { to: "/settings/organisation", key: "nav.organisation", icon: Building2, exact: false },
+  { to: "/field", key: "nav.field", icon: HardHat, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
 ] as const;
 
