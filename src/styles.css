@@ -334,6 +334,13 @@
   color: currentColor;
 }
 
+/* Orange wordmark text fails contrast on the light working screens, the same
+   way orange-on-navy did on the console. The accent span falls back to the
+   text-safe ink inside the work surface; the navy console keeps the orange. */
+.work-surface .wordmark .text-brand-accent {
+  color: var(--brand-accent-ink);
+}
+
 .work-surface .glass-navy,
 .work-surface .glass {
   background: var(--work-control);

@@ -139,6 +139,9 @@ function CustomReport() {
   const [templateName, setTemplateName] = useState("");
   const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
+  // The template explanation shows only until the template is known — a
+  // remembered brief or a deliberate choice — and never nags after that.
+  const [templateKnown, setTemplateKnown] = useState(() => Boolean(typeParam));
 
   const [reportId, setReportId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SurveyTypeSnapshot | null>(null);
@@ -161,6 +164,7 @@ function CustomReport() {
           systemDefinitions.some((definition) => definition.id === saved["templateId"])
         ) {
           setTemplateId(saved["templateId"] as string);
+          setTemplateKnown(true);
         }
         if (typeof saved["presetId"] === "string") setPresetId(saved["presetId"]);
         if (typeof saved["tone"] === "string") setTone(toneById(saved["tone"]).id);
@@ -409,7 +413,7 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      <h1 className="editorial-title text-xl font-semibold sm:text-2xl">Start a report</h1>
+      <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Start a report</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {capturing
           ? "Photographs upload as you take them."
@@ -431,14 +435,20 @@ function CustomReport() {
             <TemplateSelect
               id="custom-report-template"
               value={templateId}
-              onChange={setTemplateId}
+              onChange={(id) => {
+                setTemplateId(id);
+                setTemplateKnown(true);
+              }}
               disabled={start.isPending}
             />
           </div>
-          {/* The template is explained once, here, and nowhere else. */}
-          <p className="mt-1 text-xs text-muted-foreground">
-            The template sets the instructions the AI works to.
-          </p>
+          {/* The template is explained once, here, and nowhere else — and
+              only until it is known (first visit or a deliberate change). */}
+          {templateKnown ? null : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              The template sets the instructions the AI works to.
+            </p>
+          )}
         </section>
       )}
 

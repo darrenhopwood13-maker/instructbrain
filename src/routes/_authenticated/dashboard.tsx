@@ -142,6 +142,10 @@ function Dashboard() {
 
   return (
     <AppShell>
+      {/* The desk user's first question is "what came in from site?" — the
+          queue opens the page, ahead of the action tiles. */}
+      <SiteQueue organisationIds={organisationIds} />
+
       <section aria-labelledby="mode-heading">
         <h2 id="mode-heading" className="sr-only">
           Choose what you are making
@@ -172,11 +176,6 @@ function Dashboard() {
           </div>
         </div>
       </section>
-
-      <SiteQueue organisationIds={organisationIds} />
-      <FieldAppCard />
-
-
 
       {overdueItems.length > 0 ? (
         <CollapsibleSection
@@ -301,6 +300,8 @@ function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Setup, not daily work: the QR card lives at the foot. */}
+      <FieldAppCard />
     </AppShell>
   );
 }

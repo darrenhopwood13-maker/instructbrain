@@ -94,7 +94,7 @@ function AllReports() {
       </header>
 
       {selected.size > 0 ? (
-        <div className="sticky top-20 z-20 mt-6 flex items-center justify-between gap-3 rounded-xl border border-fail/40 bg-surface-raised px-4 py-3 shadow-raised">
+        <div className="sticky top-20 z-20 mt-6 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-raised">
           <span className="text-sm font-semibold">
             {selected.size} {selected.size === 1 ? "report" : "reports"} selected
           </span>
