@@ -50,6 +50,20 @@ export const siteQueueQuery = (organisationIds: string[]) =>
     },
   });
 
+/** Whether a single report is already in the site queue. */
+export const reportHandoffQuery = (reportId: string) =>
+  queryOptions({
+    queryKey: ["report-handoff", reportId],
+    queryFn: async (): Promise<{ submittedAt: string | null }> => {
+      const { data, error } = await (supabase.from("reports" as never) as any)
+        .select("submitted_at")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return { submittedAt: (data?.submitted_at as string | null) ?? null };
+    },
+  });
+
 /**
  * Records the hand-off. Called only from an explicit button press. Returns
  * the updated row so callers (the report screen's More menu) can hide the
