@@ -564,6 +564,18 @@ export function RoomOrganiser({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <RoomSuggestionsDialog
+        open={proposal !== null && proposal.rooms.length > 0}
+        onOpenChange={(next) => {
+          if (!next) setProposal(null);
+        }}
+        proposal={proposal}
+        workflow={workflow}
+        urls={urls}
+        sequences={sequences}
+        applying={applying}
+        onApply={applyProposal}
+      />
     </section>
   );
 }
