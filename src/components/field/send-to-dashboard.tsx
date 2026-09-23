@@ -39,6 +39,7 @@ export function SendToDashboardControl({
     onSuccess: async () => {
       setOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
+      await queryClient.invalidateQueries({ queryKey: ["report-handoff", report.id] });
       toast.success("Sent to the dashboard", {
         description: "It is in the site queue. Anything still unresolved is listed there.",
       });
