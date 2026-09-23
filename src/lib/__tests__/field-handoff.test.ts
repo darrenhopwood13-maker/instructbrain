@@ -135,7 +135,7 @@ describe("the QR card and the nav swap", () => {
   it("stamps the hand-off only on a button press and returns the row", async () => {
     const { sendReportToDashboard } = await import("@/lib/field/handoff");
     const result = await sendReportToDashboard("r1");
-    expect(calls[0]!.updates).toHaveProperty("submitted_at");
+    expect(calls[0]!.update).toHaveProperty("submitted_at");
     expect(result).toBeNull();
   });
 });
