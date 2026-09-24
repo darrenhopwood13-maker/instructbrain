@@ -18,3 +18,7 @@
 - [x] Apply landscape Property inventory print formatting to public shared links.
 - [x] Whole-app QA implemented: QR card fixed (near-black on white tile), bottom bar swaps Organisation for On site (Organisation now in Account menu), Send to the dashboard added to the report screen's More menu, dashboard opens on the site queue with the QR card at the foot, reports-list selection bar neutral, page headings standardised, wordmark uses text-safe ink on light screens, template explanation shows only until the template is known. 232 tests pass.
 - [x] Suggest rooms: a person-approved AI grouping of inventory photographs into rooms, with overview photographs proposed and uncertain photographs held back.
+
+## Sign-in emails
+- [x] Recovery/magic links landing on dashboard — route hash tokens to the right auth screen
+- [ ] Branded Supabase auth email templates (paste-into-dashboard HTML)
