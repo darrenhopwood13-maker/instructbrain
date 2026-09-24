@@ -21,4 +21,4 @@
 
 ## Sign-in emails
 - [x] Recovery/magic links landing on dashboard — route hash tokens to the right auth screen
-- [ ] Branded Supabase auth email templates (paste-into-dashboard HTML)
+- [x] Branded Supabase auth email templates (paste-into-dashboard HTML)
