@@ -109,6 +109,8 @@ export type SurveyDefinition = {
   defaultRemedial?: string;
   outputSections?: string[];
   requiresTradeAssignment?: boolean;
+  /** Trades offered on every finding regardless of category. */
+  standardTrades?: string[];
   requiresLifecycle?: boolean;
   supportsDistribution?: boolean;
   defaultDistributionGrouping?: string;
