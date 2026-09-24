@@ -42,6 +42,8 @@ import { itemLabel } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import { listPhotos, signedThumbnailUrls } from "@/lib/photos/photo-service";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { bulkTradeEligible } from "@/lib/findings/bulk-trade";
+import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
 
 /**
  * Keyboard-first review list. j/k move, per-status shortcut keys set status,
@@ -96,6 +98,8 @@ export function ReviewList({
   const [overrides, setOverrides] = useState<Record<string, Partial<Finding>>>({});
   const [active, setActive] = useState(0);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
   // Stable review order: unresolved `not_assessed` items sort to the top when
   // first seen, and nothing reorders underneath the reviewer afterwards.
@@ -323,6 +327,32 @@ export function ReviewList({
 
   const firstNotAssessed = resolved.findIndex((status) => status.id === NOT_ASSESSED_ID);
 
+  const tradeEligible = showTrade ? bulkTradeEligible(items) : [];
+  const confirmTrades = async () => {
+    if (!onAssignTrade) return;
+    setBulkBusy(true);
+    let done = 0;
+    for (const item of tradeEligible) {
+      try {
+        await onAssignTrade(item.id, {
+          trade: item.aiSuggestedTrade ?? null,
+          dueDate: null,
+          dueDateOverridden: false,
+        });
+        done += 1;
+      } catch {
+        // Carry on; the count below says what was saved.
+      }
+    }
+    setBulkBusy(false);
+    setBulkOpen(false);
+    if (done === tradeEligible.length) toast.success(`${done} trade${done === 1 ? "" : "s"} confirmed`);
+    else
+      toast.error("Some trades could not be saved", {
+        description: `${done} of ${tradeEligible.length} confirmed. Try again for the rest.`,
+      });
+  };
+
   const confirmAll = () => {
     if (notAssessedCount > 0) {
       toast.error("Resolve not assessed findings first", {
@@ -404,7 +434,51 @@ export function ReviewList({
         </Button>
       </div>
 
+      {tradeEligible.length > 0 ? (
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 w-full sm:w-auto"
+            aria-haspopup="dialog"
+            onClick={() => setBulkOpen(true)}
+          >
+            Confirm all trades {Math.round(BULK_TRADE_CONFIRM_THRESHOLD * 100)}% or over (
+            {tradeEligible.length})
+          </Button>
+        </div>
+      ) : null}
+
+      <Dialog open={bulkOpen} onOpenChange={(open) => !bulkBusy && setBulkOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm {tradeEligible.length} suggested trades</DialogTitle>
+            <DialogDescription>
+              Each of these will be recorded as confirmed by you. You can change any of them
+              afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="max-h-none space-y-1 text-sm">
+            {tradeEligible.map((item) => (
+              <li key={item.id}>
+                <span className="font-semibold">{item.ref}</span> {item.title} —{" "}
+                {item.aiSuggestedTrade} ({Math.round((item.aiTradeConfidence ?? 0) * 100)}%)
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" className="min-h-11" disabled={bulkBusy} onClick={() => setBulkOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="brand" className="min-h-11" disabled={bulkBusy} onClick={() => void confirmTrades()}>
+              {bulkBusy ? "Confirming…" : "Confirm"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="mt-3">
+
         <Button
           type="button"
           variant="ghost"

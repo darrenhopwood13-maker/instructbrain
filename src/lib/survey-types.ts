@@ -109,6 +109,8 @@ export type SurveyDefinition = {
   defaultRemedial?: string;
   outputSections?: string[];
   requiresTradeAssignment?: boolean;
+  /** Trades offered on every finding regardless of category. */
+  standardTrades?: string[];
   requiresLifecycle?: boolean;
   supportsDistribution?: boolean;
   defaultDistributionGrouping?: string;
@@ -308,6 +310,13 @@ export function tradesOf(snapshot: SurveyTypeSnapshot | null | undefined): strin
   const seen = new Set<string>();
   for (const category of categoriesOf(snapshot)) {
     for (const trade of category.defaultTrades ?? []) {
+      if (typeof trade === "string" && trade.trim() !== "") seen.add(trade);
+    }
+  }
+  // Trades the definition offers on every finding, whatever the category.
+  const standard = (snapshot as { standardTrades?: unknown } | null | undefined)?.standardTrades;
+  if (Array.isArray(standard)) {
+    for (const trade of standard) {
       if (typeof trade === "string" && trade.trim() !== "") seen.add(trade);
     }
   }
