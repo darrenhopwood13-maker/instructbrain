@@ -1,44 +1,27 @@
-# Fix sign-in emails (magic links, password resets, sign-up confirmations)
+# Fix the reset link landing page + brand the sign-in emails
 
-## The situation
+## Problem 1 — the reset link opens the QR code screen, not the password form
 
-The app already sends its own report and distribution emails through Resend — that key is saved and working. But **sign-in emails** (magic links, password resets, sign-up confirmations) are sent by Supabase itself, using Supabase's default shared mail service. That service is heavily rate-limited and unreliable — which is why people can get locked out of their own accounts.
+**What's happening:** the password-reset email drops you on the app's home page carrying your sign-in token. The home page sees a signed-in visitor and sends you straight to the dashboard — which is where the QR card lives. You never reach the "set a new password" screen.
 
-The fix is to point Supabase's sign-in emails at your Resend account. Almost all of this lives in two dashboards — it is mostly a settings job, not a code change.
+**Fix (code change, one file):** the home page will check the link before redirecting. If the link carries a password-reset token, you go to the "Set a new password" screen. If it carries a sign-in token, you go to the sign-in callback. Only then does a signed-in visitor get sent to the dashboard. Works no matter how the email provider builds the link.
 
-## What you need to do (about 10 minutes, no coding)
+## Problem 2 — the sign-in emails are not instructBrain branded
 
-**1. Get your Resend API key**
-- Open resend.com → API Keys, and copy the key (starts with `re_`).
-- The app's saved copy is encrypted, so grab it from Resend directly. If you've lost it, create a new key there.
+Supabase sends these emails from its own templates, and they can only be changed in the Supabase dashboard — I can't reach them from the code. What I can do is everything except the final paste:
 
-**2. Turn on custom email in Supabase**
-- Open https://supabase.com/dashboard/project/krwphsejinmlwvtwugwk/auth/smtp
-- Enable **Custom SMTP** and enter:
-  - Host: `smtp.resend.com`
-  - Port: `465`
-  - Username: `resend`
-  - Password: your Resend API key
-  - Sender email: `noreply@instructbrain.com` (must be on your verified domain)
-  - Sender name: `instructBrain`
-- Save. Supabase will send a test email to confirm it works.
+**I will create:** four ready-to-paste branded email templates (magic link, password reset, sign-up confirmation, change of email), matching the app — navy header with the instructBrain wordmark, white body, orange button, and the discreet "instructBrain — An instructSite Company" footer. Delivered as files you can open, copy, and paste.
 
-**3. Raise the email rate limit**
-- Open https://supabase.com/dashboard/project/krwphsejinmlwvtwugwk/auth/rate-limits
-- Raise **Rate limit for sending emails** from the default (2/hour) to something sensible like **30–60/hour** — enough for a team signing in and resetting passwords without inviting abuse.
-- Save.
+**You then paste them (about 5 minutes):**
+1. Open https://supabase.com/dashboard/project/krwphsejinmlwvtwugwk/auth/templates
+2. For each of the four templates, replace the body with the matching branded version and save.
+3. The button link in each template (`{{ .ConfirmationURL }}`) is already in place — don't change that line.
 
-**4. Quick check**
-- From the app, sign out and use "Email me a sign-in link" — the link should arrive within a minute.
-- Try "Forgot password" too.
+**Also while you're in the dashboard (fixes the root cause properly):**
+- Open https://supabase.com/dashboard/project/krwphsejinmlwvtwugwk/auth/url-configuration
+- Add `https://instructbrain.com/auth/reset-password` and `https://instructbrain.com/auth/callback` to the allowed redirect URLs. The code fix above covers you either way, but this makes the emails land on the right screen directly.
 
-## What I will do (once you've confirmed it works)
-
-1. Update the warning box on the organisation settings screen so it no longer shouts at you once sign-in email is healthy — it becomes a quiet "configured" note instead of a red warning.
-2. Check the Supabase auth logs to confirm sign-in emails are going out cleanly.
-
-## What does not change
-
-- Report and distribution emails — already on Resend, untouched.
-- No database changes, no code changes until you've done the dashboard steps.
-- Nothing sends automatically — this is only about the sign-in emails arriving reliably.
+## Checks afterwards
+- Request a password reset from the sign-in screen — the email should arrive branded, and the link should open the "Set a new password" screen.
+- Request a magic link — same branding, link signs you in.
+- Run the full test suite after the code change.
