@@ -61,8 +61,18 @@ function Landing() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
 
-  // A signed-in visitor never needs the sales page.
+  // A signed-in visitor never needs the sales page — unless the URL carries
+  // sign-in tokens from an email link. Those must reach the auth screens
+  // first: recovery tokens go to the password screen, everything else to the
+  // sign-in callback. Without this, a reset link that lands on "/" bounces
+  // the person to the dashboard instead of the password form.
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("access_token")) {
+      const target = hash.includes("type=recovery") ? "/auth/reset-password" : "/auth/callback";
+      window.location.replace(`${target}${hash}`);
+      return;
+    }
     if (!loading && user) navigate({ to: "/dashboard", replace: true });
   }, [loading, user, navigate]);
 
