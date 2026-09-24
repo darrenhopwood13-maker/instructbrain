@@ -311,6 +311,13 @@ export function tradesOf(snapshot: SurveyTypeSnapshot | null | undefined): strin
       if (typeof trade === "string" && trade.trim() !== "") seen.add(trade);
     }
   }
+  // Trades the definition offers on every finding, whatever the category.
+  const standard = (snapshot as { standardTrades?: unknown } | null | undefined)?.standardTrades;
+  if (Array.isArray(standard)) {
+    for (const trade of standard) {
+      if (typeof trade === "string" && trade.trim() !== "") seen.add(trade);
+    }
+  }
   return [...seen];
 }
 

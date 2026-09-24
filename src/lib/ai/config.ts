@@ -160,3 +160,6 @@ export function estimateCostUsd(
 
 /** Fallback cap when an organisation has none set. */
 export const DEFAULT_MONTHLY_COST_CAP_USD = 25;
+
+/** Trade suggestions at or above this confidence can be confirmed in one press. */
+export const BULK_TRADE_CONFIRM_THRESHOLD = 0.8;
