@@ -1,72 +1,22 @@
-# Why photo uploads feel slow — and what I would change
+# One-press trade confirmation, with Principal contractor as a standard trade
 
-## What is actually happening
-
-The app never shrinks a photograph, and it shouldn't — the AI needs the full-size
-picture to see a hairline crack. A phone photo is 4–8 MB, so 30 photographs is
-roughly 150–250 MB going up a site 4G connection. That is the floor.
-
-But on top of that, each photograph currently does more work than it needs to,
-and some of it happens before anything starts uploading:
-
-1. **Nothing uploads until every photograph has been copied into memory.** When
-   you pick 30 photographs, the app reads all of them, one after another, before
-   the first byte goes up. On a phone that is several seconds of nothing visibly
-   happening. (This copy exists for a good reason — Android takes the photo away
-   mid-upload otherwise — but it doesn't have to block the queue.)
-2. **Each photograph is read twice.** Once to copy it, once again to read the
-   date and location from it.
-3. **Two more uploads per photograph after the original.** A small preview image
-   is made and uploaded, and for iPhone formats a second full-size copy is made
-   and uploaded as well. The photograph isn't counted as done until those finish.
-4. **The preview image is made on the same thread as the screen**, so the app
-   also feels sluggish while a batch runs.
-5. **Twelve at once on one site connection.** Twelve uploads share the same
-   uplink, so each one crawls, progress bars barely move, and any that time out
-   get retried — which costs more time than it saves.
-
-## What I would change
-
-- **Start uploading the first photograph immediately** and keep copying the rest
-  in the background, so the queue is never waiting on the whole selection.
-- **Read the date and location from the copy already in memory** instead of
-  reading the file a second time.
-- **Upload the original, write the row, show it as done** — then make and upload
-  the small preview afterwards, in the background. A missing preview already
-  can't block anything; this makes that true in practice.
-- **Move preview-making off the screen thread** so scrolling and tapping stay
-  smooth during a batch.
-- **Adapt how many upload at once to the connection**: around 4 on a slow mobile
-  connection, up to 12 on good Wi-Fi, instead of always 12. Fewer at once on a
-  weak signal is genuinely faster and far less likely to time out.
-- **Show honest progress**: photographs done / total, plus megabytes remaining,
-  so a slow connection reads as slow rather than as broken.
+## What you will see
+- On the Review step of any report that uses trades (Site condition, Snag identifier and any other template with trades), a single button above the list: **Confirm all trades 80% or over (N)**. N is how many findings have no trade yet and an AI suggestion at 80% or higher.
+- Pressing it opens a short confirmation listing those findings and their suggested trades. Press **Confirm** and every one of them gets its suggested trade, recorded as confirmed by you, with the usual target dates.
+- Findings below 80%, or with no suggestion, stay unassigned. You pick those as you do now. **Principal contractor** now appears in every trade dropdown.
+- Any confirmed trade can still be changed afterwards, exactly as today.
+- The button only shows when N is more than zero. It never appears on issued reports or on templates without trades.
 
 ## What does not change
-
-- Full-resolution photographs still go to the AI. No resizing, ever.
-- EXIF date and location still read from the original bytes, before anything else.
-- Photographs still appear in the order you added them, not the order they finish.
-- Item numbering, retries, resume, duplicate detection and cancel all behave as now.
-- Any AI failure still becomes **Not assessed**, never a pass.
+- Nothing is confirmed until you press the button. Nothing sends automatically.
+- The AI's suggestion, its confidence and its reasoning are all still kept, separately from your decision.
+- Confidential (person-related) findings still stay out of every subcontractor send.
+- Reports already issued keep their frozen template.
+- Other templates, the compliance register, the property inventory layout and distribution.
 
 ## Technical notes
-
-- `photos-panel.tsx`: replace the up-front `snapshotFiles(selected)` with a
-  lazy per-task snapshot so the queue starts on the first file; derive
-  `CONCURRENCY` from `navigator.connection.effectiveType` (`4g`/Wi-Fi → 12,
-  `3g` → 4, `2g`/`slow-2g` → 2), clamped by the queue's existing limit.
-- `photo-service.ts` `uploadPhoto`: pass the already-read `bytes` into
-  `readProvenance` instead of `readProvenanceFromFile`; move
-  `uploadThumbnail` (and the HEIC analysis twin) after the row insert and
-  fire them without awaiting, patching `thumbnail_path` / `analysis_path`
-  when they land.
-- `thumbnail.ts`: run `createImageBitmap` + `OffscreenCanvas` inside a small
-  worker when available; existing synchronous path stays as the fallback, and
-  the module still shares no code with the analysis derivative (invariant 3
-  test unchanged).
-- `upload-queue.ts`: unchanged public behaviour; concurrency is supplied by the
-  caller as today.
-- Tests: queue still honours the clamp; lazy snapshot still yields the exact
-  original bytes; provenance read from bytes matches the file path; a failed
-  thumbnail leaves the photo row intact and analysable.
+- New definition versions (insert, never mutate) for every template that has trades, adding "Principal contractor" to its trades list. One ordered migration on the external Supabase project. New reports pick up the new version; existing reports keep their snapshot.
+- The 80% threshold is a named config value (`BULK_TRADE_CONFIRM_THRESHOLD = 0.8`) in `src/lib/ai/config.ts`, not a magic number.
+- `review-list.tsx`: compute eligible findings (`!assignedTrade && aiSuggestedTrade && aiTradeConfidence >= threshold && !isConfidential-gating unchanged`). A real dialog, keyboard reachable, with 44px targets.
+- The route adds `onAssignTradeMany`, which reuses the existing `onAssignTrade` path for each finding (derived due date, `confirmed_by` = current user, `stateAfterAssignment`, audited `before`) so the audit trail is identical to confirming one at a time.
+- Tests: below-threshold and null suggestions are never assigned; already-assigned findings are untouched; the AI suggestion is preserved; the button is hidden when N=0, when the report is issued and on templates without trades; new definition versions include Principal contractor and issued snapshots don't change. Full suite runs before and after.
