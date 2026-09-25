@@ -29,4 +29,4 @@
 - [x] Replace report action clutter with Issue, Share and conditional Add to project.
 - [x] Simplify the report stages and remove repeated report commands.
 - [x] Remove duplicate On site hand-off controls and audit remaining authenticated screens.
-- [ ] Verify all report types, accessibility, mobile layouts and the complete test suite.
+- [x] Verify all report types, accessibility, mobile layouts and the complete test suite.
