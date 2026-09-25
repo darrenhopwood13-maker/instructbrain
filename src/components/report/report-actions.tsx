@@ -56,7 +56,7 @@ export function ReportActions({
   document: ReportDocument;
   resultView?: ResultView;
   prepareSummary?: boolean;
-  onAddToProject?: () => void;
+  onAddToProject?: (() => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
@@ -138,7 +138,7 @@ export function ReportActions({
     mutationFn: async () => {
       const share = await createShareLink({
         reportId: document.report.id,
-        organisationId: document.organisation.id,
+        organisationId: document.organisation?.id ?? "",
         days: 30,
       });
       const url = shareUrlForToken(share.token);
@@ -240,7 +240,7 @@ export function ReportActions({
               <Link
                 to="/reports/$id/print"
                 params={{ id: document.report.id }}
-                search={{ view: resultView }}
+                search={{ auto: undefined, view: resultView }}
               >
                 <Eye aria-hidden="true" className="size-4" />
                 Preview report
