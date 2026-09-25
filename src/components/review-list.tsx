@@ -23,6 +23,7 @@ import {
   resolveStatus,
   requiresTradeAssignment,
   reviewShortcuts,
+  aiCaptureFieldsOf,
   type StatusDefinition,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
@@ -68,6 +69,7 @@ export function ReviewList({
   tradeOptions = [],
   onAssignTrade,
   onAddTradeToDirectory,
+  onEditText,
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
@@ -82,6 +84,11 @@ export function ReviewList({
   /** Persists a human's trade decision and its derived target date. */
   onAssignTrade?: (findingId: string, assignment: TradeAssignment) => Promise<void>;
   onAddTradeToDirectory?: (trade: string) => void;
+  /** Persists a person's correction of the description and, where declared, the item label. */
+  onEditText?: (
+    findingId: string,
+    edit: { findingText: string; captureFields?: Record<string, string> },
+  ) => Promise<void>;
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -101,6 +108,11 @@ export function ReviewList({
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [unresolvedOnly, setUnresolvedOnly] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState("");
+  const [draftItem, setDraftItem] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
   // Stable review order: unresolved `not_assessed` items sort to the top when
   // first seen, and nothing reorders underneath the reviewer afterwards.
@@ -187,6 +199,11 @@ export function ReviewList({
   // A minimal record template carries no repairs, so no remedial box is shown.
   const showRemedial =
     !usesRoomSchedule && !isMinimalBriefTemplate((snapshot as { id?: string }).id);
+  // Only templates that declare an `item` capture field get an editable item name.
+  const itemField = useMemo(
+    () => aiCaptureFieldsOf(snapshot).find((field) => field.id === "item") ?? null,
+    [snapshot],
+  );
   const causeGuidance =
     derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
 
@@ -286,10 +303,19 @@ export function ReviewList({
 
     if (key === "j" || event.key === "ArrowDown") {
       event.preventDefault();
-      setActive((i) => Math.min(i + 1, items.length - 1));
+      if (unresolvedOnly) goToFinding(nextUnresolved(active, 1));
+      else setActive((i) => Math.min(i + 1, items.length - 1));
     } else if (key === "k" || event.key === "ArrowUp") {
       event.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
+      if (unresolvedOnly) goToFinding(nextUnresolved(active, -1));
+      else setActive((i) => Math.max(i - 1, 0));
+    } else if (key === "n") {
+      event.preventDefault();
+      goToFinding(nextUnresolved(active, 1));
+    } else if (key === "e" && onEditText) {
+      event.preventDefault();
+      const current = items[active];
+      if (current) startEdit(current);
     } else if (key === "enter") {
       event.preventDefault();
       confirmActive();
@@ -329,6 +355,59 @@ export function ReviewList({
   const confirmed = items.length - unconfirmed;
 
   const firstNotAssessed = resolved.findIndex((status) => status.id === NOT_ASSESSED_ID);
+
+  /** Next (or previous) not-assessed finding from `from`, wrapping; stays put if none. */
+  function nextUnresolved(from: number, direction: 1 | -1): number {
+    const total = items.length;
+    for (let step = 1; step <= total; step++) {
+      const index = (((from + direction * step) % total) + total) % total;
+      if (resolved[index]?.id === NOT_ASSESSED_ID) return index;
+    }
+    return from;
+  }
+
+  useEffect(() => {
+    if (notAssessedCount === 0 && unresolvedOnly) setUnresolvedOnly(false);
+  }, [notAssessedCount, unresolvedOnly]);
+
+  function startEdit(item: Finding) {
+    setEditingId(item.id);
+    setDraftText(item.description ?? "");
+    setDraftItem(item.captureFields?.["item"] ?? "");
+  }
+
+  async function saveEdit(item: Finding, index: number, andNext: boolean) {
+    if (!onEditText) return;
+    const findingText = draftText.trim();
+    const label = draftItem.trim();
+    setSavingEdit(true);
+    try {
+      await onEditText(item.id, {
+        findingText,
+        ...(itemField ? { captureFields: { item: label } } : {}),
+      });
+      applyOverride(item.id, {
+        description: findingText,
+        title: findingText.split("\n")[0]?.trim() || item.title,
+        aiDrafted: false,
+        captureFields: { ...(item.captureFields ?? {}), ...(itemField ? { item: label } : {}) },
+      });
+      setEditingId(null);
+      toast.success("Wording saved", {
+        description:
+          resolved[index]?.id === NOT_ASSESSED_ID
+            ? "Now choose a status below to resolve this item."
+            : "Marked as edited by you.",
+      });
+      if (andNext) goToFinding(nextUnresolved(index, 1));
+    } catch (error) {
+      toast.error("That change could not be saved", {
+        description: error instanceof Error ? error.message : "Nothing was written to the report.",
+      });
+    } finally {
+      setSavingEdit(false);
+    }
+  }
 
   const tradeEligible = showTrade ? bulkTradeEligible(items) : [];
   const confirmTrades = async () => {
@@ -419,6 +498,21 @@ export function ReviewList({
             onClick={() => goToFinding(Math.max(firstNotAssessed, 0))}
           >
             Go to first unresolved
+          </Button>
+          <Button
+            size="sm"
+            variant={unresolvedOnly ? "brand" : "quiet"}
+            aria-pressed={unresolvedOnly}
+            className="min-h-11"
+            onClick={() => {
+              const turningOn = !unresolvedOnly;
+              setUnresolvedOnly(turningOn);
+              if (turningOn && resolved[active]?.id !== NOT_ASSESSED_ID) {
+                goToFinding(Math.max(firstNotAssessed, 0));
+              }
+            }}
+          >
+            Unidentified only · {notAssessedCount} left
           </Button>
         </div>
       ) : null}
@@ -585,8 +679,12 @@ export function ReviewList({
         <Button
           variant="quiet"
           className="min-h-11"
-          disabled={active >= items.length - 1}
-          onClick={() => setActive((i) => Math.min(i + 1, items.length - 1))}
+          disabled={!unresolvedOnly && active >= items.length - 1}
+          onClick={() =>
+            unresolvedOnly
+              ? goToFinding(nextUnresolved(active, 1))
+              : setActive((i) => Math.min(i + 1, items.length - 1))
+          }
         >
           Next
           <ChevronRight aria-hidden="true" className="size-4" />
@@ -653,7 +751,9 @@ export function ReviewList({
                   <StatusPill status={status} />
                 </span>
               </div>
-              <p className="mt-2 break-words font-semibold leading-snug">{item.title}</p>
+              <p className="mt-2 break-words font-semibold leading-snug">
+                {item.captureFields?.["item"]?.trim() || item.title}
+              </p>
               <p className="mt-1 break-words text-sm text-muted-foreground">
                 {item.location} · {item.trade}
               </p>
@@ -685,6 +785,64 @@ export function ReviewList({
                     )}
                   </p>
                 </FieldCard>
+
+                {onEditText && editingId === item.id ? (
+                  <div className="space-y-3 rounded-xl border border-border bg-surface-sunken p-3">
+                    {itemField ? (
+                      <div>
+                        <label htmlFor={`item-${item.id}`} className="eyebrow block text-muted-foreground">
+                          {itemField.label}
+                        </label>
+                        <input
+                          id={`item-${item.id}`}
+                          value={draftItem}
+                          maxLength={60}
+                          placeholder="e.g. Radiator valve"
+                          onChange={(event) => setDraftItem(event.target.value)}
+                          className="mt-2 h-11 w-full rounded-md border border-input bg-surface-raised px-3 text-base"
+                        />
+                      </div>
+                    ) : null}
+                    <div>
+                      <label htmlFor={`desc-${item.id}`} className="eyebrow block text-muted-foreground">
+                        Description
+                      </label>
+                      <textarea
+                        id={`desc-${item.id}`}
+                        value={draftText}
+                        rows={5}
+                        onChange={(event) => setDraftText(event.target.value)}
+                        className="mt-2 w-full rounded-md border border-input bg-surface-raised p-3 text-base leading-relaxed"
+                      />
+                    </div>
+                    <div className="grid gap-2 sm:flex sm:flex-wrap">
+                      <Button
+                        variant="brand"
+                        className="min-h-11"
+                        disabled={savingEdit}
+                        onClick={() => void saveEdit(item, index, notAssessedCount > 1)}
+                      >
+                        {notAssessedCount > 1 ? "Save and next" : "Save"}
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        className="min-h-11"
+                        disabled={savingEdit}
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : onEditText ? (
+                  <Button
+                    variant="quiet"
+                    className="min-h-11 w-full sm:w-auto"
+                    onClick={() => startEdit(item)}
+                  >
+                    {itemField ? "Edit item name and description" : "Edit description"}
+                  </Button>
+                ) : null}
 
                 {showCause ? (
                   <FieldCard
