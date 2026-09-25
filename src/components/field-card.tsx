@@ -26,6 +26,7 @@ export function FieldCard({
   popOutDescription,
   className,
   emphasis = "default",
+  expandable = true,
 }: {
   label: string;
   badge?: ReactNode;
@@ -38,6 +39,8 @@ export function FieldCard({
   popOutDescription?: string;
   className?: string;
   emphasis?: "default" | "flag";
+  /** Whether the inline preview also offers a full-screen reading dialog. */
+  expandable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
@@ -69,29 +72,33 @@ export function FieldCard({
         {children}
       </div>
 
-      <Button
-        type="button"
-        variant="quiet"
-        className="mt-3 w-full min-h-11 justify-center sm:w-auto"
-        onClick={() => setOpen(true)}
-      >
-        <Maximize2 aria-hidden="true" className="mr-1.5 size-4" />
-        Open {label.toLowerCase()}
-      </Button>
+      {expandable ? (
+        <>
+          <Button
+            type="button"
+            variant="quiet"
+            className="mt-3 min-h-11 w-full justify-center sm:w-auto"
+            onClick={() => setOpen(true)}
+          >
+            <Maximize2 aria-hidden="true" className="mr-1.5 size-4" />
+            Open {label.toLowerCase()}
+          </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto rounded-t-2xl">
-          <DialogHeader>
-            <DialogTitle className="editorial-title">{label}</DialogTitle>
-            <DialogDescription>
-              {popOutDescription ?? "The complete text, at a comfortable reading size."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-w-prose break-words text-base leading-relaxed">
-            {popOut ?? children}
-          </div>
-        </DialogContent>
-      </Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto rounded-t-2xl">
+              <DialogHeader>
+                <DialogTitle className="editorial-title">{label}</DialogTitle>
+                <DialogDescription>
+                  {popOutDescription ?? "The complete text, at a comfortable reading size."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-w-prose break-words text-base leading-relaxed">
+                {popOut ?? children}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
     </section>
   );
 }

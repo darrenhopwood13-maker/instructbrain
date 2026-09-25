@@ -53,6 +53,10 @@ describe("property inventory", () => {
     expect(findingsRuleForPhoto(snapshot, { _photo_role: "inventory_detail" })?.findingsPerPhoto).toBe("one");
 
     expect(layout?.kind).toBe("inventory_room_schedule");
+    expect(propertyInventoryDefinition.aiGuidance?.["remedialGuidance"]).toContain(
+      "records condition only",
+    );
+    expect(propertyInventoryDefinition.requiresLifecycle).not.toBe(true);
     expect(layout?.columns).toMatchObject({
       item: "Item",
       description: "Description",
