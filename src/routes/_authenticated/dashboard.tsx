@@ -85,15 +85,15 @@ function CollapsibleSection({
   const [open, setOpen] = useState(false);
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mt-6">
-      <div className="flex items-center gap-3">
+      <div className={action ? "grid gap-2 sm:flex sm:items-center sm:gap-3" : "flex items-center gap-3"}>
         <CollapsibleTrigger
-          className={`flex min-h-11 flex-1 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 ${
+          className={`flex min-h-11 min-w-0 w-full flex-1 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 ${
             tone === "fail"
               ? "border-fail/30 bg-fail-soft hover:border-fail/50"
               : "border-border bg-surface-raised hover:border-brand-blue/40"
           }`}
         >
-          <span id={id} className="editorial-title flex items-center gap-2 text-base font-semibold">
+          <span id={id} className="editorial-title flex min-w-0 flex-wrap items-center gap-2 text-base font-semibold">
             {tone === "fail" ? (
               <AlertTriangle aria-hidden="true" className="size-4 shrink-0 text-fail" />
             ) : null}
@@ -211,7 +211,7 @@ function Dashboard() {
         action={
           <Link
             to="/reports"
-            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-brand-accent-ink"
+            className="ml-auto inline-flex min-h-11 shrink-0 items-center gap-1 px-1 text-sm font-semibold text-brand-accent-ink"
           >
             All reports
             <ArrowRight aria-hidden="true" className="size-4" />

@@ -17,6 +17,7 @@ import {
   definesField,
   derivedFieldsOf,
   regulatoryReferencesOf,
+  reportLayoutOf,
   resolveCategory,
   resolveSeverity,
   resolveStatus,
@@ -182,8 +183,10 @@ export function ReviewList({
   const showReference = definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
   const showTrade = requiresTradeAssignment(snapshot) && !!onAssignTrade;
+  const usesRoomSchedule = reportLayoutOf(snapshot)?.kind === "inventory_room_schedule";
   // A minimal record template carries no repairs, so no remedial box is shown.
-  const showRemedial = !isMinimalBriefTemplate((snapshot as { id?: string }).id);
+  const showRemedial =
+    !usesRoomSchedule && !isMinimalBriefTemplate((snapshot as { id?: string }).id);
   const causeGuidance =
     derivedFields.find((field) => field.id === "likely_cause")?.guidance ?? null;
 
@@ -674,6 +677,7 @@ export function ReviewList({
                 <FieldCard
                   label="Description"
                   popOutDescription="What the assessment observed in the photograph."
+                  expandable={!usesRoomSchedule}
                 >
                   <p className="whitespace-pre-wrap">
                     {item.description || item.note || (
