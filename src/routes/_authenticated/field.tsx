@@ -1,9 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Camera, Monitor, Send } from "lucide-react";
+import { ArrowRight, Camera, Monitor } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { InstallBar } from "@/components/field/install-bar";
-import { SendToDashboardControl } from "@/components/field/send-to-dashboard";
 import { Button } from "@/components/ui/button";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
@@ -94,20 +93,6 @@ function FieldCockpit() {
                   </span>
                 </Link>
 
-                <SendToDashboardControl
-                  report={{ id: report.id, title: report.title }}
-                  trigger={(openSend) => (
-                    <Button
-                      type="button"
-                      variant="quiet"
-                      className="mt-3 min-h-11 w-full"
-                      onClick={openSend}
-                    >
-                      <Send aria-hidden="true" className="mr-1.5 size-4" />
-                      Send to the dashboard
-                    </Button>
-                  )}
-                />
               </li>
             ))}
           </ul>

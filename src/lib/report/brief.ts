@@ -199,6 +199,8 @@ export type ReportBrief = {
   advisoryFooter: boolean;
   specialRequest: string;
   findingsPerPhoto: FindingsPerPhoto;
+  /** Draft an editable report summary after every finding is human-confirmed. */
+  draftSummary: boolean;
   /** Snapshot of every survey type this report covers, keyed by definition id. */
   surveyTypes?: Array<{ id: string; label: string }>;
 };
@@ -212,6 +214,7 @@ export const EMPTY_BRIEF: ReportBrief = {
   advisoryFooter: false,
   specialRequest: "",
   findingsPerPhoto: "template",
+  draftSummary: false,
   surveyTypes: [],
 };
 
@@ -269,6 +272,7 @@ export function coerceBrief(value: unknown): ReportBrief | null {
       typeof raw["specialRequest"] === "string" ? raw["specialRequest"] : "",
     ),
     findingsPerPhoto: findingsPerPhotoById(raw["findingsPerPhoto"]),
+    draftSummary: boolOr(raw["draftSummary"], false),
     surveyTypes,
   };
 }

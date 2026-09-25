@@ -22,3 +22,11 @@
 ## Sign-in emails
 - [x] Recovery/magic links landing on dashboard — route hash tokens to the right auth screen
 - [x] Branded Supabase auth email templates (paste-into-dashboard HTML)
+
+## Simplified report journey
+- [x] Standardise Take photo and Add photos controls at narrow phone widths.
+- [x] Reduce AI brief options and add the Draft report summary toggle.
+- [x] Replace report action clutter with Issue, Share and conditional Add to project.
+- [x] Simplify the report stages and remove repeated report commands.
+- [x] Remove duplicate On site hand-off controls and audit remaining authenticated screens.
+- [x] Verify all report types, accessibility, mobile layouts and the complete test suite.

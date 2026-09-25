@@ -206,6 +206,7 @@ export async function loadReportDocument(
       synthesisConfirmed: report["synthesis_confirmed"] === true,
       coverPhotoId: (report["cover_photo_id"] as string | null) ?? null,
       outputLanguage: (report["output_language"] as string | null) ?? "en",
+      draftSummary: coerceBrief(report["brief"])?.draftSummary ?? false,
 
     },
     project: project
