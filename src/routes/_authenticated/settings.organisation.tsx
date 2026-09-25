@@ -198,7 +198,8 @@ function OrganisationSettings() {
         </form>
       )}
 
-      {role === "owner" && organisationId ? (
+      {void role}
+      {isPlatformAdmin && organisationId ? (
         <DeleteOrganisationZone
           organisationId={organisationId}
           organisationName={organisation?.name ?? "this organisation"}
