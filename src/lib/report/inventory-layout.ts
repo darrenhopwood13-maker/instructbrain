@@ -234,14 +234,18 @@ export function inventoryItemWithPhotoLabel(
   return `${inventoryItemLabel(finding)} · ${inventoryPhotoReference(finding, document?.snapshot)}`;
 }
 
-function firstSentenceFragment(value: string): string {
+/** Short fallback label: the first clause only, capped at a word boundary, no ellipsis. */
+export function shortItemLabel(value: string): string {
   const first = value
     .replace(/^not assessed automatically:\s*/i, "")
-    .split(/[.;\n]/)[0]
+    .split(/[.,;:\n(]|\s[-–—]\s/)[0]
     ?.replace(/\s+/g, " ")
     .trim();
   if (!first) return "";
-  return first.length > 54 ? `${first.slice(0, 51).trim()}...` : first;
+  if (first.length <= 30) return first;
+  const cut = first.slice(0, 30);
+  const space = cut.lastIndexOf(" ");
+  return (space > 10 ? cut.slice(0, space) : cut).trim();
 }
 
 export function inventoryItemTableLabel(
@@ -252,7 +256,7 @@ export function inventoryItemTableLabel(
     finding.captureFields["item"]?.trim() ||
     finding.captureFields["item_name"]?.trim() ||
     finding.captureFields["object"]?.trim();
-  const inferred = firstSentenceFragment(finding.findingText);
+  const inferred = shortItemLabel(finding.findingText);
   const base = explicit || inferred || "Unidentified item";
   const label = finding.statusId === "not_assessed" ? "Unidentified item" : base;
   return `${label}${inventoryPhotoReferenceSuffix(finding, document?.snapshot)}`;
