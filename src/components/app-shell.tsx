@@ -5,7 +5,7 @@ import { useSession, signOut } from "@/lib/auth";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
-import { HelpSheet } from "@/components/help-sheet";
+import { HelpSheet, OPEN_HELP_EVENT } from "@/components/help-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +57,13 @@ function AccountMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/settings/account">{t("nav.account")}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            window.dispatchEvent(new Event(OPEN_HELP_EVENT));
+          }}
+        >
+          {t("nav.help")}
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/settings/organisation">{t("nav.organisation")}</Link>

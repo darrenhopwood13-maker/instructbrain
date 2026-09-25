@@ -8,6 +8,7 @@ export const STRINGS = {
   "nav.field": "On site",
   "nav.projects": "Projects",
   "nav.organisation": "Organisation",
+  "nav.help": "Help",
   "nav.directory": "Directory",
   "nav.account": "Account",
   "nav.admin": "Admin",
