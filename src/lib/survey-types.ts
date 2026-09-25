@@ -90,6 +90,13 @@ export type ReferenceDefinition = {
 
 export type AiGuidance = Record<string, string>;
 
+/** A per-observation field the AI is asked to return inside `capture_fields`. Data, not code. */
+export type AiCaptureField = {
+  id: string;
+  label: string;
+  guidance?: string;
+};
+
 export type SurveyDefinition = {
   id: string;
   version: number;
@@ -99,6 +106,8 @@ export type SurveyDefinition = {
   statuses: StatusDefinition[];
   severityScale?: SeverityDefinition[];
   captureFields?: CaptureField[];
+  /** Per-observation fields the AI fills; inert unless the definition declares them. */
+  aiCaptureFields?: AiCaptureField[];
   /** Generic category list — keyed by whatever the definition provides. */
   hazardCategories?: CategoryDefinition[];
   snagCategories?: CategoryDefinition[];
@@ -256,6 +265,17 @@ export function captureFieldsOf(
       ...field,
       type: FIELD_TYPES.includes(field.type) ? field.type : "text",
     }));
+}
+
+/** Per-observation fields this definition asks the AI to return. Empty unless declared. */
+export function aiCaptureFieldsOf(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): AiCaptureField[] {
+  const raw = Array.isArray(snapshot?.aiCaptureFields) ? snapshot.aiCaptureFields : [];
+  return raw.filter(
+    (field): field is AiCaptureField =>
+      isRecord(field) && typeof field["id"] === "string" && typeof field["label"] === "string",
+  );
 }
 
 /**
