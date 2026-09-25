@@ -199,6 +199,7 @@ export function parseEnvelope(raw: unknown): Envelope {
       involves_person: item["involves_person"] === true,
       likely_cause: text(item["likely_cause"]),
       regulatory_reference: text(item["regulatory_reference"]),
+      capture_fields: captureFields(item["capture_fields"]),
     }));
 
   return {
@@ -276,7 +277,18 @@ export function toDraftFinding(
       ? "the model's confidence was below the threshold for this survey type."
       : null;
 
+  // Only fields the definition declares are kept; anything else is dropped.
+  const declared = aiCaptureFieldsOf(snapshot);
+  const aiCaptureFields: Record<string, string> = {};
+  if (status !== NOT_ASSESSED_ID) {
+    for (const field of declared) {
+      const value = observation.capture_fields?.[field.id]?.trim();
+      if (value) aiCaptureFields[field.id] = value;
+    }
+  }
+
   return {
+    ...(Object.keys(aiCaptureFields).length > 0 ? { ai_capture_fields: aiCaptureFields } : {}),
     status,
     severity,
     severity_rationale: observation.severity_rationale,
