@@ -296,18 +296,8 @@ function ReportWorkspace() {
               document={doc}
               resultView={resultView}
               prepareSummary={tab === "output"}
+              onAddToProject={!project ? () => setAttaching(true) : undefined}
             />
-            {!project ? (
-              <Button
-                type="button"
-                variant="quiet"
-                className="min-h-11 w-full sm:w-auto"
-                onClick={() => setAttaching(true)}
-              >
-                <FolderInput aria-hidden="true" className="size-4" />
-                Add to project
-              </Button>
-            ) : null}
           </div>
         ) : null}
 

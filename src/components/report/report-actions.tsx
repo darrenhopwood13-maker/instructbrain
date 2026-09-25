@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Loader2, Send, Share2, Unlock } from "lucide-react";
+import {
+  AlertTriangle,
+  Download,
+  Eye,
+  FolderInput,
+  Link2,
+  Loader2,
+  Send,
+  Share2,
+  Smartphone,
+  Unlock,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,9 +24,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { issueBlockers, type ReportDocument } from "@/lib/report/document";
-import { issueReport, reopenReport } from "@/lib/report/report-data";
+import { createShareLink, issueReport, reopenReport } from "@/lib/report/report-data";
+import { shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
 import { itemLabels } from "@/lib/item-label";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
@@ -27,17 +46,17 @@ import {
 import { ReportLanguageControl } from "@/components/report/report-language";
 import type { ResultView } from "@/lib/report/grouping";
 
-
-
-/** The report header has one issue action and one device-aware share action. */
+/** The report header has one issue action and one Share menu holding every way out. */
 export function ReportActions({
   document,
   resultView = "severity",
   prepareSummary = false,
+  onAddToProject,
 }: {
   document: ReportDocument;
   resultView?: ResultView;
   prepareSummary?: boolean;
+  onAddToProject?: () => void;
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
@@ -115,13 +134,44 @@ export function ReportActions({
     summaryStarted,
   ]);
 
-  const pdf = useMutation({
+  const link = useMutation({
     mutationFn: async () => {
+      const share = await createShareLink({
+        reportId: document.report.id,
+        organisationId: document.organisation.id,
+        days: 30,
+      });
+      const url = shareUrlForToken(share.token);
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+      return { url, copied };
+    },
+    onSuccess: async ({ url, copied }) => {
+      await queryClient.invalidateQueries({ queryKey: ["report-shares", document.report.id] });
+      toast.success(copied ? "Link copied" : "Link created", {
+        description: `${url} — works for 30 days.`,
+        duration: 10000,
+      });
+    },
+    onError: (error) =>
+      toast.error("The link could not be created", {
+        description: error instanceof Error ? error.message : "Unknown error.",
+      }),
+  });
+
+  const pdf = useMutation({
+    mutationFn: async (mode: "download" | "share") => {
       const result = await buildPdf({ data: { reportId: document.report.id, view: resultView } });
       const bytes = pdfBytesFromBase64(result.content);
-      const outcome = canShare
-        ? await sharePdfBytes(bytes, result.filename, document.report.title)
-        : await savePdfBytes(bytes, result.filename);
+      const outcome =
+        mode === "share"
+          ? await sharePdfBytes(bytes, result.filename, document.report.title)
+          : await savePdfBytes(bytes, result.filename);
       return { filename: result.filename, outcome };
     },
     onSuccess: (result) => {
@@ -169,20 +219,55 @@ export function ReportActions({
             Issue report
           </Button>
         )}
-        <Button
-          type="button"
-          variant="quiet"
-          className="min-h-11 w-full sm:w-auto"
-          disabled={pdf.isPending}
-          onClick={() => pdf.mutate()}
-        >
-          {pdf.isPending ? (
-            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          ) : (
-            <Share2 aria-hidden="true" className="size-4" />
-          )}
-          Share
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="quiet"
+              className="min-h-11 w-full sm:w-auto"
+              disabled={pdf.isPending || link.isPending}
+            >
+              {pdf.isPending || link.isPending ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <Share2 aria-hidden="true" className="size-4" />
+              )}
+              Share
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem asChild className="min-h-11">
+              <Link
+                to="/reports/$id/print"
+                params={{ id: document.report.id }}
+                search={{ view: resultView }}
+              >
+                <Eye aria-hidden="true" className="size-4" />
+                Preview report
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="min-h-11" onSelect={() => link.mutate()}>
+              <Link2 aria-hidden="true" className="size-4" />
+              Create link
+            </DropdownMenuItem>
+            <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
+              <Download aria-hidden="true" className="size-4" />
+              Download report
+            </DropdownMenuItem>
+            {canShare ? (
+              <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("share")}>
+                <Smartphone aria-hidden="true" className="size-4" />
+                Share via device
+              </DropdownMenuItem>
+            ) : null}
+            {onAddToProject ? (
+              <DropdownMenuItem className="min-h-11" onSelect={onAddToProject}>
+                <FolderInput aria-hidden="true" className="size-4" />
+                Add to project
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <IssueDialog
