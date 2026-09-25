@@ -36,3 +36,21 @@ export const adminSetPlan = createServerFn({ method: "POST" })
     await setOrganisationPlan(context.supabase as never, data.organisationId, data.plan);
     return { ok: true };
   });
+
+export const adminEverything = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { listEverything } = await import("@/lib/admin/admin.server");
+    return listEverything(context.supabase as never);
+  });
+
+export const adminDeleteDirectoryEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ({
+    id: requiredString((input as Record<string, unknown> | null)?.["id"], "directory entry"),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { deleteDirectoryEntry } = await import("@/lib/admin/admin.server");
+    await deleteDirectoryEntry(context.supabase as never, data.id);
+    return { ok: true };
+  });
