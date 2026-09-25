@@ -356,7 +356,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 5,
+  version: 6,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
@@ -379,6 +379,14 @@ export const propertyInventoryDefinition: SurveyDefinition = {
     },
     { id: "count", label: "Quantity", type: "number", hint: "How many of this item are present" },
   ],
+  aiCaptureFields: [
+    {
+      id: "item",
+      label: "Item",
+      guidance:
+        "A short item label of one to three words naming the object, such as 'Oak dining table' or 'Radiator'. No sizes, no quantities, no condition.",
+    },
+  ],
   aiGuidance: {
     persona: `Recording an inventory of contents, fixtures and fittings at a property. You write as an inventory clerk would: name the object, describe it very briefly, and comment on its condition. Nothing more.
 
@@ -390,7 +398,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     multiFindingGuidance:
       "Return one entry per item worth recording, and no more. Where several of the same item appear in one photograph, record them once and set the quantity — never one entry per copy. Group small like-for-like contents that would be listed together (crockery, cushions, books, tools) into a single entry with a quantity. Do not split one object into several entries, do not record the same object twice, and do not pad the list with items already recorded from another photograph of the same room.",
     descriptionGuidance:
-      "Write the entry as: the object and a very brief description, then one short sentence on its condition. For example 'Oak dining table, approximately 1.8m, seats six. Light surface scratches to the top; joints sound.' Do not exceed two sentences.",
+      "Return the object's short label in the item capture field. Then write the entry as a very brief description followed by one short sentence on its condition: what it is made of, its approximate size and any quantity detail, then its condition. For example 'Approximately 1.8m, seats six. Light surface scratches to the top; joints sound.' Do not exceed two sentences and do not begin by repeating the item label in full.",
     remedialGuidance:
       "This survey type records condition only. Return remedial as null — no works are being specified.",
     failCriteria:
