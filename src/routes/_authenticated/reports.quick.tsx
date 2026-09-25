@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Camera, ImagePlus, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
+import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import { TemplateSelect } from "@/components/template-select";
 import {
   Select,
@@ -50,11 +51,6 @@ import {
   type ReportToneId,
   type ReportTypeId,
 } from "@/lib/report/brief";
-import {
-  deleteReportTemplate,
-  listReportTemplates,
-  saveReportTemplate,
-} from "@/lib/report/templates.functions";
 
 type CustomReportSearch = { type?: string | undefined; project?: string | undefined };
 
@@ -116,16 +112,11 @@ function CustomReport() {
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
   const project = (projects.data ?? []).find((item) => item.id === projectId) ?? null;
 
-  const loadTemplates = useServerFn(listReportTemplates);
-  const storeTemplate = useServerFn(saveReportTemplate);
-  const removeTemplate = useServerFn(deleteReportTemplate);
-
   const [templateId, setTemplateId] = useState<string>(
     systemDefinitions.some((definition) => definition.id === typeParam)
       ? (typeParam as string)
       : (systemDefinitions[0]?.id ?? ""),
   );
-  const [presetId, setPresetId] = useState<string>("record");
   const [tone, setTone] = useState<ReportToneId>(DEFAULT_TONE_ID);
   const [specialRequest, setSpecialRequest] = useState("");
   const [reportType, setReportType] = useState<ReportTypeId>("assessment");
@@ -133,11 +124,10 @@ function CustomReport() {
   const [includeSeverity, setIncludeSeverity] = useState(true);
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
+  const [draftSummary, setDraftSummary] = useState(false);
   const [docTitle, setDocTitle] = useState("");
   const [docSubtitle, setDocSubtitle] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [templateName, setTemplateName] = useState("");
-  const [savedTemplateId, setSavedTemplateId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
   // The template explanation shows only until the template is known — a
   // remembered brief or a deliberate choice — and never nags after that.
@@ -166,7 +156,6 @@ function CustomReport() {
           setTemplateId(saved["templateId"] as string);
           setTemplateKnown(true);
         }
-        if (typeof saved["presetId"] === "string") setPresetId(saved["presetId"]);
         if (typeof saved["tone"] === "string") setTone(toneById(saved["tone"]).id);
         if (typeof saved["reportType"] === "string") {
           setReportType(reportTypeById(saved["reportType"]));
@@ -179,6 +168,7 @@ function CustomReport() {
           setAdvisoryFooter(saved["advisoryFooter"]);
         }
         setFindingsPerPhoto(findingsPerPhotoById(saved["findingsPerPhoto"]));
+        if (typeof saved["draftSummary"] === "boolean") setDraftSummary(saved["draftSummary"]);
       }
     } catch {
       // A corrupt or blocked store simply means the defaults stand.
@@ -195,13 +185,13 @@ function CustomReport() {
         LAST_BRIEF_KEY,
         JSON.stringify({
           templateId,
-          presetId,
           tone,
           reportType,
           includeFix,
           includeSeverity,
           advisoryFooter,
           findingsPerPhoto,
+          draftSummary,
         }),
       );
     } catch {
@@ -210,21 +200,14 @@ function CustomReport() {
   }, [
     recalled,
     templateId,
-    presetId,
     tone,
     reportType,
     includeFix,
     includeSeverity,
     advisoryFooter,
     findingsPerPhoto,
+    draftSummary,
   ]);
-
-
-  const templates = useQuery({
-    queryKey: ["report-templates", organisationId],
-    queryFn: () => loadTemplates({ data: { organisationId: organisationId as string } }),
-    enabled: Boolean(organisationId),
-  });
 
   const chosenDefinition = useMemo(
     () =>
@@ -265,7 +248,7 @@ function CustomReport() {
   const focusMissing = minimal && sanitiseSpecialRequest(specialRequest) === "";
 
   const brief: ReportBrief = {
-    presetId,
+    presetId: null,
     tone,
     reportType,
     includeFix: stripped ? false : includeFix,
@@ -273,6 +256,7 @@ function CustomReport() {
     advisoryFooter,
     specialRequest: sanitiseSpecialRequest(specialRequest),
     findingsPerPhoto,
+    draftSummary,
     surveyTypes: chosenDefinition
       ? [
           {
@@ -288,20 +272,6 @@ function CustomReport() {
   // The photographs already chosen are held so a dropped signal never loses them.
   const heldFilesRef = useRef<File[]>([]);
   const [heldCount, setHeldCount] = useState(0);
-
-
-
-  const applyPreset = (id: string) => {
-    setPresetId(id);
-    const preset = presetById(id);
-    if (!preset) return;
-    setTone(preset.tone);
-    setReportType(preset.reportType);
-    setIncludeFix(preset.includeFix);
-    setIncludeSeverity(preset.includeSeverity);
-    setAdvisoryFooter(preset.advisoryFooter);
-    if (preset.specialRequest) setSpecialRequest(preset.specialRequest);
-  };
 
   // The report row is created on the first photograph, never on arrival, so an
   // abandoned visit costs nothing against the monthly allowance.
@@ -359,41 +329,6 @@ function CustomReport() {
     start.mutate(heldFilesRef.current);
   };
 
-
-  const saveTemplate = useMutation({
-    mutationFn: async () => {
-      if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      return storeTemplate({
-        data: {
-          organisationId,
-          name: templateName,
-          presetId,
-          tone,
-          reportType,
-          includeFix: brief.includeFix,
-          includeSeverity: brief.includeSeverity,
-          advisoryFooter,
-          specialRequest,
-          surveyTypeIds: [templateId],
-        },
-      });
-    },
-    onSuccess: async () => {
-      setTemplateName("");
-      toast.success("Template saved.");
-      await queryClient.invalidateQueries({ queryKey: ["report-templates", organisationId] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const dropTemplate = useMutation({
-    mutationFn: (id: string) => removeTemplate({ data: { id } }),
-    onSuccess: async () => {
-      toast.success("Template removed.");
-      await queryClient.invalidateQueries({ queryKey: ["report-templates", organisationId] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
 
   const receive = async (list: FileList | null) => {
     const files = list ? Array.from(list) : [];
