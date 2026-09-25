@@ -83,7 +83,7 @@ export type ReportDocument = {
     coverPhotoId: string | null;
     /** The language this report is ISSUED in. English is the record copy. */
     outputLanguage: string;
-    draftSummary: boolean;
+    draftSummary?: boolean;
 
   };
   project: {

@@ -18,7 +18,6 @@ import {
 import { createReport, projectsQuery } from "@/lib/data";
 import { usePlanUsage } from "@/lib/plans";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
-import { Label } from "@/components/ui/label";
 import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
@@ -475,7 +474,8 @@ function CustomReport() {
 
       {!capturing ? (
         <section aria-labelledby="brief-heading" className="mt-8">
-          {/* One control, not a heading and a button saying the same word. */}
+          {/* The report template carries the core instructions. Only the few
+              choices that materially shape this report live here. */}
           <h2 id="brief-heading" className="sr-only">
              AI brief
           </h2>

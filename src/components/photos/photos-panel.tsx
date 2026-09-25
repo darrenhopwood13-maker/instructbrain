@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, ImagePlus, Info, Loader2, Trash2 } from "lucide-react";
+import { Camera, Info, Loader2, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { organisationPlanQuery } from "@/lib/plans";
 import { toast } from "sonner";
 import { setCoverPhoto } from "@/lib/report/branding";
 import { Button } from "@/components/ui/button";
+import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -573,23 +574,14 @@ export function PhotosPanel({
 
 
 
-        <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
-          <Button
-            variant="brand"
-            onClick={() => filePickerRef.current?.click()}
-            disabled={busy || atPhotoCap}
-          >
-            <ImagePlus aria-hidden="true" />
-            Choose from Photos
-          </Button>
-          <Button
-            variant="quiet"
-            onClick={() => cameraRef.current?.click()}
-            disabled={busy || atPhotoCap}
-          >
-            <Camera aria-hidden="true" />
-            Take a photograph
-          </Button>
+        <div className="mt-4 hidden sm:block">
+          <PhotoCaptureActions
+            compact
+            onCamera={() => cameraRef.current?.click()}
+            onGallery={() => filePickerRef.current?.click()}
+            disabled={atPhotoCap}
+            busy={busy}
+          />
         </div>
         {atPhotoCap ? (
           <p className="mt-3 text-sm text-fail-soft">
@@ -741,24 +733,12 @@ export function PhotosPanel({
             Photograph limit reached for this report ({photoCap} on your plan).
           </p>
         ) : (
-          <div className="flex gap-2">
-            <Button
-              variant="brand"
-              className="h-14 flex-1 text-base"
-              onClick={() => cameraRef.current?.click()}
-            >
-              <Camera aria-hidden="true" className="size-5" />
-              Take photo
-            </Button>
-            <Button
-              variant="quiet"
-              className="h-14 flex-1 text-base"
-              onClick={() => filePickerRef.current?.click()}
-            >
-              <ImagePlus aria-hidden="true" className="size-5" />
-              Choose from Photos
-            </Button>
-          </div>
+          <PhotoCaptureActions
+            compact
+            onCamera={() => cameraRef.current?.click()}
+            onGallery={() => filePickerRef.current?.click()}
+            busy={busy}
+          />
         )}
       </div>
 
