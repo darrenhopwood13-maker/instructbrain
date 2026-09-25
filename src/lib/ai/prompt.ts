@@ -1,4 +1,5 @@
 import {
+  aiCaptureFieldsOf,
   aiGuidanceOf,
   allowsMultipleFindingsPerPhoto,
   categoryGroupsOf,
@@ -103,6 +104,14 @@ export function buildSystemPrompt(
       ),
     ),
     list("Trades this survey type recognises", tradesOf(snapshot)),
+    aiCaptureFieldsOf(snapshot).length > 0
+      ? list(
+          "Per-observation capture fields — return capture_fields with exactly these ids on every observation",
+          aiCaptureFieldsOf(snapshot).map((field) =>
+            [`${field.id} — ${field.label}`, field.guidance].filter(Boolean).join(": "),
+          ),
+        )
+      : null,
     definesField(snapshot, "regulatory_reference")
       ? list(
           "Regulatory references — regulatory_reference must be one of these ids exactly, or null. Never invent one",

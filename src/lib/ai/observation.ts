@@ -1,4 +1,5 @@
 import {
+  aiCaptureFieldsOf,
   NOT_ASSESSED_ID,
   allowsMultipleFindingsPerPhoto,
   definesField,
