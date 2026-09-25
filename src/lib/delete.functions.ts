@@ -10,17 +10,37 @@ import type { Database } from "@/integrations/supabase/types";
  * the ordered delete and storage cleanup after verification.
  */
 
-async function assertAdmin(
+async function isPlatformAdmin(supabase: SupabaseClient<Database>): Promise<boolean> {
+  const { data } = await supabase.rpc("is_platform_admin");
+  return data === true;
+}
+
+/** Normal users may delete only what they created; the platform admin may delete anything. */
+async function assertCanDeleteRow(
   supabase: SupabaseClient<Database>,
-  orgId: string,
+  userId: string,
+  table: "reports" | "projects",
+  id: string,
 ) {
+  if (await isPlatformAdmin(supabase)) return;
+  const column = table === "reports" ? "author_id" : "created_by";
+  const { data } = await (supabase.from(table) as any).select(column).eq("id", id).maybeSingle();
+  if (!data || data[column] !== userId) {
+    throw new Error(
+      table === "reports"
+        ? "You can only delete reports you created."
+        : "You can only delete projects you created.",
+    );
+  }
+}
+
+async function assertAdmin(supabase: SupabaseClient<Database>, orgId: string) {
+  if (await isPlatformAdmin(supabase)) return;
   const { data } = await supabase.rpc("has_org_role", {
     _org: orgId,
     _roles: ["owner", "admin"],
   });
-  if (data !== true) {
-    throw new Error("Only owners and admins can delete projects or reports.");
-  }
+  if (data !== true) throw new Error("Only owners and admins can do this.");
 }
 
 export const deleteReport = createServerFn({ method: "POST" })
@@ -34,7 +54,7 @@ export const deleteReport = createServerFn({ method: "POST" })
       .eq("id", reportId)
       .single();
     if (error || !report) throw new Error("Report not found.");
-    await assertAdmin(context.supabase, report.organisation_id);
+    await assertCanDeleteRow(context.supabase, context.userId, "reports", reportId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -70,7 +90,7 @@ export const deleteProject = createServerFn({ method: "POST" })
       .eq("id", projectId)
       .single();
     if (error || !project) throw new Error("Project not found.");
-    await assertAdmin(context.supabase, project.organisation_id);
+    await assertCanDeleteRow(context.supabase, context.userId, "projects", projectId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -177,10 +197,8 @@ export const bulkDeleteReports = createServerFn({ method: "POST" })
       throw new Error("One or more reports could not be found.");
     }
 
-    // Every report must be in an organisation the caller administers.
-    const orgs = [...new Set(reports.map((r) => r.organisation_id))];
-    for (const orgId of orgs) {
-      await assertAdmin(context.supabase, orgId);
+    for (const report of reports) {
+      await assertCanDeleteRow(context.supabase, context.userId, "reports", report.id);
     }
 
     for (const report of reports) {
@@ -203,12 +221,8 @@ export const deleteOrganisation = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ organisationId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { organisationId } = data;
-    const { data: isOwner } = await context.supabase.rpc("has_org_role", {
-      _org: organisationId,
-      _roles: ["owner"],
-    });
-    if (isOwner !== true) {
-      throw new Error("Only the organisation owner can delete the organisation.");
+    if (!(await isPlatformAdmin(context.supabase))) {
+      throw new Error("Only the platform administrator can delete an organisation.");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
