@@ -29,12 +29,7 @@ import type { ResultView } from "@/lib/report/grouping";
 
 
 
-/**
- * The output actions live in the report header. The working set stays visible —
- * language, Download PDF, and the issue gate — and the occasional actions sit
- * behind one More menu so the header stays calm on a phone.
- * Extra menu entries (distribution, attach, delete) arrive as `children`.
- */
+/** The report header has one issue action and one device-aware share action. */
 export function ReportActions({
   document,
   resultView = "severity",

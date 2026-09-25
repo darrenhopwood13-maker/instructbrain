@@ -116,10 +116,11 @@ describe("the QR card and the nav swap", () => {
     expect(card).toContain("Scan to open the instructBrain field app");
   });
 
-  it("keeps the hand-off available from the report screen's More menu", () => {
+  it("does not repeat the field hand-off in the report action bar", () => {
     const actions = readFileSync("src/components/report/report-actions.tsx", "utf8");
-    expect(actions).toContain("SendToDashboardControl");
-    expect(actions).toContain("Send to the dashboard");
+    expect(actions).not.toContain("SendToDashboardControl");
+    expect(actions).not.toContain("Send to the dashboard");
+    expect(actions).toContain("Share");
   });
 
   it("gives the phone's bottom bar the field cockpit, not organisation settings", () => {

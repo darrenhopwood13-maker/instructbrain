@@ -299,7 +299,14 @@ function ReportWorkspace() {
 
       {/* Numbered steps, each showing what is still outstanding, so progress is
           readable at a glance instead of hidden behind three equal tabs. */}
-      <Tabs defaultValue={tab ?? "photos"} className="mt-10">
+      <Tabs
+        value={tab ?? "photos"}
+        onValueChange={(next) => {
+          if (next !== "photos" && next !== "review" && next !== "output") return;
+          void navigate({ search: (current) => ({ ...current, tab: next }), replace: true });
+        }}
+        className="mt-10"
+      >
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="photos">1 · Photos</TabsTrigger>
           <TabsTrigger value="review">
