@@ -71,6 +71,8 @@ export type Finding = {
   /** Presentation split of `note`: the observation and the recommended action. */
   description?: string;
   remedial?: string;
+  /** Per-finding capture fields, e.g. a short `item` label on inventory templates. */
+  captureFields?: Record<string, string>;
 
   /** The human's decision. Null until someone assigns a trade. */
   assignedTrade?: string | null;
