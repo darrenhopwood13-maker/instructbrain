@@ -63,11 +63,15 @@ export function FieldCard({
 
       <div
         className="mt-2.5 overflow-hidden break-words text-sm leading-relaxed"
-        style={{
-          display: "-webkit-box",
-          WebkitBoxOrient: "vertical",
-          WebkitLineClamp: previewLines,
-        }}
+        style={
+          expandable
+            ? {
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: previewLines,
+              }
+            : undefined
+        }
       >
         {children}
       </div>
