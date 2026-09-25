@@ -34,7 +34,6 @@ import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
-import { useOrganisations } from "@/lib/use-organisations";
 import { safeResultView, type ResultView } from "@/lib/report/grouping";
 
 type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView };
@@ -70,7 +69,6 @@ function ReportWorkspace() {
   const navigate = Route.useNavigate();
   const resultView = safeResultView(view);
   const queryClient = useQueryClient();
-  useOrganisations();
   const query = useQuery(reportQuery(id));
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
