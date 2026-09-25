@@ -43,6 +43,7 @@ export type Observation = {
   involves_person: boolean;
   likely_cause: string | null;
   regulatory_reference: string | null;
+  capture_fields?: Record<string, string> | null;
 };
 
 export type Envelope = {
@@ -53,6 +54,8 @@ export type Envelope = {
 
 /** A finding ready to be written. `ref` and `sequence` are assigned by the caller. */
 export type DraftFinding = {
+  /** AI-returned values for fields the definition declares; merged into capture_fields on save. */
+  ai_capture_fields?: Record<string, string>;
   status: string;
   severity: string | null;
   severity_rationale: string | null;
@@ -122,6 +125,18 @@ export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
   if (definesField(snapshot, "regulatory_reference") && references.length > 0) {
     properties["regulatory_reference"] = { type: ["string", "null"], enum: [...references, null] };
   }
+  const aiFields = aiCaptureFieldsOf(snapshot);
+  if (aiFields.length > 0) {
+    const fieldProps = Object.fromEntries(
+      aiFields.map((field) => [field.id, { type: ["string", "null"] }]),
+    );
+    properties["capture_fields"] = {
+      type: "object",
+      additionalProperties: false,
+      required: Object.keys(fieldProps),
+      properties: fieldProps,
+    };
+  }
 
   return {
     type: "object",
@@ -167,6 +182,16 @@ function region(value: unknown): Region | null {
   const [x, y, w, h] = numbers as number[];
   const clamp = (n: number) => Math.min(1, Math.max(0, n));
   return { x: clamp(x!), y: clamp(y!), w: clamp(w!), h: clamp(h!) };
+}
+
+function captureFields(value: unknown): Record<string, string> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const out: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    const cleaned = text(entry);
+    if (cleaned) out[key] = cleaned;
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 /**

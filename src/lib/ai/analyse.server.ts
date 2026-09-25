@@ -515,7 +515,7 @@ export async function analysePhotoForReport(
     }
     const { ref, sequence } = allocated;
 
-    const insertDraft = async (payload: DraftFinding) =>
+    const insertDraft = async ({ ai_capture_fields, ...payload }: DraftFinding) =>
       (await table(client, "findings")
         .insert({
           report_id: input.reportId,
@@ -523,6 +523,7 @@ export async function analysePhotoForReport(
           sequence,
           capture_fields: {
             ...(photo.capture_fields ?? {}),
+            ...(ai_capture_fields ?? {}),
             // Records which survey type assessed this item, so a report
             // covering several types can be sectioned in the document.
             [SURVEY_TYPE_FIELD]: String((snapshot as { id?: unknown }).id ?? ""),
