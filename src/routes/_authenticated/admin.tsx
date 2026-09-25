@@ -280,7 +280,7 @@ function AdminList({
   onDelete,
 }: {
   title: string;
-  query: { data?: Everything; isPending: boolean; error: Error | null };
+  query: { data: Everything | undefined; isPending: boolean; error: Error | null };
   pick: (d: Everything) => Item[];
   what: string;
   onDelete: (id: string) => Promise<void>;
