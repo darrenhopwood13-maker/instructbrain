@@ -68,7 +68,7 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
 };
 
 /** Photo bytes budget, so a photo-heavy report cannot exhaust worker memory. */
-const PHOTO_BUDGET_BYTES = 14 * 1024 * 1024;
+const PHOTO_BUDGET_BYTES = 40 * 1024 * 1024;
 const SINGLE_PHOTO_LIMIT_BYTES = 2.5 * 1024 * 1024;
 
 type Cursor = { page: PDFPage; y: number; pageNumber: number };
@@ -205,15 +205,17 @@ async function embedPhoto(
 ): Promise<PDFImage | null> {
   if (fetcher.cache.has(photo.id)) return fetcher.cache.get(photo.id) ?? null;
 
-  const candidates = [photo.url, photo.thumbUrl].filter((url): url is string => !!url);
+  // Print-sized copy first: a photo drawn in a small box never needs the
+  // full-resolution original, and using originals exhausted the budget after
+  // a handful of photos, leaving the rest of the report without pictures.
+  // (Display copy only — the AI analysis path is separate and untouched.)
+  const candidates = [photo.thumbUrl, photo.url].filter((url): url is string => !!url);
   let embedded: PDFImage | null = null;
 
   for (const url of candidates) {
     if (fetcher.spent >= PHOTO_BUDGET_BYTES) break;
     const bytes = await fetchBytes(url);
     if (!bytes) continue;
-    // An oversized original falls back to the display copy rather than
-    // blowing the attachment size out.
     if (bytes.byteLength > SINGLE_PHOTO_LIMIT_BYTES && url !== candidates[candidates.length - 1]) {
       continue;
     }
@@ -434,6 +436,8 @@ async function drawInventoryOverviewPhotos(
     });
     const image = await embedPhoto(writer, fetcher, photo);
     if (image) drawImageAt(writer.cursor.page, image, x + 4, top - 4, width - 8, height - 8);
+    else
+      writer.cursor.page.drawText("Photo unavailable", { x: x + 6, y: top - height / 2, size: 8, font: writer.regular, color: MUTED });
     writer.cursor.page.drawText(`Photo ${photo.sequence}`, {
       x: x + 6,
       y: top - height + 6,
@@ -541,6 +545,8 @@ async function drawInventoryPhotoPages(
       if (fetcher) {
         const image = await embedPhoto(writer, fetcher, photo);
         if (image) drawImageAt(writer.cursor.page, image, x + 6, top - 42, cardWidth - 12, imageHeight - 12);
+        else
+          writer.cursor.page.drawText("Photo unavailable", { x: x + 10, y: top - 36 - imageHeight / 2, size: 8, font: writer.regular, color: MUTED });
       }
     }
   }
