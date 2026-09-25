@@ -614,6 +614,14 @@ export function ReviewList({
             <li>
               <span className="kbd-hint">↵</span> confirm the focused finding
             </li>
+            <li>
+              <span className="kbd-hint">N</span> next unidentified item
+            </li>
+            {onEditText ? (
+              <li>
+                <span className="kbd-hint">E</span> edit the wording
+              </li>
+            ) : null}
           </ul>
         </DialogContent>
       </Dialog>
