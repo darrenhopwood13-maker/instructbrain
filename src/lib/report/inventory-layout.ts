@@ -256,7 +256,7 @@ export function inventoryItemTableLabel(
     finding.captureFields["item"]?.trim() ||
     finding.captureFields["item_name"]?.trim() ||
     finding.captureFields["object"]?.trim();
-  const inferred = firstSentenceFragment(finding.findingText);
+  const inferred = shortItemLabel(finding.findingText);
   const base = explicit || inferred || "Unidentified item";
   const label = finding.statusId === "not_assessed" ? "Unidentified item" : base;
   return `${label}${inventoryPhotoReferenceSuffix(finding, document?.snapshot)}`;
