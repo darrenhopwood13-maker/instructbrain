@@ -120,3 +120,55 @@ export async function setOrganisationPlan(
     .eq("id", organisationId);
   if (error) throw new Error(error.message);
 }
+
+export type AdminItem = { id: string; name: string; detail: string; organisationName: string };
+
+export async function listEverything(supabase: SupabaseClient): Promise<{
+  projects: AdminItem[];
+  reports: AdminItem[];
+  directory: AdminItem[];
+}> {
+  await assertPlatformAdmin(supabase);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [projects, reports, directory] = await Promise.all([
+    supabaseAdmin
+      .from("projects")
+      .select("id, name, reference, organisations(name)")
+      .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("reports")
+      .select("id, title, status, report_date, organisations(name)")
+      .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("project_directory")
+      .select("id, trade, company_name, projects(name, organisations(name))")
+      .order("created_at", { ascending: false }),
+  ]);
+  return {
+    projects: ((projects.data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      name: r.name,
+      detail: r.reference ?? "No reference",
+      organisationName: r.organisations?.name ?? "",
+    })),
+    reports: ((reports.data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      name: r.title,
+      detail: `${r.status} · ${r.report_date}`,
+      organisationName: r.organisations?.name ?? "",
+    })),
+    directory: ((directory.data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      name: r.company_name,
+      detail: `${r.trade} · ${r.projects?.name ?? ""}`,
+      organisationName: r.projects?.organisations?.name ?? "",
+    })),
+  };
+}
+
+export async function deleteDirectoryEntry(supabase: SupabaseClient, id: string): Promise<void> {
+  await assertPlatformAdmin(supabase);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("project_directory").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}

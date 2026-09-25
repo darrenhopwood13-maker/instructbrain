@@ -1,3 +1,4 @@
+import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +55,7 @@ const swatches = [
 function OrganisationSettings() {
   const { organisationId, role } = useOrganisations();
   const usage = usePlanUsage(organisationId);
+  const { isPlatformAdmin } = useIsPlatformAdmin();
   const query = useQuery(organisationQuery(organisationId));
   const queryClient = useQueryClient();
 
@@ -198,7 +200,8 @@ function OrganisationSettings() {
         </form>
       )}
 
-      {role === "owner" && organisationId ? (
+
+      {isPlatformAdmin && organisationId ? (
         <DeleteOrganisationZone
           organisationId={organisationId}
           organisationName={organisation?.name ?? "this organisation"}

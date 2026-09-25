@@ -1,6 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Trash2 } from "lucide-react";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteOrganisation, deleteProject, deleteReport } from "@/lib/delete.functions";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -14,7 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { adminOrganisations, adminSetPlan, adminSignUps } from "@/lib/admin/admin.functions";
+import {
+  adminDeleteDirectoryEntry,
+  adminEverything,
+  adminOrganisations,
+  adminSetPlan,
+  adminSignUps,
+} from "@/lib/admin/admin.functions";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { planLimitsQuery } from "@/lib/plans";
 
@@ -60,6 +79,12 @@ function AdminConsole() {
     enabled: isPlatformAdmin,
   });
   const plans = useQuery(planLimitsQuery());
+  const everything = useQuery({
+    queryKey: ["admin", "everything"],
+    queryFn: () => adminEverything(),
+    enabled: isPlatformAdmin,
+  });
+  const refreshAll = () => queryClient.invalidateQueries({ queryKey: ["admin"] });
 
   const changePlan = useMutation({
     mutationFn: (input: { organisationId: string; plan: string }) => adminSetPlan({ data: input }),
@@ -155,6 +180,14 @@ function AdminConsole() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <ConfirmDelete
+                      label={`Delete ${org.name}`}
+                      what="the organisation, with every project, report, photograph, register, directory entry and membership in it"
+                      onConfirm={async () => {
+                        await deleteOrganisation({ data: { organisationId: org.id } });
+                        await refreshAll();
+                      }}
+                    />
                   </div>
                 </FieldCard>
               </li>
@@ -162,6 +195,37 @@ function AdminConsole() {
           </ul>
         )}
       </section>
+
+      <AdminList
+        title="Projects"
+        query={everything}
+        pick={(d) => d.projects}
+        what="the project, its reports, photographs and directory"
+        onDelete={async (id) => {
+          await deleteProject({ data: { projectId: id } });
+          await refreshAll();
+        }}
+      />
+      <AdminList
+        title="Reports"
+        query={everything}
+        pick={(d) => d.reports}
+        what="the report, its findings and photographs"
+        onDelete={async (id) => {
+          await deleteReport({ data: { reportId: id } });
+          await refreshAll();
+        }}
+      />
+      <AdminList
+        title="Directory entries"
+        query={everything}
+        pick={(d) => d.directory}
+        what="this company and its contacts from the project directory"
+        onDelete={async (id) => {
+          await adminDeleteDirectoryEntry({ data: { id } });
+          await refreshAll();
+        }}
+      />
 
       <section aria-labelledby="users-heading" className="mt-12">
         <h2 id="users-heading" className="text-lg font-semibold">
@@ -202,5 +266,106 @@ function AdminConsole() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+type Everything = Awaited<ReturnType<typeof adminEverything>>;
+type Item = Everything["projects"][number];
+
+function AdminList({
+  title,
+  query,
+  pick,
+  what,
+  onDelete,
+}: {
+  title: string;
+  query: { data: Everything | undefined; isPending: boolean; error: Error | null };
+  pick: (d: Everything) => Item[];
+  what: string;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const items = query.data ? pick(query.data) : [];
+  return (
+    <section className="mt-12">
+      <h2 className="text-lg font-semibold">{`${title} (${items.length})`}</h2>
+      {query.isPending ? (
+        <LoadingState label={`Loading ${title.toLowerCase()}`} />
+      ) : query.error ? (
+        <p className="mt-3 text-sm text-fail">{query.error.message}</p>
+      ) : items.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">None.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface-raised">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center justify-between gap-3 p-3">
+              <span className="min-w-0">
+                <span className="block truncate font-semibold">{item.name}</span>
+                <span className="block truncate text-sm text-muted-foreground">
+                  {`${item.organisationName} · ${item.detail}`}
+                </span>
+              </span>
+              <ConfirmDelete label={`Delete ${item.name}`} what={what} onConfirm={() => onDelete(item.id)} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ConfirmDelete({
+  label,
+  what,
+  onConfirm,
+}: {
+  label: string;
+  what: string;
+  onConfirm: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      await onConfirm();
+      toast.success("Deleted.");
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="quiet" className="min-h-11 shrink-0 text-fail hover:text-fail" aria-label={label}>
+          <Trash2 aria-hidden="true" className="size-4" />
+          <span className="hidden sm:inline">Delete</span>
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{`${label}?`}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {`This permanently deletes ${what}. This cannot be undone.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="min-h-11">Keep it</AlertDialogCancel>
+          <AlertDialogAction
+            className="min-h-11 bg-fail text-white hover:bg-fail/90"
+            disabled={busy}
+            onClick={(e) => {
+              e.preventDefault();
+              void run();
+            }}
+          >
+            {busy ? "Deleting…" : "Delete permanently"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
