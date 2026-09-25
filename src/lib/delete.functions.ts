@@ -268,12 +268,8 @@ export const getOrganisationDeleteSummary = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ organisationId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { organisationId } = data;
-    const { data: isOwner } = await context.supabase.rpc("has_org_role", {
-      _org: organisationId,
-      _roles: ["owner"],
-    });
-    if (isOwner !== true) {
-      throw new Error("Only the organisation owner can view this.");
+    if (!(await isPlatformAdmin(context.supabase))) {
+      throw new Error("Only the platform administrator can view this.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const count = async (table: "projects" | "reports" | "compliance_runs", filter: Record<string, unknown>) => {
