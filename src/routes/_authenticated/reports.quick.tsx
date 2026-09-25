@@ -667,13 +667,6 @@ function CustomReport() {
                         disabled: false,
                         set: setAdvisoryFooter,
                       },
-                       {
-                         id: "draft-summary",
-                         label: "Draft report summary",
-                         checked: draftSummary,
-                         disabled: false,
-                         set: setDraftSummary,
-                       },
                     ].map((row) => (
                       <label
                         key={row.id}
@@ -694,6 +687,20 @@ function CustomReport() {
                   </div>
                 </fieldset>
               )}
+
+               <label
+                 htmlFor="draft-summary"
+                 className="flex min-h-11 items-center gap-3 rounded-xl border border-border p-3 text-sm"
+               >
+                 <input
+                   id="draft-summary"
+                   type="checkbox"
+                   checked={draftSummary}
+                   onChange={(event) => setDraftSummary(event.target.checked)}
+                   className="size-4 shrink-0 accent-[var(--brand-accent)]"
+                 />
+                 Draft a report summary after findings are confirmed
+               </label>
 
               <CoverBrandingFields
                 organisationId={organisationId}

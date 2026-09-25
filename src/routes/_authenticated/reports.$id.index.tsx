@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
-import { DeleteReportButton } from "@/components/delete-buttons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
@@ -66,13 +65,12 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
 
 function ReportWorkspace() {
   const [attaching, setAttaching] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const { id } = Route.useParams();
   const { tab, view } = Route.useSearch();
   const navigate = Route.useNavigate();
   const resultView = safeResultView(view);
   const queryClient = useQueryClient();
-  const { organisationId } = useOrganisations();
+  useOrganisations();
   const query = useQuery(reportQuery(id));
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
@@ -298,14 +296,6 @@ function ReportWorkspace() {
           </div>
         ) : null}
 
-        <DeleteReportButton
-          reportId={report.id}
-          title={report.title}
-          projectId={project?.id ?? null}
-          open={deleting}
-          onOpenChange={setDeleting}
-          hideTrigger
-        />
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 
