@@ -787,6 +787,25 @@ async function buildInventoryReportPdf(
 
   const photoGroups = inventoryRoomPhotoGroups(document);
 
+  // Fetch every photo a few at a time up front (in page order, so the budget
+  // is spent in reading order) instead of one after another while drawing.
+  if (fetcher) {
+    const queue = [
+      ...rooms.flatMap((room) => room.overviewPhotos.slice(0, 3)),
+      ...photoGroups.rooms.flatMap((group) => group.entries.map((entry) => entry.photo)),
+      ...photoGroups.unallocated.map((entry) => entry.photo),
+    ];
+    let next = 0;
+    await Promise.all(
+      Array.from({ length: 6 }, async () => {
+        while (next < queue.length) {
+          const photo = queue[next++];
+          if (photo) await embedPhoto(writer, fetcher, photo);
+        }
+      }),
+    );
+  }
+
   for (const room of rooms) {
     newPage(writer);
     indexEntries.push({
