@@ -24,8 +24,8 @@ import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document
 import { reportPrintPageClass } from "@/lib/report/print-layout";
 
 describe("property inventory", () => {
-  it("is version 5 and asks for its own document header", () => {
-    expect(propertyInventoryDefinition.version).toBe(5);
+  it("is version 6 and asks for its own document header", () => {
+    expect(propertyInventoryDefinition.version).toBe(6);
     expect(asksForDocumentHeader(propertyInventoryDefinition)).toBe(true);
   });
 
