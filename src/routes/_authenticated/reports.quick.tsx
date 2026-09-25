@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -36,13 +35,11 @@ import { DocumentHeaderFields } from "@/components/report/document-header-fields
 import { useSession } from "@/lib/auth";
 import {
   DEFAULT_TONE_ID,
-  REPORT_PRESETS,
   REPORT_TONES,
   REPORT_TYPES,
   SPECIAL_REQUEST_LIMIT,
   findingsPerPhotoById,
   isMinimalBriefTemplate,
-  presetById,
   reportTypeById,
   sanitiseSpecialRequest,
   toneById,
@@ -445,32 +442,12 @@ function CustomReport() {
               event.target.value = "";
             }}
           />
-          <Button
-            type="button"
-            size="lg"
-            className="min-h-14 w-full text-base"
-            disabled={start.isPending || !organisationId || focusMissing}
-            onClick={() => cameraRef.current?.click()}
-          >
-            {start.isPending ? (
-              <Loader2 aria-hidden="true" className="size-5 animate-spin" />
-            ) : (
-              <Camera aria-hidden="true" className="size-5" />
-            )}
-            Take photo
-          </Button>
-          <div className="mt-2 flex justify-center">
-            <Button
-              type="button"
-              variant="ghost"
-              className="min-h-11 text-sm font-medium"
-              disabled={start.isPending || !organisationId || focusMissing}
-              onClick={() => pickerRef.current?.click()}
-            >
-              <ImagePlus aria-hidden="true" className="size-4" />
-              Choose from Photos
-            </Button>
-          </div>
+           <PhotoCaptureActions
+             onCamera={() => cameraRef.current?.click()}
+             onGallery={() => pickerRef.current?.click()}
+             disabled={!organisationId || focusMissing}
+             busy={start.isPending}
+           />
           {start.isError && heldCount > 0 ? (
             <div
               role="status"
@@ -500,7 +477,7 @@ function CustomReport() {
         <section aria-labelledby="brief-heading" className="mt-8">
           {/* One control, not a heading and a button saying the same word. */}
           <h2 id="brief-heading" className="sr-only">
-            Options
+             AI brief
           </h2>
           <Button
             type="button"
@@ -512,12 +489,11 @@ function CustomReport() {
           >
             <span className="flex items-center gap-2">
               <Sparkles aria-hidden="true" className="size-4" />
-              {briefOpen ? "Hide options" : "Options"}
+               {briefOpen ? "Hide AI brief" : "AI brief"}
             </span>
             <span className="truncate text-xs font-normal">
-              {presetById(presetId)?.label ?? "No preset"} · {toneById(tone).label}
+               {toneById(tone).label}
               {brief.specialRequest ? " · special request" : ""}
-              {project ? ` · ${project.name}` : ""}
             </span>
           </Button>
 
@@ -528,89 +504,6 @@ function CustomReport() {
               className="mt-4 space-y-6 rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
             >
               <h3 className="eyebrow">How it reads</h3>
-
-              {templates.data && templates.data.length > 0 ? (
-                <div>
-                  <label htmlFor="saved-template" className="text-sm font-semibold">
-                    Saved templates
-                  </label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Select
-                      {...(savedTemplateId === "" ? {} : { value: savedTemplateId })}
-                      onValueChange={(id) => {
-                        const template = templates.data?.find((entry) => entry.id === id);
-                        if (!template) return;
-                        setSavedTemplateId(id);
-                        setPresetId(template.presetId ?? "blank");
-                        setTone(toneById(template.tone).id);
-                        setReportType(reportTypeById(template.reportType));
-                        setIncludeFix(template.includeFix);
-                        setIncludeSeverity(template.includeSeverity);
-                        setAdvisoryFooter(template.advisoryFooter);
-                        setSpecialRequest(template.specialRequest);
-                        const first = template.surveyTypeIds[0];
-                        if (first) setTemplateId(first);
-                        toast.success(`Loaded “${template.name}”.`);
-                      }}
-                    >
-                      <SelectTrigger
-                        id="saved-template"
-                        aria-label="Saved templates"
-                        className="h-11 flex-1 bg-surface-raised text-sm"
-                      >
-                        <SelectValue placeholder="Load a saved template…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.data.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-11"
-                      disabled={savedTemplateId === ""}
-                      aria-label="Delete the selected saved template"
-                      onClick={() => {
-                        if (savedTemplateId === "") return;
-                        dropTemplate.mutate(savedTemplateId);
-                        setSavedTemplateId("");
-                      }}
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              <div>
-                <label htmlFor="preset" className="text-sm font-semibold">
-                  Preset
-                </label>
-                <Select value={presetId} onValueChange={applyPreset}>
-                  <SelectTrigger
-                    id="preset"
-                    aria-label="Preset"
-                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
-                  >
-                    <SelectValue placeholder="Choose a preset…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REPORT_PRESETS.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {preset.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {presetById(presetId)?.description}
-                </p>
-              </div>
 
               <div>
                 <label htmlFor="tone" className="text-sm font-semibold">
@@ -670,7 +563,7 @@ function CustomReport() {
               {minimal ? null : (
                 <div>
                   <label htmlFor="special-request" className="text-sm font-semibold">
-                    Special request
+                     Special instruction
                   </label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     In your own words. It changes what the AI emphasises — never whether something
@@ -689,28 +582,6 @@ function CustomReport() {
               )}
 
               <h3 className="eyebrow">What it includes</h3>
-
-              <div>
-                <Label htmlFor="report-project">Project (optional)</Label>
-                <select
-                  id="report-project"
-                  value={projectId}
-                  onChange={(event) => setProjectId(event.target.value)}
-                  disabled={start.isPending}
-                  className="mt-2 h-11 w-full rounded-md border border-border bg-surface-raised px-3 text-sm"
-                >
-                  <option value="">Not in a project</option>
-                  {(projects.data ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} ({item.reference})
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Pick a project and this report is filed under it. Leave it as it is for a
-                  standalone report.
-                </p>
-              </div>
 
               {asksForHeader ? (
                 <DocumentHeaderFields
@@ -796,6 +667,13 @@ function CustomReport() {
                         disabled: false,
                         set: setAdvisoryFooter,
                       },
+                       {
+                         id: "draft-summary",
+                         label: "Draft report summary",
+                         checked: draftSummary,
+                         disabled: false,
+                         set: setDraftSummary,
+                       },
                     ].map((row) => (
                       <label
                         key={row.id}
@@ -816,32 +694,6 @@ function CustomReport() {
                   </div>
                 </fieldset>
               )}
-
-              <div>
-                <label htmlFor="template-name" className="text-sm font-semibold">
-                  Save this setup as a template
-                </label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <input
-                    id="template-name"
-                    value={templateName}
-                    onChange={(event) => setTemplateName(event.target.value)}
-                    placeholder="Template name"
-                    className="min-h-11 flex-1 rounded-xl border border-border bg-surface px-3 text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={!templateName.trim() || saveTemplate.isPending}
-                    onClick={() => saveTemplate.mutate()}
-                  >
-                    {saveTemplate.isPending ? (
-                      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                    ) : null}
-                    Save template
-                  </Button>
-                </div>
-              </div>
 
               <CoverBrandingFields
                 organisationId={organisationId}
