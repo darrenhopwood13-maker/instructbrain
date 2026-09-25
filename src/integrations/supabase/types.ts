@@ -1153,6 +1153,7 @@ export type Database = {
           address: string | null
           client_name: string | null
           created_at: string
+          created_by: string | null
           fallback_recipient_email: string | null
           fallback_recipient_name: string | null
           id: string
@@ -1166,6 +1167,7 @@ export type Database = {
           address?: string | null
           client_name?: string | null
           created_at?: string
+          created_by?: string | null
           fallback_recipient_email?: string | null
           fallback_recipient_name?: string | null
           id?: string
@@ -1179,6 +1181,7 @@ export type Database = {
           address?: string | null
           client_name?: string | null
           created_at?: string
+          created_by?: string | null
           fallback_recipient_email?: string | null
           fallback_recipient_name?: string | null
           id?: string
