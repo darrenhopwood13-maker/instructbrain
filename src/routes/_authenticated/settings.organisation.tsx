@@ -54,6 +54,7 @@ const swatches = [
 function OrganisationSettings() {
   const { organisationId, role } = useOrganisations();
   const usage = usePlanUsage(organisationId);
+  const { isPlatformAdmin } = useIsPlatformAdmin();
   const query = useQuery(organisationQuery(organisationId));
   const queryClient = useQueryClient();
 
@@ -198,7 +199,7 @@ function OrganisationSettings() {
         </form>
       )}
 
-      {void role}
+
       {isPlatformAdmin && organisationId ? (
         <DeleteOrganisationZone
           organisationId={organisationId}
