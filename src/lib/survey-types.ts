@@ -616,7 +616,8 @@ export function definesField(
 export function reviewShortcuts(
   snapshot: SurveyTypeSnapshot | null | undefined,
 ): Array<{ key: string; status: StatusDefinition }> {
-  const used = new Set(["j", "k"]);
+  // j/k move, n jumps to the next not-assessed item, e edits wording.
+  const used = new Set(["j", "k", "n", "e"]);
   const shortcuts: Array<{ key: string; status: StatusDefinition }> = [];
 
   for (const status of statusesOf(snapshot)) {

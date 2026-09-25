@@ -121,6 +121,23 @@ function ReportWorkspace() {
   const onConfirm = (findingId: string, patch: ConfirmPatch) =>
     writeConfirmations([findingId], patch);
 
+  /** A person's correction of the AI wording. The AI's raw output is untouched. */
+  const onEditText = async (
+    findingId: string,
+    edit: { findingText: string; captureFields?: Record<string, string> },
+  ) => {
+    const before = (findings.data ?? []).find((item) => item.id === findingId);
+    const patch: FindingPatch = { finding_text: edit.findingText };
+    if (edit.captureFields) {
+      patch.capture_fields = { ...(before?.captureFields ?? {}), ...edit.captureFields };
+    }
+    await updateFinding(id, findingId, patch, {
+      finding_text: before?.description ?? null,
+      capture_fields: before?.captureFields ?? null,
+    });
+    await refresh();
+  };
+
   /**
    * A human's trade decision. The AI suggestion is never overwritten, and the
    * target date derives from the severity's target window in the snapshot.
@@ -355,6 +372,7 @@ function ReportWorkspace() {
               findings={findings.data ?? []}
               onConfirm={onConfirm}
               onConfirmMany={writeConfirmations}
+              onEditText={onEditText}
               tradeOptions={tradeOptions}
               onAssignTrade={onAssignTrade}
             />

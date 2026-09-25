@@ -443,6 +443,16 @@ function locationOf(captureFields: Record<string, string> | null): string {
   return parts.length > 0 ? parts.join(", ") : "Location not recorded";
 }
 
+function stringFields(value: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (typeof v === "string") out[key] = v;
+    }
+  }
+  return out;
+}
+
 function toFinding(row: FindingRow, photoIds: string[]): Finding {
   return {
     id: row.id,
@@ -461,6 +471,7 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     note: row.remedial_text ?? row.finding_text ?? "",
     description: row.finding_text ?? "",
     remedial: row.remedial_text ?? "",
+    captureFields: stringFields(row.capture_fields),
 
     // The suggestion and the human decision are stored, and read, separately.
     assignedTrade: row.assigned_trade,
