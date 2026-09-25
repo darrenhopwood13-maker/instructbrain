@@ -191,7 +191,7 @@ export function RoomSuggestionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-h-[100dvh] max-w-3xl overflow-y-auto overscroll-contain sm:max-h-[90dvh]">
         <DialogHeader>
           <DialogTitle>Suggested rooms</DialogTitle>
           <DialogDescription>
@@ -274,7 +274,7 @@ export function RoomSuggestionsDialog({
           </div>
         ) : null}
 
-        <DialogFooter>
+        <DialogFooter className="sticky bottom-0 -mx-6 -mb-6 gap-2 border-t border-border bg-background p-4">
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
