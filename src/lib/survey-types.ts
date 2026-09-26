@@ -558,7 +558,7 @@ export function roleIsOutsideSections(
   if (!workflow) return false;
   const roleId = captureFields?.[workflow.roleField];
   if (!roleId) return false;
-  return workflow.roles.find((role) => role.id === roleId)?.outsideSections === true;
+  return (workflow.roles ?? []).find((role) => role.id === roleId)?.outsideSections === true;
 }
 
 export function aiGuidanceOf(

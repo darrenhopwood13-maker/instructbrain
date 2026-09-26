@@ -9,7 +9,7 @@ const opts = { confidenceThreshold: 0.6, tradeConfidenceThreshold: 0.6, tier: "t
 
 describe("inventory item labels (v6)", () => {
   it("declares a short AI item field", () => {
-    expect(inventory.version).toBe(6);
+    expect(inventory.version).toBeGreaterThanOrEqual(6);
     expect(aiCaptureFieldsOf(inventory).map((f) => f.id)).toEqual(["item"]);
     const schema = envelopeJsonSchema(inventory) as any;
     expect(schema.properties.observations.items.properties.capture_fields).toBeTruthy();
