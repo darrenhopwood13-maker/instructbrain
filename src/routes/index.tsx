@@ -126,7 +126,7 @@ function LandingHeader() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             to="/auth/sign-in"
-            className="ib-btn-minline"
+            className="ib-btn-minline orange"
           >
             Sign in
           </Link>

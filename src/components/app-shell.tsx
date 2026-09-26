@@ -34,7 +34,7 @@ function AccountMenu() {
     return (
       <Link
         to="/auth/sign-in"
-        className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+        className="console-control inline-flex min-h-11 items-center rounded-md border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
       >
         {t("action.signIn")}
       </Link>
