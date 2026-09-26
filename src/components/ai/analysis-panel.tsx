@@ -96,7 +96,7 @@ export function AnalysisPanel({
             </p>
           </div>
 
-          <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 -mx-4 flex w-[calc(100%+2rem)] flex-wrap items-end gap-2 border-t border-border bg-surface-raised px-4 py-3 sm:static sm:mx-0 sm:w-auto sm:border-0 sm:p-0">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="min-w-[13rem]">
               <Label htmlFor="analysis-speed" className="text-xs text-muted-foreground">
                 Speed
@@ -122,6 +122,8 @@ export function AnalysisPanel({
             ) : null}
             <Button
               type="button"
+              id="analyse-photos-button"
+              data-pending={run.pendingCount}
               disabled={run.running || run.loading || run.pendingCount === 0}
               onClick={() => setConfirmOpen(true)}
             >
