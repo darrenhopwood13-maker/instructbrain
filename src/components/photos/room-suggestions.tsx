@@ -56,10 +56,14 @@ export function RoomSuggestionsDialog({
   const [rooms, setRooms] = useState<ProposedRoom[]>([]);
   const [unsure, setUnsure] = useState<string[]>([]);
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
+  const [suggestedOverview, setSuggestedOverview] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!proposal) return;
-    setRooms(proposal.rooms.map((room) => ({ ...room })));
+    // Suggested overview photographs are hints only — none is ticked until the
+    // person taps it, so no photograph becomes a room overview by itself.
+    setSuggestedOverview(new Set(proposal.rooms.flatMap((room) => room.overviewPhotoIds)));
+    setRooms(proposal.rooms.map((room) => ({ ...room, overviewPhotoIds: [] })));
     setUnsure([...proposal.unsure]);
     // A room the model was unsure about starts unticked — the person decides.
     setAccepted(
@@ -183,7 +187,9 @@ export function RoomSuggestionsDialog({
         >
           {rooms.find((room) => room.label === label)?.overviewPhotoIds.includes(photoId)
             ? "Overview photo"
-            : "Item photo"}
+            : suggestedOverview.has(photoId)
+              ? "Item photo · suggested overview"
+              : "Item photo"}
         </Button>
       ) : null}
     </li>

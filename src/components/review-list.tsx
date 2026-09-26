@@ -631,7 +631,7 @@ export function ReviewList({
           {photoUrl.get(position.photoId) ? (
             <img
               src={photoUrl.get(position.photoId) ?? ""}
-              alt={`Photograph ${position.photoIndex} of ${position.photoTotal} under review`}
+              alt={`Photo ${position.photoIndex} of ${position.photoTotal} under review`}
               className="mx-auto max-h-[42vh] w-auto rounded-lg object-contain"
             />
           ) : (
@@ -640,9 +640,13 @@ export function ReviewList({
             </p>
           )}
           <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Finding {position.findingIndex} of {position.findingTotal} · Photo{" "}
-            {position.photoIndex} of {position.photoTotal}
+            Photo {position.photoIndex} of {position.photoTotal}
           </p>
+          {position.findingTotal > 1 ? (
+            <p className="mt-1 text-center text-xs text-muted-foreground">
+              {position.findingTotal} findings on this photo · this is {position.findingIndex}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

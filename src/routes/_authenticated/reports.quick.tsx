@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
@@ -7,6 +7,8 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
+import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
+import { photoWorkflowOf } from "@/lib/survey-types";
 import { TemplateSelect } from "@/components/template-select";
 import {
   Select,
@@ -339,6 +341,38 @@ function CustomReport() {
 
   };
 
+  // Continuous camera: the first shot creates the report; later shots go
+  // straight to the report's upload queue, or wait briefly until it is ready.
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const addToReportRef = useRef<((files: File[]) => void) | null>(null);
+  const waitingShotsRef = useRef<File[]>([]);
+  const onPanelReady = useCallback((add: (files: File[]) => void) => {
+    addToReportRef.current = add;
+    if (waitingShotsRef.current.length > 0) {
+      const waiting = waitingShotsRef.current;
+      waitingShotsRef.current = [];
+      add(waiting);
+    }
+  }, []);
+  const onShot = (file: File) => {
+    if (addToReportRef.current) {
+      addToReportRef.current([file]);
+      return;
+    }
+    if (!reportId && !start.isPending && heldFilesRef.current.length === 0) {
+      heldFilesRef.current = [file];
+      setHeldCount(1);
+      start.mutate([file]);
+      return;
+    }
+    waitingShotsRef.current.push(file);
+  };
+  const openCamera = () => {
+    if (canUseInAppCamera()) setCameraOpen(true);
+    else cameraRef.current?.click();
+  };
+
   const capturing = reportId !== null && snapshot !== null;
   const activeSnapshot = snapshot;
 
@@ -442,7 +476,7 @@ function CustomReport() {
             }}
           />
            <PhotoCaptureActions
-             onCamera={() => cameraRef.current?.click()}
+             onCamera={openCamera}
              onGallery={() => pickerRef.current?.click()}
              disabled={!organisationId || focusMissing}
              busy={start.isPending}
@@ -719,7 +753,13 @@ function CustomReport() {
       {capturing && activeSnapshot ? (
         <>
           <section className="mt-8">
-            <PhotosPanel reportId={reportId} snapshot={activeSnapshot} initialFiles={initialFiles} />
+            <PhotosPanel
+              reportId={reportId}
+              snapshot={activeSnapshot}
+              initialFiles={initialFiles}
+              onReady={onPanelReady}
+              onUploadedCount={setUploadedCount}
+            />
           </section>
 
           <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">
@@ -732,6 +772,18 @@ function CustomReport() {
           </div>
         </>
       ) : null}
+      <ContinuousCamera
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onShot={onShot}
+        onFallback={() => cameraRef.current?.click()}
+        uploadedCount={uploadedCount}
+        allowAnalyse={
+          chosenDefinition
+            ? photoWorkflowOf(snapshotOf(chosenDefinition))?.kind !== "inventory_room_schedule"
+            : true
+        }
+      />
     </AppShell>
   );
 }
