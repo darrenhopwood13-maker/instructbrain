@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, CircleDashed, Loader2, RotateCcw, Sparkles, TriangleAlert, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,11 +47,19 @@ function StateIcon({ state }: { state: PhotoRun["state"] }) {
 export function AnalysisPanel({
   reportId,
   snapshot,
+  onRunComplete,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
+  /** Called once when a run this person started finishes, so the flow can move on. */
+  onRunComplete?: () => void;
 }) {
   const run = useAnalysisRun(reportId);
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !run.running && !run.fatalError) onRunComplete?.();
+    wasRunning.current = run.running;
+  }, [run.running, run.fatalError, onRunComplete]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Standard keeps the second opinion. Fast is a single pass, chosen per run.
   const [speed, setSpeed] = useState<"standard" | "fast">("standard");
@@ -114,6 +122,8 @@ export function AnalysisPanel({
             ) : null}
             <Button
               type="button"
+              id="analyse-photos-button"
+              data-pending={run.pendingCount}
               disabled={run.running || run.loading || run.pendingCount === 0}
               onClick={() => setConfirmOpen(true)}
             >
