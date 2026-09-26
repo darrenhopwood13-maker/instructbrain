@@ -65,3 +65,31 @@ The report cards don't fit on a phone screen. Fix:
 - `src/components/review-list.tsx` (around line 642): replace the combined caption with `Photo {photoIndex} of {photoTotal}`, plus a conditional secondary line when `findingTotal > 1`, and update the image `alt` to match. The photo number comes from the persisted sequence position already in `position`.
 - `src/routes/_authenticated/dashboard.tsx` (lines 236–251): add `min-w-0` to the `li` and the `Link`; use a grid header `grid-cols-[minmax(0,1fr)_auto]` that stacks below `sm`; use `line-clamp-2 break-words` on the title in place of `truncate`. The exact cause of the overflow will be checked with a 375px screenshot before the fix.
 - `roadmap.md`: add both items when the plan is approved (it can't be edited in plan mode).
+
+---
+
+# Also in this plan: room overview photos and photos showing twice (Property inventory)
+
+## No automatic room overview photos
+
+When you create rooms, no photo becomes a room overview by itself. Every photo you move into a room goes in as an item photo. You then tap **Room overview** on the ones you want, up to 3 per room.
+
+- Works the same for every room. An inventory can have as many rooms as you need.
+- **Suggest rooms** still proposes overview photos, but none are ticked until you tick them in the proposal.
+- The title-page photo rule doesn't change.
+
+## Each photo shown once on the Photos screen
+
+Today the full photo grid shows every photo, and the room organiser shows the room photos again below it, so moved photos appear twice. Change:
+
+- The main grid shows only photos **not yet in a room**, with the heading "Not in a room · 14".
+- Once a photo is moved into a room, it shows only under that room.
+- **Remove from room** puts it back in the "Not in a room" grid.
+- The title-page photo stays visible in the main grid and keeps its badge.
+- Other report types don't change: they have no rooms, so the grid still shows everything.
+
+## Technical notes (additions)
+
+- Checked: `photos-panel.tsx` passes the full `photos` array to `PhotoGrid` and also to `RoomOrganiser`, which lists each room's overview and item photos. That is the double display. The fix passes `grouped.unallocated` (plus the cover photo) to `PhotoGrid` when `inventoryWorkflow` is set.
+- The automatic overview rule is not in the organiser's allocate action (`allocateToRoomFields` sets only room and order). Step one is to trace it in `room-suggest.ts` (line 244 marks proposed overviews) and in the photo role defaults, then make it opt-in only. `inventory-layout.ts` already uses only explicitly marked overviews (`slice(0,3)` caps them), and there is no positional fallback to remove.
+- Tests: allocating never sets the overview role; suggested overviews start unticked; the inventory grid excludes allocated photos; non-inventory grids stay unchanged.
