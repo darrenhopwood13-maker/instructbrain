@@ -832,7 +832,7 @@ export function PhotosPanel({
             selected={selected}
             onToggle={toggle}
             coverPhotoId={coverPhotoId}
-            onSetCover={inventoryWorkflow ? undefined : (photo) => {
+            {...(!inventoryWorkflow ? { onSetCover: (photo: PhotoRow) => {
               void (async () => {
                 try {
                   await setCoverPhoto(reportId, photo.id);
@@ -844,7 +844,7 @@ export function PhotosPanel({
                   );
                 }
               })();
-            }}
+            } } : {})}
             snapshot={snapshot}
             {...(workflow ? { onSetRole: setPhotoRole } : {})}
             onOpen={(photo) => {

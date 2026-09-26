@@ -42,7 +42,7 @@ export function inventoryReadiness(
   if (!workflow || photos.length === 0) return [];
 
   const coverRoles = new Set(
-    workflow.roles.filter((role) => role.countsAsCover).map((role) => role.id),
+    (workflow.roles ?? []).filter((role) => role.countsAsCover).map((role) => role.id),
   );
   if (workflow.coverRoleId) coverRoles.add(workflow.coverRoleId);
   if (workflow.firstPhotoRoleId) coverRoles.add(workflow.firstPhotoRoleId);

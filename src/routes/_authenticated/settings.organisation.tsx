@@ -178,24 +178,59 @@ function OrganisationSettings() {
 
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Report logo</legend>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+              className="sr-only"
+              aria-label="Choose an organisation logo"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                event.target.value = "";
+                if (file) logoMutation.mutate(file);
+              }}
+              disabled={!canEditLogo || logoMutation.isPending}
+            />
             <div className="flex items-center gap-4 rounded-xl border border-dashed border-border bg-surface-raised p-5">
-              <span
-                aria-hidden="true"
-                className="grid size-12 shrink-0 place-items-center rounded-lg bg-surface-sunken text-brand-blue"
-              >
-                <ImageUp className="size-5" />
-              </span>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Organisation logo"
+                  className="h-12 w-12 shrink-0 rounded-lg border border-border bg-paper object-contain p-1"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="grid size-12 shrink-0 place-items-center rounded-lg bg-surface-sunken text-brand-blue"
+                >
+                  <ImageUp className="size-5" />
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-semibold">
                   {organisation?.logo_path ? "Logo uploaded" : "No logo uploaded"}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  PNG or SVG, at least 512px wide.
+                  {canEditLogo
+                    ? "PNG, JPEG, WebP or SVG, at least 512px wide. Appears on every issued report unless a report has its own logo."
+                    : "Only owners and admins can change the organisation logo."}
                 </p>
               </div>
-              <Button type="button" variant="quiet" className="ml-auto shrink-0" disabled>
-                Upload
-              </Button>
+              {canEditLogo ? (
+                <Button
+                  type="button"
+                  variant="quiet"
+                  className="ml-auto shrink-0"
+                  disabled={logoMutation.isPending}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {logoMutation.isPending
+                    ? "Uploading…"
+                    : organisation?.logo_path
+                      ? "Replace"
+                      : "Upload"}
+                </Button>
+              ) : null}
             </div>
           </fieldset>
 
