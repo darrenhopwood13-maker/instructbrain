@@ -113,6 +113,19 @@ describe("sorting photographs into rooms", () => {
     expect(entries[0]?.room).not.toBeNull();
     expect(entries[1]?.room).toBeNull();
   });
+
+  it("keeps report title photographs outside room groups", () => {
+    const workflowWithTitle = {
+      ...workflow,
+      roles: [{ id: "title", label: "Title", countsAsCover: true }],
+    };
+    const { rooms, unallocated } = groupPhotosByRoom(
+      [photo("a", 1, { room: "Kitchen", _photo_role: "title" })],
+      workflowWithTitle,
+    );
+    expect(rooms).toEqual([]);
+    expect(unallocated).toEqual([]);
+  });
 });
 
 describe("starting a report on a weak signal", () => {

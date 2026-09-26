@@ -585,6 +585,16 @@ export function PhotosPanel({
       if (role?.countsAsCover) {
         await setCoverPhoto(reportId, photo.id);
         setCoverPhotoId(photo.id);
+      } else if (photo.id === coverPhotoId) {
+        const replacement = photos.find(
+          (item) =>
+            item.id !== photo.id &&
+            workflow.roles.find(
+              (candidate) => candidate.id === item.capture_fields?.[workflow.roleField],
+            )?.countsAsCover === true,
+        );
+        await setCoverPhoto(reportId, replacement?.id ?? null);
+        setCoverPhotoId(replacement?.id ?? null);
       }
       await refresh();
       toast.success(role ? `Photograph #${photo.sequence} set as ${role.label}.` : "Photograph type cleared.");

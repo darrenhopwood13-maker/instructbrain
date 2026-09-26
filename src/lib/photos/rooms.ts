@@ -49,6 +49,10 @@ export function groupPhotosByRoom<T extends RoomPhoto>(
   for (const photo of ordered) {
     // Handover evidence (meters, keys) never belongs to a room.
     if (roleIsOutsideSections(workflow, photo.capture_fields)) continue;
+    const role = workflow.roles.find(
+      (item) => item.id === photo.capture_fields?.[workflow.roleField],
+    );
+    if (role?.countsAsCover) continue;
     const label = roomOf(photo, workflow);
     if (label === "") {
       unallocated.push(photo);

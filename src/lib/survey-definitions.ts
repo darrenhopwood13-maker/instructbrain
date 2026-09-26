@@ -444,6 +444,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
         label: "Exterior",
         description: "An exterior evidence photograph. It is not analysed.",
         excludesAi: true,
+        outsideSections: true,
       },
       {
         id: "title_page",
