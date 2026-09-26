@@ -100,7 +100,7 @@ export function HandoverCard({
     ),
   );
 
-  const useSelected = async (target: Target) => {
+  const assignSelected = async (target: Target) => {
     const ids = target.kind === "meter" ? selectedIds.slice(0, 1) : selectedIds;
     if (ids.length === 0) return;
     const patch =
@@ -220,7 +220,7 @@ export function HandoverCard({
                     Choose photo
                   </Button>
                   {selectionHint ? (
-                    <Button variant="quiet" className="min-h-11 w-full" onClick={() => void useSelected({ kind: "meter", slotId: slot.id })}>
+                    <Button variant="quiet" className="min-h-11 w-full" onClick={() => void assignSelected({ kind: "meter", slotId: slot.id })}>
                       Use selected photo
                     </Button>
                   ) : null}
@@ -397,7 +397,7 @@ export function HandoverCard({
           </Button>
         </div>
         {selectionHint ? (
-          <Button variant="quiet" className="min-h-11" onClick={() => void useSelected({ kind: "keys" })}>
+          <Button variant="quiet" className="min-h-11" onClick={() => void assignSelected({ kind: "keys" })}>
             {selectionHint} as {layout.keysTitle.toLowerCase()}
           </Button>
         ) : null}
