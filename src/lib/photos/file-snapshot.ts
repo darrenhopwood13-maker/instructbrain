@@ -1,3 +1,4 @@
+import { deviceProvenanceOf, stampFile } from "@/lib/photos/device-provenance";
 /**
  * Android's camera and gallery hand the page a file *reference*, not the bytes.
  * That reference can be revoked while a large batch is still queued, and the
