@@ -245,10 +245,10 @@
   --background: oklch(1 0 0);
   --foreground: oklch(0.21 0.035 262);
   --surface: oklch(1 0 0);
-  --surface-raised: oklch(1 0 0);
-  --surface-sunken: oklch(0.965 0.006 262);
+  --surface-raised: oklch(0.975 0.012 262);
+  --surface-sunken: oklch(0.955 0.018 262);
 
-  --card: oklch(1 0 0);
+  --card: oklch(0.965 0.018 262);
   --card-foreground: oklch(0.21 0.035 262);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.035 262);
@@ -261,13 +261,12 @@
   --brand-accent-ink: oklch(0.45 0.16 40);
 
   --brand-blue: oklch(0.4 0.11 262);
-  --brand-blue-soft: oklch(0.955 0.02 262);
+  --brand-blue-soft: oklch(0.965 0.018 262);
   --brand-blue-ink: oklch(0.3 0.09 262);
-  --work-blue: oklch(0.48 0.1 258);
-  --work-blue-deep: oklch(0.38 0.09 258);
+  --work-blue: oklch(0.4 0.11 262);
+  --work-blue-deep: oklch(0.34 0.1 262);
   --work-control: oklch(0.975 0.004 262);
-  --work-control-edge: oklch(0.4 0.11 262 / 72%);
-  --work-accent-edge: oklch(0.68 0.21 42 / 72%);
+  --work-control-edge: oklch(0.79 0.025 262);
 
   --primary: oklch(0.52 0.19 38.2);
   --primary-foreground: oklch(1 0 0);
@@ -280,9 +279,9 @@
   --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
-  --border: oklch(0.4 0.11 262 / 48%);
-  --border-strong: oklch(0.4 0.11 262 / 72%);
-  --input: oklch(0.4 0.11 262 / 62%);
+  --border: oklch(0.82 0.022 262);
+  --border-strong: oklch(0.7 0.035 262);
+  --input: oklch(0.76 0.028 262);
   --ring: oklch(0.52 0.19 38.2);
 
   --pass: oklch(0.42 0.11 158);
@@ -301,7 +300,7 @@
   --glass-highlight: oklch(1 0 0 / 0%);
 
   --gradient-panel: none;
-  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%);
+  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 5%);
 
   background-color: var(--surface);
   background-image: none;
@@ -312,27 +311,34 @@
 .work-surface [class*="console-panel"],
 .work-surface [class*="glass-panel"] {
   background-image: none;
-  background-color: var(--surface);
+  background-color: var(--card);
   border: 1px solid var(--border);
-  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
+  box-shadow: var(--shadow-raised);
   backdrop-filter: none;
 }
 
-/* White working screens pair a thin orange keyline with a blue control fill,
-   matching the dashboard actions without darkening the whole workspace. */
+/* White working screens follow the approved editorial reference: orange is
+   reserved for the primary action, while supporting controls stay quiet. */
 .work-surface .glass-orange {
-  background: var(--work-blue);
-  border-color: var(--brand-accent);
+  background: var(--brand-accent);
+  border-color: var(--brand-accent-deep);
   color: var(--primary-foreground);
   text-shadow: none;
-  box-shadow: 0 2px 10px -6px color-mix(in oklab, var(--work-blue) 45%, transparent);
+  box-shadow: 0 2px 8px -6px color-mix(in oklab, var(--brand-accent) 45%, transparent);
 }
 
 .work-surface .glass-orange svg {
   color: currentColor;
 }
 
-/* The light-shell wordmark is the requested orange-and-blue brand lock-up. */
+/* The white-screen lock-up uses the clean reference typography, without
+   altering Audiowide on the established navy console screens. */
+.work-surface .wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 .work-surface .wordmark .text-brand-accent {
   color: var(--brand-accent);
 }
@@ -344,13 +350,11 @@
 .work-surface .glass-navy,
 .work-surface .glass {
   background: var(--brand-blue-soft);
-  border: 1.5px solid var(--brand-accent);
+  border: 1px solid var(--border-strong);
   color: var(--brand-blue-ink);
   text-shadow: none;
   backdrop-filter: none;
-  box-shadow:
-    0 1px 0 oklch(1 0 0) inset,
-    0 2px 8px -5px color-mix(in oklab, var(--brand-accent) 35%, transparent);
+  box-shadow: var(--shadow-raised);
 }
 
 .work-surface .glass-navy svg,
@@ -358,38 +362,36 @@
   color: currentColor;
 }
 
-/* Cards, fields and framed controls use a fine blue edge with an inset orange
-   keyline. Status surfaces and the legal/report `.paper` scope are excluded. */
+/* Cards, fields and framed controls use one fine neutral-blue edge. */
 .work-surface :where(.border-border, .border-input, [class*="border-border/"], [class*="border-input/"]):not(.paper *) {
   border-color: var(--work-control-edge);
-  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
+  box-shadow: var(--shadow-raised);
 }
 
 .work-surface :where(input, textarea, select, [role="combobox"]) {
   min-height: 2.75rem;
 }
 
-/* Portalled menus and dialogs sit outside `.work-surface`; scope them through
-   the active light shell so they receive the same paired keyline. */
+/* Portalled menus and dialogs sit outside `.work-surface`; keep the same fine edge. */
 body:has(.work-surface) :where([role="dialog"], [role="menu"], [role="listbox"]) {
   border-color: var(--work-control-edge);
-  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
+  box-shadow: var(--shadow-raised);
 }
 
 /* Destructive meaning remains in the copy and icon, but white-screen actions
    no longer become a solid red block. */
 body:has(.work-surface) :where(button, [role="button"]).bg-fail,
 body:has(.work-surface) :where(button, [role="button"]).bg-destructive {
-  background: var(--work-blue);
-  border: 1.5px solid var(--brand-accent);
-  color: var(--primary-foreground);
+  background: var(--surface);
+  border: 1px solid var(--fail);
+  color: var(--fail);
   box-shadow: none;
 }
 
 body:has(.work-surface) :where(button, [role="button"]).bg-fail:hover,
 body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover {
-  background: var(--work-blue-deep);
-  border-color: var(--brand-accent-light);
+  background: var(--fail-soft);
+  border-color: var(--fail);
 }
 
 @utility work-choice {
