@@ -26,7 +26,6 @@ import {
   inventoryRoomPhotoGroups,
   inventoryCheckoutComment,
   inventoryConditionLabel,
-  inventoryCoverPhoto,
   inventoryFindingPhotos,
   inventoryItemTableLabel,
   inventoryItemWithPhotoLabel,
