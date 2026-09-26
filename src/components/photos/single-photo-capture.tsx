@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
-import { snapshotFile } from "@/lib/photos/file-snapshot";
+import { snapshotFiles } from "@/lib/photos/file-snapshot";
 
 /**
  * The same capture process as report photos, for screens that need one photo:
@@ -21,7 +21,8 @@ export function useSinglePhotoCapture(onFile: (file: File) => void): {
     async (file: File | undefined | null) => {
       if (!file) return;
       try {
-        onFile(await snapshotFile(file));
+        const [held] = await snapshotFiles([file]);
+        onFile(held ?? file);
       } catch {
         onFile(file);
       }

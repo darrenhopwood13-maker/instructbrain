@@ -1,3 +1,4 @@
+import { useSinglePhotoCapture } from "@/components/photos/single-photo-capture";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -263,8 +264,13 @@ function ComplianceRun() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const fileInput = useRef<HTMLInputElement | null>(null);
   const [photoFor, setPhotoFor] = useState<ComplianceEntry | null>(null);
+  const photoForRef = useRef<ComplianceEntry | null>(null);
+  photoForRef.current = photoFor;
+  const capture = useSinglePhotoCapture((file) => {
+    const entry = photoForRef.current;
+    if (entry) photo.mutate({ entry, file });
+  });
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const photoUrls = useQuery(runPhotosQuery(run?.reportId ?? null));
 
@@ -528,7 +534,7 @@ function ComplianceRun() {
                         variant="outline"
                         onClick={() => {
                           setPhotoFor(entry);
-                          fileInput.current?.click();
+                          capture.takePhoto();
                         }}
                         disabled={photo.isPending}
                       >
@@ -573,19 +579,7 @@ function ComplianceRun() {
         )}
       </section>
 
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="sr-only"
-        aria-label="Photograph of this point"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = "";
-          if (file && photoFor) photo.mutate({ entry: photoFor, file });
-        }}
-      />
+      {capture.element}
 
       <section className="mt-10 border-t border-border pt-6">
         {!locked && blockers.length > 0 ? (
