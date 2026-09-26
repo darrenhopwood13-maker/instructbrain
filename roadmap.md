@@ -30,3 +30,11 @@
 - [x] Simplify the report stages and remove repeated report commands.
 - [x] Remove duplicate On site hand-off controls and audit remaining authenticated screens.
 - [x] Verify all report types, accessibility, mobile layouts and the complete test suite.
+
+## Capture and rooms (26 Sep)
+- [x] Continuous in-app camera: keep shooting, each shot uploads in the background.
+- [x] Analyse as I shoot switch (not for Property inventory).
+- [x] Review shows one photo number; findings-per-photo line only when more than one.
+- [x] Recent reports cards fit narrow phones.
+- [x] No automatic room overview photos; suggested overviews start unticked.
+- [x] Photos in a room no longer also show in the main grid.

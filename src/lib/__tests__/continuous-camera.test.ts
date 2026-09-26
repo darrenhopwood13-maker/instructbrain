@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MIN_LONG_EDGE, trackMeetsMinimum } from "@/components/photos/continuous-camera";
 import { assignUploadSequences } from "@/lib/photos/upload-queue";
-import { buildApplyBatches } from "@/lib/photos/room-suggest";
 
 describe("continuous camera", () => {
   it("refuses a camera track below the analysis minimum", () => {
@@ -18,7 +17,4 @@ describe("continuous camera", () => {
     expect(second[0]!.sequence).toBe(6);
   });
 
-  it("exports room batches without inventing overviews", () => {
-    expect(typeof buildApplyBatches).toBe("function");
-  });
 });
