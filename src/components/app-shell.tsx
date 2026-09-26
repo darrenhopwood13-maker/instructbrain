@@ -131,7 +131,9 @@ export function AppShell({
             <span className="min-w-0">
               <span className="wordmark block truncate text-lg leading-tight sm:text-xl">
                 <span className="text-brand-accent">instruct</span>
-                <span className="text-foreground">Brain</span>
+                <span className={surface === "light" ? "work-wordmark-brain" : "text-foreground"}>
+                  Brain
+                </span>
               </span>
             </span>
           </Link>
