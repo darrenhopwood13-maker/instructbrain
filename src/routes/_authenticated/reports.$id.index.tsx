@@ -49,10 +49,10 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
     const tab = search["tab"];
     const view = safeResultView(search["view"]);
     const flag = search["analyse"];
-    const analyse = flag === true || flag === 1 || flag === "1" || flag === "true" ? true : undefined;
+    const extra = flag === true || flag === 1 || flag === "1" || flag === "true" ? { analyse: true } : {};
     return tab === "review" || tab === "output" || tab === "photos"
-      ? { tab, view, analyse }
-      : { view, analyse };
+      ? { tab, view, ...extra }
+      : { view, ...extra };
   },
   head: () => {
     const title = "Report workspace — instructBrain";
@@ -238,7 +238,10 @@ function ReportWorkspace() {
     if (nextAction.kind === "uploading" || analysisStatus.pending === null) return;
     arrivalHandled.current = true;
     if (nextAction.kind === "analyse") setConfirmSignal((value) => value + 1);
-    void navigate({ search: (current) => ({ ...current, analyse: undefined }), replace: true });
+    void navigate({
+      search: ({ analyse: _dropped, ...rest }) => rest,
+      replace: true,
+    });
   }, [analyse, nextAction.kind, analysisStatus.pending, navigate]);
 
   // Once everything on the review step becomes resolved, offer to move on and
