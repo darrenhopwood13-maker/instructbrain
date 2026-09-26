@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
@@ -156,7 +157,25 @@ function ProjectDashboard() {
         ) : null}
       </header>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor="project-status" className="text-sm font-medium text-muted-foreground">
+            Status
+          </label>
+          <select
+            id="project-status"
+            value={current.status}
+            disabled={setStatus.isPending}
+            onChange={(event) => setStatus.mutate(event.target.value as ProjectStatus)}
+            className="h-9 rounded-lg border border-border bg-surface px-2 text-sm"
+          >
+            {(Object.keys(projectStatusLabels) as ProjectStatus[]).map((status) => (
+              <option key={status} value={status}>
+                {projectStatusLabels[status]}
+              </option>
+            ))}
+          </select>
+        </div>
         <DeleteProjectButton
           projectId={current.id}
           name={current.name}
