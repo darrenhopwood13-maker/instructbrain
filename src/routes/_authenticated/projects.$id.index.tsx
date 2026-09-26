@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   AlarmClock,
@@ -15,7 +15,8 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
-import { overdueItemsQuery, projectQuery, projectReportsQuery } from "@/lib/data";
+import { overdueItemsQuery, projectQuery, projectReportsQuery, updateProjectStatus } from "@/lib/data";
+import { projectStatusLabels, type ProjectStatus } from "@/lib/types";
 import {
   fallbackIsSet,
   fallbackRecipientQuery,
@@ -47,9 +48,20 @@ function ProjectDashboard() {
   const { id } = Route.useParams();
   const { organisationId } = useOrganisations();
   const usage = usePlanUsage(organisationId);
+  const queryClient = useQueryClient();
   const project = useQuery(projectQuery(id));
   const reports = useQuery(projectReportsQuery(id));
   const overdue = useQuery(overdueItemsQuery(id));
+
+  const setStatus = useMutation({
+    mutationFn: (status: ProjectStatus) => updateProjectStatus(id, status),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project", id] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Project status updated.");
+    },
+    onError: (error: Error) => toast.error(error.message || "The status could not be updated."),
+  });
 
   if (project.isPending) {
     return (
