@@ -9,6 +9,12 @@ Your recording shows the Start a report screen after all 46 photos are uploaded,
 - **Draft the findings** also jumps straight to Review. Review is empty before analysis, so even when it works it sends you to a dead end.
 - The report screen has the same overlap problem: the **Analyse photos** bar is also hidden behind Take photo / Add photos on phones.
 
+## The room overview rule (confirmed, unchanged)
+
+- **Room overview photos are never analysed.** That rule is right and stays.
+- **Only you choose the overview photos** — the AI never picks or changes them.
+- **You choose them before analysis starts.** The room checklist blocks the Analyse button until every room has its three overviews, so analysis can never begin before overviews are chosen, and the chosen overviews are always excluded from analysis.
+
 ## What will change
 
 1. **One bottom bar on phones, not two.** The photos area gets one bar at the bottom:
