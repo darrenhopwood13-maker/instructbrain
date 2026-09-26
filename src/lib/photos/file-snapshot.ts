@@ -1,3 +1,4 @@
+import { deviceProvenanceOf, stampFile } from "@/lib/photos/device-provenance";
 /**
  * Android's camera and gallery hand the page a file *reference*, not the bytes.
  * That reference can be revoked while a large batch is still queued, and the
@@ -39,12 +40,13 @@ export async function snapshotFiles(files: File[]): Promise<File[]> {
     try {
       const bytes = await file.arrayBuffer();
       held += bytes.byteLength;
-      snapshots.push(
-        new File([bytes], file.name, {
-          type: file.type,
-          lastModified: file.lastModified,
-        }),
-      );
+      const copy = new File([bytes], file.name, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+      const stamp = deviceProvenanceOf(file);
+      if (stamp) stampFile(copy, stamp); // keep the camera's time and place
+      snapshots.push(copy);
     } catch {
       snapshots.push(file);
     }

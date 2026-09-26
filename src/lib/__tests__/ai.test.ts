@@ -274,14 +274,14 @@ describe("concurrency", () => {
 describe("house voice", () => {
   const voiced: SurveyTypeSnapshot = {
     ...roofing,
-    houseVoice: "You are the instructSite Oracle: ABSTENTION IS NOT HEDGING.",
+    houseVoice: "You are the instructBrain Oracle: ABSTENTION IS NOT HEDGING.",
     aiGuidance: { persona: "Assessing weatherproofing membrane condition." },
   };
 
   it("places the snapshot's house voice before the type-specific persona", () => {
     const prompt = buildSystemPrompt(voiced);
     expect(prompt).toContain("ABSTENTION IS NOT HEDGING.");
-    expect(prompt.indexOf("instructSite Oracle")).toBeLessThan(
+    expect(prompt.indexOf("instructBrain Oracle")).toBeLessThan(
       prompt.indexOf("Assessing weatherproofing membrane condition."),
     );
   });
@@ -326,7 +326,7 @@ describe("intermediate statuses are reachable", () => {
   it("carries the house voice on every system definition, at a published version", () => {
     for (const definition of systemDefinitions) {
       expect(definition.version).toBeGreaterThanOrEqual(1);
-      expect(buildSystemPrompt(definition)).toContain("instructSite Oracle");
+      expect(buildSystemPrompt(definition)).toContain("instructBrain Oracle");
     }
   });
 

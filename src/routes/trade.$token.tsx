@@ -1,3 +1,5 @@
+import { useSinglePhotoCapture } from "@/components/photos/single-photo-capture";
+import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -234,7 +236,7 @@ function ItemCard({
   onMove: (to: LifecycleState) => void;
   onPhoto: (file: File) => void;
 }) {
-  const [inputId] = useState(() => `closeout-${item.id}`);
+  const capture = useSinglePhotoCapture((file) => onPhoto(file));
   const options = allowedTransitions(item.lifecycleState, "subcontractor");
   const severityLabel = resolveSeverity(snapshot, item.severity)?.label ?? null;
 
@@ -325,26 +327,13 @@ function ItemCard({
           </Button>
         ))}
 
-        <label
-          htmlFor={inputId}
-          className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-semibold"
-        >
-          <Camera aria-hidden="true" className="size-4" />
-          Add a close-out photograph
-        </label>
-        <input
-          id={inputId}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="sr-only"
-          disabled={busy}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (file) onPhoto(file);
-          }}
+        <PhotoCaptureActions
+          compact
+          busy={busy}
+          onCamera={capture.takePhoto}
+          onGallery={capture.choosePhoto}
         />
+        {capture.element}
       </div>
     </article>
   );

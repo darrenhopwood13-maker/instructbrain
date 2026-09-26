@@ -155,7 +155,7 @@ export function ReportDocumentView({
  */
 function BrandCredit() {
   return (
-    <p className="mt-10 border-t border-border pt-3 text-center text-[0.6875rem] text-muted-foreground">
+    <p className="report-credit mt-10 border-t border-border pt-3 text-center text-[0.625rem] tracking-wide text-muted-foreground/70">
       {BRAND_CREDIT}
     </p>
   );

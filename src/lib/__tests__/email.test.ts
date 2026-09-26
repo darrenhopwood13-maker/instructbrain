@@ -82,8 +82,8 @@ describe("email templates", () => {
       expect(rendered.text.length).toBeGreaterThan(0);
       expect(rendered.text).not.toContain("<");
       // Brand furniture, on every message.
-      expect(rendered.html).toContain("An instructSite Company");
-      expect(rendered.text).toContain("An instructSite Company");
+      expect(rendered.html).toContain("AN INSTRUCTSITE COMPANY");
+      expect(rendered.text).toContain("AN INSTRUCTSITE COMPANY");
     }
   });
 

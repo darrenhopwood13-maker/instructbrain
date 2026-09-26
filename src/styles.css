@@ -224,6 +224,10 @@
 
   --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
 
+  /* Subtle instructSite orange: rules and edges only; text uses the deeper ink (AA on white). */
+  --paper-accent: oklch(0.68 0.21 42);
+  --paper-accent-ink: oklch(0.5 0.16 42);
+
   background-color: var(--surface);
   color: var(--foreground);
 }
@@ -1049,3 +1053,10 @@
     animation: none !important;
   }
 }
+
+/* Report brand touches — identical in preview, share link and print. */
+.paper article { border-top: 3px solid var(--paper-accent); }
+.paper .eyebrow { color: var(--paper-accent-ink); }
+.paper h2.editorial-title { padding-bottom: 0.375rem; border-bottom: 1px solid color-mix(in oklab, var(--paper-accent) 45%, transparent); }
+.paper thead th:first-child { box-shadow: inset 3px 0 0 var(--paper-accent); }
+.paper .report-credit { font-variant: small-caps; }

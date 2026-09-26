@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
+import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
+import { useSinglePhotoCapture } from "@/components/photos/single-photo-capture";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
@@ -25,6 +27,7 @@ export function CoverBrandingFields({
   disabled?: boolean;
 }) {
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const coverCapture = useSinglePhotoCapture((file) => onCoverFile(file));
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [defaultLogoUrl, setDefaultLogoUrl] = useState<string | null>(null);
@@ -79,6 +82,7 @@ export function CoverBrandingFields({
         photograph can be set as the cover later.
       </p>
 
+      {coverCapture.element}
       <input
         ref={coverInputRef}
         type="file"
@@ -123,16 +127,12 @@ export function CoverBrandingFields({
             </Button>
           </div>
         ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            size="default" className="min-h-11"
+          <PhotoCaptureActions
+            compact
             disabled={disabled}
-            onClick={() => coverInputRef.current?.click()}
-          >
-            <ImagePlus aria-hidden="true" />
-            Choose from Photos
-          </Button>
+            onCamera={coverCapture.takePhoto}
+            onGallery={() => coverInputRef.current?.click()}
+          />
         )}
       </div>
 

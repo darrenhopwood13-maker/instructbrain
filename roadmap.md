@@ -38,3 +38,9 @@
 - [x] Recent reports cards fit narrow phones.
 - [x] No automatic room overview photos; suggested overviews start unticked.
 - [x] Photos in a room no longer also show in the main grid.
+
+## 26 Sep — capture parity + report brand
+- [x] Time and location on in-app camera shots
+- [x] Same camera on compliance, close-out and title-page photos
+- [x] instructBrain footer credit + subtle orange on all reports
+- [ ] Directory logo button restyle (not started)
