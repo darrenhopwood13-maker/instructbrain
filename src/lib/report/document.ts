@@ -84,6 +84,9 @@ export type ReportDocument = {
     /** The language this report is ISSUED in. English is the record copy. */
     outputLanguage: string;
     draftSummary?: boolean;
+    /** Meter readings and keys recorded at handover (raw; see handover.ts). */
+    handover?: unknown;
+
 
   };
   project: {
