@@ -34,7 +34,7 @@ function AccountMenu() {
     return (
       <Link
         to="/auth/sign-in"
-        className="console-control inline-flex min-h-11 items-center rounded-md border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken"
+        className="console-control inline-flex min-h-11 items-center rounded-full border px-3 text-sm font-medium text-foreground transition-colors"
       >
         {t("action.signIn")}
       </Link>
@@ -45,7 +45,7 @@ function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Account — ${user.email ?? "signed in"}`}
-        className="console-control inline-flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+        className="console-control inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm font-medium text-foreground transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
       >
         <UserCog aria-hidden="true" className="size-4 shrink-0" />
         <span className="hidden sm:inline">{t("nav.account")}</span>
