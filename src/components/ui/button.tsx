@@ -10,10 +10,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "glass-orange focus-visible:ring-brand-accent",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        destructive: "border border-destructive bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline: "glass-navy focus-visible:ring-brand-accent",
         secondary: "glass-navy focus-visible:ring-brand-accent",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        ghost: "border border-border bg-transparent hover:bg-accent hover:text-accent-foreground",
         link: "text-brand-accent-ink underline-offset-4 hover:underline",
         brand: "glass-orange focus-visible:ring-brand-accent",
         quiet: "glass font-medium",

@@ -463,7 +463,6 @@
   [role="dialog"] h2,
   [role="dialog"] h3,
   [role="dialog"] [data-radix-dialog-title] {
-    width: 100%;
     text-align: center;
     text-wrap: balance;
   }
@@ -540,7 +539,7 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   :focus-visible {
@@ -551,7 +550,7 @@
 
 @utility editorial-title {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 @utility wordmark {

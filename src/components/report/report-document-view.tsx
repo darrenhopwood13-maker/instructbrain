@@ -263,7 +263,7 @@ function InventoryDocument({
         <div className="mt-5 space-y-8">
           {rooms.map((room) => (
             <section key={room.key} className="break-before-page">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-2">
+              <div className="grid justify-items-center gap-1 border-b border-border pb-2 text-center">
                 <h3 className="editorial-title text-xl font-semibold">{room.label}</h3>
                 <p className="text-sm text-muted-foreground">
                   {room.findings.length} item{room.findings.length === 1 ? "" : "s"}
@@ -795,7 +795,7 @@ function Results({
 
   return (
     <section aria-labelledby="section-results">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="grid justify-items-center gap-3 text-center">
         <h2 id="section-results" className="editorial-title text-xl font-semibold">
           Results
         </h2>
