@@ -233,25 +233,26 @@ function Dashboard() {
             description="Choose what you're making above to start your first one."
           />
         ) : (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ul className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
             {recent.data.map((report) => (
               <li key={report.id} className="min-w-0">
                 <Link
                   to="/reports/$id"
                   params={{ id: report.id }}
-                  className="flex min-w-0 flex-col gap-2 rounded-xl border border-border bg-surface-raised p-4 shadow-raised transition-colors hover:border-brand-blue/40"
+                  className="flex min-w-0 overflow-hidden flex-col gap-2 rounded-xl border border-border bg-surface-raised p-4 shadow-raised transition-colors hover:border-brand-blue/40"
                 >
-                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                  <div className="grid min-w-0 gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
                     <span className="line-clamp-2 min-w-0 flex-1 break-words font-semibold">
                       {report.title}
                     </span>
-                    <span className="shrink-0">
+                    <span className="w-fit shrink-0 self-start">
                       <ReportStatusPill status={report.status} />
                     </span>
                   </div>
-                  <span className="break-words text-xs text-muted-foreground">
-                    {report.isQuick && !report.projectId ? "Custom report" : "Project report"} ·
-                    Updated {report.updated}
+                  <span className="flex min-w-0 flex-col gap-0.5 break-words text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1">
+                    <span>{report.isQuick && !report.projectId ? "Custom report" : "Project report"}</span>
+                    <span className="hidden sm:inline" aria-hidden="true">·</span>
+                    <span><span className="font-medium text-foreground/80">Updated:</span> {report.updated}</span>
                   </span>
                 </Link>
               </li>

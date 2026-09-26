@@ -62,3 +62,9 @@
 - [x] Use Sora for headings, Manrope for standard copy, and retain Audiowide for the wordmark.
 - [x] Justify paragraph copy broadly while preserving functional alignment for controls and deliberately aligned text.
 - [x] Verify the public page and representative app screens at phone and desktop sizes.
+
+## 26 Sep — smartphone report lists
+- [ ] Make Recent reports and All reports use the same phone-safe card structure.
+- [ ] Stack long titles, statuses and report details without horizontal clipping.
+- [ ] Make report selection and bulk deletion usable at 320–375px.
+- [ ] Verify phone and desktop layouts and run the full checks.
