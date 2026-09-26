@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createReport, projectsQuery } from "@/lib/data";
-import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { snapshotFiles } from "@/lib/photos/file-snapshot";
@@ -263,8 +262,6 @@ function CustomReport() {
       : [],
   };
 
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   // The photographs already chosen are held so a dropped signal never loses them.
   const heldFilesRef = useRef<File[]>([]);
   const [heldCount, setHeldCount] = useState(0);
@@ -298,15 +295,6 @@ function CustomReport() {
           surveyTypeIds: [primary.id],
         }),
       );
-      // Optional title-page photo and per-report logo. The report already
-      // exists, so a failure here is a warning — never a discarded report.
-      try {
-        await applyBranding({ organisationId, reportId: id, coverFile, logoFile });
-      } catch {
-        toast.warning("Your title page photo did not save", {
-          description: "The report is saved. Pick any uploaded photograph as the title page.",
-        });
-      }
       return { id, frozen, files };
     },
     onSuccess: async ({ id, frozen, files }) => {
@@ -393,13 +381,13 @@ function CustomReport() {
         </p>
       ) : (
         <section aria-labelledby="type-heading" className="mt-1">
-          <h2
+          <h1
             id="type-heading"
-            className="flex items-center gap-2 text-sm font-semibold text-brand-accent-ink"
+            className="editorial-title flex items-center justify-center gap-2 text-xl font-semibold text-brand-blue sm:text-2xl"
           >
             <Sparkles aria-hidden="true" className="size-4" />
             Report template
-          </h2>
+          </h1>
           <div className="mt-2">
             <TemplateSelect
               id="custom-report-template"

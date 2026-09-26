@@ -20,7 +20,6 @@ import { sectionsFor } from "@/lib/report/sections";
 import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
-  inventoryCoverPhoto,
   inventoryTitlePhotos,
   inventoryItemTableLabel,
   inventoryLayout,

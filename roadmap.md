@@ -90,8 +90,8 @@
 
 ## 26 Sep — simplified report start and inventory photo labels
 - [x] Add Active, Completed and Archived project status in external Supabase.
-- [ ] Simplify report start and attach new reports through an Active project dropdown.
-- [ ] Move organisation logo upload into Organisation settings.
-- [ ] Add one quick inventory photo labelling flow for rooms, overviews, keys, meters, exterior and title photos.
-- [ ] Show up to three chosen title photos on inventory reports and item thumbnails in browser review.
-- [ ] Preserve the existing full-size inventory PDF photograph pages and verify mobile/PDF output.
+- [x] Simplify report start and attach new reports through an Active project dropdown.
+- [x] Move organisation logo upload into Organisation settings.
+- [x] Add one quick inventory photo labelling flow for rooms, overviews, keys, meters, exterior and title photos.
+- [x] Show up to three chosen title photos on inventory reports and item thumbnails in browser review.
+- [x] Preserve the existing full-size inventory PDF photograph pages and verify mobile/PDF output.
