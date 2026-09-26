@@ -1,9 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { nextSequence, uploadPhoto } from "@/lib/photos/photo-service";
-import { brandingPath } from "@/lib/report/logo";
+import { brandingPath, organisationLogoPath } from "@/lib/report/logo";
 
-export { brandingPath, resolveLogoPath } from "@/lib/report/logo";
+export { brandingPath, resolveLogoPath, organisationLogoPath } from "@/lib/report/logo";
 
 /** Upload a logo (or other branding image) into the report's branding folder. */
 export async function uploadBrandingImage(
@@ -70,4 +70,25 @@ export async function setCoverPhoto(reportId: string, photoId: string | null): P
     .update({ cover_photo_id: photoId })
     .eq("id", reportId);
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Upload (or replace) the organisation's saved logo and record its path.
+ * Owners/admins only — enforced both by the `report-photos` storage
+ * policies and by the `orgs_update_admin` RLS policy on `organisations`.
+ */
+export async function uploadOrganisationLogo(file: File, organisationId: string): Promise<string> {
+  const path = organisationLogoPath(organisationId, file.name || "logo.png");
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { upsert: true });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { error: updateError } = await supabase
+    .from("organisations")
+    .update({ logo_path: path })
+    .eq("id", organisationId);
+  if (updateError) throw new Error(updateError.message);
+
+  return path;
 }

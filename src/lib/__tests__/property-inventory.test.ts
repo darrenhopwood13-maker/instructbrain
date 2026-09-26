@@ -24,8 +24,8 @@ import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document
 import { reportPrintPageClass } from "@/lib/report/print-layout";
 
 describe("property inventory", () => {
-  it("is version 7 and asks for its own document header", () => {
-    expect(propertyInventoryDefinition.version).toBe(7);
+  it("is version 8 and asks for its own document header", () => {
+    expect(propertyInventoryDefinition.version).toBe(8);
     expect(asksForDocumentHeader(propertyInventoryDefinition)).toBe(true);
   });
 
@@ -44,8 +44,10 @@ describe("property inventory", () => {
     expect(workflow?.kind).toBe("inventory_room_schedule");
     expect(workflow?.sectionField).toBe("room");
     expect(workflow?.maxOverviewPhotos).toBe(3);
-    expect(photoRoleLabel(snapshot, {}, { isFirstPhoto: true })).toBe("Exterior / title page");
-    expect(photoExcludesFromAnalysis(snapshot, {}, { isFirstPhoto: true })).toBe(true);
+    expect(photoRoleLabel(snapshot, {}, { isFirstPhoto: true })).toBeNull();
+    expect(photoExcludesFromAnalysis(snapshot, {}, { isFirstPhoto: true })).toBe(false);
+    expect(photoExcludesFromAnalysis(snapshot, { _photo_role: "title_page" })).toBe(true);
+    expect(workflow?.roles.find((role) => role.id === "title_page")?.maxPerReport).toBe(3);
     expect(photoExcludesFromAnalysis(snapshot, { _photo_role: "room_overview" })).toBe(true);
     expect(photoExcludesFromAnalysis(snapshot, { _photo_role: "inventory_detail" })).toBe(false);
     expect(photoExcludesFromAnalysis(snapshot, {}, { isCover: true })).toBe(true);

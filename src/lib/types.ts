@@ -14,12 +14,26 @@ export function coerceReportStatus(value: unknown): ReportStatus {
   return value === "in_review" || value === "issued" ? value : "draft";
 }
 
+export type ProjectStatus = "active" | "completed" | "archived";
+
+export const projectStatusLabels: Record<ProjectStatus, string> = {
+  active: "Active",
+  completed: "Completed",
+  archived: "Archived",
+};
+
+/** Unknown persisted values never become anything other than "active" by accident. */
+export function coerceProjectStatus(value: unknown): ProjectStatus {
+  return value === "completed" || value === "archived" ? value : "active";
+}
+
 export type Project = {
   id: string;
   name: string;
   reference: string;
   client: string;
   address: string;
+  status: ProjectStatus;
   openReports: number;
   overdueItems: number;
 };

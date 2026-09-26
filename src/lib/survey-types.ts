@@ -48,6 +48,8 @@ export type PhotoWorkflowRole = {
   maxFindingsPerPhoto?: number;
   /** Evidence photos (e.g. handover) that never belong to a room or section. */
   outsideSections?: boolean;
+  /** Maximum photographs carrying this role across one report. */
+  maxPerReport?: number;
 };
 
 export type PhotoWorkflow = {
@@ -453,6 +455,9 @@ export function photoWorkflowOf(
       ...(role.excludesAi === true ? { excludesAi: true } : {}),
       ...(role.countsAsCover === true ? { countsAsCover: true } : {}),
       ...(role.outsideSections === true ? { outsideSections: true } : {}),
+      ...(Number.isFinite(Number((role as Record<string, unknown>)["maxPerReport"]))
+        ? { maxPerReport: Math.max(1, Number((role as Record<string, unknown>)["maxPerReport"])) }
+        : {}),
       ...(Number.isFinite(Number((role as Record<string, unknown>)["maxFindingsPerPhoto"]))
         ? {
             maxFindingsPerPhoto: Math.max(

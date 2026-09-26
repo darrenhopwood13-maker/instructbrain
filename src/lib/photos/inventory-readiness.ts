@@ -42,10 +42,10 @@ export function inventoryReadiness(
   if (!workflow || photos.length === 0) return [];
 
   const coverRoles = new Set(
-    [workflow.coverRoleId, workflow.firstPhotoRoleId].filter(
-      (value): value is string => typeof value === "string" && value !== "",
-    ),
+    workflow.roles.filter((role) => role.countsAsCover).map((role) => role.id),
   );
+  if (workflow.coverRoleId) coverRoles.add(workflow.coverRoleId);
+  if (workflow.firstPhotoRoleId) coverRoles.add(workflow.firstPhotoRoleId);
   const maxOverviews = workflow.maxOverviewPhotos ?? 3;
 
   const coverChosen =
@@ -81,11 +81,11 @@ export function inventoryReadiness(
   const steps: ReadinessStep[] = [
     {
       id: "cover",
-      label: "Title page photograph chosen",
+      label: "Title page photographs chosen",
       detail: coverChosen
-        ? "The title page photograph is set."
-        : "Pick one photograph to use as the title page.",
-      todo: "Choose a title page photograph",
+        ? "The title page photographs are set."
+        : "Pick up to three photographs to use on the title page.",
+      todo: "Choose title page photographs",
       done: coverChosen,
     },
     {

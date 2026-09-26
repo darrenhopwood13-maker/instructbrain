@@ -356,7 +356,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 7,
+  version: 8,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
@@ -416,8 +416,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     kind: "inventory_room_schedule",
     roleField: "_photo_role",
     sectionField: "room",
-    firstPhotoRoleId: "exterior_cover",
-    coverRoleId: "exterior_cover",
+    coverRoleId: "title_page",
     overviewRoleId: "room_overview",
     detailRoleId: "inventory_detail",
     maxOverviewPhotos: 3,
@@ -442,10 +441,17 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
     roles: [
       {
         id: "exterior_cover",
-        label: "Exterior / title page",
-        description: "The first exterior photograph used on the title page. It is not analysed.",
+        label: "Exterior",
+        description: "An exterior evidence photograph. It is not analysed.",
+        excludesAi: true,
+      },
+      {
+        id: "title_page",
+        label: "Title page",
+        description: "One of up to three photographs shown beneath the title details. It is not analysed.",
         excludesAi: true,
         countsAsCover: true,
+        maxPerReport: 3,
       },
       {
         id: "room_overview",
