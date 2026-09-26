@@ -62,6 +62,8 @@ export function ContinuousCamera({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fixRef = useRef<Fix | null>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  const onFallbackRef = useRef(onFallback);
   const [locationState, setLocationState] = useState<"waiting" | "on" | "off">("waiting");
   const [starting, setStarting] = useState(false);
   const [shots, setShots] = useState<Shot[]>([]);
@@ -69,6 +71,11 @@ export function ContinuousCamera({
   const [analyse, setAnalyse] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+    onFallbackRef.current = onFallback;
+  }, [onOpenChange, onFallback]);
 
   useEffect(() => {
     setAnalyse(analyseWhileShooting());
@@ -117,14 +124,14 @@ export function ContinuousCamera({
         const height = settings.height ?? video?.videoHeight ?? 0;
         if (!trackMeetsMinimum(width, height)) {
           stop();
-          onOpenChange(false);
-          onFallback();
+          onOpenChangeRef.current(false);
+          onFallbackRef.current();
         }
       } catch {
         if (cancelled) return;
         stop();
-        onOpenChange(false);
-        onFallback();
+        onOpenChangeRef.current(false);
+        onFallbackRef.current();
       } finally {
         if (!cancelled) setStarting(false);
       }
@@ -133,7 +140,7 @@ export function ContinuousCamera({
       cancelled = true;
       stop();
     };
-  }, [open, stop, onOpenChange, onFallback]);
+  }, [open, stop]);
 
   // Location while the camera is open. Refused or unavailable → time only.
   useEffect(() => {
