@@ -18,3 +18,24 @@
 - New shared `usePhotoCapture({ single, onFiles })` hook plus the existing `PhotoCaptureActions` and `ContinuousCamera`. It wraps file snapshotting, upload-queue sequence reservation and retry. The compliance run page, `trade.$token.tsx` and `cover-branding-fields.tsx` replace their bare `<input type=file capture>` with it. The trade page runs without a sign-in, so it uploads through its existing token path. Only the UI and file-handling process are shared.
 - Thumbnail and analysis paths stay separate, and full resolution is still used for analysis.
 - Tests: provenance precedence (EXIF over device), no location when permission is denied, and single-shot mode closing after one photo.
+
+---
+
+# Part 2: One report brand everywhere (instructBrain)
+
+## What you'll get
+- Every report looks the same wherever you see it: while you create it, in Review, on the report page, through a shared link, as a downloaded PDF and in Print. This covers all report types, including Property inventory and the Weekly Compliance Register packs.
+- The only brand wording on reports is one faint footer on every page: **instructBrain · AN INSTRUCTSITE COMPANY**. There's no "instructSite family" wording and no other instructSite mentions on reports.
+- Subtle orange touches, on a white page with black text so it stays professional and readable:
+  - a thin orange rule under the report header and at the top of the cover page
+  - small orange section labels above headings, such as "FINDINGS" or "ROOM 3"
+  - an orange left edge on table headers and on the numbered photo tags
+  - Condition and status colours don't change, and each one still shows its word next to it.
+- The AI's writing instructions currently call it the "instructSite Oracle". That becomes "instructBrain". The wording of findings doesn't change.
+
+## Technical details
+- One shared report brand module (colours, footer text, rule widths) is used by the on-screen `.paper` preview, the print page, the shared link page and the PDF builders (standard and inventory landscape). Their separate copies of the header and footer are removed.
+- `BRAND_CREDIT` becomes "instructBrain · AN INSTRUCTSITE COMPANY". It's shown at about 55% opacity in small caps in every page footer.
+- A new `--paper-accent` token uses the brand orange, for borders and rules only. Where it appears as text it uses the darker orange text token, so it passes WCAG AA on white.
+- A test scans the report, PDF and share output for "family" or any other "instructSite" wording outside the footer credit.
+- The contact email and code comments are unchanged.
