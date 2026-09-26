@@ -86,4 +86,4 @@
 - [x] Justify longer app and report copy with narrow-phone readability safeguards.
 - [x] Apply soft orange outlines to white-screen buttons, inputs, cards, panels and dialogs.
 - [x] Make every button label wrap comfortably within its control at 320–375px.
-- [ ] Verify app screens and rendered report PDFs.
+- [x] Verify app screens and rendered report PDFs.

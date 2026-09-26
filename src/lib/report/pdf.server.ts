@@ -787,6 +787,7 @@ async function drawFinding(
   drawText(writer, `${itemLabel(finding.ref)}${locationOf(finding) ? ` — ${locationOf(finding)}` : ""}`, {
     size: 12,
     bold: true,
+    align: "center",
   });
 
   const chips = [
