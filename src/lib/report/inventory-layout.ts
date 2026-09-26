@@ -33,18 +33,41 @@ export function inventoryLayout(document: Pick<ReportDocument, "snapshot">): Rep
   return layout?.kind === "inventory_room_schedule" ? layout : null;
 }
 
-export function inventoryCoverPhoto(document: ReportDocument): DocPhoto | null {
+/** Title-page photographs in report order. New snapshots allow up to three;
+ * older snapshots retain their single first/cover photograph behaviour. */
+export function inventoryTitlePhotos(document: ReportDocument): DocPhoto[] {
   const workflow = photoWorkflowOf(document.snapshot);
   const chosen = document.photos.find((photo) => photo.id === document.report.coverPhotoId);
-  if (chosen) return chosen;
-  const workflowCover = workflow
-    ? document.photos.find(
-        (photo) =>
-          photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 })
-            ?.countsAsCover === true,
+  const rolePhotos = workflow
+    ? document.photos.filter(
+        (photo) => photoRoleOf(document.snapshot, photo.captureFields)?.countsAsCover === true,
       )
-    : null;
-  return workflowCover ?? document.photos[0] ?? null;
+    : [];
+  const candidates = [chosen, ...rolePhotos].filter((photo): photo is DocPhoto => !!photo);
+  const unique = candidates
+    .filter((photo, index) => candidates.findIndex((item) => item.id === photo.id) === index)
+    .sort((a, b) => a.sequence - b.sequence);
+  const coverLimit = Math.max(
+    1,
+    ...(workflow?.roles.filter((role) => role.countsAsCover).map((role) => role.maxPerReport ?? 1) ?? [1]),
+  );
+  if (unique.length > 0) return unique.slice(0, coverLimit);
+
+  // Versioned legacy snapshots named a first-photo role. Preserve their
+  // historical single-cover output without imposing it on new snapshots.
+  if (workflow?.firstPhotoRoleId) {
+    const legacy = document.photos.find(
+      (photo) =>
+        photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 })
+          ?.countsAsCover === true,
+    );
+    return legacy ? [legacy] : document.photos.slice(0, 1);
+  }
+  return [];
+}
+
+export function inventoryCoverPhoto(document: ReportDocument): DocPhoto | null {
+  return inventoryTitlePhotos(document)[0] ?? null;
 }
 
 function sectionValue(fields: Record<string, string>, key: string | undefined): string {

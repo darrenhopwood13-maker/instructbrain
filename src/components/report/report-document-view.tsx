@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
 import { InlineField } from "@/components/report/inline-field";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   documentSections,
   documentStatistics,
@@ -26,10 +27,12 @@ import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
+  inventoryFindingPhotos,
   inventoryItemTableLabel,
   inventoryItemWithPhotoLabel,
   inventoryLayout,
   inventoryRooms,
+  inventoryTitlePhotos,
   isInventoryLayout,
 } from "@/lib/report/inventory-layout";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
@@ -183,7 +186,7 @@ function InventoryDocument({
 } & Pick<Handlers, "onFindingPatch">) {
   const rooms = inventoryRooms(document);
   const layout = inventoryLayout(document);
-  const cover = inventoryCoverPhoto(document);
+  const titlePhotos = inventoryTitlePhotos(document);
   const readOnly = !editable || !onFindingPatch;
   const photoGroups = inventoryRoomPhotoGroups(document);
 
@@ -208,7 +211,7 @@ function InventoryDocument({
           </div>
         </div>
 
-        <div className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+        <div className="mt-7">
           <div>
             <h1 className="editorial-title text-3xl font-semibold leading-tight sm:text-4xl">
               {document.report.title}
@@ -225,12 +228,17 @@ function InventoryDocument({
               <Pair label="Author" value={document.author ?? "Not recorded"} />
             </dl>
           </div>
-          {cover ? (
-            <img
-              src={cover.url ?? cover.thumbUrl ?? ""}
-              alt={`Title page photograph — ${document.project?.name ?? document.report.title}`}
-              className="h-64 w-full rounded-lg border border-border object-cover"
-            />
+          {titlePhotos.length > 0 ? (
+            <div className="mt-6 grid grid-cols-3 gap-3" aria-label="Title page photographs">
+              {titlePhotos.map((photo, index) => (
+                <img
+                  key={photo.id}
+                  src={photo.url ?? photo.thumbUrl ?? ""}
+                  alt={`Title page photograph ${index + 1} — ${document.project?.name ?? document.report.title}`}
+                  className="aspect-[16/9] min-w-0 w-full rounded-lg border border-border object-cover"
+                />
+              ))}
+            </div>
           ) : null}
         </div>
       </section>
@@ -308,7 +316,10 @@ function InventoryDocument({
                     >
                       <div className="border-border p-3 font-semibold sm:border-r">
                         <span className="sm:hidden text-xs uppercase text-muted-foreground">Item </span>
-                        {inventoryItemTableLabel(finding, document)}
+                        <div className="flex items-start gap-2">
+                          {!print ? <InventoryItemThumbnail document={document} finding={finding} /> : null}
+                          <span className="min-w-0">{inventoryItemTableLabel(finding, document)}</span>
+                        </div>
                       </div>
                       <div className="border-border p-3 sm:border-r">
                         <span className="sm:hidden block text-xs font-semibold uppercase text-muted-foreground">
@@ -359,6 +370,45 @@ function InventoryDocument({
       <InventoryBackingPages document={document} />
       <BrandCredit />
     </article>
+  );
+}
+
+function InventoryItemThumbnail({
+  document,
+  finding,
+}: {
+  document: ReportDocument;
+  finding: DocFinding;
+}) {
+  const [open, setOpen] = useState(false);
+  const photo = inventoryFindingPhotos(finding, document.snapshot)[0];
+  const source = photo?.thumbUrl ?? photo?.url;
+  const fullSource = photo?.url ?? photo?.thumbUrl;
+  if (!photo || !source || !fullSource) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`View photograph ${photo.sequence} for ${inventoryItemTableLabel(finding, document)}`}
+        className="size-12 shrink-0 overflow-hidden rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+      >
+        <img src={source} alt="" loading="lazy" className="size-full object-cover" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{inventoryItemTableLabel(finding, document)}</DialogTitle>
+          </DialogHeader>
+          <img
+            src={fullSource}
+            alt={`Photograph ${photo.sequence} for ${inventoryItemTableLabel(finding, document)}`}
+            className="max-h-[75dvh] w-full rounded-lg object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

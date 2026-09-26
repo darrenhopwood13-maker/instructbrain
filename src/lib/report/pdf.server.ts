@@ -21,6 +21,7 @@ import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
   inventoryCoverPhoto,
+  inventoryTitlePhotos,
   inventoryItemTableLabel,
   inventoryLayout,
   inventoryRoomPhotoGroups,
@@ -906,7 +907,7 @@ async function buildInventoryReportPdf(
   doc.setProducer("instructBrain");
   doc.setCreator("instructBrain");
 
-  const cover = inventoryCoverPhoto(document);
+  const titlePhotos = inventoryTitlePhotos(document);
   const coverPage = writer.cursor.page;
   const organisationName = document.organisation?.name ?? "instructBrain";
   let coverY = 430;
@@ -949,18 +950,17 @@ async function buildInventoryReportPdf(
       color: MUTED,
     });
   }
-  if (cover && fetcher) {
-    const image = await embedPhoto(writer, fetcher, cover);
-    if (image) {
-      drawImageAt(
-        coverPage,
-        image,
-        LANDSCAPE_LETTER.width - margin - 150,
-        166,
-        150,
-        82,
-      );
-    }
+  if (titlePhotos.length > 0 && fetcher) {
+    const available = (
+      await Promise.all(titlePhotos.map(async (photo) => ({ photo, image: await embedPhoto(writer, fetcher, photo) })))
+    ).filter((entry): entry is { photo: DocPhoto; image: PDFImage } => entry.image !== null);
+    const gap = 10;
+    const width = Math.min(214, (writer.contentWidth - gap * Math.max(0, available.length - 1)) / Math.max(1, available.length));
+    const totalWidth = width * available.length + gap * Math.max(0, available.length - 1);
+    const startX = (LANDSCAPE_LETTER.width - totalWidth) / 2;
+    available.forEach((entry, index) => {
+      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 135, width, 100);
+    });
   }
 
   const rooms = inventoryRooms(document);

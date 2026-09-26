@@ -19,6 +19,7 @@ import {
   inventoryItemWithPhotoLabel,
   inventoryRoomPhotoGroups,
   inventoryRooms,
+  inventoryTitlePhotos,
 } from "@/lib/report/inventory-layout";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { reportPrintPageClass } from "@/lib/report/print-layout";
@@ -165,6 +166,56 @@ describe("property inventory", () => {
     expect(groups.unallocated).toEqual([]);
     expect(inventoryItemWithPhotoLabel(document.findings[0]!)).toBe("Item 2 · Photo 9");
     expect(inventoryItemTableLabel(document.findings[0]!)).toBe("Kitchen item (Photo 9)");
+  });
+
+  it("keeps up to three selected title photographs in upload order", () => {
+    const snapshot = snapshotOf(propertyInventoryDefinition);
+    const photos = [4, 2, 3, 1].map((sequence) => ({
+      id: `p${sequence}`,
+      sequence,
+      filename: `${sequence}.jpg`,
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: { _photo_role: "title_page" },
+    }));
+    const document = {
+      report: { coverPhotoId: null },
+      snapshot,
+      photos,
+      findings: [],
+    } as unknown as ReportDocument;
+
+    expect(inventoryTitlePhotos(document).map((photo) => photo.sequence)).toEqual([1, 2, 3]);
+  });
+
+  it("preserves a legacy snapshot's single first-photo cover", () => {
+    const snapshot = snapshotOf(propertyInventoryDefinition);
+    snapshot.version = 7;
+    if (snapshot.photoWorkflow) {
+      snapshot.photoWorkflow.firstPhotoRoleId = "exterior_cover";
+      snapshot.photoWorkflow.coverRoleId = "exterior_cover";
+      snapshot.photoWorkflow.roles = snapshot.photoWorkflow.roles.filter((role) => role.id !== "title_page");
+      const exterior = snapshot.photoWorkflow.roles.find((role) => role.id === "exterior_cover");
+      if (exterior) exterior.countsAsCover = true;
+    }
+    const first = {
+      id: "legacy-cover",
+      sequence: 1,
+      filename: "cover.jpg",
+      capturedAt: null,
+      url: null,
+      thumbUrl: null,
+      captureFields: {},
+    };
+    const document = {
+      report: { coverPhotoId: null },
+      snapshot,
+      photos: [first],
+      findings: [],
+    } as unknown as ReportDocument;
+
+    expect(inventoryTitlePhotos(document).map((photo) => photo.id)).toEqual(["legacy-cover"]);
   });
 
   it("uses the photograph's current room after analysis and keeps its row with its photograph", () => {
