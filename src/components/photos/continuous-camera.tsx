@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { stampFile, stampFor, type Fix } from "@/lib/photos/device-provenance";
 
 /**
  * In-app camera that stays open between shots. Each shot is handed over the
@@ -44,6 +45,7 @@ export function ContinuousCamera({
   onFallback,
   uploadedCount,
   allowAnalyse,
+  single = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,9 +55,13 @@ export function ContinuousCamera({
   uploadedCount: number;
   /** Hidden for templates whose photographs must be organised before analysis. */
   allowAnalyse: boolean;
+  /** Close after one shot, for screens that need a single photo. */
+  single?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fixRef = useRef<Fix | null>(null);
+  const [locationState, setLocationState] = useState<"waiting" | "on" | "off">("waiting");
   const [starting, setStarting] = useState(false);
   const [shots, setShots] = useState<Shot[]>([]);
   const [flash, setFlash] = useState(false);
@@ -124,11 +130,38 @@ export function ContinuousCamera({
     };
   }, [open, stop, onOpenChange, onFallback]);
 
+  // Location while the camera is open. Refused or unavailable → time only.
+  useEffect(() => {
+    if (!open || typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationState(open ? "off" : "waiting");
+      return;
+    }
+    setLocationState("waiting");
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        fixRef.current = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          at: position.timestamp || Date.now(),
+        };
+        setLocationState("on");
+      },
+      () => setLocationState("off"),
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 },
+    );
+    return () => {
+      navigator.geolocation.clearWatch(id);
+      fixRef.current = null;
+    };
+  }, [open]);
+
   const takeShot = useCallback(async () => {
     const stream = streamRef.current;
     const video = videoRef.current;
     const track = stream?.getVideoTracks()[0];
     if (!track || !video) return;
+    const shotAt = Date.now();
     setFlash(true);
     window.setTimeout(() => setFlash(false), 120);
     let blob: Blob | null = null;
@@ -155,9 +188,11 @@ export function ContinuousCamera({
       type: blob.type || "image/jpeg",
       lastModified: now,
     });
+    stampFile(file, stampFor(shotAt, fixRef.current));
     onShot(file);
     setShots((current) => [...current, { id: String(now), url: URL.createObjectURL(blob!) }]);
-  }, [onShot]);
+    if (single) onOpenChange(false);
+  }, [onShot, single, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -188,6 +223,13 @@ export function ContinuousCamera({
 
         <p role="status" aria-live="polite" className="text-center text-sm font-semibold">
           {shots.length} taken · {Math.min(uploadedCount, shots.length)} uploaded
+        </p>
+        <p className="text-center text-xs text-muted-foreground">
+          {locationState === "on"
+            ? "Time and location recorded with each photo"
+            : locationState === "off"
+              ? "Location not recorded · time recorded with each photo"
+              : "Finding your location…"}
         </p>
 
         {shots.length > 0 ? (
