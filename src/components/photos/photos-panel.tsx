@@ -39,6 +39,7 @@ import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
 import { RoomOrganiser } from "@/components/photos/room-organiser";
 import { ReadinessChecklist } from "@/components/photos/readiness-checklist";
 import { inventoryReadiness } from "@/lib/photos/inventory-readiness";
+import { groupPhotosByRoom } from "@/lib/photos/rooms";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
@@ -391,6 +392,19 @@ export function PhotosPanel({
     void addFiles(transfer.files);
   }, [ready, organisationId, initialFiles, addFiles]);
 
+  useEffect(() => {
+    if (ready !== "ready" || !organisationId || !onReady) return;
+    onReady((files) => void addFiles(files));
+  }, [ready, organisationId, onReady, addFiles]);
+
+  const groupedForGrid = useMemo(() => {
+    if (!inventoryWorkflow) return { unallocatedIds: new Set<string>(), count: 0 };
+    const { unallocated } = groupPhotosByRoom(photos, inventoryWorkflow);
+    return { unallocatedIds: new Set(unallocated.map((photo) => photo.id)), count: unallocated.length };
+  }, [photos, inventoryWorkflow]);
+
+  const uploadedCount = uploads.filter((item) => item.state === "done").length;
+
 
   const retry = useCallback(
     (ids: string[]) => {
@@ -653,6 +667,15 @@ export function PhotosPanel({
 
       </section>
 
+      <ContinuousCamera
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onShot={(file) => void addFiles([file])}
+        onFallback={fallbackCamera}
+        uploadedCount={uploadedCount}
+        allowAnalyse={!inventoryWorkflow}
+      />
+
       <UploadTray
         items={uploads}
         overall={overall}
@@ -727,7 +750,15 @@ export function PhotosPanel({
           </p>
 
           <PhotoGrid
-            photos={photos}
+            photos={
+              inventoryWorkflow
+                ? photos.filter(
+                    (photo) =>
+                      photo.id === coverPhotoId ||
+                      groupedForGrid.unallocatedIds.has(photo.id),
+                  )
+                : photos
+            }
             urls={urls}
             selected={selected}
             onToggle={toggle}
