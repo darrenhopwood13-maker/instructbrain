@@ -123,22 +123,9 @@ function LandingHeader() {
         <Link to="/" className="flex min-w-0 items-center gap-3 rounded-md">
           <Wordmark />
         </Link>
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <Link
-            to="/auth/sign-in"
-            className="ib-btn-minline orange"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/auth/sign-up"
-            className="ib-btn-3d sm"
-          >
-            <span className="sm:hidden">Start</span>
-            <span className="hidden sm:inline">Start free</span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        </div>
+        <Link to="/auth/sign-in" className="ib-btn-minline orange">
+          Sign in
+        </Link>
       </div>
     </header>
   );
