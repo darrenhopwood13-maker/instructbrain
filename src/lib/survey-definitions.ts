@@ -356,7 +356,7 @@ Describe conditions only. Never describe, identify, count or characterise any pe
 
 export const propertyInventoryDefinition: SurveyDefinition = {
   id: "property_inventory",
-  version: 6,
+  version: 7,
   houseVoice: HOUSE_VOICE,
   label: "Property inventory",
   category: "inventory",
@@ -459,6 +459,20 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
         description: "A detail photograph analysed into the room inventory table.",
         maxFindingsPerPhoto: 1,
       },
+      {
+        id: "handover_meter",
+        label: "Meter photograph",
+        description: "A meter photographed as evidence of its reading. It is not analysed into a room.",
+        excludesAi: true,
+        outsideSections: true,
+      },
+      {
+        id: "handover_keys",
+        label: "Keys photograph",
+        description: "Keys, fobs or access devices photographed as evidence. It is not analysed into a room.",
+        excludesAi: true,
+        outsideSections: true,
+      },
     ],
   },
   reportLayout: {
@@ -502,13 +516,34 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
           "The condition wording is based on the photographs supplied and the information recorded on site. The report is intended as a professional record of the photographed inventory.",
         ],
       },
-      {
-        title: "Keys and meter readings",
-        body: [
-          "Keys, fobs, access devices and meter readings should be recorded here when captured as part of the inventory evidence.",
-        ],
-      },
     ],
+    handover: {
+      meterRoleId: "handover_meter",
+      keysRoleId: "handover_keys",
+      slotField: "_handover_slot",
+      meterTitle: "Meter Readings",
+      meterNotice:
+        "These readings must be checked by the relevant boards as we cannot be held responsible for discrepancies in the readings.",
+      readingLabel: "Reading",
+      serialLabel: "Meter serial",
+      notAccessibleLabel: "No meter / not accessible",
+      startLabel: "Start of tenancy",
+      endLabel: "End of tenancy",
+      addMeterLabel: "Add another meter",
+      meterTypes: [
+        { id: "electric", label: "Electric meter" },
+        { id: "gas", label: "Gas meter" },
+        { id: "water", label: "Water meter" },
+      ],
+      keysTitle: "Keys",
+      keysIntro: "Keys issued at start of tenancy:",
+      keyItemLabel: "Key or device",
+      keyQuantityLabel: "Quantity",
+      questions: [
+        { id: "handed_over", label: "Handed over" },
+        { id: "tenant_present", label: "Tenant present" },
+      ],
+    },
   },
   outputSections: ["cover", "index", "schedule", "appendix"],
   requiresTradeAssignment: false,
