@@ -46,6 +46,8 @@ export type PhotoWorkflowRole = {
   countsAsCover?: boolean;
   /** A stricter per-photo finding limit for photos carrying this role. */
   maxFindingsPerPhoto?: number;
+  /** Evidence photos (e.g. handover) that never belong to a room or section. */
+  outsideSections?: boolean;
 };
 
 export type PhotoWorkflow = {
@@ -74,6 +76,8 @@ export type ReportLayout = {
     checkoutComment?: string;
   };
   backingPages?: Array<{ title: string; body: string[] }>;
+  /** Handover evidence pages; read by src/lib/report/handover.ts. */
+  handover?: Record<string, unknown>;
 };
 
 export type CategoryDefinition = {
@@ -448,6 +452,7 @@ export function photoWorkflowOf(
       ...(typeof role.description === "string" ? { description: role.description } : {}),
       ...(role.excludesAi === true ? { excludesAi: true } : {}),
       ...(role.countsAsCover === true ? { countsAsCover: true } : {}),
+      ...(role.outsideSections === true ? { outsideSections: true } : {}),
       ...(Number.isFinite(Number((role as Record<string, unknown>)["maxFindingsPerPhoto"]))
         ? {
             maxFindingsPerPhoto: Math.max(
@@ -543,6 +548,17 @@ export function photoExcludesFromAnalysis(
 ): boolean {
   if (options.isCover === true) return true;
   return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto === true })?.excludesAi === true;
+}
+
+/** Whether a photo carries a role that sits outside every room / section. */
+export function roleIsOutsideSections(
+  workflow: PhotoWorkflow | null | undefined,
+  captureFields: Record<string, string> | null | undefined,
+): boolean {
+  if (!workflow) return false;
+  const roleId = captureFields?.[workflow.roleField];
+  if (!roleId) return false;
+  return workflow.roles.find((role) => role.id === roleId)?.outsideSections === true;
 }
 
 export function aiGuidanceOf(
