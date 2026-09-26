@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FolderPlus, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { PhotoRow } from "@/lib/photos/photo-service";
 import type { PhotoWorkflow } from "@/lib/survey-types";
 import {
@@ -119,8 +112,6 @@ export function RoomOrganiser({
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-  const [addTarget, setAddTarget] = useState("");
   const [renaming, setRenaming] = useState<{ key: string; label: string } | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [deleting, setDeleting] = useState<{ key: string; label: string } | null>(null);
@@ -210,14 +201,6 @@ export function RoomOrganiser({
     if (selectedIds.length > 0) await allocate(label, entries.length);
   };
 
-  const addToRoom = async () => {
-    const label = addTarget.trim();
-    if (label === "") return;
-    setAddOpen(false);
-    const index = entries.findIndex((entry) => entry.key === label.toLowerCase());
-    await allocate(label, index === -1 ? entries.length : index);
-  };
-
   const renameRoom = async () => {
     if (!renaming) return;
     const label = renameTitle.trim();
@@ -274,15 +257,6 @@ export function RoomOrganiser({
             type="button"
             variant="secondary"
             className="min-h-11"
-            onClick={() => setCreateOpen(true)}
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Create room
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="min-h-11"
             disabled={suggesting || photos.length === 0}
             onClick={() => void runSuggestions()}
           >
@@ -292,26 +266,24 @@ export function RoomOrganiser({
           <Button
             type="button"
             className="min-h-11"
-            disabled={selectedIds.length === 0 || entries.length === 0}
+            disabled={selectedIds.length === 0}
             onClick={() => {
-              setAddTarget(entries[0]?.label ?? "");
-              setAddOpen(true);
+              setNewTitle("");
+              setCreateOpen(true);
             }}
           >
             <FolderPlus aria-hidden="true" className="size-4" />
-            Add {selectedIds.length || ""} to room
+            {selectedIds.length > 0 ? `Put ${selectedIds.length} in a room` : "Put in a room"}
           </Button>
         </div>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Create your rooms first, then select photographs above and add them to a room. Up to {limit}{" "}
-        of each room&apos;s photographs can be its overview photographs — those are shown at the top
-        of the room&apos;s page and are not analysed.
+        Tick photos, then Put in a room. Tap Overview on up to {limit} per room — those aren&apos;t analysed.
       </p>
 
       {entries.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          No rooms yet. Create your first room.
+          No rooms yet. Tick some photos above, then press Put in a room.
         </p>
       ) : null}
 
@@ -381,7 +353,9 @@ export function RoomOrganiser({
             {entry.room ? (
               <>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {entry.room.overviewPhotos.length} of {limit} overview photographs ·{" "}
+                  {entry.room.overviewPhotos.length === 0
+                    ? `Tap Overview on up to ${limit} photos · `
+                    : `${entry.room.overviewPhotos.length} of ${limit} overview photographs · `}
                   {entry.room.itemPhotos.length} item photograph
                   {entry.room.itemPhotos.length === 1 ? "" : "s"}
                 </p>
@@ -413,7 +387,7 @@ export function RoomOrganiser({
                                 : setHeader(entry.room!, photo.id))
                             }
                           >
-                            {isHeader ? "Overview photo" : "Item photo"}
+                            {isHeader ? "Overview ✓" : "Overview"}
                           </Button>
                         </li>
                       );
@@ -437,84 +411,73 @@ export function RoomOrganiser({
       ) : null}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[100dvh] overflow-y-auto sm:max-h-[90dvh]">
           <DialogHeader>
-            <DialogTitle>Create a room</DialogTitle>
+            <DialogTitle>Put in a room</DialogTitle>
             <DialogDescription>
-              {selectedIds.length > 0
-                ? `The ${selectedIds.length} selected photograph${selectedIds.length === 1 ? "" : "s"} will be put in this room.`
-                : "Create your rooms one by one, then add photographs to them."}
+              {selectedIds.length} photograph{selectedIds.length === 1 ? "" : "s"} selected. Tap a
+              room, or name a new one.
             </DialogDescription>
           </DialogHeader>
-          {suggestions.length > 0 ? (
-            <div>
-              <p className="text-sm font-medium">Common rooms</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {suggestions.map((suggestion) => (
-                  <li key={suggestion}>
-                    <Button
-                      type="button"
-                      variant={newTitle.trim() === suggestion ? "default" : "secondary"}
-                      size="sm"
-                      className="min-h-11"
-                      onClick={() => setNewTitle(suggestion)}
-                    >
-                      {suggestion}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {entries.length > 0 ? (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {entries.map((entry, index) => (
+                <li key={entry.key}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-11 w-full justify-start whitespace-normal text-left"
+                    onClick={() => {
+                      setCreateOpen(false);
+                      void allocate(entry.label, index);
+                    }}
+                  >
+                    {entry.label}
+                  </Button>
+                </li>
+              ))}
+            </ul>
           ) : null}
-          <label className="text-sm font-medium" htmlFor="new-room-title">
-            Room title
-          </label>
-          <input
-            id="new-room-title"
-            value={newTitle}
-            onChange={(event) => setNewTitle(event.target.value)}
-            className="w-full rounded-xl border border-border bg-surface p-3 text-sm"
-          />
+          <div className="border-t border-border pt-3">
+            <label className="text-sm font-medium" htmlFor="new-room-title">
+              New room
+            </label>
+            {suggestions.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {suggestions
+                  .filter((suggestion) => !entries.some((entry) => entry.key === suggestion.toLowerCase()))
+                  .map((suggestion) => (
+                    <li key={suggestion}>
+                      <Button
+                        type="button"
+                        variant={newTitle.trim() === suggestion ? "default" : "quiet"}
+                        size="sm"
+                        className="min-h-11"
+                        onClick={() => setNewTitle(suggestion)}
+                      >
+                        {suggestion}
+                      </Button>
+                    </li>
+                  ))}
+              </ul>
+            ) : null}
+            <input
+              id="new-room-title"
+              value={newTitle}
+              placeholder="Room name"
+              onChange={(event) => setNewTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void createRoom();
+              }}
+              className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-base"
+            />
+          </div>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button type="button" disabled={newTitle.trim() === ""} onClick={() => void createRoom()}>
-              Create room
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add photographs to a room</DialogTitle>
-            <DialogDescription>
-              {selectedIds.length} photograph{selectedIds.length === 1 ? "" : "s"} selected.
-            </DialogDescription>
-          </DialogHeader>
-          <label className="text-sm font-medium" htmlFor="add-room-target">
-            Room
-          </label>
-          <Select value={addTarget} onValueChange={setAddTarget}>
-            <SelectTrigger id="add-room-target" className="min-h-11">
-              <SelectValue placeholder="Choose a room" />
-            </SelectTrigger>
-            <SelectContent>
-              {entries.map((entry) => (
-                <SelectItem key={entry.key} value={entry.label}>
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" disabled={addTarget.trim() === ""} onClick={() => void addToRoom()}>
-              Add to room
+              Create room and add
             </Button>
           </DialogFooter>
         </DialogContent>

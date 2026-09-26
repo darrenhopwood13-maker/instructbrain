@@ -847,7 +847,15 @@ export function PhotosPanel({
             </DialogDescription>
           </DialogHeader>
           <CaptureFieldsForm
-            fields={fields}
+            fields={
+              inventoryWorkflow
+                ? fields.filter(
+                    (field) =>
+                      field.id !== inventoryWorkflow.sectionField &&
+                      field.id !== inventoryWorkflow.roleField,
+                  )
+                : fields
+            }
             values={bulkValues}
             onChange={(fieldId, value) =>
               setBulkValues((current) => ({ ...current, [fieldId]: value }))
