@@ -56,3 +56,9 @@
 - [x] Replace filled/3D orange buttons on navy screens with soft orange outlines.
 - [x] Keep white working-screen buttons neutral, with no orange outlines.
 - [x] Verify phone and desktop button states, touch targets and label wrapping.
+
+## 26 Sep — entry and typography
+- [x] Replace the duplicate-looking Start and Sign in header actions with one Sign in action.
+- [x] Use Sora for headings, Manrope for standard copy, and retain Audiowide for the wordmark.
+- [x] Justify paragraph copy broadly while preserving functional alignment for controls and deliberately aligned text.
+- [ ] Verify the public page and representative app screens at phone and desktop sizes.
