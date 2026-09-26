@@ -19,9 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createReport, projectsQuery } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
-import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
@@ -104,8 +101,8 @@ function CustomReport() {
   const queryClient = useQueryClient();
   const { organisationId, organisationIds, userId } = useOrganisations();
   const { user } = useSession();
-  const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
+  const activeProjects = (projects.data ?? []).filter((item) => item.status === "active");
   // One start screen for every report. A report belongs to a project only when
   // the person picks one — otherwise it is a standalone report.
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");

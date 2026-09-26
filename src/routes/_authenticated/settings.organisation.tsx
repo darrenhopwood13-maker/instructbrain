@@ -1,6 +1,6 @@
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageUp, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { organisationQuery, updateOrganisation } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
+import { uploadOrganisationLogo } from "@/lib/report/branding";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
@@ -62,6 +65,9 @@ function OrganisationSettings() {
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("blue");
   const [address, setAddress] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const canEditLogo = role === "owner" || role === "admin";
 
   const organisation = query.data ?? null;
 
@@ -72,6 +78,20 @@ function OrganisationSettings() {
     if (organisation.brand_colour) setBrand(organisation.brand_colour);
   }, [organisation]);
 
+  useEffect(() => {
+    let active = true;
+    setLogoUrl(null);
+    const path = organisation?.logo_path;
+    if (!path) return;
+    void (async () => {
+      const { data } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, 300);
+      if (active) setLogoUrl(data?.signedUrl ?? null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [organisation?.logo_path]);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
@@ -80,6 +100,20 @@ function OrganisationSettings() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["organisation"] });
       toast.success("Organisation details saved");
+    },
+  });
+
+  const logoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!organisationId) throw new Error("You are not a member of an organisation yet.");
+      return uploadOrganisationLogo(file, organisationId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["organisation"] });
+      toast.success("Logo saved");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "The logo could not be saved.");
     },
   });
 
