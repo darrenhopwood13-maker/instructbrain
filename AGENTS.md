@@ -12,3 +12,4 @@
 - Mark only browser-created camera files as app-owned so snapshotting skips their redundant memory copy; external camera and gallery files must always retain the Android-safe snapshot path.
 - Apply typography and borders by semantic role: centre content headings, justify narrative copy only where readable, and preserve functional alignment for controls, tables, metadata, and status labels so mobile and report layouts remain scannable.
 - Keep Property inventory photo roles and their limits in the versioned survey definition; shared capture and report code must interpret those roles generically so issued snapshots remain unchanged.
+- Scope the feature-overview visual treatment through `.work-surface`; navy console screens and `.paper` report output must remain independently styled.

@@ -95,3 +95,9 @@
 - [x] Add one quick inventory photo labelling flow for rooms, overviews, keys, meters, exterior and title photos.
 - [x] Show up to three chosen title photos on inventory reports and item thumbnails in browser review.
 - [x] Preserve the existing full-size inventory PDF photograph pages and verify mobile/PDF output.
+
+## 27 Sep — approved white-screen visual reference
+- [ ] Restore white working screens to the supplied feature-overview style.
+- [ ] Remove double blue/orange borders and heavy dashboard controls from white screens.
+- [ ] Use Sora for the white-screen wordmark while retaining Manrope body copy.
+- [ ] Verify representative white screens at 375px and desktop; leave navy screens and report output unchanged.
