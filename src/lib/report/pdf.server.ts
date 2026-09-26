@@ -142,6 +142,7 @@ type TextOptions = {
   x?: number;
   lineGap?: number;
   gapAfter?: number;
+  align?: "left" | "center" | "justify";
 };
 
 function drawText(writer: Writer, text: string, options: TextOptions = {}): void {
@@ -150,17 +151,38 @@ function drawText(writer: Writer, text: string, options: TextOptions = {}): void
   const width = options.width ?? writer.contentWidth;
   const x = options.x ?? writer.margin;
   const lineHeight = size + (options.lineGap ?? 3);
-  for (const line of wrap(text, font, size, width)) {
+  const lines = wrap(text, font, size, width);
+  const alignment = options.align ?? "left";
+  lines.forEach((line, index) => {
     ensure(writer, lineHeight);
-    writer.cursor.page.drawText(line, {
-      x,
-      y: writer.cursor.y - size,
-      size,
-      font,
-      color: options.colour ?? INK,
-    });
+    const lineWidth = font.widthOfTextAtSize(line, size);
+    const isFinalLine = index === lines.length - 1;
+    const words = line.split(/\s+/).filter(Boolean);
+    if (alignment === "justify" && !isFinalLine && words.length > 1 && lineWidth < width) {
+      const wordsWidth = words.reduce((total, word) => total + font.widthOfTextAtSize(word, size), 0);
+      const gap = (width - wordsWidth) / (words.length - 1);
+      let wordX = x;
+      for (const word of words) {
+        writer.cursor.page.drawText(word, {
+          x: wordX,
+          y: writer.cursor.y - size,
+          size,
+          font,
+          color: options.colour ?? INK,
+        });
+        wordX += font.widthOfTextAtSize(word, size) + gap;
+      }
+    } else {
+      writer.cursor.page.drawText(line, {
+        x: alignment === "center" ? x + Math.max(0, (width - lineWidth) / 2) : x,
+        y: writer.cursor.y - size,
+        size,
+        font,
+        color: options.colour ?? INK,
+      });
+    }
     writer.cursor.y -= lineHeight;
-  }
+  });
   writer.cursor.y -= options.gapAfter ?? 0;
 }
 
@@ -357,8 +379,9 @@ function drawCenteredText(
 }
 
 function drawInventoryHeader(writer: Writer, title = "Property inventory"): void {
-  writer.cursor.page.drawText(sanitise(title), {
-    x: writer.margin,
+  const safeTitle = sanitise(title);
+  writer.cursor.page.drawText(safeTitle, {
+    x: (writer.pageSize.width - writer.bold.widthOfTextAtSize(safeTitle, 14)) / 2,
     y: writer.pageSize.height - writer.margin - 3,
     size: 14,
     font: writer.bold,
@@ -383,7 +406,7 @@ function drawInventoryIndexPage(
   entries: InventoryIndexEntry[],
 ): void {
   page.drawText("Index", {
-    x: writer.margin,
+    x: (writer.pageSize.width - writer.bold.widthOfTextAtSize("Index", 16)) / 2,
     y: writer.pageSize.height - writer.margin - 3,
     size: 16,
     font: writer.bold,
@@ -727,7 +750,7 @@ function drawInventoryBackingPages(writer: Writer, document: ReportDocument): In
     entries.push({ label: pageDefinition.title, page: writer.cursor.pageNumber });
     drawInventoryHeader(writer, pageDefinition.title);
     for (const paragraph of pageDefinition.body) {
-      drawText(writer, paragraph, { size: 10, lineGap: 4, gapAfter: 8 });
+      drawText(writer, paragraph, { size: 10, lineGap: 4, gapAfter: 8, align: "justify" });
     }
   }
   return entries;
@@ -782,10 +805,10 @@ async function drawFinding(
     );
   }
 
-  if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4 });
+  if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
   if (finding.remedialText) {
     drawText(writer, "Required action", { size: 8, bold: true, colour: MUTED });
-    drawText(writer, finding.remedialText, { size: 10, gapAfter: 4 });
+    drawText(writer, finding.remedialText, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.likelyCause) {
     drawText(writer, `Likely cause: ${finding.likelyCause}`, { size: 9, colour: MUTED });
@@ -1106,9 +1129,9 @@ export async function buildReportPdf(
 
   /* Cover */
   eyebrow(writer, document.organisation?.name ?? "instructBrain");
-  drawText(writer, document.report.title, { size: 24, bold: true, lineGap: 6, gapAfter: 4 });
+  drawText(writer, document.report.title, { size: 24, bold: true, lineGap: 6, gapAfter: 4, align: "center" });
   if (document.report.subtitle) {
-    drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, gapAfter: 6 });
+    drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, gapAfter: 6, align: "center" });
   }
   if (options.variant === "trade") {
     drawText(writer, `Extract for ${options.trade ?? "items not yet assigned to a trade"}`, {
@@ -1172,18 +1195,18 @@ export async function buildReportPdf(
   if (options.variant === "full" && summary.trim()) {
     drawRule(writer, 14, 10);
     eyebrow(writer, "Report summary");
-    drawText(writer, summary, { size: 10, gapAfter: 4 });
+    drawText(writer, summary, { size: 10, gapAfter: 4, align: "justify" });
   }
 
   if (options.variant === "full" && document.report.scopeText) {
     drawRule(writer, 12, 10);
     eyebrow(writer, "Scope and limitations");
-    drawText(writer, document.report.scopeText, { size: 10 });
+    drawText(writer, document.report.scopeText, { size: 10, align: "justify" });
   }
   if (options.variant === "full" && document.report.methodologyText) {
     drawRule(writer, 12, 10);
     eyebrow(writer, "Methodology");
-    drawText(writer, document.report.methodologyText, { size: 10 });
+    drawText(writer, document.report.methodologyText, { size: 10, align: "justify" });
   }
 
   /* Contents — only where the report covers more than one survey type. */
@@ -1220,7 +1243,7 @@ export async function buildReportPdf(
     for (const section of sectioned ? sections : [{ id: "all", label: "", findings }]) {
       if (sectioned) {
         ensure(writer, 70);
-        drawText(writer, section.label, { size: 14, bold: true, gapAfter: 4 });
+        drawText(writer, section.label, { size: 14, bold: true, gapAfter: 4, align: "center" });
       }
       const groups = groupResults({ ...document, findings: section.findings }, view);
       for (const group of groups) {
@@ -1242,7 +1265,7 @@ export async function buildReportPdf(
   if (document.advisoryFooter) {
     drawRule(writer, 14, 10);
     eyebrow(writer, "Advisory");
-    drawText(writer, document.advisoryFooter, { size: 9, colour: MUTED });
+    drawText(writer, document.advisoryFooter, { size: 9, colour: MUTED, align: "justify" });
   }
 
   drawFooters(writer);
