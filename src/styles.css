@@ -266,7 +266,8 @@
   --work-blue: oklch(0.48 0.1 258);
   --work-blue-deep: oklch(0.38 0.09 258);
   --work-control: oklch(0.975 0.004 262);
-  --work-control-edge: oklch(0.68 0.21 42 / 72%);
+  --work-control-edge: oklch(0.4 0.11 262 / 72%);
+  --work-accent-edge: oklch(0.68 0.21 42 / 72%);
 
   --primary: oklch(0.52 0.19 38.2);
   --primary-foreground: oklch(1 0 0);
@@ -279,9 +280,9 @@
   --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
-  --border: oklch(0.68 0.21 42 / 48%);
-  --border-strong: oklch(0.62 0.2 40 / 72%);
-  --input: oklch(0.68 0.21 42 / 62%);
+  --border: oklch(0.4 0.11 262 / 48%);
+  --border-strong: oklch(0.4 0.11 262 / 72%);
+  --input: oklch(0.4 0.11 262 / 62%);
   --ring: oklch(0.52 0.19 38.2);
 
   --pass: oklch(0.42 0.11 158);
@@ -313,36 +314,38 @@
   background-image: none;
   background-color: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-raised);
+  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
   backdrop-filter: none;
 }
 
-/* White working screens use the same orange keyline as the navy console,
-   while their fills stay white and restrained for outdoor legibility. */
+/* White working screens pair a thin orange keyline with a blue control fill,
+   matching the dashboard actions without darkening the whole workspace. */
 .work-surface .glass-orange {
-  background: var(--work-control);
+  background: var(--work-blue);
   border-color: var(--brand-accent);
-  color: var(--secondary-foreground);
+  color: var(--primary-foreground);
   text-shadow: none;
-  box-shadow: 0 2px 10px -6px oklch(0 0 0 / 25%);
+  box-shadow: 0 2px 10px -6px color-mix(in oklab, var(--work-blue) 45%, transparent);
 }
 
 .work-surface .glass-orange svg {
   color: currentColor;
 }
 
-/* Orange wordmark text fails contrast on the light working screens, the same
-   way orange-on-navy did on the console. The accent span falls back to the
-   text-safe ink inside the work surface; the navy console keeps the orange. */
+/* The light-shell wordmark is the requested orange-and-blue brand lock-up. */
 .work-surface .wordmark .text-brand-accent {
-  color: var(--brand-accent-ink);
+  color: var(--brand-accent);
+}
+
+.work-surface .wordmark .work-wordmark-brain {
+  color: var(--brand-blue);
 }
 
 .work-surface .glass-navy,
 .work-surface .glass {
-  background: var(--work-control);
+  background: var(--brand-blue-soft);
   border: 1.5px solid var(--brand-accent);
-  color: var(--secondary-foreground);
+  color: var(--brand-blue-ink);
   text-shadow: none;
   backdrop-filter: none;
   box-shadow:
@@ -353,6 +356,40 @@
 .work-surface .glass-navy svg,
 .work-surface .glass svg {
   color: currentColor;
+}
+
+/* Cards, fields and framed controls use a fine blue edge with an inset orange
+   keyline. Status surfaces and the legal/report `.paper` scope are excluded. */
+.work-surface :where(.border-border, .border-input, [class*="border-border/"], [class*="border-input/"]):not(.paper *) {
+  border-color: var(--work-control-edge);
+  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
+}
+
+.work-surface :where(input, textarea, select, [role="combobox"]) {
+  min-height: 2.75rem;
+}
+
+/* Portalled menus and dialogs sit outside `.work-surface`; scope them through
+   the active light shell so they receive the same paired keyline. */
+body:has(.work-surface) :where([role="dialog"], [role="menu"], [role="listbox"]) {
+  border-color: var(--work-control-edge);
+  box-shadow: inset 0 0 0 1px var(--work-accent-edge), var(--shadow-raised);
+}
+
+/* Destructive meaning remains in the copy and icon, but white-screen actions
+   no longer become a solid red block. */
+body:has(.work-surface) :where(button, [role="button"]).bg-fail,
+body:has(.work-surface) :where(button, [role="button"]).bg-destructive {
+  background: var(--work-blue);
+  border: 1.5px solid var(--brand-accent);
+  color: var(--primary-foreground);
+  box-shadow: none;
+}
+
+body:has(.work-surface) :where(button, [role="button"]).bg-fail:hover,
+body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover {
+  background: var(--work-blue-deep);
+  border-color: var(--brand-accent-light);
 }
 
 @utility work-choice {
