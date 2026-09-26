@@ -1,7 +1,7 @@
-# Restore the app to the approved feature-overview style
+# Restore white working screens to the approved feature-overview style
 
 ## Visual direction
-Use the supplied `instructBrain-feature-overview.pdf` as the exact design reference for working screens:
+Use the supplied `instructBrain-feature-overview.pdf` as the exact design reference for white working screens only:
 
 - White page background with a solid navy header.
 - A single thin orange divider or top accent, not blue-and-orange double borders.
@@ -20,8 +20,9 @@ Use the supplied `instructBrain-feature-overview.pdf` as the exact design refere
 ## Components and screens
 - Rework shared white-screen tokens and controls first so cards, fields, menus, dialogs, and buttons inherit the reference style consistently.
 - Keep primary actions obvious without turning every control orange or outlining every object twice.
-- Apply the same visual language across report start, capture, review, issue, projects, compliance, directory, settings, and admin screens.
-- Preserve the light `.paper` report output and its current content structure; align its typography and branding with the approved reference without changing generated report behaviour.
+- Apply the same visual language only where report start, capture, review, issue, projects, compliance, directory, settings, and admin use white working surfaces.
+- Leave navy screens and their buttons, borders, wordmarks, colours, and typography unchanged in this first pass.
+- Leave the `.paper` report preview, shared report view, and generated PDF completely unchanged in this first pass.
 
 ## Quality checks
 - Compare representative white screens directly against the supplied PDF at desktop and 375px phone widths.
@@ -29,5 +30,6 @@ Use the supplied `instructBrain-feature-overview.pdf` as the exact design refere
 - Run the full automated suite and confirm the preview build is clean.
 
 ## Boundaries
+- White working screens only; no changes to navy screens or report output.
 - No workflow, data, AI, report-order, photo-role, permission, or Supabase changes.
 - No dark mode, gradients, mascots, decorative blobs, or broad navigation redesign.
