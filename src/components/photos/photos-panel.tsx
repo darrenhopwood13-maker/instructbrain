@@ -108,9 +108,8 @@ export function PhotosPanel({
   const inventoryWorkflow = workflow?.kind === "inventory_room_schedule" ? workflow : null;
   const zoneFields = useMemo(
     () =>
-      inventoryWorkflow?.sectionField
-        ? fields.filter((field) => field.id === inventoryWorkflow.sectionField)
-        : fields,
+      // Property inventory: rooms are set only in the room organiser, never at upload.
+      inventoryWorkflow ? [] : fields,
     [fields, inventoryWorkflow],
   );
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
@@ -848,7 +847,15 @@ export function PhotosPanel({
             </DialogDescription>
           </DialogHeader>
           <CaptureFieldsForm
-            fields={fields}
+            fields={
+              inventoryWorkflow
+                ? fields.filter(
+                    (field) =>
+                      field.id !== inventoryWorkflow.sectionField &&
+                      field.id !== inventoryWorkflow.roleField,
+                  )
+                : fields
+            }
             values={bulkValues}
             onChange={(fieldId, value) =>
               setBulkValues((current) => ({ ...current, [fieldId]: value }))
@@ -877,7 +884,15 @@ export function PhotosPanel({
             </DialogDescription>
           </DialogHeader>
           <CaptureFieldsForm
-            fields={fields}
+            fields={
+              inventoryWorkflow
+                ? fields.filter(
+                    (field) =>
+                      field.id !== inventoryWorkflow.sectionField &&
+                      field.id !== inventoryWorkflow.roleField,
+                  )
+                : fields
+            }
             values={editValues}
             onChange={(fieldId, value) =>
               setEditValues((current) => ({ ...current, [fieldId]: value }))
