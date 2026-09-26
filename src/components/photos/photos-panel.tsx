@@ -89,6 +89,7 @@ export function PhotosPanel({
   initialFiles,
   pinnedFields,
   onReady,
+  onUploadedCount,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
@@ -98,6 +99,7 @@ export function PhotosPanel({
   pinnedFields?: Record<string, string>;
   /** Hands the start screen a way to add later shots to this report. */
   onReady?: (add: (files: File[]) => void) => void;
+  onUploadedCount?: (count: number) => void;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
@@ -404,6 +406,9 @@ export function PhotosPanel({
   }, [photos, inventoryWorkflow]);
 
   const uploadedCount = uploads.filter((item) => item.state === "done").length;
+  useEffect(() => {
+    onUploadedCount?.(uploadedCount);
+  }, [uploadedCount, onUploadedCount]);
 
 
   const retry = useCallback(

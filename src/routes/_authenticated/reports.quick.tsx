@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
@@ -344,7 +344,7 @@ function CustomReport() {
   // Continuous camera: the first shot creates the report; later shots go
   // straight to the report's upload queue, or wait briefly until it is ready.
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [shotsSent, setShotsSent] = useState(0);
+  const [uploadedCount, setUploadedCount] = useState(0);
   const addToReportRef = useRef<((files: File[]) => void) | null>(null);
   const waitingShotsRef = useRef<File[]>([]);
   const onPanelReady = useCallback((add: (files: File[]) => void) => {
@@ -356,7 +356,6 @@ function CustomReport() {
     }
   }, []);
   const onShot = (file: File) => {
-    setShotsSent((count) => count + 1);
     if (addToReportRef.current) {
       addToReportRef.current([file]);
       return;
@@ -754,7 +753,13 @@ function CustomReport() {
       {capturing && activeSnapshot ? (
         <>
           <section className="mt-8">
-            <PhotosPanel reportId={reportId} snapshot={activeSnapshot} initialFiles={initialFiles} />
+            <PhotosPanel
+              reportId={reportId}
+              snapshot={activeSnapshot}
+              initialFiles={initialFiles}
+              onReady={onPanelReady}
+              onUploadedCount={setUploadedCount}
+            />
           </section>
 
           <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">
@@ -767,6 +772,18 @@ function CustomReport() {
           </div>
         </>
       ) : null}
+      <ContinuousCamera
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onShot={onShot}
+        onFallback={() => cameraRef.current?.click()}
+        uploadedCount={uploadedCount}
+        allowAnalyse={
+          chosenDefinition
+            ? photoWorkflowOf(snapshotOf(chosenDefinition))?.kind !== "inventory_room_schedule"
+            : true
+        }
+      />
     </AppShell>
   );
 }
