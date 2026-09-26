@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReportStepper, defaultStep, readyToIssue, type ReportStep } from "@/components/report/report-stepper";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -180,6 +180,58 @@ function ReportWorkspace() {
     ]),
   ).sort((a, b) => a.localeCompare(b));
 
+  const findingsAll = findings.data ?? [];
+  const docEarly = document.data ?? null;
+  const stepState = {
+    hasFindings: findingsAll.length > 0,
+    unresolved: docEarly
+      ? issueBlockers(docEarly).notAssessed.length + issueBlockers(docEarly).unconfirmed.length
+      : findingsAll.filter((f) => !f.confirmed).length,
+    issued: docEarly?.report.status === "issued",
+  };
+  const loadedEnough = !findings.isPending && !document.isPending;
+  const step: ReportStep = tab ?? (loadedEnough ? defaultStep(stepState) : "photos");
+  const ready = readyToIssue(stepState);
+
+  const goTo = useCallback(
+    (next: ReportStep) => {
+      setAutoAdvance(false);
+      void navigate({ search: (current) => ({ ...current, tab: next }) });
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [navigate],
+  );
+
+  const onRunComplete = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["findings", id] }).then(() => goTo("review"));
+  }, [queryClient, id, goTo]);
+
+  const startAnalysis = () => {
+    const button = window.document.getElementById("analyse-photos-button") as HTMLButtonElement | null;
+    if (!button) return;
+    button.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!button.disabled) button.click();
+  };
+  const pendingNote = Number(
+    (typeof window !== "undefined" &&
+      window.document.getElementById("analyse-photos-button")?.getAttribute("data-pending")) ||
+      0,
+  );
+
+  // Once everything on the review step becomes resolved, offer to move on and
+  // go there after a short moment unless the person chooses to stay.
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const wasReady = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!loadedEnough) return;
+    if (wasReady.current === false && ready && step === "review") setAutoAdvance(true);
+    wasReady.current = ready;
+  }, [ready, step, loadedEnough]);
+  useEffect(() => {
+    if (!autoAdvance) return;
+    const timer = window.setTimeout(() => goTo("output"), 3000);
+    return () => window.clearTimeout(timer);
+  }, [autoAdvance, goTo]);
 
   if (query.isPending) {
     return (
@@ -290,56 +342,30 @@ function ReportWorkspace() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">Updated {report.updated}</p>
 
-        {doc ? (
-          <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap sm:items-center">
-            <ReportActions
-              document={doc}
-              resultView={resultView}
-              prepareSummary={tab === "output"}
-              onAddToProject={!project ? () => setAttaching(true) : undefined}
-            />
-          </div>
-        ) : null}
 
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
       </header>
 
-      {/* Numbered steps, each showing what is still outstanding, so progress is
-          readable at a glance instead of hidden behind three equal tabs. */}
-      <Tabs
-        value={tab ?? "photos"}
-        onValueChange={(next) => {
-          if (next !== "photos" && next !== "review" && next !== "output") return;
-          void navigate({ search: (current) => ({ ...current, tab: next }), replace: true });
-        }}
-        className="mt-10"
-      >
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="photos">1 · Photos</TabsTrigger>
-          <TabsTrigger value="review">
-            2 · Review
-            {toConfirm > 0 ? (
-              <span className="ml-1.5 rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
-                {toConfirm}
-              </span>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="output">3 · Issue</TabsTrigger>
-        </TabsList>
-
+      <div className="mt-8">
+        <ReportStepper current={step} onSelect={goTo} reviewCount={toConfirm} />
         <p role="status" className="mt-3 text-sm text-muted-foreground">
           {stepNote}
         </p>
+      </div>
 
-        <TabsContent value="photos" className="mt-10">
+      {step === "photos" ? (
+        <div className="mt-8 space-y-8">
           <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
-        </TabsContent>
+          <AnalysisPanel
+            reportId={report.id}
+            snapshot={report.surveyTypeSnapshot}
+            onRunComplete={onRunComplete}
+          />
+        </div>
+      ) : null}
 
-        <TabsContent value="review" className="mt-10">
-          <div className="mb-5">
-            <AnalysisPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
-          </div>
-
+      {step === "review" ? (
+        <div className="mt-8">
           {findings.isPending ? (
             <LoadingState label="Loading findings…" />
           ) : findings.isError ? (
@@ -348,18 +374,23 @@ function ReportWorkspace() {
               error={findings.error}
               onRetry={() => void findings.refetch()}
             />
-          ) : (findings.data ?? []).length === 0 ? (
+          ) : findingList.length === 0 ? (
             <EmptyState
               icon={FileText}
               eyebrow="Nothing to review"
               title="No findings on this report yet"
-              description="Upload photographs on the Photos tab, then draft findings from them here."
+              description="Add photographs and analyse them first."
+              action={
+                <Button type="button" onClick={() => goTo("photos")}>
+                  Back to photos
+                </Button>
+              }
             />
           ) : (
             <ReviewList
               snapshot={report.surveyTypeSnapshot}
               reportId={report.id}
-              findings={findings.data ?? []}
+              findings={findingList}
               onConfirm={onConfirm}
               onConfirmMany={writeConfirmations}
               onEditText={onEditText}
@@ -367,9 +398,11 @@ function ReportWorkspace() {
               onAssignTrade={onAssignTrade}
             />
           )}
-        </TabsContent>
+        </div>
+      ) : null}
 
-        <TabsContent value="output" className="mt-10">
+      {step === "output" ? (
+        <div className="mt-8">
           {document.isPending ? (
             <LoadingState label="Assembling the document…" />
           ) : document.isError ? (
@@ -380,6 +413,14 @@ function ReportWorkspace() {
             />
           ) : doc ? (
             <>
+              <div className="mb-6 grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+                <ReportActions
+                  document={doc}
+                  resultView={resultView}
+                  prepareSummary
+                  onAddToProject={!project ? () => setAttaching(true) : undefined}
+                />
+              </div>
               {locked ? (
                 <p className="mb-5 rounded-lg border border-brand-blue/30 bg-brand-blue-soft px-4 py-3 text-sm text-brand-blue-ink">
                   This report has been issued as version {doc.report.currentVersion} and is locked.
@@ -478,8 +519,63 @@ function ReportWorkspace() {
               </section>
             </>
           ) : null}
-        </TabsContent>
-      </Tabs>
+        </div>
+      ) : null}
+
+      {/* Thumb-zone bar: the one next thing to do on this step. */}
+      {!locked && (step === "photos" || step === "review") ? (
+        <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 mt-8 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:bottom-4">
+          {step === "photos" ? (
+            findingList.length > 0 && pendingNote === 0 ? (
+              <Button type="button" className="min-h-12 w-full" onClick={() => goTo("review")}>
+                Continue to review
+              </Button>
+            ) : (
+              <Button type="button" className="min-h-12 w-full" onClick={startAnalysis}>
+                Analyse photos
+              </Button>
+            )
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                {findingList.length - toConfirm} of {findingList.length} confirmed
+              </p>
+              <Button
+                type="button"
+                className="min-h-11"
+                variant={ready ? "default" : "quiet"}
+                onClick={() => goTo("output")}
+              >
+                Continue to issue
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {autoAdvance ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-x-4 bottom-[calc(10rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:bottom-24"
+        >
+          <p className="font-semibold">All findings confirmed</p>
+          <p className="mt-1 text-sm text-muted-foreground">Taking you to Issue…</p>
+          <div className="mt-3 flex gap-2">
+            <Button type="button" className="min-h-11 flex-1" onClick={() => goTo("output")}>
+              Continue to issue
+            </Button>
+            <Button
+              type="button"
+              variant="quiet"
+              className="min-h-11"
+              onClick={() => setAutoAdvance(false)}
+            >
+              Stay here
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }
