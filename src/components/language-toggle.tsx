@@ -41,7 +41,7 @@ export function LanguageToggle({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Language — currently ${current?.native ?? "English"}`}
-            className="console-control flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold uppercase tracking-wide text-brand-accent-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+            className="console-control flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold uppercase tracking-wide text-brand-accent-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
           >
             <Globe aria-hidden="true" className="size-4 shrink-0" />
             {current?.label ?? "EN"}
