@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
+import { EMPTY_PHOTO_STATUS, nextPhotoAction, type PhotoStatus } from "@/lib/report/next-action";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
 import { photoWorkflowOf } from "@/lib/survey-types";
@@ -345,6 +346,15 @@ function CustomReport() {
   // straight to the report's upload queue, or wait briefly until it is ready.
   const [cameraOpen, setCameraOpen] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
+  const [photoStatus, setPhotoStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
+  // Analysis happens on the report screen; here the count is not known yet.
+  const nextAction = nextPhotoAction(photoStatus, {
+    pending: null,
+    running: false,
+    completed: 0,
+    total: 0,
+    hasFindings: false,
+  });
   const addToReportRef = useRef<((files: File[]) => void) | null>(null);
   const waitingShotsRef = useRef<File[]>([]);
   const onPanelReady = useCallback((add: (files: File[]) => void) => {
@@ -759,17 +769,27 @@ function CustomReport() {
               initialFiles={initialFiles}
               onReady={onPanelReady}
               onUploadedCount={setUploadedCount}
+              onStatus={setPhotoStatus}
+              nextAction={
+                nextAction.enabled ? (
+                  <Button asChild className="min-h-12 w-full whitespace-normal">
+                    <Link
+                      to="/reports/$id"
+                      params={{ id: reportId }}
+                      search={{ tab: "photos", analyse: true }}
+                    >
+                      {nextAction.label}
+                      <ArrowRight aria-hidden="true" className="size-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button type="button" className="min-h-12 w-full whitespace-normal" disabled>
+                    {nextAction.label}
+                  </Button>
+                )
+              }
             />
           </section>
-
-          <div className="sticky bottom-20 z-20 mt-8 sm:bottom-4">
-            <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/reports/$id" params={{ id: reportId }} search={{ tab: "review" }}>
-                Draft the findings
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
-            </Button>
-          </div>
         </>
       ) : null}
       <ContinuousCamera

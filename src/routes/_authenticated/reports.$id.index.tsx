@@ -16,6 +16,12 @@ import { ReportDocumentView } from "@/components/report/report-document-view";
 import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { languageLabel } from "@/i18n/languages";
 import { ReportActions } from "@/components/report/report-actions";
+import {
+  EMPTY_PHOTO_STATUS,
+  nextPhotoAction,
+  type AnalysisStatus,
+  type PhotoStatus,
+} from "@/lib/report/next-action";
 import { InlineField } from "@/components/report/inline-field";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -36,13 +42,17 @@ import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
 import { safeResultView, type ResultView } from "@/lib/report/grouping";
 
-type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView };
+type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView; analyse?: boolean };
 
 export const Route = createFileRoute("/_authenticated/reports/$id/")({
   validateSearch: (search: Record<string, unknown>): ReportSearch => {
     const tab = search["tab"];
     const view = safeResultView(search["view"]);
-    return tab === "review" || tab === "output" || tab === "photos" ? { tab, view } : { view };
+    const flag = search["analyse"];
+    const extra = flag === true || flag === 1 || flag === "1" || flag === "true" ? { analyse: true } : {};
+    return tab === "review" || tab === "output" || tab === "photos"
+      ? { tab, view, ...extra }
+      : { view, ...extra };
   },
   head: () => {
     const title = "Report workspace — instructBrain";
@@ -65,7 +75,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
 function ReportWorkspace() {
   const [attaching, setAttaching] = useState(false);
   const { id } = Route.useParams();
-  const { tab, view } = Route.useSearch();
+  const { tab, view, analyse } = Route.useSearch();
   const navigate = Route.useNavigate();
   const resultView = safeResultView(view);
   const queryClient = useQueryClient();
@@ -206,17 +216,33 @@ function ReportWorkspace() {
     void queryClient.invalidateQueries({ queryKey: ["findings", id] }).then(() => goTo("review"));
   }, [queryClient, id, goTo]);
 
-  const startAnalysis = () => {
-    const button = window.document.getElementById("analyse-photos-button") as HTMLButtonElement | null;
-    if (!button) return;
-    button.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (!button.disabled) button.click();
-  };
-  const pendingNote = Number(
-    (typeof window !== "undefined" &&
-      window.document.getElementById("analyse-photos-button")?.getAttribute("data-pending")) ||
-      0,
-  );
+  // The photos step's one next action, from the photos and the analysis state.
+  const [photoStatus, setPhotoStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
+  const [analysisStatus, setAnalysisStatus] = useState<Omit<AnalysisStatus, "hasFindings">>({
+    pending: null,
+    running: false,
+    completed: 0,
+    total: 0,
+  });
+  const [confirmSignal, setConfirmSignal] = useState(0);
+  const nextAction = nextPhotoAction(photoStatus, {
+    ...analysisStatus,
+    hasFindings: findingsAll.length > 0,
+  });
+
+  // Arriving from Start a report opens the analysis confirmation once, as soon
+  // as it is allowed. The flag is then cleared so Back never reopens it.
+  const arrivalHandled = useRef(false);
+  useEffect(() => {
+    if (!analyse || arrivalHandled.current) return;
+    if (nextAction.kind === "uploading" || analysisStatus.pending === null) return;
+    arrivalHandled.current = true;
+    if (nextAction.kind === "analyse") setConfirmSignal((value) => value + 1);
+    void navigate({
+      search: ({ analyse: _dropped, ...rest }) => rest,
+      replace: true,
+    });
+  }, [analyse, nextAction.kind, analysisStatus.pending, navigate]);
 
   // Once everything on the review step becomes resolved, offer to move on and
   // go there after a short moment unless the person chooses to stay.
@@ -354,12 +380,35 @@ function ReportWorkspace() {
       </div>
 
       {step === "photos" ? (
-        <div className="mt-8 space-y-8">
-          <PhotosPanel reportId={report.id} snapshot={report.surveyTypeSnapshot} />
+        <div className="mt-8 space-y-8 pb-40 sm:pb-0">
+          <PhotosPanel
+            reportId={report.id}
+            snapshot={report.surveyTypeSnapshot}
+            onStatus={setPhotoStatus}
+            nextAction={
+              locked ? null : (
+                <Button
+                  type="button"
+                  className="min-h-12 w-full whitespace-normal"
+                  disabled={!nextAction.enabled}
+                  onClick={() =>
+                    nextAction.kind === "review"
+                      ? goTo("review")
+                      : setConfirmSignal((value) => value + 1)
+                  }
+                >
+                  {nextAction.label}
+                </Button>
+              )
+            }
+          />
           <AnalysisPanel
             reportId={report.id}
             snapshot={report.surveyTypeSnapshot}
             onRunComplete={onRunComplete}
+            confirmSignal={confirmSignal}
+            onStatus={setAnalysisStatus}
+            photoCount={photoStatus.photoCount}
           />
         </div>
       ) : null}
@@ -522,21 +571,11 @@ function ReportWorkspace() {
         </div>
       ) : null}
 
-      {/* Thumb-zone bar: the one next thing to do on this step. */}
-      {!locked && (step === "photos" || step === "review") ? (
+      {/* Thumb-zone bar on review. The photos step carries its next action
+          inside the photos bar, next to Take photo / Add photos. */}
+      {!locked && step === "review" ? (
         <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 mt-8 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:bottom-4">
-          {step === "photos" ? (
-            findingList.length > 0 && pendingNote === 0 ? (
-              <Button type="button" className="min-h-12 w-full" onClick={() => goTo("review")}>
-                Continue to review
-              </Button>
-            ) : (
-              <Button type="button" className="min-h-12 w-full" onClick={startAnalysis}>
-                Analyse photos
-              </Button>
-            )
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 {findingList.length - toConfirm} of {findingList.length} confirmed
               </p>
@@ -549,7 +588,6 @@ function ReportWorkspace() {
                 Continue to issue
               </Button>
             </div>
-          )}
         </div>
       ) : null}
 

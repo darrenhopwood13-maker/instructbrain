@@ -9,6 +9,8 @@ export type ReadinessStep = {
   id: string;
   label: string;
   detail: string;
+  /** A few words saying what is still to do, for the next-step button. */
+  todo: string;
   done: boolean;
 };
 
@@ -80,6 +82,7 @@ export function inventoryReadiness(
       detail: coverChosen
         ? "The title page photograph is set."
         : "Pick one photograph to use as the title page.",
+      todo: "Choose a title page photograph",
       done: coverChosen,
     },
     {
@@ -91,6 +94,7 @@ export function inventoryReadiness(
           : `${roomList.length} room${roomList.length === 1 ? "" : "s"}: ${roomList
               .map((room) => room.label)
               .join(", ")}`,
+      todo: "Put photographs into rooms",
       done: roomList.length > 0,
     },
     {
@@ -100,6 +104,7 @@ export function inventoryReadiness(
         unallocated === 0
           ? "All photographs sit in a room."
           : `${unallocated} photograph${unallocated === 1 ? "" : "s"} not in a room yet.`,
+      todo: `${unallocated} photograph${unallocated === 1 ? "" : "s"} not in a room`,
       done: unallocated === 0 && roomList.length > 0,
     },
   ];
@@ -116,6 +121,12 @@ export function inventoryReadiness(
             : `Still needed in: ${shortOfOverviews
                 .map((room) => `${room.label} (${room.overviews} of ${maxOverviews})`)
                 .join(", ")}`,
+      todo:
+        shortOfOverviews.length === 0
+          ? "Choose room photographs"
+          : `Choose room photographs for ${shortOfOverviews[0]?.label ?? "each room"}${
+              shortOfOverviews.length > 1 ? ` and ${shortOfOverviews.length - 1} more` : ""
+            }`,
       done: roomList.length > 0 && shortOfOverviews.length === 0,
     });
   }

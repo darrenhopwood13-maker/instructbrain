@@ -15,7 +15,7 @@ export function PhotoCaptureActions({
   compact?: boolean;
 }) {
   return (
-    <div className={compact ? "grid gap-2 sm:grid-cols-2" : "grid gap-2"}>
+    <div className={compact ? "grid grid-cols-2 gap-2" : "grid gap-2"}>
       <Button
         type="button"
         variant="brand"
