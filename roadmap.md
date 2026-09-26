@@ -53,6 +53,6 @@
 - [ ] Verify the live camera experience on a physical phone.
 
 ## 26 Sep — blue-screen button accents
-- [ ] Replace filled/3D orange buttons on navy screens with soft orange outlines.
-- [ ] Keep white working-screen buttons neutral, with no orange outlines.
-- [ ] Verify phone and desktop button states, touch targets and label wrapping.
+- [x] Replace filled/3D orange buttons on navy screens with soft orange outlines.
+- [x] Keep white working-screen buttons neutral, with no orange outlines.
+- [x] Verify phone and desktop button states, touch targets and label wrapping.
