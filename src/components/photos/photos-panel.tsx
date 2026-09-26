@@ -749,6 +749,9 @@ export function PhotosPanel({
               : "the first photograph will be used. Choose any photograph below instead."}
           </p>
 
+          {inventoryWorkflow ? (
+            <h3 className="mt-4 text-sm font-semibold">Not in a room · {groupedForGrid.count}</h3>
+          ) : null}
           <PhotoGrid
             photos={
               inventoryWorkflow

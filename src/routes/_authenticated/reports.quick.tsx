@@ -7,6 +7,8 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
+import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
+import { photoWorkflowOf } from "@/lib/survey-types";
 import { TemplateSelect } from "@/components/template-select";
 import {
   Select,
@@ -339,6 +341,39 @@ function CustomReport() {
 
   };
 
+  // Continuous camera: the first shot creates the report; later shots go
+  // straight to the report's upload queue, or wait briefly until it is ready.
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [shotsSent, setShotsSent] = useState(0);
+  const addToReportRef = useRef<((files: File[]) => void) | null>(null);
+  const waitingShotsRef = useRef<File[]>([]);
+  const onPanelReady = useCallback((add: (files: File[]) => void) => {
+    addToReportRef.current = add;
+    if (waitingShotsRef.current.length > 0) {
+      const waiting = waitingShotsRef.current;
+      waitingShotsRef.current = [];
+      add(waiting);
+    }
+  }, []);
+  const onShot = (file: File) => {
+    setShotsSent((count) => count + 1);
+    if (addToReportRef.current) {
+      addToReportRef.current([file]);
+      return;
+    }
+    if (!reportId && !start.isPending && heldFilesRef.current.length === 0) {
+      heldFilesRef.current = [file];
+      setHeldCount(1);
+      start.mutate([file]);
+      return;
+    }
+    waitingShotsRef.current.push(file);
+  };
+  const openCamera = () => {
+    if (canUseInAppCamera()) setCameraOpen(true);
+    else cameraRef.current?.click();
+  };
+
   const capturing = reportId !== null && snapshot !== null;
   const activeSnapshot = snapshot;
 
@@ -442,7 +477,7 @@ function CustomReport() {
             }}
           />
            <PhotoCaptureActions
-             onCamera={() => cameraRef.current?.click()}
+             onCamera={openCamera}
              onGallery={() => pickerRef.current?.click()}
              disabled={!organisationId || focusMissing}
              busy={start.isPending}
