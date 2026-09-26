@@ -568,12 +568,11 @@ function ReportWorkspace() {
         </div>
       ) : null}
 
-      {/* Thumb-zone bar: the one next thing to do on this step. */}
-      {/* The photos step carries its next action inside the photos bar. */}
+      {/* Thumb-zone bar on review. The photos step carries its next action
+          inside the photos bar, next to Take photo / Add photos. */}
       {!locked && step === "review" ? (
         <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 mt-8 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:bottom-4">
-          {(
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 {findingList.length - toConfirm} of {findingList.length} confirmed
               </p>
@@ -586,7 +585,6 @@ function ReportWorkspace() {
                 Continue to issue
               </Button>
             </div>
-          )}
         </div>
       ) : null}
 
