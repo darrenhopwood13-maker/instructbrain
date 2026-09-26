@@ -7,7 +7,7 @@
  * in the database.
  */
 
-import type { PhotoWorkflow } from "@/lib/survey-types";
+import { roleIsOutsideSections, type PhotoWorkflow } from "@/lib/survey-types";
 
 export type RoomPhoto = {
   id: string;
@@ -47,6 +47,8 @@ export function groupPhotosByRoom<T extends RoomPhoto>(
   const ordered = [...photos].sort((a, b) => a.sequence - b.sequence);
 
   for (const photo of ordered) {
+    // Handover evidence (meters, keys) never belongs to a room.
+    if (roleIsOutsideSections(workflow, photo.capture_fields)) continue;
     const label = roomOf(photo, workflow);
     if (label === "") {
       unallocated.push(photo);

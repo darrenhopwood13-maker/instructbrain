@@ -11,7 +11,7 @@ import { loadAnalysableImage } from "@/lib/photos/analysis-image.server";
 import { analysisSourcePath } from "@/lib/photos/storage-paths";
 import { proposeRooms, type SuggestImage } from "@/lib/photos/room-suggest.server";
 import type { RoomProposal } from "@/lib/photos/room-suggest";
-import { photoWorkflowOf, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { photoWorkflowOf, roleIsOutsideSections, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
@@ -45,7 +45,7 @@ export async function suggestRoomsForReport(
   }
 
   const { data: photoRows, error: photoError } = await table(client, "photos")
-    .select("id, storage_path, thumbnail_path, analysis_path, sequence")
+    .select("id, storage_path, thumbnail_path, analysis_path, sequence, capture_fields")
     .eq("report_id", reportId)
     .order("sequence", { ascending: true });
   if (photoError) throw new Error(photoError.message);
@@ -56,7 +56,11 @@ export async function suggestRoomsForReport(
     thumbnail_path: string | null;
     analysis_path: string | null;
     sequence: number | null;
-  }>).filter((photo) => photo.id !== report.cover_photo_id);
+    capture_fields: Record<string, string> | null;
+  }>).filter(
+    (photo) =>
+      photo.id !== report.cover_photo_id && !roleIsOutsideSections(workflow, photo.capture_fields),
+  );
 
   if (photos.length === 0) {
     throw new Error("There are no photographs to sort into rooms yet.");
