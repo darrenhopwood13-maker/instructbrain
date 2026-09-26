@@ -716,10 +716,28 @@
 
 .console-surface .console-control {
   border-color: var(--brand-accent);
+  border-width: 1.5px;
+  background-color: var(--glass-surface);
+  border-radius: 9999px;
 }
 
 .console-surface .console-control:hover {
   border-color: var(--brand-accent-light);
+  background-color: var(--glass-surface-hover);
+}
+
+/* Dialog close shares the navy-screen control treatment — the dialog itself
+   renders on the console tokens, so the close matches its own surface. */
+.dialog-close {
+  border-color: var(--brand-accent);
+  border-width: 1.5px;
+  background-color: var(--glass-surface);
+  color: var(--color-foreground);
+}
+
+.dialog-close:hover {
+  border-color: var(--brand-accent-light);
+  background-color: var(--glass-surface-hover);
 }
 
 
