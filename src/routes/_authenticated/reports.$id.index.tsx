@@ -200,7 +200,16 @@ function ReportWorkspace() {
     issued: docEarly?.report.status === "issued",
   };
   const loadedEnough = !findings.isPending && !document.isPending;
-  const step: ReportStep = tab ?? (loadedEnough ? defaultStep(stepState) : "photos");
+  const [analysisStatus, setAnalysisStatus] = useState<Omit<AnalysisStatus, "hasFindings">>({
+    pending: null,
+    running: false,
+    completed: 0,
+    total: 0,
+  });
+  // While a run is going, the step never re-derives itself: the first results
+  // arriving must not move the screen away and cut the run short.
+  const step: ReportStep =
+    tab ?? (analysisStatus.running ? "photos" : loadedEnough ? defaultStep(stepState) : "photos");
   const ready = readyToIssue(stepState);
 
   const goTo = useCallback(
@@ -218,12 +227,6 @@ function ReportWorkspace() {
 
   // The photos step's one next action, from the photos and the analysis state.
   const [photoStatus, setPhotoStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
-  const [analysisStatus, setAnalysisStatus] = useState<Omit<AnalysisStatus, "hasFindings">>({
-    pending: null,
-    running: false,
-    completed: 0,
-    total: 0,
-  });
   const [confirmSignal, setConfirmSignal] = useState(0);
   const nextAction = nextPhotoAction(photoStatus, {
     ...analysisStatus,
@@ -402,14 +405,43 @@ function ReportWorkspace() {
               )
             }
           />
-          <AnalysisPanel
-            reportId={report.id}
-            snapshot={report.surveyTypeSnapshot}
-            onRunComplete={onRunComplete}
-            confirmSignal={confirmSignal}
-            onStatus={setAnalysisStatus}
-            photoCount={photoStatus.photoCount}
-          />
+        </div>
+      ) : null}
+
+      {/* Always mounted, so moving between steps never stops a run. */}
+      <div className={step === "photos" ? "mt-8 pb-40 sm:pb-0" : "hidden"}>
+        <AnalysisPanel
+          reportId={report.id}
+          snapshot={report.surveyTypeSnapshot}
+          onRunComplete={onRunComplete}
+          confirmSignal={confirmSignal}
+          onStatus={setAnalysisStatus}
+          photoCount={photoStatus.photoCount}
+        />
+      </div>
+
+      {step !== "photos" && !locked && (analysisStatus.running || (analysisStatus.pending ?? 0) > 0) ? (
+        <div
+          role="status"
+          className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-sm">
+            {analysisStatus.running
+              ? `Analysing ${analysisStatus.completed} of ${analysisStatus.total} photos…`
+              : `${analysisStatus.pending} photo${analysisStatus.pending === 1 ? "" : "s"} not analysed yet.`}
+          </p>
+          {!analysisStatus.running ? (
+            <Button
+              type="button"
+              className="min-h-11"
+              onClick={() => {
+                goTo("photos");
+                setConfirmSignal((value) => value + 1);
+              }}
+            >
+              Analyse remaining
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
