@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isUnreadableFileError, snapshotFiles } from "@/lib/photos/file-snapshot";
+import {
+  isAppOwnedFile,
+  isUnreadableFileError,
+  markAppOwnedFile,
+  snapshotFiles,
+} from "@/lib/photos/file-snapshot";
 
 function unreadable(name: string): File {
   const file = new File([new Uint8Array([1, 2, 3])], name, { type: "image/jpeg" });
@@ -31,6 +36,15 @@ describe("file snapshots", () => {
   it("keeps the original reference when the bytes cannot be read", async () => {
     const original = unreadable("gone.jpg");
     const held = await snapshotFiles([original]);
+    expect(held[0]).toBe(original);
+  });
+
+  it("does not copy a file whose bytes were created inside the app", async () => {
+    const original = markAppOwnedFile(
+      new File([new Uint8Array([4, 5, 6])], "camera.jpg", { type: "image/jpeg" }),
+    );
+    const held = await snapshotFiles([original]);
+    expect(isAppOwnedFile(original)).toBe(true);
     expect(held[0]).toBe(original);
   });
 

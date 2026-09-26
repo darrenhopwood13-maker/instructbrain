@@ -13,6 +13,21 @@ import { deviceProvenanceOf, stampFile } from "@/lib/photos/device-provenance";
 
 /** Total bytes held in memory at once; beyond this the reference is kept. */
 const MEMORY_BUDGET_BYTES = 192 * 1024 * 1024;
+const appOwnedFiles = new WeakSet<File>();
+
+/**
+ * Files created from bytes already owned by this page do not need a second
+ * byte-for-byte memory copy. External camera/gallery references are never
+ * marked and retain the Android safeguard below.
+ */
+export function markAppOwnedFile(file: File): File {
+  appOwnedFiles.add(file);
+  return file;
+}
+
+export function isAppOwnedFile(file: File): boolean {
+  return appOwnedFiles.has(file);
+}
 
 export function isUnreadableFileError(error: unknown): boolean {
   const name = (error as { name?: string } | null)?.name ?? "";
@@ -33,6 +48,10 @@ export async function snapshotFiles(files: File[]): Promise<File[]> {
   let held = 0;
   const snapshots: File[] = [];
   for (const file of files) {
+    if (isAppOwnedFile(file)) {
+      snapshots.push(file);
+      continue;
+    }
     if (held + file.size > MEMORY_BUDGET_BYTES) {
       snapshots.push(file);
       continue;

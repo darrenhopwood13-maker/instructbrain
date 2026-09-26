@@ -44,3 +44,10 @@
 - [x] Same camera on compliance, close-out and title-page photos
 - [x] instructBrain footer credit + subtle orange on all reports
 - [ ] Directory logo button restyle (not started)
+
+## 26 Sep — larger, faster camera
+- [x] Make the in-app camera a full-screen mobile viewfinder with overlaid thumb-zone controls.
+- [x] Move secondary camera status and analysis controls into a compact expandable panel.
+- [x] Add immediate capture feedback and prevent overlapping camera reads.
+- [x] Skip redundant byte copying only for app-created camera files.
+- [ ] Verify the live camera experience on a physical phone.
