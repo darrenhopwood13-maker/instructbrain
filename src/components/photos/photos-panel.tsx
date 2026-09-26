@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { PhotoStatus } from "@/lib/report/next-action";
 import { Camera, Info, Loader2, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { organisationPlanQuery } from "@/lib/plans";
@@ -90,6 +91,8 @@ export function PhotosPanel({
   pinnedFields,
   onReady,
   onUploadedCount,
+  nextAction,
+  onStatus,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
@@ -100,6 +103,13 @@ export function PhotosPanel({
   /** Hands the start screen a way to add later shots to this report. */
   onReady?: (add: (files: File[]) => void) => void;
   onUploadedCount?: (count: number) => void;
+  /**
+   * The one next step after photographs. On a phone it sits in the same bottom
+   * bar as Take photo / Add photos, so neither can cover the other.
+   */
+  nextAction?: ReactNode;
+  /** Upload progress and room readiness, for the parent's next-step button. */
+  onStatus?: (status: PhotoStatus) => void;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
@@ -409,6 +419,26 @@ export function PhotosPanel({
     onUploadedCount?.(uploadedCount);
   }, [uploadedCount, onUploadedCount]);
 
+  const readiness = useMemo(
+    () => inventoryReadiness(inventoryWorkflow, photos, coverPhotoId),
+    [inventoryWorkflow, photos, coverPhotoId],
+  );
+  const uploadsActive = uploads.filter(
+    (item) => item.state === "queued" || item.state === "running",
+  ).length;
+  const uploadsTotal = uploads.filter(
+    (item) => item.state !== "cancelled" && item.state !== "skipped",
+  ).length;
+  useEffect(() => {
+    onStatus?.({
+      photoCount: photos.length,
+      uploadsActive,
+      uploadsDone: uploadedCount,
+      uploadsTotal,
+      readiness,
+    });
+  }, [onStatus, photos.length, uploadsActive, uploadedCount, uploadsTotal, readiness]);
+
 
   const retry = useCallback(
     (ids: string[]) => {
@@ -565,7 +595,7 @@ export function PhotosPanel({
   }
 
   return (
-    <div className="space-y-5 pb-28 sm:pb-0">
+    <div className={nextAction ? "space-y-5 pb-44 sm:pb-0" : "space-y-5 pb-28 sm:pb-0"}>
       <section className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:p-5">
         <p className="eyebrow">Step one</p>
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
@@ -813,15 +843,21 @@ export function PhotosPanel({
             />
           ) : null}
 
-          <ReadinessChecklist
-            steps={inventoryReadiness(inventoryWorkflow, photos, coverPhotoId)}
-          />
+          <ReadinessChecklist steps={readiness} />
         </>
 
       )}
 
-      {/* One-handed controls: primary actions in the lower third on a phone. */}
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
+      {nextAction ? (
+        <div className="sticky bottom-4 z-20 hidden rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:block">
+          {nextAction}
+        </div>
+      ) : null}
+
+      {/* One-handed controls on a phone: the next step on top, capture beneath,
+          in one bar so nothing is ever hidden behind anything else. */}
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 space-y-2 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
+        {nextAction}
         {atPhotoCap ? (
           <p className="text-center text-sm text-fail-soft">
             Photograph limit reached for this report ({photoCap} on your plan).
