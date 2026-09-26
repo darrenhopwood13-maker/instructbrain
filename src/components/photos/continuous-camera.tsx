@@ -231,16 +231,17 @@ export function ContinuousCamera({
           {flash ? <div aria-hidden="true" className="absolute inset-0 bg-background/60" /> : null}
         </div>
 
-        <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-gradient-to-b from-foreground/80 to-transparent px-3 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <button
+        <div className="absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-foreground/75 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm">
+          <Button
             type="button"
-            className="flex min-h-11 min-w-0 items-center gap-2 justify-self-start rounded-full bg-foreground/70 px-3 text-sm font-semibold text-background backdrop-blur-sm"
+            variant="quiet"
+            className="min-h-11 min-w-0 max-w-full justify-self-start border-background/40 bg-foreground/70 px-3 text-sm font-semibold text-background"
             aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((current) => !current)}
           >
             <span className="truncate">{shots.length} taken · {Math.min(uploadedCount, shots.length)} uploaded</span>
             <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
-          </button>
+          </Button>
           <Button
             type="button"
             variant="quiet"
@@ -279,7 +280,7 @@ export function ContinuousCamera({
           </div>
         ) : null}
 
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-foreground/90 via-foreground/55 to-transparent px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16">
+        <div className="absolute inset-x-0 bottom-0 z-10 bg-foreground/75 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
           {shots.length > 0 ? (
             <ol className="mb-3 flex justify-center gap-2 overflow-hidden" aria-label="Recent photos taken">
               {shots.slice(-5).map((shot, index, visible) => (
