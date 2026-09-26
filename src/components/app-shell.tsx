@@ -45,7 +45,7 @@ function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Account — ${user.email ?? "signed in"}`}
-        className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+        className="console-control inline-flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
       >
         <UserCog aria-hidden="true" className="size-4 shrink-0" />
         <span className="hidden sm:inline">{t("nav.account")}</span>
@@ -116,11 +116,11 @@ export function AppShell({
 
   return (
     <div
-      className={`flex min-h-dvh flex-col${surface === "light" ? " work-surface" : ""}`}
+      className={`flex min-h-dvh flex-col ${surface === "light" ? "work-surface" : "console-surface"}`}
     >
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:border focus:border-brand-accent focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground"
       >
         Skip to main content
       </a>
@@ -142,7 +142,7 @@ export function AppShell({
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: item.exact }}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-sunken hover:text-foreground data-[status=active]:bg-brand-blue-soft data-[status=active]:text-brand-blue-ink"
+                className="rounded-md border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-brand-accent/55 hover:bg-surface-sunken hover:text-foreground data-[status=active]:border-brand-accent data-[status=active]:bg-brand-accent/10 data-[status=active]:text-foreground"
               >
                 {t(item.key)}
               </Link>
@@ -170,7 +170,7 @@ export function AppShell({
               <Link
                 to={item.to}
                 activeOptions={{ exact: item.exact }}
-                className="flex min-h-14 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium text-muted-foreground data-[status=active]:text-brand-blue-ink"
+                className="flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 border-transparent text-[0.6875rem] font-medium text-muted-foreground data-[status=active]:border-brand-accent data-[status=active]:text-foreground"
               >
                 <item.icon aria-hidden="true" className="size-5" />
                 {t(item.key)}

@@ -317,21 +317,14 @@
   backdrop-filter: none;
 }
 
-/* Industrial controls for white working screens. The global glass treatment
-   remains untouched on the navy dashboard and marketing pages. */
+/* Neutral controls for white working screens. Orange outlines belong to the
+   navy console only, where they have enough surrounding contrast. */
 .work-surface .glass-orange {
-  background-image: linear-gradient(
-    180deg,
-    var(--brand-accent) 0%,
-    var(--brand-accent-deep) 100%
-  );
-  border-color: var(--brand-accent-deep);
-  color: var(--primary-foreground);
-  text-shadow: 0 1px 1px oklch(0 0 0 / 24%);
-  box-shadow:
-    0 1px 0 oklch(1 0 0 / 36%) inset,
-    0 5px 0 var(--brand-accent-deep),
-    0 12px 20px -12px color-mix(in oklab, var(--brand-accent) 55%, transparent);
+  background: var(--work-control);
+  border-color: var(--work-control-edge);
+  color: var(--secondary-foreground);
+  text-shadow: none;
+  box-shadow: 0 2px 10px -6px oklch(0 0 0 / 25%);
 }
 
 .work-surface .glass-orange svg {
@@ -631,29 +624,30 @@
   }
 }
 
-/* Soft flat orange primary — pill corners, no sheen, no depth edge.
-   Orange is reserved for the single primary action on a screen. */
+/* Navy-screen action: transparent blue glass with a clear orange keyline.
+   Light working screens neutralise this above. */
 @utility glass-orange {
-  background-color: var(--brand-accent);
-  border: 1.5px solid transparent;
+  background-color: var(--glass-surface);
+  border: 1.5px solid var(--brand-accent);
   border-radius: 9999px;
-  color: var(--glass-orange-ink);
+  color: var(--color-foreground);
   font-weight: 700;
-  box-shadow: 0 6px 16px -8px oklch(0.686 0.21 41.1 / 45%);
+  box-shadow: none;
   transition:
-    filter 0.15s ease,
-    box-shadow 0.15s ease;
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   & svg {
     color: inherit;
   }
 
   &:hover:not(:disabled) {
-    filter: brightness(1.07);
+    background-color: var(--glass-accent-surface);
+    border-color: var(--brand-accent-light);
   }
 
   &:active:not(:disabled) {
-    filter: brightness(0.93);
+    background-color: var(--glass-accent-surface-hover);
   }
 
   &:disabled {
@@ -878,10 +872,9 @@
   }
 }
 
-/* 3D Element buttons (concept 08) — landing CTA family, shared with the
-   dashboard's three feature buttons (same thing, same treatment). Pill
-   shape, blue→navy glass gradient, hairline white border, hover lift, and
-   the 3D object + arrow sat on the right. */
+/* Blue-screen action tiles: flat navy glass with an orange outline. The
+   object remains useful recognition imagery, but the control itself has no
+   orange fill, depth edge or hover lift. */
 .ib-btn-3d {
   position: relative;
   display: flex;
@@ -890,20 +883,20 @@
   width: 100%;
   padding: 16px 70px 16px 18px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(43, 75, 255, 0.28) 0%, rgba(20, 30, 60, 0.55) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
+  background: var(--glass-surface);
+  border: 1.5px solid var(--brand-accent);
+  color: var(--foreground);
   font-weight: 600;
   font-size: 14px;
   text-decoration: none;
-  backdrop-filter: blur(4px);
+  backdrop-filter: none;
   transition:
-    transform 0.15s,
+    background-color 0.15s,
     border-color 0.15s;
 }
 .ib-btn-3d:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--glass-accent-surface);
+  border-color: var(--brand-accent-light);
 }
 .ib-btn-3d .obj {
   position: absolute;
@@ -919,14 +912,14 @@
   height: 54px;
   object-fit: cover;
   border-radius: 50%;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
 }
 .ib-btn-3d .obj svg {
   width: 18px;
   height: 18px;
 }
 .ib-btn-3d.orange .obj svg {
-  color: #ff7b00;
+  color: var(--brand-accent-light);
 }
 /* compact header variant */
 .ib-btn-3d.sm {
@@ -940,11 +933,12 @@
   height: 16px;
 }
 .ib-btn-3d:focus-visible {
-  outline: 3px solid rgba(43, 75, 255, 0.7);
+  outline: 3px solid var(--brand-accent-light);
   outline-offset: 2px;
 }
 .ib-btn-3d[aria-pressed="true"] {
-  outline: 3px solid rgba(43, 75, 255, 0.6);
+  background: var(--glass-accent-surface-hover);
+  outline: 3px solid var(--brand-accent);
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
