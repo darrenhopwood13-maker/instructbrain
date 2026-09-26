@@ -233,19 +233,23 @@ function Dashboard() {
             description="Choose what you're making above to start your first one."
           />
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {recent.data.map((report) => (
-              <li key={report.id}>
+              <li key={report.id} className="min-w-0">
                 <Link
                   to="/reports/$id"
                   params={{ id: report.id }}
-                  className="flex flex-col gap-2 rounded-xl border border-border bg-surface-raised p-4 shadow-raised transition-colors hover:border-brand-blue/40"
+                  className="flex min-w-0 flex-col gap-2 rounded-xl border border-border bg-surface-raised p-4 shadow-raised transition-colors hover:border-brand-blue/40"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="min-w-0 truncate font-semibold">{report.title}</span>
-                    <ReportStatusPill status={report.status} />
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                    <span className="line-clamp-2 min-w-0 flex-1 break-words font-semibold">
+                      {report.title}
+                    </span>
+                    <span className="shrink-0">
+                      <ReportStatusPill status={report.status} />
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="break-words text-xs text-muted-foreground">
                     {report.isQuick && !report.projectId ? "Custom report" : "Project report"} ·
                     Updated {report.updated}
                   </span>
