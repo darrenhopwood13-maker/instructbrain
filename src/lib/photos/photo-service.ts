@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { nextRef } from "@/lib/finding-refs";
 import { humanisePlanError } from "@/lib/plans";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
+import { deviceProvenanceOf, mergeProvenance } from "@/lib/photos/device-provenance";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
 import { isUnreadableFileError } from "@/lib/photos/file-snapshot";
 import {
@@ -231,7 +232,8 @@ export async function uploadPhoto(
     }
     throw error;
   }
-  const provenance = await readProvenanceFromFile(file); // step 1 — before anything else
+  // step 1 — before anything else. EXIF wins; the in-app camera's stamp fills gaps.
+  const provenance = mergeProvenance(await readProvenanceFromFile(file), deviceProvenanceOf(file));
   const checksum = await sha256Hex(bytes);
   onProgress(0.05);
 
