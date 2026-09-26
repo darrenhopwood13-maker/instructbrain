@@ -517,7 +517,7 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-surface-raised p-4">
+      <div className="grid min-w-0 gap-4 rounded-xl border border-border bg-surface-raised p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div className="min-w-0">
           <p className="text-sm font-semibold">
             {confirmed} of {items.length} findings confirmed
@@ -526,7 +526,7 @@ export function ReviewList({
             Review each AI-drafted finding before the report can be issued.
           </p>
         </div>
-        <Button variant="brand" className="shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
+        <Button variant="brand" className="w-full sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
           Confirm all
         </Button>
       </div>
@@ -650,17 +650,17 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 grid grid-cols-2 items-center gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
         <Button
           variant="quiet"
-          className="min-h-11"
+          className="min-h-11 w-full px-3"
           disabled={active === 0}
           onClick={() => setActive((i) => Math.max(i - 1, 0))}
         >
           <ChevronLeft aria-hidden="true" className="size-4" />
           Previous
         </Button>
-        <div className="order-last w-full sm:order-none sm:w-auto sm:flex-1">
+        <div className="col-span-2 w-full sm:col-span-1 sm:w-auto sm:flex-1">
           <label htmlFor="go-to-finding" className="sr-only">
             Go to finding
           </label>
@@ -690,7 +690,7 @@ export function ReviewList({
         </div>
         <Button
           variant="quiet"
-          className="min-h-11"
+          className="min-h-11 w-full px-3"
           disabled={!unresolvedOnly && active >= items.length - 1}
           onClick={() =>
             unresolvedOnly

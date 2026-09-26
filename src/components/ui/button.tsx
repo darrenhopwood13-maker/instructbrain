@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex min-w-0 items-center justify-center gap-2 whitespace-normal text-center rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex min-w-0 max-w-full items-center justify-center gap-2 whitespace-normal break-words text-center leading-snug rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -23,10 +23,10 @@ const buttonVariants = cva(
       },
 
       size: {
-        default: "h-11 px-5 py-2",
-        sm: "h-9 rounded-md px-3 text-xs sm:h-8",
-        lg: "h-12 rounded-xl px-8",
-        xl: "h-16 rounded-2xl px-8 text-base sm:h-[4.5rem] sm:px-10 sm:text-lg [&_svg]:size-5",
+        default: "min-h-11 px-5 py-2",
+        sm: "min-h-9 rounded-md px-3 py-2 text-xs sm:min-h-8",
+        lg: "min-h-12 rounded-xl px-6 py-3 sm:px-8",
+        xl: "min-h-16 rounded-2xl px-6 py-4 text-base sm:min-h-[4.5rem] sm:px-10 sm:text-lg [&_svg]:size-5",
         icon: "size-11 sm:size-10",
       },
 
