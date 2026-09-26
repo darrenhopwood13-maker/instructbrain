@@ -274,13 +274,22 @@ function drawFooters(writer: Writer): void {
       font: writer.regular,
       color: MUTED,
     });
-    // One discreet credit, centred, identical on every page.
+    // One faint credit, centred beneath the footer line, identical on every page.
     sheet.drawText(credit, {
-      x: writer.pageSize.width / 2 - writer.regular.widthOfTextAtSize(credit, 7) / 2,
-      y: writer.margin - 18,
-      size: 7,
+      x: writer.pageSize.width / 2 - writer.regular.widthOfTextAtSize(credit, 6.5) / 2,
+      y: writer.margin - 29,
+      size: 6.5,
       font: writer.regular,
       color: MUTED,
+      opacity: 0.7,
+    });
+    // Subtle brand touch: a thin orange rule across the top of every page.
+    sheet.drawRectangle({
+      x: writer.margin,
+      y: writer.pageSize.height - writer.margin / 2,
+      width: writer.pageSize.width - writer.margin * 2,
+      height: 1.2,
+      color: ACCENT,
     });
     const label = `Page ${index + 1} of ${pages.length}`;
     sheet.drawText(label, {

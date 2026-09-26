@@ -10,6 +10,7 @@
  * storage exactly as stored; nothing here touches the analysis path.
  */
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import { BRAND_CREDIT } from "@/lib/brand";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import {
@@ -672,6 +673,18 @@ export async function buildCompliancePack(
       font: regular,
       color: MUTED,
     });
+    // The one brand credit, faint, centred beneath the footer line.
+    const credit = sanitise(BRAND_CREDIT);
+    sheet.drawText(credit, {
+      x: A4.width / 2 - regular.widthOfTextAtSize(credit, 6.5) / 2,
+      y: MARGIN - 29,
+      size: 6.5,
+      font: regular,
+      color: MUTED,
+      opacity: 0.7,
+    });
+    // Subtle brand touch: a thin orange rule across the top of every page.
+    sheet.drawRectangle({ x: MARGIN, y: A4.height - MARGIN / 2, width: A4.width - MARGIN * 2, height: 1.2, color: ACCENT });
     const label = `Page ${index + 1} of ${pages.length}`;
     sheet.drawText(label, {
       x: A4.width - MARGIN - regular.widthOfTextAtSize(label, 8),
