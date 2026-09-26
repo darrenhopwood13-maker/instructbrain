@@ -94,13 +94,16 @@ function AllReports() {
       </header>
 
       {selected.size > 0 ? (
-        <div className="sticky top-20 z-20 mt-6 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-raised px-4 py-3 shadow-raised">
-          <span className="text-sm font-semibold">
+        <div className="sticky top-20 z-20 mt-6 grid min-w-0 gap-2 rounded-xl border border-border bg-surface-raised px-3 py-3 shadow-raised min-[360px]:grid-cols-[minmax(0,1fr)_auto] min-[360px]:items-center min-[360px]:gap-3 min-[360px]:px-4">
+          <span className="min-w-0 text-sm font-semibold">
             {selected.size} {selected.size === 1 ? "report" : "reports"} selected
           </span>
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogTrigger asChild>
-              <Button variant="quiet" className="min-h-11 text-fail hover:text-fail">
+              <Button
+                variant="quiet"
+                className="min-h-11 w-full justify-center text-fail hover:text-fail min-[360px]:w-auto"
+              >
                 <Trash2 aria-hidden="true" className="size-4" />
                 Delete selected
               </Button>
@@ -149,46 +152,54 @@ function AllReports() {
           />
         ) : (
           <>
-            <label className="mb-3 flex w-fit cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <label className="mb-3 grid min-h-11 w-fit cursor-pointer grid-cols-[2.75rem_minmax(0,1fr)] items-center text-sm text-muted-foreground hover:text-foreground">
+              <span className="grid size-11 place-items-center">
               <input
                 type="checkbox"
                 aria-label="Select all reports"
                 checked={allSelected}
                 onChange={toggleAll}
-                className="size-4 accent-brand-blue"
+                  className="size-5 accent-brand-blue"
               />
+              </span>
               Select all on this page
             </label>
             <ul className="grid gap-3 sm:grid-cols-2">
               {list.map((report) => (
-                <li key={report.id}>
+                <li key={report.id} className="min-w-0">
+                  <div className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-surface-raised p-2 shadow-raised transition-colors hover:border-brand-blue/40 sm:p-3">
+                    <label className="grid size-11 cursor-pointer place-items-center self-start">
+                      <span className="sr-only">Select {report.title}</span>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${report.title}`}
+                        checked={selected.has(report.id)}
+                        onChange={() => toggle(report.id)}
+                        className="size-5 accent-brand-blue"
+                      />
+                    </label>
                   <Link
                     to="/reports/$id"
                     params={{ id: report.id }}
-                    className="flex h-full flex-col gap-2 rounded-xl border border-border bg-surface-raised p-4 shadow-raised transition-colors hover:border-brand-blue/40"
+                      className="flex min-w-0 flex-col gap-2 px-1 py-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${report.title}`}
-                          checked={selected.has(report.id)}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                          onChange={() => toggle(report.id)}
-                          className="size-4 shrink-0 accent-brand-blue"
-                        />
-                        <span className="truncate font-semibold">{report.title}</span>
-                      </span>
-                      <ReportStatusPill status={report.status} />
+                      <div className="grid min-w-0 gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
+                        <span className="line-clamp-2 min-w-0 break-words font-semibold leading-snug">
+                          {report.title}
+                        </span>
+                        <span className="w-fit shrink-0">
+                          <ReportStatusPill status={report.status} />
+                        </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {report.isQuick && !report.projectId ? "Custom report" : "Project report"} ·{" "}
-                      {report.reference} · Updated {report.updated}
-                    </span>
+                      <span className="flex min-w-0 flex-col gap-0.5 break-words text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1">
+                        <span>{report.isQuick && !report.projectId ? "Custom report" : "Project report"}</span>
+                        <span className="hidden sm:inline" aria-hidden="true">·</span>
+                        <span><span className="font-medium text-foreground/80">Reference:</span> {report.reference || "None"}</span>
+                        <span className="hidden sm:inline" aria-hidden="true">·</span>
+                        <span><span className="font-medium text-foreground/80">Updated:</span> {report.updated}</span>
+                      </span>
                   </Link>
+                  </div>
                 </li>
               ))}
             </ul>
