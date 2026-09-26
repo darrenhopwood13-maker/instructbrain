@@ -266,7 +266,7 @@
   --work-blue: oklch(0.48 0.1 258);
   --work-blue-deep: oklch(0.38 0.09 258);
   --work-control: oklch(0.975 0.004 262);
-  --work-control-edge: oklch(0.84 0.014 262);
+  --work-control-edge: oklch(0.68 0.21 42 / 72%);
 
   --primary: oklch(0.52 0.19 38.2);
   --primary-foreground: oklch(1 0 0);
@@ -279,9 +279,9 @@
   --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
-  --border: oklch(0.9 0.012 262);
-  --border-strong: oklch(0.78 0.02 262);
-  --input: oklch(0.88 0.014 262);
+  --border: oklch(0.68 0.21 42 / 48%);
+  --border-strong: oklch(0.62 0.2 40 / 72%);
+  --input: oklch(0.68 0.21 42 / 62%);
   --ring: oklch(0.52 0.19 38.2);
 
   --pass: oklch(0.42 0.11 158);
@@ -317,11 +317,11 @@
   backdrop-filter: none;
 }
 
-/* Neutral controls for white working screens. Orange outlines belong to the
-   navy console only, where they have enough surrounding contrast. */
+/* White working screens use the same orange keyline as the navy console,
+   while their fills stay white and restrained for outdoor legibility. */
 .work-surface .glass-orange {
   background: var(--work-control);
-  border-color: var(--work-control-edge);
+  border-color: var(--brand-accent);
   color: var(--secondary-foreground);
   text-shadow: none;
   box-shadow: 0 2px 10px -6px oklch(0 0 0 / 25%);
@@ -341,14 +341,13 @@
 .work-surface .glass-navy,
 .work-surface .glass {
   background: var(--work-control);
-  border: 1px solid var(--work-control-edge);
+  border: 1.5px solid var(--brand-accent);
   color: var(--secondary-foreground);
   text-shadow: none;
   backdrop-filter: none;
   box-shadow:
     0 1px 0 oklch(1 0 0) inset,
-    0 3px 0 var(--work-control-edge),
-    0 8px 14px -12px color-mix(in oklab, var(--work-blue) 35%, transparent);
+    0 2px 8px -5px color-mix(in oklab, var(--brand-accent) 35%, transparent);
 }
 
 .work-surface .glass-navy svg,
@@ -358,7 +357,7 @@
 
 @utility work-choice {
   min-height: 3rem;
-  border: 1.5px solid var(--work-control-edge);
+  border: 1.5px solid var(--brand-accent);
   border-radius: 9999px;
   background: var(--work-control);
   color: var(--secondary-foreground);
@@ -428,7 +427,7 @@
     font-feature-settings: "cv02", "cv03", "cv04", "tnum";
   }
 
-  /* Long and short copy shares an editorial edge. The final line stays natural,
+  /* Narrative copy shares an editorial edge. The final line stays natural,
      while controls and deliberately aligned utility text remain untouched. */
   p {
     text-align: justify;
@@ -453,6 +452,25 @@
       text-align-last: auto;
       hyphens: none;
     }
+  }
+
+  /* Headings are centred by content role. Table cells, labels, navigation,
+     controls and compact status text keep their functional alignment. */
+  main h1,
+  main h2,
+  main h3,
+  [role="dialog"] h1,
+  [role="dialog"] h2,
+  [role="dialog"] h3,
+  [role="dialog"] [data-radix-dialog-title] {
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  button,
+  [role="button"] {
+    overflow-wrap: anywhere;
+    line-height: 1.35;
   }
 
   /* No image may be wider than the column it sits in. */
@@ -521,7 +539,7 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   :focus-visible {
@@ -532,7 +550,7 @@
 
 @utility editorial-title {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 @utility wordmark {
@@ -1105,6 +1123,16 @@
 /* Report brand touches — identical in preview, share link and print. */
 .paper article { border-top: 3px solid var(--paper-accent); }
 .paper .eyebrow { color: var(--paper-accent-ink); }
+.paper h1.editorial-title,
+.paper h2.editorial-title,
+.paper h3.editorial-title { margin-inline: auto; text-align: center; text-wrap: balance; }
 .paper h2.editorial-title { padding-bottom: 0.375rem; border-bottom: 1px solid color-mix(in oklab, var(--paper-accent) 45%, transparent); }
+.paper .report-document > section > p,
+.paper .report-document section > div > p:not(.eyebrow):not(.text-center):not(.text-right),
+.paper .report-document .report-copy { text-align: justify; text-align-last: start; hyphens: auto; }
+.paper table p,
+.paper figcaption,
+.paper dt,
+.paper dd { text-align: start; text-align-last: auto; hyphens: none; }
 .paper thead th:first-child { box-shadow: inset 3px 0 0 var(--paper-accent); }
 .paper .report-credit { font-variant: small-caps; }

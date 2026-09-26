@@ -80,3 +80,10 @@
 - [x] Meters and keys card on Photos step; Read from photo suggestion (accept only)
 - [x] Meter Readings + Keys pages in PDF and preview, listed in index
 - [ ] Live phone check (needs your sign-in)
+
+## 26 Sep — alignment and orange outlines
+- [x] Centre app and report headings without changing functional table or form alignment.
+- [x] Justify longer app and report copy with narrow-phone readability safeguards.
+- [x] Apply soft orange outlines to white-screen buttons, inputs, cards, panels and dialogs.
+- [x] Make every button label wrap comfortably within its control at 320–375px.
+- [x] Verify app screens and rendered report PDFs.

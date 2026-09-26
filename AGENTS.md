@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Mark only browser-created camera files as app-owned so snapshotting skips their redundant memory copy; external camera and gallery files must always retain the Android-safe snapshot path.
+- Apply typography and borders by semantic role: centre content headings, justify narrative copy only where readable, and preserve functional alignment for controls, tables, metadata, and status labels so mobile and report layouts remain scannable.

@@ -607,13 +607,13 @@ function ReportWorkspace() {
           inside the photos bar, next to Take photo / Add photos. */}
       {!locked && step === "review" ? (
         <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 mt-8 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:bottom-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 {findingList.length - toConfirm} of {findingList.length} confirmed
               </p>
               <Button
                 type="button"
-                className="min-h-11"
+                className="min-h-11 w-full sm:w-auto"
                 variant={ready ? "default" : "quiet"}
                 onClick={() => goTo("output")}
               >
@@ -631,14 +631,14 @@ function ReportWorkspace() {
         >
           <p className="font-semibold">All findings confirmed</p>
           <p className="mt-1 text-sm text-muted-foreground">Taking you to Issue…</p>
-          <div className="mt-3 flex gap-2">
-            <Button type="button" className="min-h-11 flex-1" onClick={() => goTo("output")}>
+          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <Button type="button" className="min-h-11 w-full" onClick={() => goTo("output")}>
               Continue to issue
             </Button>
             <Button
               type="button"
               variant="quiet"
-              className="min-h-11"
+              className="min-h-11 w-full sm:w-auto"
               onClick={() => setAutoAdvance(false)}
             >
               Stay here
