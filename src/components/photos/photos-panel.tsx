@@ -7,6 +7,14 @@ import { setCoverPhoto } from "@/lib/report/branding";
 import { Button } from "@/components/ui/button";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import {
+  ContinuousCamera,
+  analyseWhileShooting,
+  canUseInAppCamera,
+} from "@/components/photos/continuous-camera";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { analysePhoto } from "@/lib/ai/analyse.functions";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -79,6 +87,7 @@ export function PhotosPanel({
   snapshot,
   initialFiles,
   pinnedFields,
+  onReady,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
@@ -86,6 +95,8 @@ export function PhotosPanel({
   initialFiles?: File[];
   /** Capture values stamped on every new photograph (e.g. its survey type). */
   pinnedFields?: Record<string, string>;
+  /** Hands the start screen a way to add later shots to this report. */
+  onReady?: (add: (files: File[]) => void) => void;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
@@ -117,7 +128,7 @@ export function PhotosPanel({
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
-  const [inventoryUploadMode, setInventoryUploadMode] = useState<"auto" | "overview" | "detail">("auto");
+  const [inventoryUploadMode, setInventoryUploadMode] = useState<"overview" | "detail">("detail");
   const lastToggledRef = useRef<string | null>(null);
 
   const planQuery = useQuery(organisationPlanQuery(organisationId));
@@ -127,6 +138,43 @@ export function PhotosPanel({
 
   const filePickerRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const openCamera = useCallback(() => {
+    if (canUseInAppCamera()) setCameraOpen(true);
+    else cameraRef.current?.click();
+  }, []);
+  const fallbackCamera = useCallback(() => cameraRef.current?.click(), []);
+  /** Photograph numbers are reserved one batch at a time, in shutter order. */
+  const reserveRef = useRef<Promise<void>>(Promise.resolve());
+  const queryClient = useQueryClient();
+  const runAnalysis = useServerFn(analysePhoto);
+  const analysingRef = useRef({ active: 0, waiting: [] as Array<() => void> });
+  const refreshFindingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analyseOnArrival = useCallback(
+    async (photoId: string) => {
+      const gate = analysingRef.current;
+      if (gate.active >= CONCURRENCY) await new Promise<void>((resolve) => gate.waiting.push(resolve));
+      gate.active += 1;
+      try {
+        // Title-page photos and anything the template excludes are skipped on
+        // the server; failures are recorded there as Not assessed.
+        await runAnalysis({ data: { reportId, photoId, force: false, fast: false } });
+      } catch {
+        // Left un-analysed: Draft the findings picks it up later.
+      } finally {
+        gate.active -= 1;
+        gate.waiting.shift()?.();
+        if (!refreshFindingsTimer.current) {
+          refreshFindingsTimer.current = setTimeout(() => {
+            refreshFindingsTimer.current = null;
+            void queryClient.invalidateQueries({ queryKey: ["findings", reportId] });
+            void queryClient.invalidateQueries({ queryKey: ["report", reportId] });
+          }, 800);
+        }
+      }
+    },
+    [runAnalysis, reportId, queryClient],
+  );
 
 
   const refresh = useCallback(async () => {
@@ -190,13 +238,19 @@ export function PhotosPanel({
       setBusy(true);
       const unnumbered = items.some((item) => item.sequence === null);
       if (unnumbered) {
-        const databaseNext = await nextSequence(reportId);
-        const pendingNext =
-          Math.max(
-            0,
-            ...[...pendingRef.current.values()].map((item) => item.sequence ?? 0),
-          ) + 1;
-        assignUploadSequences(items, Math.max(databaseNext, pendingNext));
+        // Chained so a later shot can never take an earlier number, however
+        // quickly the shutter is pressed.
+        const reservation = reserveRef.current.then(async () => {
+          const databaseNext = await nextSequence(reportId);
+          const pendingNext =
+            Math.max(
+              0,
+              ...[...pendingRef.current.values()].map((item) => item.sequence ?? 0),
+            ) + 1;
+          assignUploadSequences(items, Math.max(databaseNext, pendingNext));
+        });
+        reserveRef.current = reservation.catch(() => undefined);
+        await reservation;
       }
       const overviewCounts = new Map<string, number>();
       if (inventoryWorkflow?.sectionField && inventoryWorkflow.overviewRoleId) {
@@ -237,9 +291,8 @@ export function PhotosPanel({
                 const roomKey = (captureFields[inventoryWorkflow.sectionField] ?? "").trim().toLowerCase();
                 const usedOverviews = overviewCounts.get(roomKey) ?? 0;
                 const maxOverviews = inventoryWorkflow.maxOverviewPhotos ?? 3;
-                const shouldBeOverview =
-                  inventoryUploadMode === "overview" ||
-                  (inventoryUploadMode === "auto" && usedOverviews < maxOverviews);
+                // Never automatic: only an explicit choice makes a room overview.
+                const shouldBeOverview = inventoryUploadMode === "overview";
                 if (shouldBeOverview && usedOverviews < maxOverviews) {
                   captureFields[inventoryWorkflow.roleField] = inventoryWorkflow.overviewRoleId;
                   overviewCounts.set(roomKey, usedOverviews + 1);
@@ -248,12 +301,16 @@ export function PhotosPanel({
                 }
               }
               // Photographs reach storage on selection — never held in memory only.
-              return uploadPhoto(
+              const uploaded = await uploadPhoto(
                 item.file,
                 { organisationId, reportId, captureFields },
                 sequence,
                 report,
               );
+              if (!inventoryWorkflow && analyseWhileShooting() && uploaded?.photo?.id) {
+                void analyseOnArrival(uploaded.photo.id);
+              }
+              return uploaded;
             },
           })),
           { concurrency: CONCURRENCY, maxAttempts: 3, onProgress: applyProgress },
@@ -276,11 +333,11 @@ export function PhotosPanel({
         await refresh();
       }
     },
-    [organisationId, reportId, workflow, inventoryWorkflow, inventoryUploadMode, photos, snapshot, coverPhotoId, applyProgress, refresh],
+    [organisationId, reportId, workflow, inventoryWorkflow, inventoryUploadMode, photos, snapshot, coverPhotoId, applyProgress, refresh, analyseOnArrival],
   );
 
   const addFiles = useCallback(
-    async (fileList: FileList | null) => {
+    async (fileList: FileList | File[] | null) => {
       if (!fileList || fileList.length === 0) return;
       let selected = Array.from(fileList);
       // The database enforces the cap too; this only avoids doomed uploads.
@@ -529,11 +586,10 @@ export function PhotosPanel({
                 <select
                   value={inventoryUploadMode}
                   onChange={(event) =>
-                    setInventoryUploadMode(event.target.value as "auto" | "overview" | "detail")
+                    setInventoryUploadMode(event.target.value as "overview" | "detail")
                   }
                   className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
                 >
-                  <option value="auto">Auto — first 3 room photos, then items</option>
                   <option value="overview">Room overview photos only</option>
                   <option value="detail">Inventory item photos only</option>
                 </select>
@@ -577,7 +633,7 @@ export function PhotosPanel({
         <div className="mt-4 hidden sm:block">
           <PhotoCaptureActions
             compact
-            onCamera={() => cameraRef.current?.click()}
+            onCamera={openCamera}
             onGallery={() => filePickerRef.current?.click()}
             disabled={atPhotoCap}
             busy={busy}
@@ -735,7 +791,7 @@ export function PhotosPanel({
         ) : (
           <PhotoCaptureActions
             compact
-            onCamera={() => cameraRef.current?.click()}
+            onCamera={openCamera}
             onGallery={() => filePickerRef.current?.click()}
             busy={busy}
           />
