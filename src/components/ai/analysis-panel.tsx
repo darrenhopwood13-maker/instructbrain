@@ -48,19 +48,55 @@ export function AnalysisPanel({
   reportId,
   snapshot,
   onRunComplete,
+  confirmSignal = 0,
+  onStatus,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
   /** Called once when a run this person started finishes, so the flow can move on. */
   onRunComplete?: () => void;
+  /**
+   * Each increase asks to open the "Analyse N photographs?" confirmation. It
+   * never starts a run by itself — the person still presses Analyse.
+   */
+  confirmSignal?: number;
+  /** Pending count and run progress, for the page's next-step button. */
+  onStatus?: (status: {
+    pending: number | null;
+    running: boolean;
+    completed: number;
+    total: number;
+  }) => void;
 }) {
   const run = useAnalysisRun(reportId);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const wasRunning = useRef(false);
   useEffect(() => {
     if (wasRunning.current && !run.running && !run.fatalError) onRunComplete?.();
     wasRunning.current = run.running;
   }, [run.running, run.fatalError, onRunComplete]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Honour a request to confirm once the photographs have loaded.
+  const handledSignal = useRef(0);
+  useEffect(() => {
+    if (confirmSignal <= handledSignal.current) return;
+    if (run.loading) return;
+    handledSignal.current = confirmSignal;
+    if (run.running || run.pendingCount === 0) return;
+    panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setConfirmOpen(true);
+  }, [confirmSignal, run.loading, run.running, run.pendingCount]);
+
+  const pendingKnown = run.loading ? null : run.pendingCount;
+  useEffect(() => {
+    onStatus?.({
+      pending: pendingKnown,
+      running: run.running,
+      completed: run.totals.completed,
+      total: run.totals.total,
+    });
+  }, [onStatus, pendingKnown, run.running, run.totals.completed, run.totals.total]);
   // Standard keeps the second opinion. Fast is a single pass, chosen per run.
   const [speed, setSpeed] = useState<"standard" | "fast">("standard");
   const fast = speed === "fast";
@@ -80,7 +116,7 @@ export function AnalysisPanel({
   const attentionCount = run.photos.filter(needsAttention).length;
 
   return (
-    <div className="space-y-4">
+    <div ref={panelRef} className="scroll-mt-24 space-y-4">
       <div className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
