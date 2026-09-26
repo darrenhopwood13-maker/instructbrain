@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   AlarmClock,
@@ -15,7 +16,8 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
-import { overdueItemsQuery, projectQuery, projectReportsQuery } from "@/lib/data";
+import { overdueItemsQuery, projectQuery, projectReportsQuery, updateProjectStatus } from "@/lib/data";
+import { projectStatusLabels, type ProjectStatus } from "@/lib/types";
 import {
   fallbackIsSet,
   fallbackRecipientQuery,
@@ -47,9 +49,20 @@ function ProjectDashboard() {
   const { id } = Route.useParams();
   const { organisationId } = useOrganisations();
   const usage = usePlanUsage(organisationId);
+  const queryClient = useQueryClient();
   const project = useQuery(projectQuery(id));
   const reports = useQuery(projectReportsQuery(id));
   const overdue = useQuery(overdueItemsQuery(id));
+
+  const setStatus = useMutation({
+    mutationFn: (status: ProjectStatus) => updateProjectStatus(id, status),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project", id] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Project status updated.");
+    },
+    onError: (error: Error) => toast.error(error.message || "The status could not be updated."),
+  });
 
   if (project.isPending) {
     return (
@@ -144,7 +157,25 @@ function ProjectDashboard() {
         ) : null}
       </header>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor="project-status" className="text-sm font-medium text-muted-foreground">
+            Status
+          </label>
+          <select
+            id="project-status"
+            value={current.status}
+            disabled={setStatus.isPending}
+            onChange={(event) => setStatus.mutate(event.target.value as ProjectStatus)}
+            className="h-9 rounded-lg border border-border bg-surface px-2 text-sm"
+          >
+            {(Object.keys(projectStatusLabels) as ProjectStatus[]).map((status) => (
+              <option key={status} value={status}>
+                {projectStatusLabels[status]}
+              </option>
+            ))}
+          </select>
+        </div>
         <DeleteProjectButton
           projectId={current.id}
           name={current.name}

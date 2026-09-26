@@ -4,11 +4,13 @@ import { humanisePlanError } from "@/lib/plans";
 import type { SurveyDefinition } from "@/lib/survey-types";
 import type { ReportBrief } from "@/lib/report/brief";
 import {
+  coerceProjectStatus,
   coerceReportStatus,
   type DirectoryEntry,
   type Finding,
   type OverdueItem,
   type Project,
+  type ProjectStatus,
   type RecentReport,
   type Report,
 } from "@/lib/types";
@@ -130,6 +132,7 @@ type ProjectRow = {
   client_name: string | null;
   address: string | null;
   principal_contractor: string | null;
+  status: string;
 };
 
 function toProject(row: ProjectRow, openReports: number, overdueItems: number): Project {
@@ -139,6 +142,7 @@ function toProject(row: ProjectRow, openReports: number, overdueItems: number): 
     reference: row.reference ?? "No reference",
     client: row.client_name ?? "Client not recorded",
     address: row.address ?? "Address not recorded",
+    status: coerceProjectStatus(row.status),
     openReports,
     overdueItems,
   };
@@ -153,7 +157,7 @@ export const projectsQuery = (organisationIds: string[]) =>
     queryFn: async (): Promise<Project[]> => {
       const rows = unwrap(
         await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor")
+          .select("id, organisation_id, name, reference, client_name, address, principal_contractor, status")
           .in("organisation_id", organisationIds)
           .order("created_at", { ascending: false }),
       ) as ProjectRow[];
@@ -204,7 +208,7 @@ export const projectQuery = (projectId: string) =>
     queryFn: async (): Promise<Project | null> => {
       const rows = unwrap(
         await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor")
+          .select("id, organisation_id, name, reference, client_name, address, principal_contractor, status")
           .eq("id", projectId)
           .limit(1),
       ) as ProjectRow[];
@@ -221,6 +225,14 @@ export type NewProject = {
   address: string;
   principalContractor: string;
 };
+
+export async function updateProjectStatus(
+  projectId: string,
+  status: ProjectStatus,
+): Promise<void> {
+  const { error } = await from("projects").update({ status }).eq("id", projectId);
+  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+}
 
 export async function createProject(input: NewProject): Promise<string> {
   const { data, error } = await from("projects")

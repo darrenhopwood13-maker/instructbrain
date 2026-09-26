@@ -25,8 +25,8 @@ const meterPhoto = {
 const keysPhoto = { id: "k1", sequence: 10, capture_fields: { [workflow.roleField]: layout.keysRoleId } };
 
 describe("handover (meters and keys)", () => {
-  it("is declared by the v7 template", () => {
-    expect(snapshot.version).toBe(7);
+  it("is retained by the current versioned template", () => {
+    expect(snapshot.version).toBe(8);
     expect(layout.meterTypes.map((type) => type.id)).toEqual(["electric", "gas", "water"]);
   });
 

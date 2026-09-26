@@ -1,6 +1,6 @@
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageUp, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { organisationQuery, updateOrganisation } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
+import { uploadOrganisationLogo } from "@/lib/report/branding";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
@@ -62,6 +65,9 @@ function OrganisationSettings() {
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("blue");
   const [address, setAddress] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const canEditLogo = role === "owner" || role === "admin";
 
   const organisation = query.data ?? null;
 
@@ -72,6 +78,20 @@ function OrganisationSettings() {
     if (organisation.brand_colour) setBrand(organisation.brand_colour);
   }, [organisation]);
 
+  useEffect(() => {
+    let active = true;
+    setLogoUrl(null);
+    const path = organisation?.logo_path;
+    if (!path) return;
+    void (async () => {
+      const { data } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, 300);
+      if (active) setLogoUrl(data?.signedUrl ?? null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [organisation?.logo_path]);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
@@ -80,6 +100,20 @@ function OrganisationSettings() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["organisation"] });
       toast.success("Organisation details saved");
+    },
+  });
+
+  const logoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!organisationId) throw new Error("You are not a member of an organisation yet.");
+      return uploadOrganisationLogo(file, organisationId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["organisation"] });
+      toast.success("Logo saved");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "The logo could not be saved.");
     },
   });
 
@@ -144,24 +178,59 @@ function OrganisationSettings() {
 
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Report logo</legend>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+              className="sr-only"
+              aria-label="Choose an organisation logo"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                event.target.value = "";
+                if (file) logoMutation.mutate(file);
+              }}
+              disabled={!canEditLogo || logoMutation.isPending}
+            />
             <div className="flex items-center gap-4 rounded-xl border border-dashed border-border bg-surface-raised p-5">
-              <span
-                aria-hidden="true"
-                className="grid size-12 shrink-0 place-items-center rounded-lg bg-surface-sunken text-brand-blue"
-              >
-                <ImageUp className="size-5" />
-              </span>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Organisation logo"
+                  className="h-12 w-12 shrink-0 rounded-lg border border-border bg-paper object-contain p-1"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="grid size-12 shrink-0 place-items-center rounded-lg bg-surface-sunken text-brand-blue"
+                >
+                  <ImageUp className="size-5" />
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-semibold">
                   {organisation?.logo_path ? "Logo uploaded" : "No logo uploaded"}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  PNG or SVG, at least 512px wide.
+                  {canEditLogo
+                    ? "PNG, JPEG, WebP or SVG, at least 512px wide. Appears on every issued report unless a report has its own logo."
+                    : "Only owners and admins can change the organisation logo."}
                 </p>
               </div>
-              <Button type="button" variant="quiet" className="ml-auto shrink-0" disabled>
-                Upload
-              </Button>
+              {canEditLogo ? (
+                <Button
+                  type="button"
+                  variant="quiet"
+                  className="ml-auto shrink-0"
+                  disabled={logoMutation.isPending}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {logoMutation.isPending
+                    ? "Uploading…"
+                    : organisation?.logo_path
+                      ? "Replace"
+                      : "Upload"}
+                </Button>
+              ) : null}
             </div>
           </fieldset>
 

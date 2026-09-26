@@ -504,6 +504,22 @@ export function PhotosPanel({
     const values = Object.fromEntries(
       Object.entries(bulkValues).filter(([, value]) => value.trim() !== ""),
     );
+    if (inventoryWorkflow) {
+      const roleId = values[inventoryWorkflow.roleField];
+      const role = inventoryWorkflow.roles.find((item) => item.id === roleId);
+      if (role?.maxPerReport) {
+        const selectedIds = new Set(selectedPhotos.map((photo) => photo.id));
+        const existing = photos.filter(
+          (photo) =>
+            !selectedIds.has(photo.id) &&
+            photo.capture_fields?.[inventoryWorkflow.roleField] === role.id,
+        ).length;
+        if (existing + selectedPhotos.length > role.maxPerReport) {
+          toast.error(`Choose no more than ${role.maxPerReport} ${role.label.toLowerCase()} photographs.`);
+          return;
+        }
+      }
+    }
     setBulkOpen(false);
     try {
       await updateCaptureFields(
@@ -552,12 +568,33 @@ export function PhotosPanel({
         return;
       }
     }
+    const nextRole = workflow.roles.find((item) => item.id === roleId);
+    if (nextRole?.maxPerReport) {
+      const existing = photos.filter(
+        (item) =>
+          item.id !== photo.id && item.capture_fields?.[workflow.roleField] === nextRole.id,
+      ).length;
+      if (existing >= nextRole.maxPerReport) {
+        toast.error(`Choose no more than ${nextRole.maxPerReport} ${nextRole.label.toLowerCase()} photographs.`);
+        return;
+      }
+    }
     try {
       await updateCaptureFields([photo.id], { [workflow.roleField]: roleId });
-      const role = workflow.roles.find((item) => item.id === roleId);
+      const role = nextRole;
       if (role?.countsAsCover) {
         await setCoverPhoto(reportId, photo.id);
         setCoverPhotoId(photo.id);
+      } else if (photo.id === coverPhotoId) {
+        const replacement = photos.find(
+          (item) =>
+            item.id !== photo.id &&
+            workflow.roles.find(
+              (candidate) => candidate.id === item.capture_fields?.[workflow.roleField],
+            )?.countsAsCover === true,
+        );
+        await setCoverPhoto(reportId, replacement?.id ?? null);
+        setCoverPhotoId(replacement?.id ?? null);
       }
       await refresh();
       toast.success(role ? `Photograph #${photo.sequence} set as ${role.label}.` : "Photograph type cleared.");
@@ -651,7 +688,7 @@ export function PhotosPanel({
 
         {workflow ? (
           <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted-foreground">
-            First exterior photograph is used on the title page. Each room can have up to {workflow.maxOverviewPhotos ?? 3} wide-angle overview photographs before the item photographs are analysed.
+            Label uploaded photographs before analysis. Room overviews, keys, meters, exterior and title-page photographs are kept as evidence and are not analysed.
           </p>
         ) : null}
 
@@ -776,15 +813,17 @@ export function PhotosPanel({
             </div>
           </div>
 
-          <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
-            <span className="font-semibold">Title page photograph: </span>
-            {coverPhotoId
-              ? `#${photos.find((photo) => photo.id === coverPhotoId)?.sequence ?? "—"} — ${
-                  photos.find((photo) => photo.id === coverPhotoId)?.original_filename ??
-                  "chosen photograph"
-                }`
-              : "the first photograph will be used. Choose any photograph below instead."}
-          </p>
+          {!inventoryWorkflow ? (
+            <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
+              <span className="font-semibold">Title page photograph: </span>
+              {coverPhotoId
+                ? `#${photos.find((photo) => photo.id === coverPhotoId)?.sequence ?? "—"} — ${
+                    photos.find((photo) => photo.id === coverPhotoId)?.original_filename ??
+                    "chosen photograph"
+                  }`
+                : "the first photograph will be used. Choose any photograph below instead."}
+            </p>
+          ) : null}
 
           {inventoryWorkflow ? (
             <h3 className="mt-4 text-sm font-semibold">Not in a room · {groupedForGrid.count}</h3>
@@ -803,7 +842,7 @@ export function PhotosPanel({
             selected={selected}
             onToggle={toggle}
             coverPhotoId={coverPhotoId}
-            onSetCover={(photo) => {
+            {...(!inventoryWorkflow ? { onSetCover: (photo: PhotoRow) => {
               void (async () => {
                 try {
                   await setCoverPhoto(reportId, photo.id);
@@ -815,7 +854,7 @@ export function PhotosPanel({
                   );
                 }
               })();
-            }}
+            } } : {})}
             snapshot={snapshot}
             {...(workflow ? { onSetRole: setPhotoRole } : {})}
             onOpen={(photo) => {
@@ -908,22 +947,44 @@ export function PhotosPanel({
               photographs at once.
             </DialogDescription>
           </DialogHeader>
-          <CaptureFieldsForm
-            fields={
-              inventoryWorkflow
-                ? fields.filter(
-                    (field) =>
-                      field.id !== inventoryWorkflow.sectionField &&
-                      field.id !== inventoryWorkflow.roleField,
-                  )
-                : fields
-            }
-            values={bulkValues}
-            onChange={(fieldId, value) =>
-              setBulkValues((current) => ({ ...current, [fieldId]: value }))
-            }
-            idPrefix="bulk"
-          />
+          {inventoryWorkflow ? (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-foreground">
+                Room or area
+                <input
+                  list="inventory-room-suggestions"
+                  value={inventoryWorkflow.sectionField ? bulkValues[inventoryWorkflow.sectionField] ?? "" : ""}
+                  onChange={(event) => {
+                    if (!inventoryWorkflow.sectionField) return;
+                    setBulkValues((current) => ({ ...current, [inventoryWorkflow.sectionField as string]: event.target.value }));
+                  }}
+                  className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
+                  placeholder="Choose or type a room"
+                />
+                <datalist id="inventory-room-suggestions">
+                  {(inventoryWorkflow.sectionSuggestions ?? []).map((room) => <option key={room} value={room} />)}
+                </datalist>
+              </label>
+              <label className="block text-sm font-medium text-foreground">
+                Photograph type
+                <select
+                  value={bulkValues[inventoryWorkflow.roleField] ?? ""}
+                  onChange={(event) => setBulkValues((current) => ({ ...current, [inventoryWorkflow.roleField]: event.target.value }))}
+                  className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
+                >
+                  <option value="">Leave unchanged</option>
+                  {inventoryWorkflow.roles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+                </select>
+              </label>
+            </div>
+          ) : (
+            <CaptureFieldsForm
+              fields={fields}
+              values={bulkValues}
+              onChange={(fieldId, value) => setBulkValues((current) => ({ ...current, [fieldId]: value }))}
+              idPrefix="bulk"
+            />
+          )}
           <DialogFooter>
             <Button variant="quiet" onClick={() => setBulkOpen(false)}>
               Cancel

@@ -19,9 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createReport, projectsQuery } from "@/lib/data";
-import { usePlanUsage } from "@/lib/plans";
-import { PlanUsageMeter } from "@/components/plan-usage-meter";
-import { CoverBrandingFields } from "@/components/report/cover-branding-fields";
 import { applyBranding } from "@/lib/report/branding";
 import { useOrganisations } from "@/lib/use-organisations";
 import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
@@ -104,8 +101,8 @@ function CustomReport() {
   const queryClient = useQueryClient();
   const { organisationId, organisationIds, userId } = useOrganisations();
   const { user } = useSession();
-  const usage = usePlanUsage(organisationId);
   const projects = useQuery(projectsQuery(organisationIds));
+  const activeProjects = (projects.data ?? []).filter((item) => item.status === "active");
   // One start screen for every report. A report belongs to a project only when
   // the person picks one — otherwise it is a standalone report.
   const [projectId, setProjectId] = useState<string>(projectParam ?? "");
@@ -388,13 +385,6 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Start a report</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {capturing
-          ? "Photographs upload as you take them."
-          : "Your last set-up is ready — take a photo to start."}
-      </p>
-
       {capturing && activeSnapshot ? (
         <p className="mt-4 text-sm">
           <span className="font-semibold">Report template:</span>{" "}
@@ -402,8 +392,12 @@ function CustomReport() {
           {project ? ` In ${project.name}.` : ""}
         </p>
       ) : (
-        <section aria-labelledby="type-heading" className="mt-5">
-          <h2 id="type-heading" className="text-sm font-semibold">
+        <section aria-labelledby="type-heading" className="mt-1">
+          <h2
+            id="type-heading"
+            className="flex items-center gap-2 text-sm font-semibold text-brand-accent-ink"
+          >
+            <Sparkles aria-hidden="true" className="size-4" />
             Report template
           </h2>
           <div className="mt-2">
@@ -415,6 +409,7 @@ function CustomReport() {
                 setTemplateKnown(true);
               }}
               disabled={start.isPending}
+              className="h-11 w-full max-w-xl border-brand-accent/30 bg-surface-raised text-sm"
             />
           </div>
           {/* The template is explained once, here, and nowhere else — and
@@ -424,10 +419,41 @@ function CustomReport() {
               The template sets the instructions the AI works to.
             </p>
           )}
+
+          <div className="mt-4 max-w-xl">
+            <label htmlFor="custom-report-project" className="text-sm font-semibold">
+              Project
+            </label>
+            <Select
+              value={projectId === "" ? "standalone" : projectId}
+              onValueChange={(next) => setProjectId(next === "standalone" ? "" : next)}
+              disabled={start.isPending}
+            >
+              <SelectTrigger
+                id="custom-report-project"
+                aria-label="Project"
+                className="mt-2 h-11 w-full bg-surface-raised text-sm"
+              >
+                <SelectValue placeholder="Standalone report" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standalone">Standalone report</SelectItem>
+                {activeProjects.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </section>
       )}
 
-      {!capturing ? <PlanUsageMeter usage={usage} className="mt-5" /> : null}
+      <p className="mt-4 text-sm text-muted-foreground">
+        {capturing
+          ? "Photographs upload as you take them."
+          : "Your last set-up is ready — take a photo to start."}
+      </p>
 
 
       {minimal && !capturing ? (
@@ -746,14 +772,6 @@ function CustomReport() {
                  Draft a report summary after findings are confirmed
                </label>
 
-              <CoverBrandingFields
-                organisationId={organisationId}
-                coverFile={coverFile}
-                logoFile={logoFile}
-                onCoverFile={setCoverFile}
-                onLogoFile={setLogoFile}
-                disabled={start.isPending}
-              />
             </div>
           ) : null}
         </section>
