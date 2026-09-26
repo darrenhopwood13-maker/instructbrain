@@ -39,6 +39,8 @@ import { PhotoGrid } from "@/components/photos/photo-grid";
 import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
 import { RoomOrganiser } from "@/components/photos/room-organiser";
 import { ReadinessChecklist } from "@/components/photos/readiness-checklist";
+import { HandoverCard } from "@/components/photos/handover-card";
+import { handoverLayoutOf } from "@/lib/report/handover";
 import { inventoryReadiness } from "@/lib/photos/inventory-readiness";
 import { groupPhotosByRoom } from "@/lib/photos/rooms";
 
@@ -116,6 +118,7 @@ export function PhotosPanel({
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
   const workflow = useMemo(() => photoWorkflowOf(snapshot), [snapshot]);
   const inventoryWorkflow = workflow?.kind === "inventory_room_schedule" ? workflow : null;
+  const handoverLayout = useMemo(() => handoverLayoutOf(snapshot), [snapshot]);
   const zoneFields = useMemo(
     () =>
       // Property inventory: rooms are set only in the room organiser, never at upload.
@@ -349,7 +352,7 @@ export function PhotosPanel({
   );
 
   const addFiles = useCallback(
-    async (fileList: FileList | File[] | null) => {
+    async (fileList: FileList | File[] | null, extraFields?: Record<string, string>) => {
       if (!fileList || fileList.length === 0) return;
       let selected = Array.from(fileList);
       // The database enforces the cap too; this only avoids doomed uploads.
@@ -370,7 +373,7 @@ export function PhotosPanel({
       const items: Pending[] = selected.map((file, index) => ({
         id: `${Date.now()}-${index}-${file.name}`,
         file,
-        captureFields: { ...zoneValues, ...(pinnedFields ?? {}) },
+        captureFields: { ...zoneValues, ...(pinnedFields ?? {}), ...(extraFields ?? {}) },
         sequence: null,
       }));
 
@@ -836,6 +839,29 @@ export function PhotosPanel({
                   await refresh();
                 } catch (error) {
                   toast.error("Could not update the rooms", {
+                    description: error instanceof Error ? error.message : "Please try again.",
+                  });
+                }
+              }}
+            />
+          ) : null}
+
+          {inventoryWorkflow && handoverLayout ? (
+            <HandoverCard
+              reportId={reportId}
+              layout={handoverLayout}
+              workflow={inventoryWorkflow}
+              photos={photos}
+              urls={urls}
+              selectedIds={selectedPhotos.map((photo) => photo.id)}
+              onClearSelection={() => setSelected(new Set())}
+              onUpload={(file, captureFields) => void addFiles([file], captureFields)}
+              onApply={async (ids, patch) => {
+                try {
+                  await updateCaptureFields(ids, patch);
+                  await refresh();
+                } catch (error) {
+                  toast.error("Could not update the photograph", {
                     description: error instanceof Error ? error.message : "Please try again.",
                   });
                 }
