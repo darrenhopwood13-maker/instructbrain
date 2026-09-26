@@ -1161,6 +1161,7 @@ export type Database = {
           organisation_id: string
           principal_contractor: string | null
           reference: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -1175,6 +1176,7 @@ export type Database = {
           organisation_id: string
           principal_contractor?: string | null
           reference?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -1189,6 +1191,7 @@ export type Database = {
           organisation_id?: string
           principal_contractor?: string | null
           reference?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
