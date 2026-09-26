@@ -61,4 +61,4 @@
 - [x] Replace the duplicate-looking Start and Sign in header actions with one Sign in action.
 - [x] Use Sora for headings, Manrope for standard copy, and retain Audiowide for the wordmark.
 - [x] Justify paragraph copy broadly while preserving functional alignment for controls and deliberately aligned text.
-- [ ] Verify the public page and representative app screens at phone and desktop sizes.
+- [x] Verify the public page and representative app screens at phone and desktop sizes.

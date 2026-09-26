@@ -447,6 +447,14 @@
     text-align-last: right;
   }
 
+  @media (max-width: 479px) {
+    p:not(.text-center):not(.text-right) {
+      text-align: start;
+      text-align-last: auto;
+      hyphens: none;
+    }
+  }
+
   /* No image may be wider than the column it sits in. */
   img,
   svg,
