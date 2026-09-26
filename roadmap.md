@@ -64,7 +64,7 @@
 - [x] Verify the public page and representative app screens at phone and desktop sizes.
 
 ## 26 Sep — smartphone report lists
-- [ ] Make Recent reports and All reports use the same phone-safe card structure.
-- [ ] Stack long titles, statuses and report details without horizontal clipping.
-- [ ] Make report selection and bulk deletion usable at 320–375px.
-- [ ] Verify phone and desktop layouts and run the full checks.
+- [x] Make Recent reports and All reports use the same phone-safe card structure.
+- [x] Stack long titles, statuses and report details without horizontal clipping.
+- [x] Make report selection and bulk deletion usable at 320–375px.
+- [x] Verify phone and desktop layout rules and run the full checks.
