@@ -199,7 +199,13 @@ function drawRule(writer: Writer, gapBefore = 6, gapAfter = 8): void {
 }
 
 function eyebrow(writer: Writer, text: string): void {
-  drawText(writer, text.toUpperCase(), { size: 8, bold: true, colour: ACCENT, gapAfter: 2 });
+  drawText(writer, text.toUpperCase(), {
+    size: 8,
+    bold: true,
+    colour: ACCENT,
+    gapAfter: 2,
+    align: "center",
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -1248,7 +1254,13 @@ export async function buildReportPdf(
       const groups = groupResults({ ...document, findings: section.findings }, view);
       for (const group of groups) {
         ensure(writer, 60);
-        drawText(writer, group.label, { size: 12, bold: true, colour: ACCENT, gapAfter: 2 });
+        drawText(writer, group.label, {
+          size: 12,
+          bold: true,
+          colour: ACCENT,
+          gapAfter: 2,
+          align: "center",
+        });
         for (const finding of group.findings) {
           await drawFinding(writer, document, finding, fetcher);
         }
