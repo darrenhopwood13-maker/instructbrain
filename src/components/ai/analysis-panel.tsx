@@ -50,6 +50,7 @@ export function AnalysisPanel({
   onRunComplete,
   confirmSignal = 0,
   onStatus,
+  photoCount,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
@@ -67,6 +68,8 @@ export function AnalysisPanel({
     completed: number;
     total: number;
   }) => void;
+  /** Photographs on the report; a change re-reads what still needs analysing. */
+  photoCount?: number;
 }) {
   const run = useAnalysisRun(reportId);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -87,6 +90,14 @@ export function AnalysisPanel({
     panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setConfirmOpen(true);
   }, [confirmSignal, run.loading, run.running, run.pendingCount]);
+
+  const lastCount = useRef(photoCount);
+  const { refresh, running: isRunning } = run;
+  useEffect(() => {
+    if (photoCount === undefined || photoCount === lastCount.current) return;
+    lastCount.current = photoCount;
+    if (!isRunning) void refresh();
+  }, [photoCount, isRunning, refresh]);
 
   const pendingKnown = run.loading ? null : run.pendingCount;
   useEffect(() => {
