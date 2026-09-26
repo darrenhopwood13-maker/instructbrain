@@ -1,4 +1,4 @@
-import type { PhotoWorkflow } from "@/lib/survey-types";
+import { roleIsOutsideSections, type PhotoWorkflow } from "@/lib/survey-types";
 
 /**
  * A step the person still has to complete before a room-schedule report can be
@@ -52,7 +52,10 @@ export function inventoryReadiness(
     (coverPhotoId !== null && photos.some((photo) => photo.id === coverPhotoId)) ||
     photos.some((photo) => coverRoles.has(roleOf(workflow, photo)));
 
-  const roomPhotos = photos.filter((photo) => !coverRoles.has(roleOf(workflow, photo)));
+  const roomPhotos = photos.filter(
+    (photo) =>
+      !coverRoles.has(roleOf(workflow, photo)) && !roleIsOutsideSections(workflow, photo.capture_fields),
+  );
   const rooms = new Map<string, { label: string; overviews: number; items: number }>();
   let unallocated = 0;
   for (const photo of roomPhotos) {
