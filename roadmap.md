@@ -68,3 +68,9 @@
 - [x] Stack long titles, statuses and report details without horizontal clipping.
 - [x] Make report selection and bulk deletion usable at 320–375px.
 - [x] Verify phone and desktop layout rules and run the full checks.
+
+## 26 Sep — photos to analysis hand-off
+- [x] One phone bottom bar: next step on top, Take photo / Add photos side by side beneath.
+- [x] Start a report leads to analysis (opens the confirmation), not an empty Review.
+- [x] Property inventory waits for the room checklist; uploads must finish first.
+- [ ] Live phone check of the new bar and hand-off (needs the user's signed-in phone).
