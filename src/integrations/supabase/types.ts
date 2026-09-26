@@ -1399,6 +1399,7 @@ export type Database = {
           created_at: string
           current_version: number
           executive_summary: string | null
+          handover: Json | null
           id: string
           is_quick: boolean
           issued_at: string | null
@@ -1428,6 +1429,7 @@ export type Database = {
           created_at?: string
           current_version?: number
           executive_summary?: string | null
+          handover?: Json | null
           id?: string
           is_quick?: boolean
           issued_at?: string | null
@@ -1457,6 +1459,7 @@ export type Database = {
           created_at?: string
           current_version?: number
           executive_summary?: string | null
+          handover?: Json | null
           id?: string
           is_quick?: boolean
           issued_at?: string | null

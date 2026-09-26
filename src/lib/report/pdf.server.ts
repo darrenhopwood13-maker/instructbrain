@@ -28,8 +28,15 @@ import {
   isInventoryLayout,
   type InventoryAppendixEntry,
 } from "@/lib/report/inventory-layout";
-
-import { NOT_ASSESSED_ID, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import {
+  coerceHandover,
+  handoverLayoutOf,
+  keyPhotos,
+  meterPhotoFor,
+  meterReadingText,
+  meterSlots,
+} from "@/lib/report/handover";
+import { NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 
 export type PdfVariant = "full" | "trade" | "item";
 
@@ -564,6 +571,152 @@ async function drawInventoryPhotoPages(
     : { label: heading, page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
 }
 
+function drawBoxedPhoto(
+  writer: Writer,
+  image: PDFImage | null,
+  x: number,
+  top: number,
+  width: number,
+  height: number,
+  emptyText: string,
+): void {
+  writer.cursor.page.drawRectangle({ x, y: top - height, width, height, borderColor: RULE, borderWidth: 0.75 });
+  if (image) drawImageAt(writer.cursor.page, image, x + 4, top - 4, width - 8, height - 8);
+  else
+    writer.cursor.page.drawText(sanitise(emptyText), {
+      x: x + 6,
+      y: top - height / 2,
+      size: 8,
+      font: writer.regular,
+      color: MUTED,
+    });
+}
+
+/** Meter readings and keys: always printed, blank where nothing was recorded. */
+async function drawInventoryHandoverPages(
+  writer: Writer,
+  document: ReportDocument,
+  fetcher: PhotoFetcher | null,
+): Promise<InventoryIndexEntry[]> {
+  const layout = handoverLayoutOf(document.snapshot);
+  const workflow = photoWorkflowOf(document.snapshot);
+  if (!layout || !workflow) return [];
+  const record = coerceHandover(document.report.handover);
+  const entries: InventoryIndexEntry[] = [];
+  const photoOf = async (photo: DocPhoto | null) =>
+    photo && fetcher ? embedPhoto(writer, fetcher, photo) : null;
+
+  // Meters: photos in a row, captioned; then the start / end table.
+  newPage(writer);
+  entries.push({ label: layout.meterTitle, page: writer.cursor.pageNumber });
+  drawInventoryHeader(writer, layout.meterTitle);
+  const slots = meterSlots(layout, record);
+  const perRow = Math.min(3, Math.max(1, slots.length));
+  const gap = 12;
+  const boxWidth = (writer.contentWidth - gap * (perRow - 1)) / perRow;
+  const boxHeight = slots.length > 3 ? 110 : 150;
+  for (let start = 0; start < slots.length; start += perRow) {
+    const row = slots.slice(start, start + perRow);
+    ensure(writer, boxHeight + 40);
+    const top = writer.cursor.y;
+    for (const [index, slot] of row.entries()) {
+      const x = writer.margin + index * (boxWidth + gap);
+      const photo = meterPhotoFor(layout, workflow.roleField, document.photos, slot.id);
+      drawBoxedPhoto(writer, await photoOf(photo), x, top, boxWidth, boxHeight, "no photo");
+      const entry = record.meters[slot.id];
+      const caption = [
+        `${slot.label}: ${meterReadingText(layout, entry) || " "}`,
+        entry?.serial?.trim() ? `${layout.serialLabel}: ${entry.serial.trim()}` : "",
+      ].filter(Boolean);
+      caption.forEach((line, lineIndex) => {
+        writer.cursor.page.drawText(sanitise(line), {
+          x,
+          y: top - boxHeight - 12 - lineIndex * 11,
+          size: 8.5,
+          font: lineIndex === 0 ? writer.bold : writer.regular,
+          color: lineIndex === 0 ? INK : MUTED,
+        });
+      });
+    }
+    writer.cursor.y = top - boxHeight - 40;
+  }
+
+  const labelWidth = 200;
+  const columnWidth = (writer.contentWidth - labelWidth) / 2;
+  const rowHeight = 24;
+  const drawRow = (cells: [string, string, string], header: boolean) => {
+    ensure(writer, rowHeight);
+    const top = writer.cursor.y;
+    if (header) {
+      writer.cursor.page.drawRectangle({
+        x: writer.margin,
+        y: top - rowHeight,
+        width: writer.contentWidth,
+        height: rowHeight,
+        color: rgb(0.94, 0.96, 0.98),
+      });
+    }
+    writer.cursor.page.drawRectangle({
+      x: writer.margin,
+      y: top - rowHeight,
+      width: writer.contentWidth,
+      height: rowHeight,
+      borderColor: RULE,
+      borderWidth: 0.5,
+    });
+    const widths = [labelWidth, columnWidth, columnWidth];
+    let x = writer.margin;
+    cells.forEach((cell, index) => {
+      if (index > 0) {
+        writer.cursor.page.drawLine({ start: { x, y: top }, end: { x, y: top - rowHeight }, thickness: 0.5, color: RULE });
+      }
+      drawCellText(writer.cursor.page, header || index === 0 ? writer.bold : writer.regular, cell, x + 6, top - 5, (widths[index] ?? 0) - 12, 8.5, header ? MUTED : INK);
+      x += widths[index] ?? 0;
+    });
+    writer.cursor.y -= rowHeight;
+  };
+  drawRow(["", layout.startLabel, layout.endLabel], true);
+  for (const slot of slots) drawRow([slot.label, meterReadingText(layout, record.meters[slot.id]), ""], false);
+  writer.cursor.y -= 12;
+  if (layout.meterNotice) drawText(writer, layout.meterNotice, { size: 8.5, colour: MUTED });
+
+  // Keys: photos, the list, then the yes / no answers.
+  newPage(writer);
+  entries.push({ label: layout.keysTitle, page: writer.cursor.pageNumber });
+  drawInventoryHeader(writer, layout.keysTitle);
+  const keys = keyPhotos(layout, workflow.roleField, document.photos).sort((a, b) => a.sequence - b.sequence);
+  const keyBoxes = Math.max(1, Math.min(3, keys.length));
+  const keyWidth = (writer.contentWidth - gap * (keyBoxes - 1)) / keyBoxes;
+  const keyHeight = 150;
+  for (let start = 0; start < Math.max(1, keys.length); start += keyBoxes) {
+    ensure(writer, keyHeight + 16);
+    const top = writer.cursor.y;
+    for (let index = 0; index < keyBoxes; index += 1) {
+      const photo = keys[start + index] ?? null;
+      if (start + index >= Math.max(1, keys.length)) break;
+      drawBoxedPhoto(writer, await photoOf(photo), writer.margin + index * (keyWidth + gap), top, keyWidth, keyHeight, "no photo");
+    }
+    writer.cursor.y = top - keyHeight - 16;
+  }
+  if (layout.keysIntro) drawText(writer, layout.keysIntro, { size: 10, bold: true, gapAfter: 6 });
+  const listed = record.keys.filter((key) => key.label.trim() !== "");
+  drawRow([layout.keyItemLabel, layout.keyQuantityLabel, ""], true);
+  if (listed.length === 0) {
+    drawRow([" ", " ", ""], false);
+    drawRow([" ", " ", ""], false);
+  }
+  for (const key of listed) drawRow([key.label.trim(), key.quantity.trim(), ""], false);
+  writer.cursor.y -= 12;
+  for (const question of layout.questions) {
+    const answer = record.answers[question.id];
+    drawText(writer, `${question.label}: ${answer === "yes" ? "Yes" : answer === "no" ? "No" : "__________"}`, {
+      size: 10,
+      gapAfter: 4,
+    });
+  }
+  return entries;
+}
+
 function drawInventoryBackingPages(writer: Writer, document: ReportDocument): InventoryIndexEntry[] {
   const pages = inventoryLayout(document)?.backingPages ?? [];
   if (pages.length === 0) return [];
@@ -907,6 +1060,7 @@ async function buildInventoryReportPdf(
     "These photographs have not been allocated to a room.",
   );
   if (remainder) indexEntries.push(remainder);
+  indexEntries.push(...(await drawInventoryHandoverPages(writer, document, fetcher)));
   indexEntries.push(...drawInventoryBackingPages(writer, document));
   if (indexEntries.length === 0) {
     indexEntries.push({ label: "No rooms have been recorded yet.", page: 2 });

@@ -74,3 +74,9 @@
 - [x] Start a report leads to analysis (opens the confirmation), not an empty Review.
 - [x] Property inventory waits for the room checklist; uploads must finish first.
 - [ ] Live phone check of the new bar and hand-off (needs the user's signed-in phone).
+
+## 26 Sep — meters and keys
+- [x] v7 template roles + handover block; reports.handover column
+- [x] Meters and keys card on Photos step; Read from photo suggestion (accept only)
+- [x] Meter Readings + Keys pages in PDF and preview, listed in index
+- [ ] Live phone check (needs your sign-in)

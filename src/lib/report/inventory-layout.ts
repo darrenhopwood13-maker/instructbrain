@@ -167,6 +167,8 @@ export function inventoryAppendixEntries(document: ReportDocument): InventoryApp
     .filter((photo) => {
       if (photo.id === cover?.id) return false;
       const role = photoRoleOf(document.snapshot, photo.captureFields, { isFirstPhoto: photo.sequence === 1 });
+      // Handover evidence prints on its own pages, never among room items.
+      if (role?.outsideSections === true) return false;
       return role?.id !== layout.overviewRoleId && role?.countsAsCover !== true;
     })
     .sort((a, b) => a.sequence - b.sequence)

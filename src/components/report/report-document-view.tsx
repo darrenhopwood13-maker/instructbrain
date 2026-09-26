@@ -34,6 +34,15 @@ import {
 } from "@/lib/report/inventory-layout";
 import type { FindingPatch, ReportPatch } from "@/lib/report/report-data";
 import {
+  coerceHandover,
+  handoverLayoutOf,
+  keyPhotos,
+  meterPhotoFor,
+  meterReadingText,
+  meterSlots,
+} from "@/lib/report/handover";
+import { photoWorkflowOf } from "@/lib/survey-types";
+import {
   NOT_ASSESSED_ID,
   definesField,
   definitionLabel,
@@ -346,6 +355,7 @@ function InventoryDocument({
         document={document}
       />
 
+      <InventoryHandoverPages document={document} print={print} />
       <InventoryBackingPages document={document} />
       <BrandCredit />
     </article>
@@ -418,6 +428,116 @@ function InventoryPhotoBlock({
         ))}
       </ul>
     </section>
+  );
+}
+
+function InventoryHandoverPages({ document, print }: { document: ReportDocument; print: boolean }) {
+  const layout = handoverLayoutOf(document.snapshot);
+  const workflow = photoWorkflowOf(document.snapshot);
+  if (!layout || !workflow) return null;
+  const record = coerceHandover(document.report.handover);
+  const slots = meterSlots(layout, record);
+  const keys = keyPhotos(layout, workflow.roleField, document.photos).sort((a, b) => a.sequence - b.sequence);
+  const listed = record.keys.filter((key) => key.label.trim() !== "");
+  return (
+    <>
+      <section aria-label={layout.meterTitle} className="break-before-page">
+        <h2 className="editorial-title text-xl font-semibold">{layout.meterTitle}</h2>
+        <ul className="mt-4 grid gap-5 sm:grid-cols-3">
+          {slots.map((slot) => {
+            const photo = meterPhotoFor(layout, workflow.roleField, document.photos, slot.id);
+            const entry = record.meters[slot.id];
+            return (
+              <li key={slot.id} className="break-inside-avoid rounded-lg border border-border p-2">
+                {photo ? (
+                  <PhotoFigure
+                    attachment={{ photo, role: "appendix", region: null }}
+                    useFullResolution={print}
+                    caption={`Photo ${photo.sequence}`}
+                  />
+                ) : (
+                  <p className="grid aspect-[4/3] place-items-center text-xs text-muted-foreground">no photo</p>
+                )}
+                <p className="mt-2 text-sm font-semibold">
+                  {slot.label}: {meterReadingText(layout, entry)}
+                </p>
+                {entry?.serial?.trim() ? (
+                  <p className="text-xs text-muted-foreground">
+                    {layout.serialLabel}: {entry.serial.trim()}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+        <table className="mt-6 w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-surface-raised text-left text-xs">
+              <th className="border border-border p-2"><span className="sr-only">Meter</span></th>
+              <th className="border border-border p-2">{layout.startLabel}</th>
+              <th className="border border-border p-2">{layout.endLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {slots.map((slot) => (
+              <tr key={slot.id}>
+                <th scope="row" className="border border-border p-2 text-left">{slot.label}</th>
+                <td className="border border-border p-2">{meterReadingText(layout, record.meters[slot.id])}</td>
+                <td className="border border-border p-2" />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {layout.meterNotice ? <p className="mt-3 text-xs text-muted-foreground">{layout.meterNotice}</p> : null}
+      </section>
+
+      <section aria-label={layout.keysTitle} className="break-before-page">
+        <h2 className="editorial-title text-xl font-semibold">{layout.keysTitle}</h2>
+        {keys.length > 0 ? (
+          <ul className="mt-4 grid gap-5 sm:grid-cols-3">
+            {keys.map((photo) => (
+              <li key={photo.id} className="break-inside-avoid rounded-lg border border-border p-2">
+                <PhotoFigure
+                  attachment={{ photo, role: "appendix", region: null }}
+                  useFullResolution={print}
+                  caption={`Photo ${photo.sequence}`}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {layout.keysIntro ? <p className="mt-4 text-sm font-semibold">{layout.keysIntro}</p> : null}
+        <table className="mt-2 w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-surface-raised text-left text-xs">
+              <th className="border border-border p-2">{layout.keyItemLabel}</th>
+              <th className="border border-border p-2">{layout.keyQuantityLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(listed.length > 0 ? listed : [{ label: "", quantity: "" }, { label: "", quantity: "" }]).map(
+              (key, index) => (
+                <tr key={`${key.label}-${index}`}>
+                  <td className="h-9 border border-border p-2">{key.label}</td>
+                  <td className="h-9 border border-border p-2">{key.quantity}</td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        </table>
+        <dl className="mt-4 space-y-1 text-sm">
+          {layout.questions.map((question) => {
+            const answer = record.answers[question.id];
+            return (
+              <div key={question.id} className="flex gap-2">
+                <dt className="font-semibold">{question.label}:</dt>
+                <dd>{answer === "yes" ? "Yes" : answer === "no" ? "No" : "—"}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      </section>
+    </>
   );
 }
 
