@@ -321,8 +321,12 @@
   color: var(--foreground);
 }
 
-.work-surface .app-shell-header .work-wordmark-brain {
-  color: var(--foreground);
+.work-surface .app-shell-header {
+  border-bottom: 2px solid var(--brand-accent);
+}
+
+.work-surface .app-shell-mobile-nav {
+  border-top: 2px solid var(--brand-accent);
 }
 
 .work-surface .app-shell-header .console-control {
@@ -385,6 +389,20 @@
   color: var(--brand-blue);
 }
 
+/* The wordmark in navy navigation chrome is identical to the dashboard. */
+.work-surface .app-shell-header .wordmark {
+  font-family: var(--font-wordmark);
+  font-weight: 400;
+}
+
+.work-surface .app-shell-header .wordmark .text-brand-accent {
+  color: var(--brand-accent);
+}
+
+.work-surface .app-shell-header .wordmark .work-wordmark-brain {
+  color: var(--foreground);
+}
+
 .work-surface .glass-navy,
 .work-surface .glass {
   background: var(--brand-blue-soft);
@@ -416,20 +434,20 @@ body:has(.work-surface) :where([role="dialog"], [role="menu"], [role="listbox"])
   box-shadow: var(--shadow-raised);
 }
 
-/* Destructive meaning remains in the copy and icon, but white-screen actions
-   no longer become a solid red block. */
+/* Destructive meaning remains explicit in the copy and icon, while solid
+   white-screen action buttons use the established orange action treatment. */
 body:has(.work-surface) :where(button, [role="button"]).bg-fail,
 body:has(.work-surface) :where(button, [role="button"]).bg-destructive {
-  background: var(--surface);
-  border: 1px solid var(--fail);
-  color: var(--fail);
-  box-shadow: none;
+  background: var(--brand-accent);
+  border: 1px solid var(--brand-accent-deep);
+  color: var(--primary-foreground);
+  box-shadow: 0 2px 8px -6px color-mix(in oklab, var(--brand-accent) 45%, transparent);
 }
 
 body:has(.work-surface) :where(button, [role="button"]).bg-fail:hover,
 body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover {
-  background: var(--fail-soft);
-  border-color: var(--fail);
+  background: var(--brand-accent-deep);
+  border-color: var(--brand-accent-deep);
 }
 
 @utility work-choice {
