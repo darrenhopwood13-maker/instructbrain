@@ -113,3 +113,4 @@
 - [x] Replace the darker white-screen accent override with the dashboard's exact #FF5E00 brand orange.
 - [x] Keep darker/lighter orange variants only for contrast and interaction states.
 - [x] Preserve navy screens, report output, status colours, layout and behaviour.
+- [x] Draw the top and bottom navy-bar separators independently in dashboard orange so inherited borders cannot turn them grey.
