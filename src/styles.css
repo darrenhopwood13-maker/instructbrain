@@ -324,15 +324,34 @@
 }
 
 .work-surface .app-shell-header {
-  border-color: var(--brand-accent);
-  border-bottom-width: 3px;
+  border-bottom-color: transparent;
   opacity: 1;
 }
 
 .work-surface .app-shell-mobile-nav {
-  border-color: var(--brand-accent);
-  border-top-width: 3px;
+  border-top-color: transparent;
   opacity: 1;
+}
+
+/* Draw the separators independently from Tailwind's shared border colour so
+   inherited light-screen borders cannot turn the dashboard orange grey. */
+.work-surface .app-shell-header::after,
+.work-surface .app-shell-mobile-nav::before {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background-color: var(--brand-accent);
+  content: "";
+  pointer-events: none;
+}
+
+.work-surface .app-shell-header::after {
+  bottom: 0;
+}
+
+.work-surface .app-shell-mobile-nav::before {
+  top: 0;
 }
 
 .work-surface .app-shell-header .console-control {
