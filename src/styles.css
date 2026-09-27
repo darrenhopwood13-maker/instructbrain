@@ -307,6 +307,44 @@
   color: var(--foreground);
 }
 
+/* Working pages stay white, while their shared navigation chrome matches the
+   dashboard so the four mobile destinations sit on one continuous navy bar. */
+.work-surface .app-shell-header,
+.work-surface .app-shell-mobile-nav {
+  --foreground: oklch(0.985 0 0);
+  --muted-foreground: oklch(0.887 0.011 261.8);
+  --surface-raised: oklch(0.367 0.1 262.8);
+  --surface-sunken: oklch(0.342 0.091 262.9);
+  --border: oklch(0.686 0.21 41.1 / 55%);
+  --glass-surface: oklch(1 0 0 / 9%);
+  --glass-surface-hover: oklch(1 0 0 / 15%);
+  color: var(--foreground);
+}
+
+.work-surface .app-shell-header .work-wordmark-brain {
+  color: var(--foreground);
+}
+
+.work-surface .app-shell-header .console-control {
+  border-color: var(--brand-accent);
+  border-width: 1.5px;
+  background-color: var(--glass-surface);
+  color: var(--foreground);
+}
+
+.work-surface .app-shell-header .console-control:hover {
+  border-color: var(--brand-accent-light);
+  background-color: var(--glass-surface-hover);
+}
+
+.work-surface .app-shell-mobile-nav a {
+  color: var(--muted-foreground);
+}
+
+.work-surface .app-shell-mobile-nav a[data-status="active"] {
+  color: var(--foreground);
+}
+
 /* Legibility beats decoration outdoors: no grid, no glow on working screens. */
 .work-surface [class*="console-panel"],
 .work-surface [class*="glass-panel"] {

@@ -125,7 +125,7 @@ export function AppShell({
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
+      <header className="app-shell-header sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
         <div className="shell-container flex items-center gap-4 py-5">
           <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
@@ -161,7 +161,7 @@ export function AppShell({
 
       <nav
         aria-label="Primary mobile"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
+        className="app-shell-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul
           className="grid"
