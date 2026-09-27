@@ -699,8 +699,11 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            void addFiles(event.target.files);
-            event.target.value = "";
+            const input = event.currentTarget;
+            // Clear only after the bytes are held: Android revokes the files on reset.
+            void Promise.resolve(addFiles(input.files)).finally(() => {
+              input.value = "";
+            });
           }}
         />
         <input
@@ -711,8 +714,11 @@ export function PhotosPanel({
           multiple
           className="sr-only"
           onChange={(event) => {
-            void addFiles(event.target.files);
-            event.target.value = "";
+            const input = event.currentTarget;
+            // Clear only after the bytes are held: Android revokes the files on reset.
+            void Promise.resolve(addFiles(input.files)).finally(() => {
+              input.value = "";
+            });
           }}
         />
 

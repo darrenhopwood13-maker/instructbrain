@@ -56,8 +56,17 @@ export async function snapshotFiles(files: File[]): Promise<File[]> {
       snapshots.push(file);
       continue;
     }
+    let bytes: ArrayBuffer | null = null;
+    for (let attempt = 0; attempt < 2 && !bytes; attempt += 1) {
+      try {
+        bytes = await file.arrayBuffer();
+      } catch {
+        // Google Photos items may still be downloading; one short retry.
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 300));
+      }
+    }
     try {
-      const bytes = await file.arrayBuffer();
+      if (!bytes) throw new Error("unreadable");
       held += bytes.byteLength;
       const copy = new File([bytes], file.name, {
         type: file.type,

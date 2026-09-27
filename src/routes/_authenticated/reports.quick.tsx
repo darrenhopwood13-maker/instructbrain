@@ -484,8 +484,11 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              void receive(event.target.files);
-              event.target.value = "";
+              const input = event.currentTarget;
+              // Clear only after the bytes are held: Android revokes the files on reset.
+              void Promise.resolve(receive(input.files)).finally(() => {
+                input.value = "";
+              });
             }}
           />
           <input
@@ -495,8 +498,11 @@ function CustomReport() {
             multiple
             className="sr-only"
             onChange={(event) => {
-              void receive(event.target.files);
-              event.target.value = "";
+              const input = event.currentTarget;
+              // Clear only after the bytes are held: Android revokes the files on reset.
+              void Promise.resolve(receive(input.files)).finally(() => {
+                input.value = "";
+              });
             }}
           />
            <PhotoCaptureActions
