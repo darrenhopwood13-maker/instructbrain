@@ -101,3 +101,8 @@
 - [x] Remove double blue/orange borders and heavy dashboard controls from white screens.
 - [x] Use Sora for the white-screen wordmark while retaining Manrope body copy.
 - [x] Verify styling scope and automated checks; live signed-in visual review remains unavailable for external Supabase sessions.
+
+## 27 Sep — working-screen navigation chrome
+- [x] Match the shared working-screen header to the dashboard navy.
+- [x] Place all four mobile navigation destinations on one continuous navy bottom bar.
+- [ ] Verify the authenticated phone view (external Supabase session unavailable locally).
