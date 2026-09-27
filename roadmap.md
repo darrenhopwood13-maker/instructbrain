@@ -105,4 +105,5 @@
 ## 27 Sep — working-screen navigation chrome
 - [x] Match the shared working-screen header to the dashboard navy.
 - [x] Place all four mobile navigation destinations on one continuous navy bottom bar.
+- [x] Add clear orange separators, dashboard-matched header wordmark and orange destructive actions.
 - [ ] Verify the authenticated phone view (external Supabase session unavailable locally).
