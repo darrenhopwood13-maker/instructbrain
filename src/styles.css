@@ -318,15 +318,21 @@
   --border: oklch(0.686 0.21 41.1 / 55%);
   --glass-surface: oklch(1 0 0 / 9%);
   --glass-surface-hover: oklch(1 0 0 / 15%);
+  background-color: var(--brand-blue);
+  background-image: var(--blueprint-grid);
   color: var(--foreground);
 }
 
 .work-surface .app-shell-header {
-  border-bottom: 2px solid var(--brand-accent);
+  border-color: var(--brand-accent);
+  border-bottom-width: 3px;
+  opacity: 1;
 }
 
 .work-surface .app-shell-mobile-nav {
-  border-top: 2px solid var(--brand-accent);
+  border-color: var(--brand-accent);
+  border-top-width: 3px;
+  opacity: 1;
 }
 
 .work-surface .app-shell-header .console-control {
@@ -437,7 +443,9 @@ body:has(.work-surface) :where([role="dialog"], [role="menu"], [role="listbox"])
 /* Destructive meaning remains explicit in the copy and icon, while solid
    white-screen action buttons use the established orange action treatment. */
 body:has(.work-surface) :where(button, [role="button"]).bg-fail,
-body:has(.work-surface) :where(button, [role="button"]).bg-destructive {
+body:has(.work-surface) :where(button, [role="button"]).bg-destructive,
+.work-surface :where(button, [role="button"])[class*="bg-fail"],
+.work-surface :where(button, [role="button"])[class*="bg-destructive"] {
   background: var(--brand-accent);
   border: 1px solid var(--brand-accent-deep);
   color: var(--primary-foreground);
@@ -445,7 +453,9 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive {
 }
 
 body:has(.work-surface) :where(button, [role="button"]).bg-fail:hover,
-body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover {
+body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
+.work-surface :where(button, [role="button"])[class*="bg-fail"]:hover,
+.work-surface :where(button, [role="button"])[class*="bg-destructive"]:hover {
   background: var(--brand-accent-deep);
   border-color: var(--brand-accent-deep);
 }

@@ -107,3 +107,4 @@
 - [x] Place all four mobile navigation destinations on one continuous navy bottom bar.
 - [x] Add clear orange separators, dashboard-matched header wordmark and orange destructive actions.
 - [ ] Verify the authenticated phone view (external Supabase session unavailable locally).
+- [x] Make the white-screen navy header/footer, orange separators and orange destructive actions explicit so utility styling cannot override them.
