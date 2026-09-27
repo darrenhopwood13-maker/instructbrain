@@ -234,8 +234,8 @@
 
 /*
  * Working-screen scope — capture, photos, review and the compliance register.
- * Same light sheet as `.paper`, but the primary action keeps the brand orange
- * (deepened so white label text clears AA on white). Chrome is stripped: no
+ * Same light sheet as `.paper`, with the exact dashboard brand orange used for
+ * primary actions and accents. Chrome is stripped: no
  * blueprint grid, no outer glow, no layered console surfaces.
  *
  * Accent is collapsed to three roles here — fill, hover and a text-safe ink —
@@ -253,10 +253,10 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.035 262);
 
-  /* Three accent roles only. */
-  --brand-accent: oklch(0.52 0.19 38.2);
-  --brand-accent-deep: oklch(0.46 0.17 38.2);
-  --brand-accent-light: oklch(0.52 0.19 38.2);
+  /* Match the dashboard exactly: instructSite orange #FF5E00. */
+  --brand-accent: oklch(0.686 0.21 41.1);
+  --brand-accent-deep: oklch(0.626 0.2 38.2);
+  --brand-accent-light: oklch(0.741 0.165 50.6);
   --brand-accent-soft: oklch(0.965 0.03 45);
   --brand-accent-ink: oklch(0.45 0.16 40);
 
@@ -269,7 +269,7 @@
   --work-control-edge: oklch(0.79 0.025 262);
 
   --primary: oklch(0.52 0.19 38.2);
-  --primary-foreground: oklch(1 0 0);
+  --primary-foreground: oklch(0.26 0.072 263);
   --secondary: oklch(0.962 0.006 262);
   --secondary-foreground: oklch(0.28 0.045 262);
   --muted: oklch(0.962 0.006 262);
@@ -282,7 +282,7 @@
   --border: oklch(0.82 0.022 262);
   --border-strong: oklch(0.7 0.035 262);
   --input: oklch(0.76 0.028 262);
-  --ring: oklch(0.52 0.19 38.2);
+  --ring: oklch(0.686 0.21 41.1);
 
   --pass: oklch(0.42 0.11 158);
   --pass-soft: oklch(0.955 0.03 158);
