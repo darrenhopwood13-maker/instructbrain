@@ -48,8 +48,10 @@ export function useSinglePhotoCapture(onFile: (file: File) => void): {
         aria-hidden="true"
         onChange={(event) => {
           const file = event.target.files?.[0];
-          event.target.value = "";
-          void deliver(file);
+          const input = event.currentTarget;
+          void Promise.resolve(deliver(file)).finally(() => {
+            input.value = "";
+          });
         }}
       />
       <input
@@ -61,8 +63,10 @@ export function useSinglePhotoCapture(onFile: (file: File) => void): {
         aria-hidden="true"
         onChange={(event) => {
           const file = event.target.files?.[0];
-          event.target.value = "";
-          void deliver(file);
+          const input = event.currentTarget;
+          void Promise.resolve(deliver(file)).finally(() => {
+            input.value = "";
+          });
         }}
       />
       <ContinuousCamera
