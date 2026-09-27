@@ -108,3 +108,8 @@
 - [x] Add clear orange separators, dashboard-matched header wordmark and orange destructive actions.
 - [ ] Verify the authenticated phone view (external Supabase session unavailable locally).
 - [x] Make the white-screen navy header/footer, orange separators and orange destructive actions explicit so utility styling cannot override them.
+
+## 27 Sep — dashboard orange on white screens
+- [x] Replace the darker white-screen accent override with the dashboard's exact #FF5E00 brand orange.
+- [x] Keep darker/lighter orange variants only for contrast and interaction states.
+- [x] Preserve navy screens, report output, status colours, layout and behaviour.
