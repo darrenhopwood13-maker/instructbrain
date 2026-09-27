@@ -31,12 +31,18 @@ export function PhotoCaptureActions({
         type="button"
         variant="quiet"
         size={compact ? "default" : "lg"}
-        className={compact ? "min-h-12 w-full" : "min-h-14 w-full text-base"}
+        className={`${compact ? "min-h-12" : "min-h-14 text-base"} h-auto w-full flex-col gap-0 whitespace-normal py-1.5`}
         disabled={disabled || busy}
         onClick={onGallery}
+        aria-label="Add from albums — Google Photos, albums or Files. Select as many as you like."
       >
-        <ImagePlus aria-hidden="true" className="size-5 shrink-0" />
-        Add photos
+        <span className="flex items-center gap-2">
+          <ImagePlus aria-hidden="true" className="size-5 shrink-0" />
+          Add from albums
+        </span>
+        <span aria-hidden="true" className="text-xs font-normal text-muted-foreground">
+          Google Photos, albums or Files
+        </span>
       </Button>
     </div>
   );
