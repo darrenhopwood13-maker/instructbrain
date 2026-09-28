@@ -2,16 +2,17 @@
 
 A screen recording of the real app going through the Property inventory journey, edited down to a punchy 30-second MP4 for promo use.
 
-## The report we'll feature
+## What we'll feature
 
-Your existing **Crowndean House** inventory (created today): 48 photos, 5 rooms (Porch, Living room, Bedroom, Stairs, Exterior) each with 3 overview photos, a title-page photo, and 32 findings. It's ideal — real content, no demo setup needed.
+- Your existing **Crowndean House** inventory: 48 photos, 5 rooms (Porch, Living room, Bedroom, Stairs, Exterior) each with 3 overview photos, a title-page photo, and 32 findings.
+- Your **final inventory PDF** (the "222.pdf" you shared from Google Drive — the finished Crowndean House report). I'll feature its real pages as the closing hero shot. Google Drive only lets me view it, not download it from here, so I'll capture the same PDF through the app's own **Download report** during the recording — it's the identical document.
 
 ## What the video will show (in order)
 
 1. **The report** — opening Crowndean House so the viewer sees it's a real property inventory.
 2. **Photos and rooms** — the photo grid with rooms labelled and the three overview photos per room.
 3. **AI analysis and review** — the findings list with item thumbnails, confirming items.
-4. **The finished report** — the landscape PDF preview and the Share/Download moment.
+4. **The finished report** — the Download/Share moment, then real pages of the final landscape PDF (cover, a room schedule, photo pages) as the payoff.
 
 Each stage gets roughly 5–8 seconds with quick cuts so the story reads in 30 seconds.
 
@@ -19,7 +20,8 @@ Note: because Crowndean House is already captured and analysed, the recording sh
 
 ## How I'll do it
 
-- Drive the real app in a browser at phone size (375px wide), recording the screen as I move through the journey.
+- Drive the real app in a browser at phone size (375px wide), recording the screen as I move through the journey, including the Download report moment.
+- Convert pages of the downloaded PDF into clean full-screen shots for the closing sequence.
 - Edit with ffmpeg: trim dead time, speed up waits, cut to exactly 30 seconds.
 - Deliver the final MP4 to your Files, plus the unedited full-length cut.
 
