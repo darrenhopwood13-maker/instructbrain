@@ -114,3 +114,9 @@
 - [x] Keep darker/lighter orange variants only for contrast and interaction states.
 - [x] Preserve navy screens, report output, status colours, layout and behaviour.
 - [x] Draw the top and bottom navy-bar separators independently in dashboard orange so inherited borders cannot turn them grey.
+
+## 28 Sep — compact phone uploads
+- [x] Replace the always-visible per-photo upload list with a compact overall summary.
+- [x] Keep failed uploads visible and retryable, with optional details for the full queue.
+- [x] Reduce the phone capture dock and reserve enough page space so it covers no content.
+- [ ] Verify the revised dock with a large album on the user's signed-in phone.
