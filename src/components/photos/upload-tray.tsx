@@ -1,4 +1,5 @@
-import { AlertTriangle, Check, Clock, ImageOff, RefreshCw, X } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Clock, ImageOff, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -46,10 +47,14 @@ export function UploadTray({
   onRetryAll: () => void;
   onDismiss: () => void;
 }) {
+  const [showDetails, setShowDetails] = useState(false);
   if (items.length === 0) return null;
   const failed = items.filter((item) => item.state === "error");
   const finished = items.filter((item) => item.state === "done" || item.state === "skipped");
   const active = items.length - finished.length - failed.length;
+  const detailItems = showDetails
+    ? items
+    : failed;
 
   return (
     <section
@@ -58,8 +63,10 @@ export function UploadTray({
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
-          <h3 className="editorial-title truncate text-base font-semibold">
-            {active > 0 ? "Uploading photographs" : "Upload complete"}
+          <h3 className="editorial-title text-base font-semibold">
+            {active > 0
+              ? `Uploading ${finished.length} of ${items.length}`
+              : `${finished.length} photograph${finished.length === 1 ? "" : "s"} uploaded`}
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {finished.length} of {items.length} stored
@@ -73,7 +80,7 @@ export function UploadTray({
               Retry {failed.length}
             </Button>
           ) : null}
-          {active === 0 ? (
+          {active === 0 && failed.length === 0 ? (
             <Button variant="quiet" size="sm" onClick={onDismiss}>
               Clear
             </Button>
@@ -97,8 +104,22 @@ export function UploadTray({
         </p>
       ) : null}
 
-      <ul className="mt-3 max-h-64 divide-y divide-border overflow-y-auto rounded-md border border-border">
-        {items.map((item) => (
+      {items.length > failed.length ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-2 min-h-11 px-2"
+          aria-expanded={showDetails}
+          onClick={() => setShowDetails((current) => !current)}
+        >
+          {showDetails ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+          {showDetails ? "Hide details" : "View details"}
+        </Button>
+      ) : null}
+
+      {detailItems.length > 0 ? <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-md border border-border">
+        {detailItems.map((item) => (
           <li key={item.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-2.5">
             <StateIcon state={item.state} />
             <div className="min-w-0">
@@ -120,7 +141,7 @@ export function UploadTray({
             )}
           </li>
         ))}
-      </ul>
+      </ul> : null}
     </section>
   );
 }

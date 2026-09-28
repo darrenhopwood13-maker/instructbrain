@@ -635,7 +635,7 @@ export function PhotosPanel({
   }
 
   return (
-    <div className={nextAction ? "space-y-5 pb-44 sm:pb-0" : "space-y-5 pb-28 sm:pb-0"}>
+    <div className={nextAction ? "space-y-5 pb-48 sm:pb-0" : "space-y-5 pb-32 sm:pb-0"}>
       <section className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:p-5">
         <p className="eyebrow">Step one</p>
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
@@ -927,7 +927,7 @@ export function PhotosPanel({
 
       {/* One-handed controls on a phone: the next step on top, capture beneath,
           in one bar so nothing is ever hidden behind anything else. */}
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 space-y-2 border-t border-border bg-background/95 p-3 backdrop-blur sm:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 space-y-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur sm:hidden">
         {nextAction}
         {atPhotoCap ? (
           <p className="text-center text-sm text-fail-soft">
@@ -936,6 +936,7 @@ export function PhotosPanel({
         ) : (
           <PhotoCaptureActions
             compact
+            showHint={false}
             onCamera={openCamera}
             onGallery={() => filePickerRef.current?.click()}
             busy={busy}
