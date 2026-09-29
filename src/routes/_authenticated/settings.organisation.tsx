@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_authenticated/settings/organisation")({
 
 const swatches = [
   { id: "blue", label: "Instruct Blue", className: "bg-brand-blue" },
-  { id: "orange", label: "Instruct Orange", className: "bg-brand-accent" },
+  { id: "orange", label: "Instruct Laser Green", className: "bg-brand-accent" },
   { id: "ink", label: "Deep Ink", className: "bg-brand-blue-ink" },
 ];
 
