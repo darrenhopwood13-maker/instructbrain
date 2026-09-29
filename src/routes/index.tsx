@@ -109,8 +109,8 @@ function Wordmark() {
   return (
     <span className="block min-w-0">
       <span className="wordmark block truncate text-lg leading-tight">
-        <span className="text-brand-accent">instruct</span>
-        <span className="text-foreground">Brain</span>
+        <span className="text-foreground">instruct</span>
+        <span className="text-brand-accent">Brain</span>
       </span>
     </span>
   );
@@ -138,12 +138,12 @@ function Hero() {
         /* Split Action button — primary CTA */
         .ib-btn-split { display:inline-flex; align-items:stretch; border-radius:10px; overflow:hidden; background:#fff; border:1.5px solid #1a1a2e; box-shadow:0 3px 0 rgba(26,26,46,.18); text-decoration:none; }
         .ib-btn-split .txt { padding:13px 18px 13px 22px; display:inline-flex; align-items:center; gap:9px; color:#1a1a2e; font-weight:600; font-size:15px; }
-        .ib-btn-split .arrow { background:#ff7b00; color:#fff; padding:0 18px; display:flex; align-items:center; transition:background .15s; }
-        .ib-btn-split:hover .arrow { background:#e56f00; }
+        .ib-btn-split .arrow { background:var(--brand-accent); color:var(--primary-foreground); padding:0 18px; display:flex; align-items:center; transition:background .15s; }
+        .ib-btn-split:hover .arrow { background:var(--brand-accent-deep); }
         .ib-btn-split:hover { box-shadow:0 4px 0 rgba(26,26,46,.22); }
         /* Minimal Line button — secondary */
         .ib-btn-minline { display:inline-flex; align-items:center; gap:9px; padding:12px 20px; border-radius:9px; border:1.5px solid rgba(26,26,46,.45); background:transparent; color:#1a1a2e; font-weight:600; font-size:15px; text-decoration:none; transition:background .15s; }
-        .ib-btn-minline.orange { color:#d16600; border-color:rgba(255,123,0,.55); }
+        .ib-btn-minline.orange { color:var(--brand-accent-ink); border-color:var(--glass-accent-border); }
         .ib-btn-minline:hover { background:rgba(26,26,46,.05); }
         /* Blueprint grid backdrop */
         .hero-blueprint { position:relative; }
@@ -153,15 +153,15 @@ function Hero() {
         .cta-deck { background: rgba(43,75,255,.07); border:1px solid rgba(43,75,255,.22); border-radius:22px; padding:30px 26px 26px; box-shadow:0 10px 34px rgba(43,75,255,.12); }
         /* hero z-order so the 3D objects sit above the deck edge */
         .cta-deck > * { position:relative; z-index:1; }
-        .cta-deck::before { content:""; position:absolute; inset:0; border-radius:22px; background:radial-gradient(500px 160px at 85% 0%, rgba(255,123,0,.12), transparent 60%); pointer-events:none; }
-        .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: radial-gradient(circle at 30% 30%, rgba(43,75,255,.12), transparent 60%), radial-gradient(circle at 70% 70%, rgba(255,123,0,.08), transparent 55%), repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, rgba(43,75,255,.05) 30px 32px); border-radius:50%; pointer-events:none; }
+        .cta-deck::before { content:""; position:absolute; inset:0; border-radius:22px; background:color-mix(in oklab, var(--brand-accent) 12%, transparent); pointer-events:none; }
+        .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, rgba(43,75,255,.05) 30px 32px); border-radius:50%; pointer-events:none; }
         .hero-topo > * { position:relative; z-index:1; }
       `}</style>
       <div className="land-hero-grid">
         <div>
           <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
-            <span className="text-brand-accent">instruct</span>
-            <span className="text-foreground">Brain</span>
+            <span className="text-foreground">instruct</span>
+            <span className="text-brand-accent">Brain</span>
           </p>
           <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
             Photos in. Client-ready reports out.

@@ -141,7 +141,7 @@ export function earliestTargetDate(items: ExtractItem[]): string | null {
 const INK = "#101c33";
 const MUTED = "#5a6478";
 const RULE = "#d9dee8";
-const ACCENT = "#ff5e00";
+const ACCENT = "#57ff00";
 const PAPER = "#ffffff";
 
 function esc(value: string): string {

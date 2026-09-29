@@ -130,8 +130,8 @@ export function AppShell({
           <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
               <span className="wordmark block truncate text-lg leading-tight sm:text-xl">
-                <span className="text-brand-accent">instruct</span>
-                <span className={surface === "light" ? "work-wordmark-brain" : "text-foreground"}>
+                <span className="wordmark-instruct text-foreground">instruct</span>
+                <span className={surface === "light" ? "work-wordmark-brain" : "text-brand-accent"}>
                   Brain
                 </span>
               </span>
