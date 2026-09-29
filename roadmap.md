@@ -120,3 +120,10 @@
 - [x] Keep failed uploads visible and retryable, with optional details for the full queue.
 - [x] Reduce the phone capture dock and reserve enough page space so it covers no content.
 - [ ] Verify the revised dock with a large album on the user's signed-in phone.
+
+## 29 Sep — Instruct family brand system
+- [x] Define the reusable Instruct family colour, typography, surface and workflow rules.
+- [x] Set instructBrain's product accent to Laser Green #57FF00.
+- [x] Change the wordmark to white “instruct” and product-coloured “Brain” on navy.
+- [ ] Replace remaining legacy orange literals and verify every representative surface.
+- [ ] Deliver the reusable AI build brief and rerun all checks.
