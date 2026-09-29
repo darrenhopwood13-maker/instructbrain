@@ -141,7 +141,7 @@ export function earliestTargetDate(items: ExtractItem[]): string | null {
 const INK = "#101c33";
 const MUTED = "#5a6478";
 const RULE = "#d9dee8";
-const ACCENT = "#ff5e00";
+const ACCENT = "#57ff00";
 const PAPER = "#ffffff";
 
 function esc(value: string): string {
@@ -162,7 +162,7 @@ function shell(title: string, body: string): string {
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;text-align:left;">
 <tr><td style="padding-bottom:16px;border-bottom:1px solid ${RULE};">
-<span style="font-size:15px;letter-spacing:0.04em;font-weight:700;color:${ACCENT};">instruct</span><span style="font-size:15px;letter-spacing:0.04em;font-weight:700;color:${INK};">Brain</span>
+<span style="display:inline-block;padding:8px 10px;background:#24417b;font-size:15px;letter-spacing:0.04em;font-weight:700;color:${PAPER};">instruct<span style="color:${ACCENT};">Brain</span></span>
 </td></tr>
 <tr><td style="padding:24px 0 8px;">${body}</td></tr>
 <tr><td style="padding-top:20px;border-top:1px solid ${RULE};font-size:12px;line-height:1.6;color:${MUTED};">
@@ -184,7 +184,7 @@ function small(text: string): string {
 }
 
 function button(label: string, url: string): string {
-  return `<p style="margin:0 0 18px;"><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;background:${ACCENT};color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;">${esc(label)}</a></p>
+  return `<p style="margin:0 0 18px;"><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;background:${ACCENT};color:${INK};font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;">${esc(label)}</a></p>
 <p style="margin:0 0 18px;font-size:12px;line-height:1.6;color:${MUTED};word-break:break-all;">${esc(url)}</p>`;
 }
 

@@ -4,7 +4,7 @@
 
 /*
  * instructBrain — design system.
- * Dark navy console (Instruct suite family) with a shiny orange accent.
+ * Dark navy console (Instruct suite family) with a per-product accent.
  * The report document itself stays paper: see the `.paper` scope below.
  * Never hardcode colour values in components; use these tokens.
  */
@@ -66,7 +66,7 @@
 
   --shadow-raised: 0 1px 0 oklch(1 0 0 / 12%) inset, 0 20px 50px -28px oklch(0 0 0 / 78%);
   --shadow-sheet: 0 30px 70px -20px oklch(0 0 0 / 65%);
-  --shadow-glow: 0 0 0 1px oklch(0.686 0.21 41.1 / 14%), 0 10px 22px -8px oklch(0.686 0.21 41.1 / 50%);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--brand-accent) 14%, transparent), 0 10px 22px -8px color-mix(in oklab, var(--brand-accent) 50%, transparent);
 
 }
 
@@ -96,22 +96,25 @@
   --brand-blue-soft: oklch(0.323 0.059 262.7);
   --brand-blue-ink: oklch(0.887 0.011 261.8);
 
-  /* Accent orange — instructSite #FF5E00 / hsl(22 100% 55%) */
-  --brand-accent: oklch(0.686 0.21 41.1);
-  --brand-accent-light: oklch(0.741 0.165 50.6);
-  --brand-accent-deep: oklch(0.626 0.2 38.2);
-  --brand-accent-soft: oklch(0.41 0.115 46.3);
-  /* Text-safe accent: 7.2:1 on the navy surface */
-  --brand-accent-ink: oklch(0.895 0.08 70.2);
+  /* Product accent — instructBrain Laser Green #57FF00. */
+  --brand-accent: oklch(0.8773 0.2803 139.6);
+  --brand-accent-light: oklch(0.9566 0.0929 133.5);
+  --brand-accent-deep: oklch(0.5566 0.1764 139.3);
+  --brand-accent-soft: oklch(0.8773 0.2803 139.6 / 16%);
+  /* Laser Green is 7.42:1 on the royal navy surface. */
+  --brand-accent-ink: oklch(0.8773 0.2803 139.6);
 
   --gloss-highlight: oklch(1 0 0 / 35%);
-  /* instructSite orange (#FF5E00) at the top, deepened toward the base so the
-     button reads as the same brand orange while white label text stays legible. */
+  /* Product-accent gloss for the rare promotional treatment. */
   --gradient-gloss: linear-gradient(
     180deg,
-    oklch(0.686 0.21 41.1) 0%,
-    oklch(0.575 0.196 38.5) 100%
+    var(--brand-accent) 0%,
+    var(--brand-accent-deep) 100%
   );
+
+  --blueprint-grid:
+    linear-gradient(to right, oklch(0.985 0 0 / 7%) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.985 0 0 / 7%) 1px, transparent 1px);
 
   /* Frosted glass — secondary controls */
   --glass-surface: oklch(1 0 0 / 9%);
@@ -119,22 +122,22 @@
   --glass-border: oklch(1 0 0 / 22%);
   --glass-border-hover: oklch(1 0 0 / 38%);
   --glass-highlight: oklch(1 0 0 / 22%);
-  --glass-accent-surface: oklch(0.686 0.21 41.1 / 16%);
-  --glass-accent-surface-hover: oklch(0.686 0.21 41.1 / 26%);
-  --glass-accent-border: oklch(0.686 0.21 41.1 / 55%);
-  --glass-accent-border-hover: oklch(0.686 0.21 41.1 / 85%);
+  --glass-accent-surface: oklch(0.8773 0.2803 139.6 / 16%);
+  --glass-accent-surface-hover: oklch(0.8773 0.2803 139.6 / 26%);
+  --glass-accent-border: oklch(0.8773 0.2803 139.6 / 55%);
+  --glass-accent-border-hover: oklch(0.8773 0.2803 139.6 / 85%);
 
-  /* Orange mesomorphic glass — the instructSite hero control */
+  /* Product-accent mesomorphic glass — reserved for promotional controls. */
   --glass-orange-ink: oklch(0.26 0.072 263);
   --gradient-glass-orange: linear-gradient(
     180deg,
-    oklch(0.686 0.21 41.1 / 95%) 0%,
-    oklch(0.626 0.2 38.2 / 82%) 100%
+    oklch(0.8773 0.2803 139.6 / 95%) 0%,
+    oklch(0.5566 0.1764 139.3 / 82%) 100%
   );
   --gradient-glass-orange-hover: linear-gradient(
     180deg,
-    oklch(0.741 0.165 50.6 / 100%) 0%,
-    oklch(0.626 0.2 38.2 / 92%) 100%
+    oklch(0.9566 0.0929 133.5 / 100%) 0%,
+    oklch(0.5566 0.1764 139.3 / 92%) 100%
   );
 
   --gradient-panel: linear-gradient(
@@ -143,21 +146,21 @@
     oklch(0.367 0.1 262.8 / 96%) 100%
   );
 
-  --primary: oklch(0.686 0.21 41.1);
-  --primary-foreground: oklch(1 0 0);
+  --primary: oklch(0.8773 0.2803 139.6);
+  --primary-foreground: oklch(0.2976 0.0805 263.2);
   --secondary: oklch(0.323 0.059 262.7);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.417 0.06 263.1);
   --muted-foreground: oklch(0.887 0.011 261.8);
-  --accent: oklch(0.41 0.115 46.3);
-  --accent-foreground: oklch(0.895 0.08 70.2);
+  --accent: oklch(0.8773 0.2803 139.6 / 16%);
+  --accent-foreground: oklch(0.8773 0.2803 139.6);
   --destructive: oklch(0.58 0.2 25);
   --destructive-foreground: oklch(0.99 0.005 25);
 
   --border: oklch(1 0 0 / 14%);
-  --border-strong: oklch(0.686 0.21 41.1 / 62%);
+  --border-strong: oklch(0.8773 0.2803 139.6 / 62%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.741 0.165 50.6);
+  --ring: oklch(0.9566 0.0929 133.5);
 
   /* Status — warn pushed to amber-yellow so it can never read as the accent */
   --pass: oklch(0.86 0.17 158);
@@ -224,9 +227,9 @@
 
   --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
 
-  /* Subtle instructSite orange: rules and edges only; text uses the deeper ink (AA on white). */
-  --paper-accent: oklch(0.68 0.21 42);
-  --paper-accent-ink: oklch(0.5 0.16 42);
+  /* Product accent on paper: bright rules, deep AA-safe green for text. */
+  --paper-accent: oklch(0.8773 0.2803 139.6);
+  --paper-accent-ink: oklch(0.4273 0.1344 138.9);
 
   background-color: var(--surface);
   color: var(--foreground);
@@ -253,12 +256,12 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.035 262);
 
-  /* Match the dashboard exactly: instructSite orange #FF5E00. */
-  --brand-accent: oklch(0.686 0.21 41.1);
-  --brand-accent-deep: oklch(0.626 0.2 38.2);
-  --brand-accent-light: oklch(0.741 0.165 50.6);
-  --brand-accent-soft: oklch(0.965 0.03 45);
-  --brand-accent-ink: oklch(0.45 0.16 40);
+  /* Match the dashboard exactly: instructBrain Laser Green #57FF00. */
+  --brand-accent: oklch(0.8773 0.2803 139.6);
+  --brand-accent-deep: oklch(0.5566 0.1764 139.3);
+  --brand-accent-light: oklch(0.9566 0.0929 133.5);
+  --brand-accent-soft: oklch(0.97 0.045 135);
+  --brand-accent-ink: oklch(0.4273 0.1344 138.9);
 
   --brand-blue: oklch(0.4 0.11 262);
   --brand-blue-soft: oklch(0.965 0.018 262);
@@ -268,21 +271,21 @@
   --work-control: oklch(0.975 0.004 262);
   --work-control-edge: oklch(0.79 0.025 262);
 
-  --primary: oklch(0.52 0.19 38.2);
+  --primary: oklch(0.8773 0.2803 139.6);
   --primary-foreground: oklch(0.26 0.072 263);
   --secondary: oklch(0.962 0.006 262);
   --secondary-foreground: oklch(0.28 0.045 262);
   --muted: oklch(0.962 0.006 262);
   --muted-foreground: oklch(0.44 0.025 262);
-  --accent: oklch(0.965 0.03 45);
-  --accent-foreground: oklch(0.45 0.16 40);
+  --accent: oklch(0.97 0.045 135);
+  --accent-foreground: oklch(0.4273 0.1344 138.9);
   --destructive: oklch(0.5 0.2 27);
   --destructive-foreground: oklch(0.99 0.003 27);
 
   --border: oklch(0.82 0.022 262);
   --border-strong: oklch(0.7 0.035 262);
   --input: oklch(0.76 0.028 262);
-  --ring: oklch(0.686 0.21 41.1);
+  --ring: oklch(0.5566 0.1764 139.3);
 
   --pass: oklch(0.42 0.11 158);
   --pass-soft: oklch(0.955 0.03 158);
@@ -315,7 +318,7 @@
   --muted-foreground: oklch(0.887 0.011 261.8);
   --surface-raised: oklch(0.367 0.1 262.8);
   --surface-sunken: oklch(0.342 0.091 262.9);
-  --border: oklch(0.686 0.21 41.1 / 55%);
+  --border: oklch(0.8773 0.2803 139.6 / 55%);
   --glass-surface: oklch(1 0 0 / 9%);
   --glass-surface-hover: oklch(1 0 0 / 15%);
   background-color: var(--brand-blue);
@@ -406,12 +409,12 @@
   letter-spacing: 0;
 }
 
-.work-surface .wordmark .text-brand-accent {
-  color: var(--brand-accent);
+.work-surface .wordmark .wordmark-instruct {
+  color: var(--brand-blue);
 }
 
 .work-surface .wordmark .work-wordmark-brain {
-  color: var(--brand-blue);
+  color: var(--brand-accent-deep);
 }
 
 /* The wordmark in navy navigation chrome is identical to the dashboard. */
@@ -420,12 +423,12 @@
   font-weight: 400;
 }
 
-.work-surface .app-shell-header .wordmark .text-brand-accent {
-  color: var(--brand-accent);
+.work-surface .app-shell-header .wordmark .wordmark-instruct {
+  color: var(--foreground);
 }
 
 .work-surface .app-shell-header .wordmark .work-wordmark-brain {
-  color: var(--foreground);
+  color: var(--brand-accent);
 }
 
 .work-surface .glass-navy,
@@ -777,7 +780,7 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 /* Soft outline control — accent-tinted border, no depth. */
 @utility gloss-outline {
   color: var(--color-foreground);
-  border: 1.5px solid oklch(0.686 0.21 41.1 / 62%);
+  border: 1.5px solid var(--border-strong);
   border-radius: 9999px;
   box-shadow: 0 2px 10px -6px oklch(0 0 0 / 35%);
   transition:
@@ -785,7 +788,7 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
     filter 0.15s ease;
 
   &:hover {
-    border-color: oklch(0.686 0.21 41.1 / 90%);
+    border-color: var(--brand-accent);
   }
 
   &:active {
@@ -902,7 +905,7 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
   box-shadow:
     0 1px 0 oklch(1 0 0 / 12%) inset,
     0 -1px 0 oklch(0 0 0 / 28%) inset,
-    0 0 0 1px oklch(0.686 0.21 41.1 / 14%),
+    0 0 0 1px color-mix(in oklab, var(--brand-accent) 14%, transparent),
     0 20px 50px -28px oklch(0 0 0 / 78%);
 }
 
@@ -1162,24 +1165,24 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 .land-console .dock { display:flex; flex-wrap:wrap; gap:8px; padding:12px 14px; background:#fff; border-top:1px solid rgba(26,26,46,.1); }
 .land-console .dock .mini-btn { flex:1 1 auto; min-width:0; text-align:center; font-size:.72rem; font-weight:700; padding:9px 8px; border-radius:999px; border:1px solid rgba(43,75,255,.35); color:#2b4bff; cursor:pointer; white-space:nowrap; }
 .land-console .dock .mini-btn.solid { background:linear-gradient(180deg,rgba(43,75,255,.9),rgba(30,40,90,.95)); color:#fff; border-color:transparent; box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
-.land-console .topbar .wordmark .i { color:#FF5E00; }
-.land-console .topbar .wordmark .b { color:#fff; }
+.land-console .topbar .wordmark .i { color:var(--foreground); }
+.land-console .topbar .wordmark .b { color:var(--brand-accent); }
 .land-band { background:#24417B; color:#fff; }
 .land-roi-teaser { margin-top:26px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:16px; max-width:380px; }
 .land-roi-teaser b { display:block; font-size:.9rem; margin-bottom:10px; }
 .land-roi-teaser .track { position:relative; height:6px; border-radius:999px; background:rgba(255,255,255,.2); }
-.land-roi-teaser .track::after { content:""; position:absolute; left:0; top:0; bottom:0; width:55%; border-radius:999px; background:#FF5E00; }
+.land-roi-teaser .track::after { content:""; position:absolute; left:0; top:0; bottom:0; width:55%; border-radius:999px; background:var(--brand-accent); }
 .land-roi-teaser .track .knob { position:absolute; left:55%; top:50%; width:16px; height:16px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); box-shadow:0 2px 6px rgba(0,0,0,.4); }
-.land-roi-teaser .out { display:flex; justify-content:space-between; font-size:.85rem; color:#FFD4A3; margin-top:8px; }
+.land-roi-teaser .out { display:flex; justify-content:space-between; font-size:.85rem; color:var(--brand-accent-light); margin-top:8px; }
 .land-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 .land-stat { background:#fff; border:1px solid rgba(26,26,46,.1); border-radius:16px; padding:20px; }
 .land-stat .num { font-family:var(--font-display); font-weight:800; font-size:2rem; letter-spacing:0; color:#24417B; }
-.land-stat .num em { font-style:normal; color:#FF5E00; }
+.land-stat .num em { font-style:normal; color:var(--brand-accent-deep); }
 .land-stat .lab { font-size:.85rem; color:#5b6480; margin-top:2px; }
 .land-matrix { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:18px; overflow:hidden; }
 .land-matrix table { width:100%; border-collapse:collapse; font-size:.82rem; }
 .land-matrix th, .land-matrix td { padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08); }
-.land-matrix thead th { background:rgba(255,255,255,.08); font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:#FFD4A3; font-weight:700; }
+.land-matrix thead th { background:rgba(255,255,255,.08); font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--brand-accent-light); font-weight:700; }
 .land-matrix .pt { text-align:left; font-weight:500; color:rgba(255,255,255,.92); }
 .land-matrix .lvl { color:rgba(255,255,255,.5); font-size:.66rem; text-transform:uppercase; letter-spacing:.12em; width:46px; }
 .land-dot { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; font-size:.78rem; font-weight:800; }
