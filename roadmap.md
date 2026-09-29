@@ -125,5 +125,5 @@
 - [x] Define the reusable Instruct family colour, typography, surface and workflow rules.
 - [x] Set instructBrain's product accent to Laser Green #57FF00.
 - [x] Change the wordmark to white “instruct” and product-coloured “Brain” on navy.
-- [ ] Replace remaining legacy orange literals and verify every representative surface.
-- [ ] Deliver the reusable AI build brief and rerun all checks.
+- [x] Replace remaining legacy orange literals and verify every representative surface.
+- [x] Deliver the reusable AI build brief and rerun all checks.
