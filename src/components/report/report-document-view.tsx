@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   documentSections,
   documentStatistics,
+  formatCaptureDateTime,
   formatDocumentDate,
   sectionLabel,
   type DocFinding,
@@ -57,6 +58,7 @@ import {
   severitiesOf,
   statusesOf,
   tradesOf,
+  isManualOnly,
 } from "@/lib/survey-types";
 import { AlertTriangle, Lock } from "lucide-react";
 
@@ -116,6 +118,10 @@ export function ReportDocumentView({
     );
   }
 
+  if (isManualOnly(document.snapshot)) {
+    return <ManualPhotoDocument document={document} print={print} />;
+  }
+
   return (
     <article
       className="report-document space-y-10"
@@ -155,6 +161,58 @@ export function ReportDocumentView({
           </Fragment>
         );
       })}
+      <BrandCredit />
+    </article>
+  );
+}
+
+function ManualPhotoDocument({ document, print }: { document: ReportDocument; print: boolean }) {
+  const findings = [...document.findings].sort((a, b) => a.sequence - b.sequence);
+  const pages: DocFinding[][] = [];
+  for (let index = 0; index < findings.length; index += 2) pages.push(findings.slice(index, index + 2));
+
+  return (
+    <article
+      className="report-document manual-photo-document space-y-10"
+      style={
+        document.organisation?.brandColour
+          ? ({ "--brand-accent": document.organisation.brandColour } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <Cover document={document} />
+      {pages.map((pageFindings, pageIndex) => (
+        <section
+          key={pageFindings[0]?.id ?? `manual-page-${pageIndex}`}
+          aria-label={`Photographic schedule page ${pageIndex + 1}`}
+          className="manual-photo-page grid gap-5"
+        >
+          {pageFindings.map((finding) => {
+            const attachment = finding.photos[0];
+            const captured = formatCaptureDateTime(attachment?.photo.capturedAt ?? null);
+            return (
+              <figure key={finding.id} className="manual-photo-entry grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2">
+                {attachment ? (
+                  <PhotoFigure
+                    attachment={attachment}
+                    useFullResolution={print}
+                    className="manual-photo-figure min-h-0"
+                  />
+                ) : (
+                  <div className="grid min-h-52 place-items-center border border-border bg-surface-sunken text-sm text-muted-foreground">
+                    Photograph unavailable
+                  </div>
+                )}
+                <figcaption className="manual-photo-meta grid grid-cols-[1fr_auto_auto] gap-4 border-t border-border pt-2 text-sm">
+                  <strong>{itemLabel(finding.ref)}</strong>
+                  <span><span className="font-semibold">Date:</span> {captured.date}</span>
+                  <span><span className="font-semibold">Time:</span> {captured.time}</span>
+                </figcaption>
+              </figure>
+            );
+          })}
+        </section>
+      ))}
       <BrandCredit />
     </article>
   );

@@ -140,6 +140,28 @@ export function sectionLabel(section: string): string {
   return SECTION_LABELS[section] ?? section.replace(/_/g, " ");
 }
 
+const CAPTURE_DATE = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+  timeZone: "Europe/London",
+});
+
+const CAPTURE_TIME = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Europe/London",
+});
+
+/** Deterministic UK date and time labels shared by manual report output paths. */
+export function formatCaptureDateTime(value: string | null): { date: string; time: string } {
+  if (!value) return { date: "Not recorded", time: "Not recorded" };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { date: "Not recorded", time: "Not recorded" };
+  return { date: CAPTURE_DATE.format(parsed), time: CAPTURE_TIME.format(parsed) };
+}
+
 /** Sections come from the snapshot. The list is never hardcoded. */
 export function documentSections(snapshot: SurveyTypeSnapshot): string[] {
   const sections = outputSectionsOf(snapshot);

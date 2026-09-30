@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   documentSections,
   documentStatistics,
+  formatCaptureDateTime,
   groupFindings,
   issueBlockers,
   type DocFinding,
@@ -98,6 +99,17 @@ describe("issue gate", () => {
 });
 
 describe("document assembly", () => {
+  it("formats manual photograph capture dates and times consistently", () => {
+    expect(formatCaptureDateTime("2026-09-30T13:35:00.000Z")).toEqual({
+      date: "30 September 2026",
+      time: "14:35",
+    });
+    expect(formatCaptureDateTime(null)).toEqual({
+      date: "Not recorded",
+      time: "Not recorded",
+    });
+  });
+
   it("takes its section list from the snapshot, never from a hardcoded list", () => {
     expect(documentSections(snaggingDefinition)).toEqual(snaggingDefinition.outputSections);
     expect(documentSections(weatherproofingDefinition)).toEqual(
