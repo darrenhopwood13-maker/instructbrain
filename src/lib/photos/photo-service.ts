@@ -300,13 +300,10 @@ export async function uploadPhoto(
   let analysis: { path: string; blob: Blob } | null = null;
   let thumbnail: string | null;
   if (target.skipAnalysisDerivative) {
-    // Manual (no-AI) reports: no analysis copy at all, and the display
-    // thumbnail is made while the original uploads rather than afterwards.
-    const [, thumb] = await Promise.all([
-      uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.85), signal),
-      uploadThumbnail(thumbTarget, file),
-    ]);
-    thumbnail = thumb;
+    // Manual (no-AI) reports: no analysis copy at all. The original always
+    // goes first — decoding previews alongside it starved phone uploads.
+    await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.85), signal);
+    thumbnail = await uploadThumbnail(thumbTarget, file);
     onProgress(0.92);
   } else {
     await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
