@@ -33,6 +33,7 @@ export function PhotoGrid({
   onSetCover,
   snapshot,
   onSetRole,
+  openLabel,
 }: {
   photos: PhotoRow[];
   urls: Record<string, string>;
@@ -44,6 +45,8 @@ export function PhotoGrid({
   onSetCover?: (photo: PhotoRow) => void;
   snapshot?: SurveyTypeSnapshot;
   onSetRole?: (photo: PhotoRow, roleId: string) => void;
+  /** Shows a visible action button that opens the photo (e.g. markup editor). */
+  openLabel?: string;
 }) {
   const workflow = snapshot ? photoWorkflowOf(snapshot) : null;
   return (
@@ -113,6 +116,17 @@ export function PhotoGrid({
             </div>
 
             <div className="p-2.5">
+              {openLabel ? (
+                <button
+                  type="button"
+                  onClick={() => onOpen(photo)}
+                  className="mb-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-brand-accent bg-brand-accent-soft px-2 text-sm font-semibold text-brand-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+                  aria-label={`${openLabel}: photograph ${photo.sequence}`}
+                >
+                  <PenLine aria-hidden="true" className="size-4" />
+                  {openLabel}
+                </button>
+              ) : null}
               <p className="truncate text-sm font-medium">
                 {photo.original_filename ?? "Untitled photograph"}
               </p>
