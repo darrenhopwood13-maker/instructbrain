@@ -130,7 +130,7 @@
 
 ## 30 Sep — manual photographic report
 - [x] Add a versioned manual-only report definition and secure markup storage.
-- [ ] Add one manual description and editable text, arrows, shapes and speech bubbles per photograph.
-- [ ] Exclude the template from every photograph, summary and translation AI path.
-- [ ] Preserve markup in preview, print, shared links, PDF and issued snapshots.
+- [x] Add one manual description and editable text, arrows, shapes and speech bubbles per photograph.
+- [x] Exclude the template from every photograph, summary and translation AI path.
+- [x] Preserve markup in preview, print, shared links, PDF and issued snapshots.
 - [ ] Verify existing report templates remain unchanged and run the full checks.

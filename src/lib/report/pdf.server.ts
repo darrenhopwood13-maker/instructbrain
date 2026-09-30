@@ -37,6 +37,7 @@ import {
   meterSlots,
 } from "@/lib/report/handover";
 import { NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import type { MarkupColour, MarkupLayer } from "@/lib/photos/markup";
 
 export type PdfVariant = "full" | "trade" | "item";
 
@@ -65,6 +66,13 @@ const INK = rgb(0.06, 0.11, 0.2);
 const MUTED = rgb(0.35, 0.39, 0.47);
 const RULE = rgb(0.85, 0.87, 0.91);
 const ACCENT = rgb(1, 0.37, 0);
+const MARKUP_COLOURS: Record<MarkupColour, ReturnType<typeof rgb>> = {
+  accent: ACCENT,
+  red: rgb(0.8, 0.08, 0.1),
+  yellow: rgb(0.95, 0.68, 0.02),
+  white: rgb(1, 1, 1),
+  black: INK,
+};
 
 const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
   pass: rgb(0.11, 0.45, 0.25),
@@ -269,7 +277,31 @@ async function embedPhoto(
   return embedded;
 }
 
-function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight: number): void {
+function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, width: number, height: number, font: PDFFont): void {
+  for (const layer of layers) {
+    const x1 = x + layer.x * width;
+    const y1 = y + (1 - layer.y) * height;
+    const x2 = x + layer.x2 * width;
+    const y2 = y + (1 - layer.y2) * height;
+    const colour = MARKUP_COLOURS[layer.colour];
+    if (layer.kind === "arrow") {
+      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 3, color: colour });
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      for (const offset of [-0.5, 0.5]) page.drawLine({ start: { x: x2, y: y2 }, end: { x: x2 - 12 * Math.cos(angle + offset), y: y2 - 12 * Math.sin(angle + offset) }, thickness: 3, color: colour });
+    } else if (layer.kind === "rectangle") {
+      page.drawRectangle({ x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1), borderWidth: 3, borderColor: colour });
+    } else if (layer.kind === "ellipse") {
+      page.drawEllipse({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, xScale: Math.abs(x2 - x1) / 2, yScale: Math.abs(y2 - y1) / 2, borderWidth: 3, borderColor: colour });
+    } else {
+      const boxWidth = Math.max(70, Math.abs(x2 - x1));
+      const boxHeight = Math.max(28, Math.abs(y2 - y1));
+      if (layer.kind === "speech") page.drawRectangle({ x: x1, y: y1 - boxHeight, width: boxWidth, height: boxHeight, color: rgb(1, 1, 1), opacity: 0.9, borderWidth: 2, borderColor: colour });
+      page.drawText(sanitise(layer.text ?? "").slice(0, 80), { x: x1 + 5, y: y1 - 17, size: 11, font, color: colour, maxWidth: boxWidth - 10 });
+    }
+  }
+}
+
+function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight: number, layers: MarkupLayer[] = []): void {
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
   const width = image.width * scale;
   const height = image.height * scale;
@@ -280,6 +312,7 @@ function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight:
     width,
     height,
   });
+  drawMarkup(writer.cursor.page, layers, writer.margin, writer.cursor.y - height, width, height, writer.bold);
   writer.cursor.y -= height + 8;
 }
 
@@ -838,7 +871,7 @@ async function drawFinding(
   if (fetcher) {
     for (const attached of finding.photos.slice(0, 3)) {
       const image = await embedPhoto(writer, fetcher, attached.photo);
-      if (image) drawImage(writer, image, writer.contentWidth * 0.62, 260);
+      if (image) drawImage(writer, image, writer.contentWidth * 0.62, 260, attached.photo.layers);
     }
   }
 }
