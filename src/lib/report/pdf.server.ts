@@ -9,7 +9,7 @@
  * no headless browser available here. Photographs are fetched from storage and
  * embedded as they are — nothing in this file touches the analysis path.
  */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import { LineCapStyle, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { BRAND_CREDIT } from "@/lib/brand";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
@@ -37,7 +37,7 @@ import {
   meterSlots,
 } from "@/lib/report/handover";
 import { isManualOnly, NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
-import type { MarkupColour, MarkupLayer } from "@/lib/photos/markup";
+import { MARKER_UNITS, STROKE_UNITS, TEXT_UNITS, type MarkupColour, type MarkupLayer } from "@/lib/photos/markup";
 
 export type PdfVariant = "full" | "trade" | "item";
 
