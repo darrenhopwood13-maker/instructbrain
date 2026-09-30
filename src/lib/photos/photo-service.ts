@@ -134,13 +134,40 @@ export function uploadOriginal(
       request.setRequestHeader("x-upsert", "true");
       if (file.type) request.setRequestHeader("Content-Type", file.type);
 
+      // Stall watchdog: a connection that stops moving for 45 seconds is
+      // abandoned so the queue can retry it, instead of hanging forever.
+      let stallTimer: ReturnType<typeof setTimeout> | null = null;
+      let stalled = false;
+      const armStall = () => {
+        if (stallTimer) clearTimeout(stallTimer);
+        stallTimer = setTimeout(() => {
+          stalled = true;
+          request.abort();
+        }, 45_000);
+      };
+      const clearStall = () => {
+        if (stallTimer) clearTimeout(stallTimer);
+        stallTimer = null;
+      };
+
       request.upload.onprogress = (event) => {
+        armStall();
         if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total);
       };
-      request.onerror = () => reject(new Error("Connection lost during upload."));
-      request.ontimeout = () => reject(new Error("Upload timed out."));
-      request.onabort = () => reject(new Error("Upload cancelled."));
+      request.onerror = () => {
+        clearStall();
+        reject(new Error("Connection lost during upload."));
+      };
+      request.ontimeout = () => {
+        clearStall();
+        reject(new Error("Upload timed out."));
+      };
+      request.onabort = () => {
+        clearStall();
+        reject(new Error(stalled ? "Upload stalled on a weak connection." : "Upload cancelled."));
+      };
       request.onload = () => {
+        clearStall();
         if (request.status >= 200 && request.status < 300) {
           onProgress(1);
           resolve();
@@ -149,6 +176,7 @@ export function uploadOriginal(
         }
       };
       signal?.addEventListener("abort", () => request.abort(), { once: true });
+      armStall();
       // The File object itself — untouched bytes.
       request.send(file);
     })();
@@ -159,8 +187,26 @@ export function uploadOriginal(
  * DISPLAY DERIVATIVE PATH — entirely separate from the original above and
  * only ever read by the grid. Failure here is non-fatal.
  */
+// Decoding a full-size photo for its preview is memory-heavy on phones.
+// Never decode more than two at once, or the original uploads stall.
+const THUMBNAIL_SLOTS = 2;
+let thumbnailActive = 0;
+const thumbnailWaiters: Array<() => void> = [];
+async function withThumbnailSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (thumbnailActive >= THUMBNAIL_SLOTS) {
+    await new Promise<void>((resolve) => thumbnailWaiters.push(resolve));
+  }
+  thumbnailActive += 1;
+  try {
+    return await work();
+  } finally {
+    thumbnailActive -= 1;
+    thumbnailWaiters.shift()?.();
+  }
+}
+
 async function uploadThumbnail(path: string, file: Blob): Promise<string | null> {
-  const thumbnail = await createDisplayThumbnail(file);
+  const thumbnail = await withThumbnailSlot(() => createDisplayThumbnail(file));
   if (!thumbnail) return null;
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
