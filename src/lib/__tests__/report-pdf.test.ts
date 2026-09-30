@@ -4,7 +4,7 @@ import { buildReportPdf, pdfFilename, selectFindings } from "@/lib/report/pdf.se
 import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { NOT_ASSESSED_ID } from "@/lib/survey-types";
 import { buildCompliancePack, type PackData } from "@/lib/compliance/pack.server";
-import { propertyInventoryDefinition, snapshotOf } from "@/lib/survey-definitions";
+import { manualPhotoReportDefinition, propertyInventoryDefinition, snapshotOf } from "@/lib/survey-definitions";
 
 function finding(overrides: Partial<DocFinding>): DocFinding {
   return {
@@ -117,6 +117,48 @@ describe("report PDF", () => {
 
   it("names the file after the report reference", () => {
     expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
+  });
+
+  it("puts no more than two manual photographic items on each page after the title page", async () => {
+    const manualFindings = Array.from({ length: 5 }, (_, index) =>
+      finding({
+        id: `manual-${index + 1}`,
+        ref: String(index + 1),
+        sequence: index + 1,
+        statusId: "recorded",
+        findingText: `Copy that must not be drawn ${index + 1}`,
+        remedialText: "Copy that must not be drawn",
+        captureFields: {},
+        photos: [
+          {
+            photo: {
+              id: `photo-${index + 1}`,
+              sequence: index + 1,
+              filename: `photo-${index + 1}.jpg`,
+              capturedAt: "2026-09-30T13:35:00.000Z",
+              url: null,
+              thumbUrl: null,
+              captureFields: {},
+              layers: [],
+            },
+            role: "primary",
+            region: null,
+          },
+        ],
+      }),
+    );
+    const built = await buildReportPdf(
+      {
+        ...document,
+        report: { ...document.report, id: "manual-report", title: "Manual photographic report" },
+        snapshot: snapshotOf(manualPhotoReportDefinition),
+        findings: manualFindings,
+        photos: manualFindings.map((entry) => entry.photos[0]?.photo).filter((photo) => photo !== undefined),
+      },
+      { variant: "full", includePhotos: false },
+    );
+    const pdf = await PDFDocument.load(built.bytes);
+    expect(pdf.getPageCount()).toBe(4);
   });
 
   it("uses the landscape room-schedule format for property inventory reports", async () => {

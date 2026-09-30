@@ -12,7 +12,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { BRAND_CREDIT } from "@/lib/brand";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
-import { formatDocumentDate } from "@/lib/report/document";
+import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
 import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
@@ -36,7 +36,7 @@ import {
   meterReadingText,
   meterSlots,
 } from "@/lib/report/handover";
-import { NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import { isManualOnly, NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
 import type { MarkupColour, MarkupLayer } from "@/lib/photos/markup";
 
 export type PdfVariant = "full" | "trade" | "item";
@@ -876,6 +876,67 @@ async function drawFinding(
   }
 }
 
+async function drawManualPhotoPages(
+  writer: Writer,
+  findings: DocFinding[],
+  fetcher: PhotoFetcher | null,
+): Promise<void> {
+  const usableHeight = writer.pageSize.height - writer.margin * 2 - 26;
+  const gap = 18;
+  const slotHeight = (usableHeight - gap) / 2;
+
+  for (let index = 0; index < findings.length; index += 1) {
+    if (index % 2 === 0) newPage(writer);
+    const slot = index % 2;
+    const top = writer.pageSize.height - writer.margin - slot * (slotHeight + gap);
+    const finding = findings[index];
+    if (!finding) continue;
+    const attachment = finding.photos[0];
+    const captured = formatCaptureDateTime(attachment?.photo.capturedAt ?? null);
+
+    writer.cursor.page.drawText(sanitise(itemLabel(finding.ref)), {
+      x: writer.margin,
+      y: top - 12,
+      size: 11,
+      font: writer.bold,
+      color: INK,
+    });
+    const metadata = `Date: ${captured.date}   Time: ${captured.time}`;
+    writer.cursor.page.drawText(sanitise(metadata), {
+      x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(metadata, 9),
+      y: top - 11,
+      size: 9,
+      font: writer.regular,
+      color: MUTED,
+    });
+
+    const imageTop = top - 25;
+    const imageHeight = slotHeight - 34;
+    if (attachment && fetcher) {
+      const image = await embedPhoto(writer, fetcher, attachment.photo);
+      if (image) {
+        const scale = Math.min(writer.contentWidth / image.width, imageHeight / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        const x = writer.margin + (writer.contentWidth - width) / 2;
+        const y = imageTop - height;
+        writer.cursor.page.drawImage(image, { x, y, width, height });
+        drawMarkup(writer.cursor.page, attachment.photo.layers ?? [], x, y, width, height, writer.bold);
+      }
+    }
+
+    if (slot === 0 && index + 1 < findings.length) {
+      const ruleY = top - slotHeight - gap / 2;
+      writer.cursor.page.drawLine({
+        start: { x: writer.margin, y: ruleY },
+        end: { x: writer.pageSize.width - writer.margin, y: ruleY },
+        thickness: 0.6,
+        color: RULE,
+      });
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Build                                                                */
 /* ------------------------------------------------------------------ */
@@ -1225,6 +1286,13 @@ export async function buildReportPdf(
   if (notice) {
     drawRule(writer, 10, 8);
     drawText(writer, notice, { size: 9, colour: MUTED, gapAfter: 2 });
+  }
+
+  if (options.variant === "full" && isManualOnly(document.snapshot)) {
+    await drawManualPhotoPages(writer, findings, fetcher);
+    drawFooters(writer);
+    const bytes = await doc.save();
+    return { bytes, filename: pdfFilename(document, options) };
   }
 
 
