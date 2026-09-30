@@ -238,7 +238,8 @@ export function issueBlockers(document: ReportDocument): IssueBlockers {
           !(finding.assignedTrade ?? "").trim(),
       )
     : [];
-  const unconfirmed = document.findings.filter((finding) => !finding.confirmedAt);
+  // Manual-only reports hold the user's own photographs and wording: nothing to confirm.
+  const unconfirmed = isManualOnly(snapshot) ? [] : document.findings.filter((finding) => !finding.confirmedAt);
   return {
     notAssessed,
     tradeMissing,
