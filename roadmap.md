@@ -134,3 +134,6 @@
 - [x] Exclude the template from every photograph, summary and translation AI path.
 - [x] Preserve markup in preview, print, shared links, PDF and issued snapshots.
 - [x] Verify existing report templates remain unchanged and run the full checks.
+
+- [x] Fastest possible uploads for no-AI manual reports
+- [x] Manual reports: auto-create item per photo, visible markup button, review list

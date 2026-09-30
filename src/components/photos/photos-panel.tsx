@@ -892,6 +892,7 @@ export function PhotosPanel({
             } } : {})}
             snapshot={snapshot}
             {...(workflow ? { onSetRole: setPhotoRole } : {})}
+            {...(isManualOnly(snapshot) ? { openLabel: "Describe & mark up" } : {})}
             onOpen={(photo) => {
               setEditing(photo);
               setEditValues({ ...(photo.capture_fields ?? {}) });
