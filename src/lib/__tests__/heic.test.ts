@@ -262,6 +262,17 @@ describe("analysis derivative", () => {
     expect(source).not.toMatch(/import\(["'][^"']*thumbnail/);
     expect(source).not.toMatch(/maxEdge/);
   });
+
+  it("keeps the manual-report reducer separate from thumbnail and analysis modules", () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), "src/lib/photos/manual-upload-image.ts"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/from\s+["'][^"']*(thumbnail|analysis-derivative)/);
+    const service = readFileSync(path.resolve(process.cwd(), "src/lib/photos/photo-service.ts"), "utf8");
+    // Only the manual (no-AI) path may reduce a photograph before upload.
+    expect(service).toMatch(/target\.skipAnalysisDerivative \? await reduceForManualReport/);
+  });
 });
 
 describe("analysis source resolution", () => {
