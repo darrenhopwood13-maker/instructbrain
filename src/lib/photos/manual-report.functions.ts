@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { isManualOnly } from "@/lib/survey-types";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { coerceMarkup, type MarkupLayer } from "@/lib/photos/markup";
 
 async function manualContext(supabase: any, reportId: string, photoId: string) {
@@ -17,7 +18,7 @@ async function manualContext(supabase: any, reportId: string, photoId: string) {
   if (report.status === "issued") throw new Error("Reopen this report before editing it.");
   const { data: photo, error: photoError } = await supabase
     .from("photos")
-    .select("id, sequence")
+    .select("id, sequence, storage_path")
     .eq("id", photoId)
     .eq("report_id", reportId)
     .maybeSingle();
@@ -25,14 +26,27 @@ async function manualContext(supabase: any, reportId: string, photoId: string) {
   return { report, photo };
 }
 
-async function ensureFinding(supabase: any, reportId: string, photoId: string, sequence: number) {
+async function signedOriginal(supabase: any, path: string | null): Promise<string | null> {
+  if (!path) return null;
+  const { data } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}
+
+async function ensureFinding(supabase: any, reportId: string, photoId: string, sequence: number, userId: string) {
   const { data: existing } = await supabase
     .from("finding_photos")
     .select("finding_id, findings!inner(id, report_id, finding_text, confirmed_at)")
     .eq("photo_id", photoId)
     .eq("findings.report_id", reportId)
     .maybeSingle();
-  if (existing?.findings) return existing.findings as { id: string; finding_text: string | null; confirmed_at: string | null };
+  if (existing?.findings) {
+    const found = existing.findings as { id: string; finding_text: string | null; confirmed_at: string | null };
+    // Manual items are the user's own record — they never need confirming.
+    if (!found.confirmed_at) {
+      await supabase.from("findings").update({ confirmed_at: new Date().toISOString(), confirmed_by: userId }).eq("id", found.id);
+    }
+    return found;
+  }
   const { data: refs, error: refError } = await supabase.rpc("next_finding_ref", { _report_id: reportId });
   if (refError) throw new Error(refError.message);
   const allocated = Array.isArray(refs) ? refs[0] : refs;
@@ -48,6 +62,8 @@ async function ensureFinding(supabase: any, reportId: string, photoId: string, s
       capture_fields: {},
       human_edited: true,
       lifecycle_state: "open",
+      confirmed_at: new Date().toISOString(),
+      confirmed_by: userId,
     })
     .select("id, finding_text, confirmed_at")
     .single();
@@ -64,7 +80,7 @@ export const ensureManualPhotoItem = createServerFn({ method: "POST" })
   .inputValidator((input: { reportId: string; photoId: string }) => input)
   .handler(async ({ data, context }) => {
     const { photo } = await manualContext(context.supabase, data.reportId, data.photoId);
-    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence);
+    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence, context.userId);
     return { findingId: finding.id };
   });
 
@@ -73,7 +89,7 @@ export const getManualPhotoEntry = createServerFn({ method: "GET" })
   .inputValidator((input: { reportId: string; photoId: string }) => input)
   .handler(async ({ data, context }) => {
     const { photo } = await manualContext(context.supabase, data.reportId, data.photoId);
-    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence);
+    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence, context.userId);
     const { data: markup } = await context.supabase
       .from("photo_markups")
       .select("layers")
@@ -82,6 +98,7 @@ export const getManualPhotoEntry = createServerFn({ method: "GET" })
     return {
       description: finding.finding_text ?? "",
       layers: coerceMarkup(markup?.layers),
+      imageUrl: await signedOriginal(context.supabase, photo.storage_path),
     };
   });
 
@@ -90,13 +107,13 @@ export const saveManualPhotoEntry = createServerFn({ method: "POST" })
   .inputValidator((input: { reportId: string; photoId: string; description: string; layers: MarkupLayer[] }) => input)
   .handler(async ({ data, context }) => {
     const { report, photo } = await manualContext(context.supabase, data.reportId, data.photoId);
-    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence);
+    const finding = await ensureFinding(context.supabase, data.reportId, data.photoId, photo.sequence, context.userId);
     const description = data.description.trim().slice(0, 4000);
     const layers = coerceMarkup(data.layers);
     const now = new Date().toISOString();
     const { error: findingError } = await context.supabase
       .from("findings")
-      .update({ finding_text: description, status: "recorded", human_edited: true, confirmed_at: description ? now : null, confirmed_by: description ? context.userId : null })
+      .update({ finding_text: description, status: "recorded", human_edited: true, confirmed_at: now, confirmed_by: context.userId })
       .eq("id", finding.id);
     if (findingError) throw new Error(findingError.message);
     const { error: markupError } = await context.supabase
