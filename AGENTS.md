@@ -14,3 +14,4 @@
 - Keep Property inventory photo roles and their limits in the versioned survey definition; shared capture and report code must interpret those roles generically so issued snapshots remain unchanged.
 - Scope the feature-overview treatment through `.work-surface`, with shared navy header/mobile navigation chrome and the current product accent; navy console screens and `.paper` report output remain independently styled.
 - Use the Instruct family accent architecture: shared navy surfaces, white “instruct”, product-coloured name, and one semantic per-product accent token family; instructBrain uses Laser Green #57FF00. This lets future Instruct apps change one accent slot without restyling components.
+- Model no-AI report behavior as a frozen `manualOnly` survey-definition capability, and persist normalized vector photo markup separately from original image bytes so templates remain data-driven and issued evidence stays immutable.

@@ -997,6 +997,26 @@ No repairs, no recommendations, no rating of how bad it is, no timescale, no res
   supportsDistribution: false,
 };
 
+/** A person-authored photographic record. No AI capability is available. */
+export const manualPhotoReportDefinition: SurveyDefinition = {
+  id: "manual_photo_report",
+  version: 1,
+  label: "Manual photographic report",
+  category: "record",
+  findingsPerPhoto: "single",
+  manualOnly: true,
+  statuses: [
+    { id: "recorded", label: "Recorded", tone: "neutral" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [],
+  captureFields: [],
+  outputSections: ["cover", "schedule"],
+  requiresTradeAssignment: false,
+  requiresLifecycle: false,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
@@ -1007,6 +1027,7 @@ export const systemDefinitions: SurveyDefinition[] = [
   mechanicalServicesDefinition,
   fitOutQualityDefinition,
   dampMoistureDefinition,
+  manualPhotoReportDefinition,
   photoConditionRecordDefinition,
 ];
 

@@ -127,3 +127,10 @@
 - [x] Change the wordmark to white “instruct” and product-coloured “Brain” on navy.
 - [x] Replace remaining legacy orange literals and verify every representative surface.
 - [x] Deliver the reusable AI build brief and rerun all checks.
+
+## 30 Sep — manual photographic report
+- [x] Add a versioned manual-only report definition and secure markup storage.
+- [ ] Add one manual description and editable text, arrows, shapes and speech bubbles per photograph.
+- [ ] Exclude the template from every photograph, summary and translation AI path.
+- [ ] Preserve markup in preview, print, shared links, PDF and issued snapshots.
+- [ ] Verify existing report templates remain unchanged and run the full checks.

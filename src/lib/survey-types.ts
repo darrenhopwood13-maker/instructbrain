@@ -128,6 +128,8 @@ export type SurveyDefinition = {
   standardTrades?: string[];
   requiresLifecycle?: boolean;
   supportsDistribution?: boolean;
+  /** Manual-only reports never invoke photograph, summary or translation AI. */
+  manualOnly?: boolean;
   defaultDistributionGrouping?: string;
   /**
    * Whether this type writes its own document header (title, subtitle, date)
@@ -154,6 +156,13 @@ export const NOT_ASSESSED_STATUS: StatusDefinition = {
   description:
     "This item could not be assessed automatically and must be resolved by a person before the report can be issued.",
 };
+
+/** A frozen capability flag; no shared workflow identifies a template by id. */
+export function isManualOnly(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): boolean {
+  return snapshot?.manualOnly === true;
+}
 
 const TONES: StatusTone[] = ["pass", "fail", "warn", "flag", "neutral"];
 
@@ -551,6 +560,7 @@ export function photoExcludesFromAnalysis(
   captureFields: Record<string, string> | null | undefined,
   options: { isCover?: boolean; isFirstPhoto?: boolean } = {},
 ): boolean {
+  if (isManualOnly(snapshot)) return true;
   if (options.isCover === true) return true;
   return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto === true })?.excludesAi === true;
 }
