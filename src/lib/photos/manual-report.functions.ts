@@ -47,7 +47,6 @@ async function ensureFinding(supabase: any, reportId: string, photoId: string, s
     }
     return found;
   }
-  if (false) return existing.findings as { id: string; finding_text: string | null; confirmed_at: string | null };
   const { data: refs, error: refError } = await supabase.rpc("next_finding_ref", { _report_id: reportId });
   if (refError) throw new Error(refError.message);
   const allocated = Array.isArray(refs) ? refs[0] : refs;
