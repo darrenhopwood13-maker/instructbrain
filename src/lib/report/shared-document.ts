@@ -1,6 +1,7 @@
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { coerceReportStatus } from "@/lib/types";
 import type { DocFindingPhoto, DocPhoto, ReportDocument } from "@/lib/report/document";
+import { coerceMarkup } from "@/lib/photos/markup";
 
 /** Maps the public share endpoint payload into the one document model. */
 export function sharedDocument(payload: any): ReportDocument {
@@ -12,6 +13,7 @@ export function sharedDocument(payload: any): ReportDocument {
     url: photo.url ?? null,
     thumbUrl: photo.thumbUrl ?? photo.url ?? null,
     captureFields: photo.capture_fields ?? {},
+    layers: coerceMarkup(photo.layers),
   }));
   const photoById = new Map(photos.map((photo) => [photo.id, photo]));
 

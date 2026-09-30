@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           );
         }
 
-        const [{ data: reports }, { data: rawFindings }, { data: photos }] = await Promise.all([
+        const [{ data: reports }, { data: rawFindings }, { data: photos }, { data: markups }] = await Promise.all([
           admin
             .from("reports")
             .select(
@@ -81,6 +81,10 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
             .select("id, sequence, original_filename, captured_at, storage_path, thumbnail_path, capture_fields")
             .eq("report_id", share.report_id)
             .order("sequence", { ascending: true }),
+          admin
+            .from("photo_markups")
+            .select("photo_id, layers")
+            .eq("report_id", share.report_id),
         ]);
 
         const rawReport = reports?.[0];
@@ -142,6 +146,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
             findings: findings ?? [],
             photos: (photos ?? []).map((photo: any) => ({
               ...photo,
+              layers: markups?.find((markup: any) => markup.photo_id === photo.id)?.layers ?? [],
               url: urls.get(photo.storage_path) ?? null,
               thumbUrl: photo.thumbnail_path ? (urls.get(photo.thumbnail_path) ?? null) : null,
             })),

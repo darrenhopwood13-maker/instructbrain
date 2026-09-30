@@ -340,7 +340,7 @@ function CustomReport() {
     completed: 0,
     total: 0,
     hasFindings: false,
-  }, activeSnapshot);
+  }, snapshot);
   const addToReportRef = useRef<((files: File[]) => void) | null>(null);
   const waitingShotsRef = useRef<File[]>([]);
   const onPanelReady = useCallback((add: (files: File[]) => void) => {

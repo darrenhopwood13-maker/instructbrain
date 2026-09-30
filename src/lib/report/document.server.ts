@@ -20,6 +20,7 @@ import type {
   DocSynthesis,
   ReportDocument,
 } from "@/lib/report/document";
+import { coerceMarkup } from "@/lib/photos/markup";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -76,7 +77,7 @@ export async function loadReportDocument(
   const report = reportRow as Record<string, any> | null;
   if (!report) return null;
 
-  const [projectResult, organisationResult, findingResult, photoResult] = await Promise.all([
+  const [projectResult, organisationResult, findingResult, photoResult, markupResult] = await Promise.all([
     report["project_id"]
       ? db
           .from("projects")
@@ -101,12 +102,15 @@ export async function loadReportDocument(
       .select("id, sequence, original_filename, captured_at, storage_path, thumbnail_path, capture_fields")
       .eq("report_id", reportId)
       .order("sequence", { ascending: true }),
+    db.from("photo_markups").select("photo_id, layers").eq("report_id", reportId),
   ]);
 
   const project = (projectResult as { data: any }).data ?? null;
   const organisation = (organisationResult as { data: any }).data ?? null;
   const findings = ((findingResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
   const photos = ((photoResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
+  const markups = ((markupResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
+  const markupByPhoto = new Map(markups.map((row) => [row["photo_id"], coerceMarkup(row["layers"])]));
 
   const links =
     findings.length === 0
@@ -143,6 +147,7 @@ export async function loadReportDocument(
       urls.get(photo["storage_path"] as string) ??
       null,
     captureFields: fields(photo["capture_fields"]),
+    layers: markupByPhoto.get(photo["id"]) ?? [],
   }));
   const photoById = new Map(docPhotos.map((photo) => [photo.id, photo]));
 

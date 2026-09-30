@@ -13,6 +13,7 @@ import type {
   DocSynthesis,
   ReportDocument,
 } from "@/lib/report/document";
+import { coerceMarkup } from "@/lib/photos/markup";
 
 /* Untyped escape hatch: generated types lag behind applied migrations. */
 function from(table: string) {
@@ -95,7 +96,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const report = reports[0];
       if (!report) return null;
 
-      const [projects, organisations, findingRows, photoRows] = await Promise.all([
+      const [projects, organisations, findingRows, photoRows, markupRows] = await Promise.all([
         report.project_id
           ? from("projects")
               .select("id, name, reference, client_name, address, principal_contractor")
@@ -119,12 +120,15 @@ export const reportDocumentQuery = (reportId: string) =>
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
+        from("photo_markups").select("photo_id, layers").eq("report_id", reportId),
       ]);
 
       const project = (unwrap(projects) as any[])[0] ?? null;
       const organisation = (unwrap(organisations) as any[])[0] ?? null;
       const findings = unwrap(findingRows) as any[];
       const photos = unwrap(photoRows) as any[];
+      const markups = unwrap(markupRows) as any[];
+      const markupByPhoto = new Map(markups.map((row) => [row.photo_id, coerceMarkup(row.layers)]));
 
       const links =
         findings.length === 0
@@ -157,6 +161,7 @@ export const reportDocumentQuery = (reportId: string) =>
           urls.get(photo.storage_path) ??
           null,
         captureFields: fields(photo.capture_fields),
+        layers: markupByPhoto.get(photo.id) ?? [],
       }));
       const photoById = new Map(docPhotos.map((photo) => [photo.id, photo]));
 
