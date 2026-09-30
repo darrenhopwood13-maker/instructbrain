@@ -36,6 +36,7 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { CaptureFieldsForm } from "@/components/photos/capture-fields-form";
 import { PhotoGrid } from "@/components/photos/photo-grid";
+import { PhotoMarkupEditor } from "@/components/photos/photo-markup";
 import { UploadTray, type UploadItem } from "@/components/photos/upload-tray";
 import { RoomOrganiser } from "@/components/photos/room-organiser";
 import { ReadinessChecklist } from "@/components/photos/readiness-checklist";
@@ -68,6 +69,7 @@ import {
   definitionLabel,
   photoRoleOf,
   photoWorkflowOf,
+  isManualOnly,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 
@@ -1003,6 +1005,17 @@ export function PhotosPanel({
         </DialogContent>
       </Dialog>
 
+      {isManualOnly(snapshot) ? (
+        <PhotoMarkupEditor
+          open={editing !== null}
+          onOpenChange={(open) => !open && setEditing(null)}
+          reportId={reportId}
+          photoId={editing?.id ?? null}
+          photoUrl={editing ? (urls[editing.id] ?? null) : null}
+          sequence={editing?.sequence ?? null}
+          onSaved={() => void refresh()}
+        />
+      ) : (
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
@@ -1057,6 +1070,7 @@ export function PhotosPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

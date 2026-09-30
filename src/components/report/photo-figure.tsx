@@ -1,4 +1,5 @@
 import type { DocFindingPhoto } from "@/lib/report/document";
+import { PhotoMarkupOverlay } from "@/components/photos/photo-markup";
 
 /**
  * A photograph with the region the finding refers to drawn on it. Without the
@@ -48,6 +49,7 @@ export function PhotoFigure({
             }}
           />
         ) : null}
+        {src && photo.layers?.length ? <PhotoMarkupOverlay layers={photo.layers} /> : null}
       </div>
       {caption ? (
         <figcaption className="mt-1.5 text-xs text-muted-foreground">

@@ -5,6 +5,7 @@ import {
   resolveStatus,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import type { MarkupLayer } from "@/lib/photos/markup";
 
 /**
  * The assembled document model.
@@ -27,6 +28,7 @@ export type DocPhoto = {
   url: string | null;
   thumbUrl: string | null;
   captureFields: Record<string, string>;
+  layers?: MarkupLayer[];
 };
 
 export type DocFindingPhoto = {
