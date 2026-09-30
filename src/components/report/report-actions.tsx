@@ -44,6 +44,7 @@ import {
   sharePdfBytes,
 } from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
+import { isManualOnly } from "@/lib/survey-types";
 import type { ResultView } from "@/lib/report/grouping";
 
 /** The report header has one issue action and one Share menu holding every way out. */
@@ -114,6 +115,7 @@ export function ReportActions({
   useEffect(() => {
     if (
       !prepareSummary ||
+      isManualOnly(document.snapshot) ||
       summaryStarted ||
       issued ||
       blockers.blocked ||
@@ -193,10 +195,9 @@ export function ReportActions({
   return (
     <>
       <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-        <ReportLanguageControl
-          reportId={document.report.id}
-          value={document.report.outputLanguage}
-        />
+        {!isManualOnly(document.snapshot) ? (
+          <ReportLanguageControl reportId={document.report.id} value={document.report.outputLanguage} />
+        ) : null}
         {issued ? (
           <Button
             type="button"

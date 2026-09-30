@@ -1,4 +1,5 @@
 import type { ReadinessStep } from "@/lib/photos/inventory-readiness";
+import { isManualOnly, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /**
  * The one next thing to do after photographs, shown as a single button in the
@@ -45,7 +46,11 @@ export const EMPTY_PHOTO_STATUS: PhotoStatus = {
   readiness: [],
 };
 
-export function nextPhotoAction(photos: PhotoStatus, analysis: AnalysisStatus): NextAction {
+export function nextPhotoAction(
+  photos: PhotoStatus,
+  analysis: AnalysisStatus,
+  snapshot?: SurveyTypeSnapshot | null,
+): NextAction {
   if (analysis.running) {
     return {
       kind: "analysing",
@@ -62,6 +67,9 @@ export function nextPhotoAction(photos: PhotoStatus, analysis: AnalysisStatus): 
   }
   if (photos.photoCount === 0) {
     return { kind: "empty", label: "Add photographs to continue", enabled: false };
+  }
+  if (isManualOnly(snapshot)) {
+    return { kind: "review", label: "Review photographs", enabled: true };
   }
   const outstanding = photos.readiness.find((step) => !step.done);
   if (outstanding) {

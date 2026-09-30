@@ -1,5 +1,7 @@
 import { applyTranslation } from "@/lib/i18n/apply-translation";
 import type { ReportDocument } from "@/lib/report/document";
+import { coerceSnapshot } from "@/lib/report/snapshot";
+import { isManualOnly } from "@/lib/survey-types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Db = any;
@@ -15,13 +17,16 @@ async function sourceStrings(
   const { data: reportRows, error: reportError } = await db
     .from("reports")
     .select(
-      "id, organisation_id, title, subtitle, scope_text, methodology_text, executive_summary",
+      "id, organisation_id, title, subtitle, scope_text, methodology_text, executive_summary, survey_type_snapshot",
     )
     .eq("id", reportId)
     .limit(1);
   if (reportError) throw new Error(reportError.message);
   const report = reportRows?.[0];
   if (!report) return null;
+  if (isManualOnly(coerceSnapshot(report.survey_type_snapshot))) {
+    throw new Error("AI translation is disabled for manual photographic reports.");
+  }
 
   const { data: findings, error: findingError } = await db
     .from("findings")
@@ -108,6 +113,7 @@ export async function documentForOutput(
   db: Db,
   document: ReportDocument,
 ): Promise<ReportDocument> {
+  if (isManualOnly(document.snapshot)) return document;
   const language = document.report.outputLanguage;
   if (!language || language === "en") return document;
   try {

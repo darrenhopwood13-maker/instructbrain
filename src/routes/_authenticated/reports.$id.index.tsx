@@ -35,7 +35,7 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
-import { definitionLabel, tradesOf } from "@/lib/survey-types";
+import { definitionLabel, isManualOnly, tradesOf } from "@/lib/survey-types";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
@@ -231,7 +231,7 @@ function ReportWorkspace() {
   const nextAction = nextPhotoAction(photoStatus, {
     ...analysisStatus,
     hasFindings: findingsAll.length > 0,
-  });
+  }, report.surveyTypeSnapshot);
 
   // Arriving from Start a report opens the analysis confirmation once, as soon
   // as it is allowed. The flag is then cleared so Back never reopens it.
@@ -409,18 +409,20 @@ function ReportWorkspace() {
       ) : null}
 
       {/* Always mounted, so moving between steps never stops a run. */}
-      <div className={step === "photos" ? "mt-8 pb-40 sm:pb-0" : "hidden"}>
-        <AnalysisPanel
+      {!isManualOnly(report.surveyTypeSnapshot) ? (
+        <div className={step === "photos" ? "mt-8 pb-40 sm:pb-0" : "hidden"}>
+          <AnalysisPanel
           reportId={report.id}
           snapshot={report.surveyTypeSnapshot}
           onRunComplete={onRunComplete}
           confirmSignal={confirmSignal}
           onStatus={setAnalysisStatus}
           photoCount={photoStatus.photoCount}
-        />
-      </div>
+          />
+        </div>
+      ) : null}
 
-      {step !== "photos" && !locked && (analysisStatus.running || (analysisStatus.pending ?? 0) > 0) ? (
+      {!isManualOnly(report.surveyTypeSnapshot) && step !== "photos" && !locked && (analysisStatus.running || (analysisStatus.pending ?? 0) > 0) ? (
         <div
           role="status"
           className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -498,7 +500,7 @@ function ReportWorkspace() {
                 <ReportActions
                   document={doc}
                   resultView={resultView}
-                  prepareSummary
+               prepareSummary={!isManualOnly(report.surveyTypeSnapshot)}
                   onAddToProject={!project ? () => setAttaching(true) : undefined}
                 />
               </div>

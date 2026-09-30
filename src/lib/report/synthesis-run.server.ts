@@ -1,7 +1,7 @@
 import { synthesise, type SynthesisResult } from "@/lib/ai/synthesis.server";
 import { logUsage } from "@/lib/ai/cost.server";
 import { coerceSnapshot } from "@/lib/report/snapshot";
-import { severitiesOf, statusesOf, definitionLabel } from "@/lib/survey-types";
+import { severitiesOf, statusesOf, definitionLabel, isManualOnly } from "@/lib/survey-types";
 
 type AnyClient = {
   from: (table: string) => any;
@@ -28,6 +28,9 @@ export async function synthesiseForReport(
   if (!report) throw new Error("That report could not be read.");
 
   const snapshot = coerceSnapshot(report.survey_type_snapshot);
+  if (isManualOnly(snapshot)) {
+    throw new Error("AI summaries are disabled for manual photographic reports.");
+  }
 
   const { data: project } = await client
     .from("projects")

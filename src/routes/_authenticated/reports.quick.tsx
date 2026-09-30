@@ -82,6 +82,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   inventory: "Property records",
   electrical: "Electrical",
   mechanical: "Mechanical & HVAC",
+  record: "Photographic records",
 };
 
 /** Device-local memory of the last brief used, so capture needs no set-up. */
@@ -339,7 +340,7 @@ function CustomReport() {
     completed: 0,
     total: 0,
     hasFindings: false,
-  });
+  }, activeSnapshot);
   const addToReportRef = useRef<((files: File[]) => void) | null>(null);
   const waitingShotsRef = useRef<File[]>([]);
   const onPanelReady = useCallback((add: (files: File[]) => void) => {
@@ -788,7 +789,7 @@ function CustomReport() {
                     <Link
                       to="/reports/$id"
                       params={{ id: reportId }}
-                      search={{ tab: "photos", analyse: true }}
+                      search={{ tab: activeSnapshot.manualOnly ? "review" : "photos", analyse: !activeSnapshot.manualOnly }}
                     >
                       {nextAction.label}
                       <ArrowRight aria-hidden="true" className="size-4" />

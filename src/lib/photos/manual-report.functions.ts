@@ -45,6 +45,7 @@ async function ensureFinding(supabase: any, reportId: string, photoId: string, s
       sequence: Number(allocated.sequence ?? sequence),
       status: "recorded",
       finding_text: "",
+      capture_fields: {},
       human_edited: true,
       lifecycle_state: "open",
     })
