@@ -1,5 +1,5 @@
 import type { DocFindingPhoto } from "@/lib/report/document";
-import { PhotoMarkupOverlay } from "@/components/photos/photo-markup";
+import { PhotoMarkupOverlay } from "@/components/photos/photo-markup-overlay";
 
 /**
  * A photograph with the region the finding refers to drawn on it. Without the

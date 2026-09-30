@@ -462,7 +462,7 @@ function ReportWorkspace() {
               icon={FileText}
               eyebrow="Nothing to review"
               title="No findings on this report yet"
-              description="Add photographs and analyse them first."
+               description={isManualOnly(report.surveyTypeSnapshot) ? "Open each photograph to add its description and markup." : "Add photographs and analyse them first."}
               action={
                 <Button type="button" onClick={() => goTo("photos")}>
                   Back to photos

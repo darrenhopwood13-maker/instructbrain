@@ -326,6 +326,7 @@ describe("intermediate statuses are reachable", () => {
   it("carries the house voice on every system definition, at a published version", () => {
     for (const definition of systemDefinitions) {
       expect(definition.version).toBeGreaterThanOrEqual(1);
+      if (definition.manualOnly) continue;
       expect(buildSystemPrompt(definition)).toContain("instructBrain Oracle");
     }
   });
