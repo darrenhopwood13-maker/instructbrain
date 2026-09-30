@@ -991,6 +991,61 @@ export type Database = {
           },
         ]
       }
+      photo_markups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          layers: Json
+          organisation_id: string
+          photo_id: string
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          layers?: Json
+          organisation_id: string
+          photo_id: string
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          layers?: Json
+          organisation_id?: string
+          photo_id?: string
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_markups_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_markups_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: true
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_markups_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           analysis_path: string | null
