@@ -138,3 +138,5 @@
 - [x] Fastest possible uploads for no-AI manual reports
 - [x] Manual reports: auto-create item per photo, visible markup button, review list
 - [x] Manual reports: two large photographs per PDF page, showing only item number, capture date and capture time
+
+- [x] Manual photographic report: no confirmation needed; rebuilt markup editor (draw/drag/resize, pen, line, numbered markers, sizes)
