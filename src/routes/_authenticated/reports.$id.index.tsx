@@ -36,6 +36,7 @@ import {
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionLabel, isManualOnly, tradesOf } from "@/lib/survey-types";
+import { ManualReviewList } from "@/components/photos/manual-review-list";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
