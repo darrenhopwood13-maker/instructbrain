@@ -1,4 +1,4 @@
-import { AlertTriangle, ImageOff, MapPin } from "lucide-react";
+import { AlertTriangle, ImageOff, MapPin, PenLine } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { PhotoRow } from "@/lib/photos/photo-service";
 import { photoRoleOf, photoWorkflowOf, type SurveyTypeSnapshot } from "@/lib/survey-types";
