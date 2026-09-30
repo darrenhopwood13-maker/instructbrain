@@ -449,7 +449,14 @@ function ReportWorkspace() {
 
       {step === "review" ? (
         <div className="mt-8">
-          {findings.isPending ? (
+          {isManualOnly(report.surveyTypeSnapshot) && !findings.isPending && !findings.isError ? (
+            <ManualReviewList
+              reportId={report.id}
+              findings={findingList}
+              readOnly={locked}
+              onSaved={() => void findings.refetch()}
+            />
+          ) : findings.isPending ? (
             <LoadingState label="Loading findings…" />
           ) : findings.isError ? (
             <ErrorState
