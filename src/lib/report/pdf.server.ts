@@ -278,25 +278,55 @@ async function embedPhoto(
 }
 
 function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, width: number, height: number, font: PDFFont): void {
+  // Units match the on-screen overlay: 1/1000 of the image height.
+  const u = height / 1000;
+  const px = (nx: number) => x + nx * width;
+  const py = (ny: number) => y + (1 - ny) * height;
+  const dark = INK;
+  const light = rgb(1, 1, 1);
   for (const layer of layers) {
-    const x1 = x + layer.x * width;
-    const y1 = y + (1 - layer.y) * height;
-    const x2 = x + layer.x2 * width;
-    const y2 = y + (1 - layer.y2) * height;
     const colour = MARKUP_COLOURS[layer.colour];
-    if (layer.kind === "arrow") {
-      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: 3, color: colour });
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      for (const offset of [-0.5, 0.5]) page.drawLine({ start: { x: x2, y: y2 }, end: { x: x2 - 12 * Math.cos(angle + offset), y: y2 - 12 * Math.sin(angle + offset) }, thickness: 3, color: colour });
+    const backing = layer.colour === "white" || layer.colour === "yellow" || layer.colour === "accent" ? dark : light;
+    const sw = Math.max(1, STROKE_UNITS[layer.stroke ?? "m"] * u);
+    const x1 = px(layer.x), y1 = py(layer.y), x2 = px(layer.x2), y2 = py(layer.y2);
+    const line = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+      page.drawLine({ start: a, end: b, thickness: sw, color: colour, lineCap: LineCapStyle.Round });
+    if (layer.kind === "arrow" || layer.kind === "line") {
+      line({ x: x1, y: y1 }, { x: x2, y: y2 });
+      if (layer.kind === "arrow") {
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const head = sw * 3.2;
+        for (const offset of [-0.45, 0.45]) line({ x: x2, y: y2 }, { x: x2 - head * Math.cos(angle + offset), y: y2 - head * Math.sin(angle + offset) });
+      }
+    } else if (layer.kind === "pen" && layer.points) {
+      for (let i = 1; i < layer.points.length; i++) {
+        const a = layer.points[i - 1]!, b = layer.points[i]!;
+        line({ x: px(a[0]), y: py(a[1]) }, { x: px(b[0]), y: py(b[1]) });
+      }
     } else if (layer.kind === "rectangle") {
-      page.drawRectangle({ x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1), borderWidth: 3, borderColor: colour });
+      page.drawRectangle({ x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1), borderWidth: sw, borderColor: colour });
     } else if (layer.kind === "ellipse") {
-      page.drawEllipse({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, xScale: Math.abs(x2 - x1) / 2, yScale: Math.abs(y2 - y1) / 2, borderWidth: 3, borderColor: colour });
+      page.drawEllipse({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, xScale: Math.abs(x2 - x1) / 2, yScale: Math.abs(y2 - y1) / 2, borderWidth: sw, borderColor: colour });
+    } else if (layer.kind === "marker") {
+      const r = MARKER_UNITS[layer.size ?? "m"] * u;
+      page.drawCircle({ x: x1, y: y1, size: r, color: colour, borderColor: light, borderWidth: r * 0.14 });
+      const label = String(layer.number ?? 1);
+      const fs = r * 1.15;
+      page.drawText(label, { x: x1 - font.widthOfTextAtSize(label, fs) / 2, y: y1 - fs * 0.36, size: fs, font, color: backing });
     } else {
-      const boxWidth = Math.max(70, Math.abs(x2 - x1));
-      const boxHeight = Math.max(28, Math.abs(y2 - y1));
-      if (layer.kind === "speech") page.drawRectangle({ x: x1, y: y1 - boxHeight, width: boxWidth, height: boxHeight, color: rgb(1, 1, 1), opacity: 0.9, borderWidth: 2, borderColor: colour });
-      page.drawText(sanitise(layer.text ?? "").slice(0, 80), { x: x1 + 5, y: y1 - 17, size: 11, font, color: colour, maxWidth: boxWidth - 10 });
+      const fs = TEXT_UNITS[layer.size ?? "m"] * u;
+      const text = sanitise(layer.text ?? "").slice(0, 160);
+      const pad = fs * 0.35;
+      const w = Math.min(width, Math.max(fs * 2, font.widthOfTextAtSize(text, fs) + pad * 2));
+      const h = fs * 1.4;
+      const bx = Math.min(x1, x + width - w);
+      const top = y1;
+      const isSpeech = layer.kind === "speech";
+      if (isSpeech) {
+        page.drawSvgPath(`M ${bx + w * 0.18} ${-(top - h)} l ${-fs * 0.5} ${fs * 0.9} l ${fs * 1.2} ${-fs * 0.9} z`, { x: 0, y: 0, color: light, borderColor: colour, borderWidth: sw * 0.6 });
+      }
+      page.drawRectangle({ x: bx, y: top - h, width: w, height: h, color: isSpeech ? light : backing, opacity: isSpeech ? 0.97 : 0.82, borderColor: isSpeech ? colour : undefined, borderWidth: isSpeech ? sw * 0.6 : 0 });
+      page.drawText(text, { x: bx + pad, y: top - h / 2 - fs * 0.35, size: fs, font, color: isSpeech ? dark : colour, maxWidth: w - pad });
     }
   }
 }

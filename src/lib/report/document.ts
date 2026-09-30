@@ -1,5 +1,6 @@
 import {
   NOT_ASSESSED_ID,
+  isManualOnly,
   outputSectionsOf,
   requiresTradeAssignment,
   resolveStatus,
