@@ -13,7 +13,7 @@ import type {
   DocSynthesis,
   ReportDocument,
 } from "@/lib/report/document";
-import { coerceMarkupLayers } from "@/lib/photos/markup";
+import { coerceMarkup } from "@/lib/photos/markup";
 
 /* Untyped escape hatch: generated types lag behind applied migrations. */
 function from(table: string) {
@@ -128,7 +128,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const findings = unwrap(findingRows) as any[];
       const photos = unwrap(photoRows) as any[];
       const markups = unwrap(markupRows) as any[];
-      const markupByPhoto = new Map(markups.map((row) => [row.photo_id, coerceMarkupLayers(row.layers)]));
+      const markupByPhoto = new Map(markups.map((row) => [row.photo_id, coerceMarkup(row.layers)]));
 
       const links =
         findings.length === 0

@@ -324,7 +324,7 @@ export function PhotosPanel({
                 sequence,
                 report,
               );
-              if (!inventoryWorkflow && analyseWhileShooting() && uploaded?.photo?.id) {
+              if (!inventoryWorkflow && !isManualOnly(snapshot) && analyseWhileShooting() && uploaded?.photo?.id) {
                 void analyseOnArrival(uploaded.photo.id);
               }
               return uploaded;
@@ -755,7 +755,7 @@ export function PhotosPanel({
         onShot={(file) => void addFiles([file])}
         onFallback={fallbackCamera}
         uploadedCount={uploadedCount}
-        allowAnalyse={!inventoryWorkflow}
+        allowAnalyse={!inventoryWorkflow && !isManualOnly(snapshot)}
       />
 
       <UploadTray

@@ -20,7 +20,7 @@ import type {
   DocSynthesis,
   ReportDocument,
 } from "@/lib/report/document";
-import { coerceMarkupLayers } from "@/lib/photos/markup";
+import { coerceMarkup } from "@/lib/photos/markup";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -110,7 +110,7 @@ export async function loadReportDocument(
   const findings = ((findingResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
   const photos = ((photoResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
   const markups = ((markupResult as { data: any[] | null }).data ?? []) as Array<Record<string, any>>;
-  const markupByPhoto = new Map(markups.map((row) => [row["photo_id"], coerceMarkupLayers(row["layers"])]));
+  const markupByPhoto = new Map(markups.map((row) => [row["photo_id"], coerceMarkup(row["layers"])]));
 
   const links =
     findings.length === 0
