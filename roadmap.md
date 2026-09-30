@@ -133,4 +133,4 @@
 - [x] Add one manual description and editable text, arrows, shapes and speech bubbles per photograph.
 - [x] Exclude the template from every photograph, summary and translation AI path.
 - [x] Preserve markup in preview, print, shared links, PDF and issued snapshots.
-- [ ] Verify existing report templates remain unchanged and run the full checks.
+- [x] Verify existing report templates remain unchanged and run the full checks.
