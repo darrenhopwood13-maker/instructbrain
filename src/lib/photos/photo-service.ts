@@ -4,6 +4,7 @@ import { humanisePlanError } from "@/lib/plans";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
 import { deviceProvenanceOf, mergeProvenance } from "@/lib/photos/device-provenance";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
+import { reduceForManualReport } from "@/lib/photos/manual-upload-image";
 import { isUnreadableFileError } from "@/lib/photos/file-snapshot";
 import {
   createAnalysisDerivative,
