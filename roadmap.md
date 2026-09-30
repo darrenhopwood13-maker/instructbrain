@@ -137,4 +137,4 @@
 
 - [x] Fastest possible uploads for no-AI manual reports
 - [x] Manual reports: auto-create item per photo, visible markup button, review list
-- [ ] Manual reports: two large photographs per PDF page, showing only item number, capture date and capture time
+- [x] Manual reports: two large photographs per PDF page, showing only item number, capture date and capture time
