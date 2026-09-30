@@ -63,6 +63,7 @@ import {
   type TaskProgress,
 } from "@/lib/photos/upload-queue";
 import { snapshotFiles } from "@/lib/photos/file-snapshot";
+import { ensureManualPhotoItem } from "@/lib/photos/manual-report.functions";
 import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
@@ -165,6 +166,7 @@ export function PhotosPanel({
   const reserveRef = useRef<Promise<void>>(Promise.resolve());
   const queryClient = useQueryClient();
   const runAnalysis = useServerFn(analysePhoto);
+  const ensureItem = useServerFn(ensureManualPhotoItem);
   const analysingRef = useRef({ active: 0, waiting: [] as Array<() => void> });
   const refreshFindingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analyseOnArrival = useCallback(
@@ -199,6 +201,24 @@ export function PhotosPanel({
     setPhotos(rows);
     setUrls(await signedThumbnailUrls(rows));
   }, [reportId]);
+
+  // Manual reports: catch up any photograph uploaded before items were
+  // created on arrival. The server call is idempotent.
+  const backfilled = useRef(false);
+  useEffect(() => {
+    if (backfilled.current || !isManualOnly(snapshot) || photos.length === 0) return;
+    backfilled.current = true;
+    void (async () => {
+      for (const photo of photos) {
+        try {
+          await ensureItem({ data: { reportId, photoId: photo.id } });
+        } catch {
+          /* a single failure must not stop the rest */
+        }
+      }
+      void queryClient.invalidateQueries();
+    })();
+  }, [photos, snapshot, reportId, ensureItem, queryClient]);
 
   useEffect(() => {
     let active = true;
@@ -318,13 +338,20 @@ export function PhotosPanel({
                 }
               }
               // Photographs reach storage on selection — never held in memory only.
+              const manual = isManualOnly(snapshot);
               const uploaded = await uploadPhoto(
                 item.file,
-                { organisationId, reportId, captureFields },
+                { organisationId, reportId, captureFields, skipAnalysisDerivative: manual },
                 sequence,
                 report,
               );
-              if (!inventoryWorkflow && !isManualOnly(snapshot) && analyseWhileShooting() && uploaded?.photo?.id) {
+              if (manual && uploaded?.photo?.id) {
+                // Every photograph becomes its own report item straight away.
+                void ensureItem({ data: { reportId, photoId: uploaded.photo.id } })
+                  .then(() => queryClient.invalidateQueries())
+                  .catch(() => undefined);
+              }
+              if (!inventoryWorkflow && !manual && analyseWhileShooting() && uploaded?.photo?.id) {
                 void analyseOnArrival(uploaded.photo.id);
               }
               return uploaded;
@@ -865,6 +892,7 @@ export function PhotosPanel({
             } } : {})}
             snapshot={snapshot}
             {...(workflow ? { onSetRole: setPhotoRole } : {})}
+            {...(isManualOnly(snapshot) ? { openLabel: "Describe & mark up" } : {})}
             onOpen={(photo) => {
               setEditing(photo);
               setEditValues({ ...(photo.capture_fields ?? {}) });

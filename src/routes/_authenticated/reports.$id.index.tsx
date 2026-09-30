@@ -36,6 +36,7 @@ import {
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionLabel, isManualOnly, tradesOf } from "@/lib/survey-types";
+import { ManualReviewList } from "@/components/photos/manual-review-list";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
@@ -449,7 +450,14 @@ function ReportWorkspace() {
 
       {step === "review" ? (
         <div className="mt-8">
-          {findings.isPending ? (
+          {isManualOnly(report.surveyTypeSnapshot) && !findings.isPending && !findings.isError ? (
+            <ManualReviewList
+              reportId={report.id}
+              findings={findingList}
+              readOnly={locked}
+              onSaved={() => void findings.refetch()}
+            />
+          ) : findings.isPending ? (
             <LoadingState label="Loading findings…" />
           ) : findings.isError ? (
             <ErrorState

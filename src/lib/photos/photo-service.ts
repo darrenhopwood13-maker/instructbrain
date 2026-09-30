@@ -190,6 +190,8 @@ export type UploadTarget = {
   organisationId: string;
   reportId: string;
   captureFields: Record<string, string>;
+  /** Manual (no-AI) reports never need an analysis copy. */
+  skipAnalysisDerivative?: boolean;
 };
 
 export async function findPhotoByChecksum(
@@ -248,26 +250,39 @@ export async function uploadPhoto(
   const filename = collisionSafeFilename(file.name || "photo.jpg");
   const original = originalPath(target.organisationId, target.reportId, filename);
 
-  await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
-
-  // Formats the model cannot read get a full-resolution JPEG twin. The
-  // decision is made from the actual bytes received, because iOS Safari
-  // sometimes transcodes a HEIC to JPEG on pick and sometimes does not.
-  const analysis = modelReadableFromBytes(bytes)
-    ? null
-    : await uploadAnalysisDerivative(
-        analysisPath(target.organisationId, target.reportId, filename),
-        file,
-      );
-  onProgress(0.88);
-
-  // Thumbnail: fall back to the derivative when the browser cannot decode the
-  // source directly. A missing thumbnail must never block an upload.
   const thumbTarget = thumbnailPath(target.organisationId, target.reportId, filename);
-  const thumbnail =
-    (await uploadThumbnail(thumbTarget, file)) ??
-    (analysis ? await uploadThumbnail(thumbTarget, analysis.blob) : null);
-  onProgress(0.92);
+  let analysis: { path: string; blob: Blob } | null = null;
+  let thumbnail: string | null;
+  if (target.skipAnalysisDerivative) {
+    // Manual (no-AI) reports: no analysis copy at all, and the display
+    // thumbnail is made while the original uploads rather than afterwards.
+    const [, thumb] = await Promise.all([
+      uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.85), signal),
+      uploadThumbnail(thumbTarget, file),
+    ]);
+    thumbnail = thumb;
+    onProgress(0.92);
+  } else {
+    await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
+
+    // Formats the model cannot read get a full-resolution JPEG twin. The
+    // decision is made from the actual bytes received, because iOS Safari
+    // sometimes transcodes a HEIC to JPEG on pick and sometimes does not.
+    analysis = modelReadableFromBytes(bytes)
+      ? null
+      : await uploadAnalysisDerivative(
+          analysisPath(target.organisationId, target.reportId, filename),
+          file,
+        );
+    onProgress(0.88);
+
+    // Thumbnail: fall back to the derivative when the browser cannot decode the
+    // source directly. A missing thumbnail must never block an upload.
+    thumbnail =
+      (await uploadThumbnail(thumbTarget, file)) ??
+      (analysis ? await uploadThumbnail(thumbTarget, analysis.blob) : null);
+    onProgress(0.92);
+  }
 
   const { data, error } = await table()
     .insert({
