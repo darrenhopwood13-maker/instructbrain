@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { translateReport } from "@/lib/i18n/translate.functions";
+import { isManualOnly } from "@/lib/survey-types";
 import { applyTranslation } from "@/lib/i18n/apply-translation";
 import type { ReportDocument } from "@/lib/report/document";
 
@@ -15,7 +16,7 @@ export function useReportTranslation(
   language?: string,
 ) {
   const target = language ?? document?.report.outputLanguage ?? "en";
-  const translated = target !== "en";
+  const translated = target !== "en" && !isManualOnly(document?.snapshot);
 
   const query = useQuery({
     queryKey: ["report-translation", reportId, target],

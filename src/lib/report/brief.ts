@@ -223,7 +223,7 @@ export const EMPTY_BRIEF: ReportBrief = {
  * brief hides those controls and forces them off, whatever a stored setup says.
  * Nothing discipline-specific is decided here: only which controls apply.
  */
-export const MINIMAL_BRIEF_TEMPLATE_IDS = ["photo_condition_record"] as const;
+export const MINIMAL_BRIEF_TEMPLATE_IDS = ["photo_condition_record", "manual_photo_report"] as const;
 
 export function isMinimalBriefTemplate(id: string | null | undefined): boolean {
   return typeof id === "string" && MINIMAL_BRIEF_TEMPLATE_IDS.includes(id as never);
