@@ -19,7 +19,7 @@ I can open the instructSiteEnterprise project directly and apply the brief mysel
 - Verify it builds cleanly.
 
 ## One decision needed either way
-**What is instructSiteEnterprise's accent colour?** The family rule is: "instruct" stays white, and each product name owns its own bright accent (instructBrain uses Laser Green #57FF00). Enterprise needs its own — for example a gold, cyan, or violet. Tell me the colour (or a hex code) and I'll fill that slot.
+**Accent decided:** purple. The family rule is: "instruct" stays white, and each product name owns its own bright accent (instructBrain uses Laser Green #57FF00). Enterprise needs its own — instructSiteEnterprise will use a **purple** accent (a bright, optimistic purple in the same spirit as instructBrain's Laser Green, with a pale text-safe companion shade).
 
 ## Recommendation
-Option B is safer — I wrote the brief and know exactly which parts are rules versus guidance, and I can verify the result builds and looks right. If you approve, tell me the accent colour and I'll switch to that project and apply it.
+Option B is safer — I wrote the brief and know exactly which parts are rules versus guidance, and I can verify the result builds and looks right. If you approve, I'll switch to that project and apply it with the purple accent.
