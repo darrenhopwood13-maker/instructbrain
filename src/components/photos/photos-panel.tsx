@@ -63,6 +63,7 @@ import {
   type TaskProgress,
 } from "@/lib/photos/upload-queue";
 import { snapshotFiles } from "@/lib/photos/file-snapshot";
+import { ensureManualPhotoItem } from "@/lib/photos/manual-report.functions";
 import {
   allowsMultipleFindingsPerPhoto,
   captureFieldsOf,
@@ -165,6 +166,7 @@ export function PhotosPanel({
   const reserveRef = useRef<Promise<void>>(Promise.resolve());
   const queryClient = useQueryClient();
   const runAnalysis = useServerFn(analysePhoto);
+  const ensureItem = useServerFn(ensureManualPhotoItem);
   const analysingRef = useRef({ active: 0, waiting: [] as Array<() => void> });
   const refreshFindingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analyseOnArrival = useCallback(
