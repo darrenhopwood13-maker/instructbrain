@@ -325,7 +325,7 @@ function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, 
       if (isSpeech) {
         page.drawSvgPath(`M ${bx + w * 0.18} ${-(top - h)} l ${-fs * 0.5} ${fs * 0.9} l ${fs * 1.2} ${-fs * 0.9} z`, { x: 0, y: 0, color: light, borderColor: colour, borderWidth: sw * 0.6 });
       }
-      page.drawRectangle({ x: bx, y: top - h, width: w, height: h, color: isSpeech ? light : backing, opacity: isSpeech ? 0.97 : 0.82, borderColor: isSpeech ? colour : undefined, borderWidth: isSpeech ? sw * 0.6 : 0 });
+      page.drawRectangle({ x: bx, y: top - h, width: w, height: h, color: isSpeech ? light : backing, opacity: isSpeech ? 0.97 : 0.82, ...(isSpeech ? { borderColor: colour, borderWidth: sw * 0.6 } : {}) });
       page.drawText(text, { x: bx + pad, y: top - h / 2 - fs * 0.35, size: fs, font, color: isSpeech ? dark : colour, maxWidth: w - pad });
     }
   }
