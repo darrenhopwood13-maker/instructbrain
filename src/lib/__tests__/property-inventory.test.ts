@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
+  manualPhotoReportDefinition,
   propertyInventoryDefinition,
   snapshotOf,
   systemDefinitions,
@@ -341,6 +342,9 @@ describe("property inventory", () => {
     expect(other).toBeDefined();
     if (!other) return;
     expect(reportPrintPageClass({ snapshot: snapshotOf(other) })).toBe("");
+    expect(reportPrintPageClass({ snapshot: snapshotOf(manualPhotoReportDefinition) })).toBe(
+      "manual-photo-print-surface",
+    );
     expect(readFileSync("src/routes/shared.$token.tsx", "utf8")).toContain(
       "reportPrintPageClass(query.data)",
     );

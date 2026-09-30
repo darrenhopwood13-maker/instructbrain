@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   documentSections,
   documentStatistics,
+  formatCaptureDateTime,
   groupFindings,
   issueBlockers,
   type DocFinding,
