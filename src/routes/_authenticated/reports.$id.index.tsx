@@ -231,7 +231,7 @@ function ReportWorkspace() {
   const nextAction = nextPhotoAction(photoStatus, {
     ...analysisStatus,
     hasFindings: findingsAll.length > 0,
-  }, report.surveyTypeSnapshot);
+  }, query.data?.report.surveyTypeSnapshot);
 
   // Arriving from Start a report opens the analysis confirmation once, as soon
   // as it is allowed. The flag is then cleared so Back never reopens it.
