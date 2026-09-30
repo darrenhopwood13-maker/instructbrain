@@ -293,17 +293,24 @@ export async function uploadPhoto(
     }
   }
 
-  const filename = collisionSafeFilename(file.name || "photo.jpg");
+  // Manual (no-AI) reports: shrink before upload. EXIF and checksum above
+  // were already taken from the original bytes. Falls back to the original.
+  const reduced = target.skipAnalysisDerivative ? await reduceForManualReport(file) : null;
+  const uploadFile = reduced
+    ? new File([reduced.blob], (file.name || "photo").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" })
+    : file;
+
+  const filename = collisionSafeFilename(uploadFile.name || "photo.jpg");
   const original = originalPath(target.organisationId, target.reportId, filename);
 
   const thumbTarget = thumbnailPath(target.organisationId, target.reportId, filename);
   let analysis: { path: string; blob: Blob } | null = null;
   let thumbnail: string | null;
   if (target.skipAnalysisDerivative) {
-    // Manual (no-AI) reports: no analysis copy at all. The original always
-    // goes first — decoding previews alongside it starved phone uploads.
-    await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.85), signal);
-    thumbnail = await uploadThumbnail(thumbTarget, file);
+    // No analysis copy at all. The upload always goes first — decoding
+    // previews alongside it starved phone uploads.
+    await uploadOriginal(original, uploadFile, (fraction) => onProgress(0.05 + fraction * 0.85), signal);
+    thumbnail = await uploadThumbnail(thumbTarget, uploadFile);
     onProgress(0.92);
   } else {
     await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
@@ -337,8 +344,8 @@ export async function uploadPhoto(
       captured_at: provenance.capturedAt,
       gps_lat: provenance.gpsLat,
       gps_lng: provenance.gpsLng,
-      width: provenance.width,
-      height: provenance.height,
+      width: reduced?.width ?? provenance.width,
+      height: reduced?.height ?? provenance.height,
       sequence,
       checksum,
       capture_fields: target.captureFields,
