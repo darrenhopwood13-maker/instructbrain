@@ -253,7 +253,6 @@ function ReportWorkspace() {
     });
   }, [analyse, nextAction.kind, analysisStatus.pending, navigate]);
 
-  const autoAdvance = false;
   void ready;
 
   if (query.isPending) {
@@ -610,29 +609,6 @@ function ReportWorkspace() {
         </div>
       ) : null}
 
-      {autoAdvance ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-4 bottom-[calc(10rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:bottom-24"
-        >
-          <p className="font-semibold">All findings confirmed</p>
-          <p className="mt-1 text-sm text-muted-foreground">Taking you to Issue…</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <Button type="button" className="min-h-11 w-full" onClick={() => goTo("output")}>
-              Continue to issue
-            </Button>
-            <Button
-              type="button"
-              variant="quiet"
-              className="min-h-11 w-full sm:w-auto"
-              onClick={() => setAutoAdvance(false)}
-            >
-              Stay here
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </AppShell>
   );
 }
