@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { HelpSheet, OPEN_HELP_EVENT } from "@/components/help-sheet";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,27 @@ function AccountMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/settings/organisation">{t("nav.organisation")}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={async () => {
+            const url = "https://instructbrain.com/promo";
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: "instructBrain", url });
+                return;
+              }
+            } catch {
+              return; // share sheet cancelled — send nothing, show nothing
+            }
+            try {
+              await navigator.clipboard.writeText(url);
+              toast.success(t("nav.sharePromoCopied"), { description: url });
+            } catch {
+              window.open(url, "_blank", "noopener");
+            }
+          }}
+        >
+          {t("nav.sharePromo")}
         </DropdownMenuItem>
         {isPlatformAdmin ? (
           <DropdownMenuItem asChild>
