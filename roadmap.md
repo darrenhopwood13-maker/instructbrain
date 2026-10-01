@@ -142,3 +142,9 @@
 - [x] Manual photographic report: no confirmation needed; rebuilt markup editor (draw/drag/resize, pen, line, numbered markers, sizes)
 - [x] Manual photographic report: bounded cover photo, selection-order output, two photos per page, issued PDF email attachment only
 - [x] Manual photographic report: professional instructBrain Laser Green branding across PDF and print while retaining two photos per page
+
+## 1 Oct — 30-second promo reel and website sharing
+- [ ] Produce and visually verify the 30-second portrait motion-graphics reel.
+- [ ] Add the public branded promo page and managed video asset.
+- [ ] Add Share Promo Video to the account/settings menu with native-share and copy fallback.
+- [ ] Verify phone/desktop playback, sharing, checks and current build.
