@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import {
   ContinuousCamera,
-  analyseWhileShooting,
   canUseInAppCamera,
 } from "@/components/photos/continuous-camera";
 import { useQueryClient } from "@tanstack/react-query";
@@ -351,7 +350,7 @@ export function PhotosPanel({
                   .then(() => queryClient.invalidateQueries())
                   .catch(() => undefined);
               }
-              if (!inventoryWorkflow && !manual && analyseWhileShooting() && uploaded?.photo?.id) {
+              if (!inventoryWorkflow && !manual && uploaded?.photo?.id) {
                 void analyseOnArrival(uploaded.photo.id);
               }
               return uploaded;
