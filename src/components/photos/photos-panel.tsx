@@ -669,19 +669,32 @@ export function PhotosPanel({
         <p className="eyebrow">Step one</p>
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
 
-        {zoneFields.length > 0 ? (
+        {zoneFields.length > 0 && !inventoryWorkflow ? (
+          <details className="mt-3 rounded-lg border border-border bg-surface px-3.5 py-2">
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">
+              Add a location tag (optional)
+            </summary>
+            <div className="pb-2">
+              <CaptureFieldsForm
+                fields={zoneFields}
+                values={zoneValues}
+                onChange={(fieldId, value) =>
+                  setZoneValues((current) => ({ ...current, [fieldId]: value }))
+                }
+                idPrefix="zone"
+                compact
+              />
+            </div>
+          </details>
+        ) : null}
+
+        {zoneFields.length > 0 && inventoryWorkflow ? (
           <div className="mt-4 rounded-lg border border-border bg-surface p-3.5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold">
-                  {inventoryWorkflow ? "Current room" : keepWalking ? "Current zone" : "Applied to new photographs"}
-                </h3>
+                <h3 className="text-sm font-semibold">Current room</h3>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {inventoryWorkflow
-                    ? "Set the room before uploading. The first three room photographs become overviews; the rest become inventory items."
-                    : keepWalking
-                    ? "Set once, then keep shooting. Every photograph takes these values until you change them."
-                    : "These values are recorded against each photograph as it uploads."}
+                  Set the room before uploading. The first three room photographs become overviews; the rest become inventory items.
                 </p>
               </div>
               <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

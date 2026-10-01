@@ -182,26 +182,30 @@ function ComplianceRun() {
 
   const [pointOpen, setPointOpen] = useState(false);
   const [location, setLocation] = useState("");
-  const [unitRef, setUnitRef] = useState("");
-  const [unitType, setUnitType] = useState(definition.unitTypes[0] ?? "");
+  const [units, setUnits] = useState<{ ref: string; type: string }[]>([
+    { ref: "", type: definition.unitTypes[0] ?? "" },
+  ]);
+  const filledUnits = units.filter((unit) => unit.ref.trim());
 
   const addPoint = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      const point = await createPoint({
-        organisationId,
-        projectId: id,
-        checkType: type,
-        location: location.trim(),
-        unitRef: unitRef.trim(),
-        unitType: unitType || null,
-      });
-      await addPointToRun({ organisationId, runId, pointId: point.id });
+      for (const unit of filledUnits) {
+        const point = await createPoint({
+          organisationId,
+          projectId: id,
+          checkType: type,
+          location: location.trim(),
+          unitRef: unit.ref.trim(),
+          unitType: unit.type || null,
+        });
+        await addPointToRun({ organisationId, runId, pointId: point.id });
+      }
     },
     onSuccess: () => {
       setPointOpen(false);
       setLocation("");
-      setUnitRef("");
+      setUnits([{ ref: "", type: definition.unitTypes[0] ?? "" }]);
       void refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -644,32 +648,71 @@ function ComplianceRun() {
                 placeholder="Level 2 core stair"
               />
             </div>
-            <div>
-              <Label htmlFor="point-ref">{definition.unitNoun} ID</Label>
-              <Input
-                id="point-ref"
-                value={unitRef}
-                onChange={(event) => setUnitRef(event.target.value)}
-                placeholder="EXT-014"
-              />
-            </div>
-            {definition.unitTypes.length > 0 ? (
-              <div>
-                <Label htmlFor="point-type">Type</Label>
-                <select
-                  id="point-type"
-                  value={unitType}
-                  onChange={(event) => setUnitType(event.target.value)}
-                  className="mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
-                >
-                  {definition.unitTypes.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium">
+                {definition.unitNoun}s at this location
+              </legend>
+              {units.map((unit, index) => (
+                <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2">
+                  <div>
+                    <Label htmlFor={`point-ref-${index}`}>{definition.unitNoun} ID</Label>
+                    <Input
+                      id={`point-ref-${index}`}
+                      value={unit.ref}
+                      onChange={(event) =>
+                        setUnits((all) =>
+                          all.map((u, i) => (i === index ? { ...u, ref: event.target.value } : u)),
+                        )
+                      }
+                      placeholder={`EXT-0${14 + index}`}
+                    />
+                  </div>
+                  {definition.unitTypes.length > 0 ? (
+                    <select
+                      aria-label={`Type for ${definition.unitNoun.toLowerCase()} ${index + 1}`}
+                      value={unit.type}
+                      onChange={(event) =>
+                        setUnits((all) =>
+                          all.map((u, i) => (i === index ? { ...u, type: event.target.value } : u)),
+                        )
+                      }
+                      className="min-h-11 rounded-md border border-border bg-background px-2 text-sm"
+                    >
+                      {definition.unitTypes.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span />
+                  )}
+                  {units.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      aria-label={`Remove ${definition.unitNoun.toLowerCase()} ${index + 1}`}
+                      onClick={() => setUnits((all) => all.filter((_, i) => i !== index))}
+                    >
+                      ✕
+                    </Button>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 w-full"
+                onClick={() =>
+                  setUnits((all) => [...all, { ref: "", type: definition.unitTypes[0] ?? "" }])
+                }
+              >
+                + Add another {definition.unitNoun.toLowerCase()} here
+              </Button>
+            </fieldset>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPointOpen(false)}>
@@ -677,9 +720,9 @@ function ComplianceRun() {
             </Button>
             <Button
               onClick={() => addPoint.mutate()}
-              disabled={addPoint.isPending || !location.trim() || !unitRef.trim()}
+              disabled={addPoint.isPending || !location.trim() || filledUnits.length === 0}
             >
-              Add
+              Add {filledUnits.length > 1 ? `${filledUnits.length}` : ""}
             </Button>
           </DialogFooter>
         </DialogContent>
