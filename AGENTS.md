@@ -17,3 +17,4 @@
 - Model no-AI report behavior as a frozen `manualOnly` survey-definition capability, and persist normalized vector photo markup separately from original image bytes so templates remain data-driven and issued evidence stays immutable.
 - Render `manualOnly` report output through its own two-items-per-A4-page presentation, showing only stable item reference and capture date/time, so other templates retain their established document layouts.
 - Distribute `manualOnly` reports as an explicitly sent issued PDF attachment, never as a recipient review page, so the delivered artifact is final and deliberate.
+- Brand `manualOnly` PDF and print output with the fixed instructBrain navy, white, and Laser Green identity rather than organisation accent overrides, while keeping customer identity secondary and readable.

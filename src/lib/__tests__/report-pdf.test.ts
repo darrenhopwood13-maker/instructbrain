@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
-import { buildReportPdf, pdfFilename, selectFindings } from "@/lib/report/pdf.server";
+import {
+  buildReportPdf,
+  MANUAL_REPORT_BRAND,
+  pdfFilename,
+  selectFindings,
+} from "@/lib/report/pdf.server";
 import type { DocFinding, ReportDocument } from "@/lib/report/document";
 import { NOT_ASSESSED_ID } from "@/lib/survey-types";
 import { buildCompliancePack, type PackData } from "@/lib/compliance/pack.server";
@@ -159,6 +164,14 @@ describe("report PDF", () => {
     );
     const pdf = await PDFDocument.load(built.bytes);
     expect(pdf.getPageCount()).toBe(4);
+    expect(pdf.getCreator()).toBe("instructBrain");
+    expect(MANUAL_REPORT_BRAND).toEqual({
+      accentHex: "#57FF00",
+      navyHex: "#24417B",
+      credit: "instructBrain · AN INSTRUCTSITE COMPANY",
+    });
+    expect(manualFindings.map((entry) => entry.ref)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(manualFindings.every((entry) => entry.findingText?.startsWith("Copy that must not be drawn"))).toBe(true);
   });
 
   it("uses the landscape room-schedule format for property inventory reports", async () => {
