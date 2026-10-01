@@ -15,6 +15,7 @@ import { BRAND_CREDIT } from "@/lib/brand";
 export type EmailTemplateName =
   | "INVITE"
   | "REPORT_SHARED"
+  | "MANUAL_REPORT_PDF"
   | "TRADE_EXTRACT"
   | "CLOSE_OUT_REQUEST";
 
@@ -62,6 +63,15 @@ export type ReportSharedPayload = {
   attachment?: EmailAttachment | null;
 };
 
+export type ManualReportPdfPayload = {
+  reportTitle: string;
+  projectName: string;
+  reference: string | null;
+  issueDate: string | null;
+  sentByName: string;
+  attachment: EmailAttachment;
+};
+
 
 export type TradeExtractPayload = {
   projectName: string;
@@ -89,6 +99,7 @@ export type CloseOutPayload = {
 export type EmailMessage =
   | { template: "INVITE"; data: InvitePayload }
   | { template: "REPORT_SHARED"; data: ReportSharedPayload }
+  | { template: "MANUAL_REPORT_PDF"; data: ManualReportPdfPayload }
   | { template: "TRADE_EXTRACT"; data: TradeExtractPayload }
   | { template: "CLOSE_OUT_REQUEST"; data: CloseOutPayload };
 
@@ -244,6 +255,8 @@ export function renderEmail(message: EmailMessage): RenderedEmail {
       return renderInvite(message.data);
     case "REPORT_SHARED":
       return renderReportShared(message.data);
+    case "MANUAL_REPORT_PDF":
+      return renderManualReportPdf(message.data);
     case "TRADE_EXTRACT":
       return renderTradeExtract(message.data);
     case "CLOSE_OUT_REQUEST":
@@ -309,6 +322,34 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
     expiry,
   ]);
   return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
+}
+
+function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
+  const subject = data.reference
+    ? `${data.reportTitle} (${data.reference}) — ${data.projectName}`
+    : `${data.reportTitle} — ${data.projectName}`;
+  const html = shell(subject, [
+    h1(data.reportTitle),
+    p(`${data.sentByName} has sent you the issued photographic report.`),
+    definitions([
+      ["Project", data.projectName],
+      ["Reference", data.reference ?? ""],
+      ["Issue date", data.issueDate ?? ""],
+    ]),
+    small("The complete issued report is attached as a PDF."),
+  ].join(""));
+  const text = textShell([
+    data.reportTitle,
+    "",
+    `${data.sentByName} has sent you the issued photographic report.`,
+    "",
+    `Project: ${data.projectName}`,
+    data.reference ? `Reference: ${data.reference}` : "",
+    data.issueDate ? `Issue date: ${data.issueDate}` : "",
+    "",
+    "The complete issued report is attached as a PDF.",
+  ]);
+  return { subject, html, text, attachments: [data.attachment] };
 }
 
 

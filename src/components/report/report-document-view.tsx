@@ -167,7 +167,9 @@ export function ReportDocumentView({
 }
 
 function ManualPhotoDocument({ document, print }: { document: ReportDocument; print: boolean }) {
-  const findings = [...document.findings].sort((a, b) => a.sequence - b.sequence);
+  // Both document loaders already sort by the linked photograph's reserved
+  // sequence. Do not replace that with finding creation order here.
+  const findings = document.findings;
   const pages: DocFinding[][] = [];
   for (let index = 0; index < findings.length; index += 2) pages.push(findings.slice(index, index + 2));
 
@@ -180,7 +182,9 @@ function ManualPhotoDocument({ document, print }: { document: ReportDocument; pr
           : undefined
       }
     >
-      <Cover document={document} />
+      <div className="manual-photo-cover">
+        <Cover document={document} />
+      </div>
       {pages.map((pageFindings, pageIndex) => (
         <section
           key={pageFindings[0]?.id ?? `manual-page-${pageIndex}`}

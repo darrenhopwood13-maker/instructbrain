@@ -31,6 +31,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { issueBlockers, type ReportDocument } from "@/lib/report/document";
 import { createShareLink, issueReport, reopenReport } from "@/lib/report/report-data";
 import { shareUrlForToken } from "@/lib/report/share-url";
@@ -45,6 +47,7 @@ import {
 } from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
 import { isManualOnly } from "@/lib/survey-types";
+import { sendManualReportPdf } from "@/lib/email/email.functions";
 import type { ResultView } from "@/lib/report/grouping";
 
 /** The report header has one issue action and one Share menu holding every way out. */
@@ -61,6 +64,9 @@ export function ReportActions({
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [summaryStarted, setSummaryStarted] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
   const buildPdf = useServerFn(downloadReportPdf);
@@ -166,6 +172,31 @@ export function ReportActions({
       }),
   });
 
+  const emailPdf = useMutation({
+    mutationFn: () =>
+      sendManualReportPdf({
+        data: {
+          reportId: document.report.id,
+          email: recipientEmail,
+          name: recipientName || null,
+        },
+      }),
+    onSuccess: (outcome) => {
+      if (!outcome.ok) {
+        toast.error("The PDF was not sent", { description: outcome.error ?? "Please try again." });
+        return;
+      }
+      setEmailOpen(false);
+      setRecipientName("");
+      setRecipientEmail("");
+      toast.success("PDF sent", { description: `Sent to ${recipientEmail}.` });
+    },
+    onError: (error) =>
+      toast.error("The PDF was not sent", {
+        description: error instanceof Error ? error.message : "Nothing was sent.",
+      }),
+  });
+
   const pdf = useMutation({
     mutationFn: async (mode: "download" | "share") => {
       const result = await buildPdf({ data: { reportId: document.report.id, view: resultView } });
@@ -226,7 +257,7 @@ export function ReportActions({
               type="button"
               variant="quiet"
               className="min-h-11 w-full sm:w-auto"
-              disabled={pdf.isPending || link.isPending}
+              disabled={pdf.isPending || link.isPending || emailPdf.isPending}
             >
               {pdf.isPending || link.isPending ? (
                 <Loader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -247,10 +278,21 @@ export function ReportActions({
                 Preview report
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="min-h-11" onSelect={() => link.mutate()}>
-              <Link2 aria-hidden="true" className="size-4" />
-              Create link
-            </DropdownMenuItem>
+            {isManualOnly(document.snapshot) ? (
+              <DropdownMenuItem
+                className="min-h-11"
+                disabled={!issued}
+                onSelect={() => setEmailOpen(true)}
+              >
+                <Send aria-hidden="true" className="size-4" />
+                {issued ? "Email PDF" : "Issue before emailing"}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem className="min-h-11" onSelect={() => link.mutate()}>
+                <Link2 aria-hidden="true" className="size-4" />
+                Create link
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
               <Download aria-hidden="true" className="size-4" />
               Download report
@@ -279,6 +321,49 @@ export function ReportActions({
         pending={issue.isPending}
         onIssue={() => issue.mutate()}
       />
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email issued PDF</DialogTitle>
+            <DialogDescription>
+              The recipient receives the issued report as a PDF attachment. Nothing is sent until you press Send PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="manual-pdf-recipient-name">Recipient name</Label>
+              <Input
+                id="manual-pdf-recipient-name"
+                value={recipientName}
+                onChange={(event) => setRecipientName(event.target.value)}
+                autoComplete="name"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="manual-pdf-recipient-email">Recipient email</Label>
+              <Input
+                id="manual-pdf-recipient-email"
+                type="email"
+                required
+                value={recipientEmail}
+                onChange={(event) => setRecipientEmail(event.target.value)}
+                autoComplete="email"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="quiet" onClick={() => setEmailOpen(false)}>Cancel</Button>
+            <Button
+              variant="brand"
+              disabled={emailPdf.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(recipientEmail.trim())}
+              onClick={() => emailPdf.mutate()}
+            >
+              {emailPdf.isPending ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Send aria-hidden="true" className="size-4" />}
+              Send PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

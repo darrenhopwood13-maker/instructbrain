@@ -97,6 +97,24 @@ export const sendReportShared = createServerFn({ method: "POST" })
     });
   });
 
+export const sendManualReportPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const value = (input ?? {}) as Record<string, unknown>;
+    return {
+      reportId: requiredString(value["reportId"], "report id"),
+      email: requiredEmail(value["email"]),
+      name: typeof value["name"] === "string" ? value["name"].trim() || null : null,
+    };
+  })
+  .handler(async ({ data, context }): Promise<SendOutcome> => {
+    const { sendManualReportPdfEmail } = await import("@/lib/email/email.server");
+    return sendManualReportPdfEmail(context.supabase as never, data, {
+      id: context.userId,
+      claims: context.claims as never,
+    });
+  });
+
 export const sendTradeExtract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {

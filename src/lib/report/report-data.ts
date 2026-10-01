@@ -155,6 +155,8 @@ export const reportDocumentQuery = (reportId: string) =>
         sequence: photo.sequence,
         filename: photo.original_filename ?? null,
         capturedAt: photo.captured_at ?? null,
+        storagePath: photo.storage_path ?? null,
+        thumbnailPath: photo.thumbnail_path ?? null,
         url: urls.get(photo.storage_path) ?? null,
         thumbUrl:
           (photo.thumbnail_path ? urls.get(photo.thumbnail_path) : null) ??

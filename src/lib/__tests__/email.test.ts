@@ -132,13 +132,16 @@ describe("no automatic sending", () => {
     for (const path of [
       "src/lib/report/report-data.ts",
       "src/lib/report/document.ts",
-      "src/components/report/report-actions.tsx",
     ]) {
       const source = read(path);
       expect(source).not.toContain("email.functions");
       expect(source).not.toContain("email.server");
       expect(source).not.toContain("sendRenderedEmail");
     }
+    const actions = read("src/components/report/report-actions.tsx");
+    expect(actions).not.toContain("email.server");
+    expect(actions).not.toContain("sendRenderedEmail");
+    expect(actions).toContain("onClick={() => emailPdf.mutate()}");
   });
 
   it("keeps the provider transport server-only", () => {
@@ -146,5 +149,26 @@ describe("no automatic sending", () => {
     expect(transport).toContain("process.env");
     // The key is only ever read on the server, behind a .server module.
     expect(read("src/lib/email/templates.ts")).not.toContain("RESEND_API_KEY");
+  });
+});
+
+describe("manual photographic PDF email", () => {
+  it("attaches the issued PDF without a browser review link", () => {
+    const attachment = { filename: "PHOTO-001.pdf", content: "JVBERi0=", contentType: "application/pdf" };
+    const rendered = renderEmail({
+      template: "MANUAL_REPORT_PDF",
+      data: {
+        reportTitle: "Photographic report",
+        projectName: "Crowndean House",
+        reference: "PHOTO-001",
+        issueDate: "1 October 2026",
+        sentByName: "A. Surveyor",
+        attachment,
+      },
+    });
+    expect(rendered.attachments).toEqual([attachment]);
+    expect(rendered.html).not.toContain("Open the report");
+    expect(rendered.html).not.toContain("/shared/");
+    expect(rendered.text).toContain("attached as a PDF");
   });
 });

@@ -26,6 +26,8 @@ export type DocPhoto = {
   sequence: number;
   filename: string | null;
   capturedAt: string | null;
+  storagePath?: string | null;
+  thumbnailPath?: string | null;
   url: string | null;
   thumbUrl: string | null;
   captureFields: Record<string, string>;
