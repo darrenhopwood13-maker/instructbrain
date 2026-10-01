@@ -10,6 +10,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadReportDocument } from "@/lib/report/document.server";
 import { buildReportPdf, type BuildPdfOptions } from "@/lib/report/pdf.server";
 import type { EmailAttachment } from "@/lib/email/templates";
+import type { ReportDocument } from "@/lib/report/document";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -49,4 +51,68 @@ export async function buildEmailPdf(
     content: toBase64(built.bytes),
     contentType: "application/pdf",
   };
+}
+
+export async function buildIssuedEmailPdf(
+  db: Db,
+  reportId: string,
+  options: BuildPdfOptions,
+): Promise<EmailAttachment | null> {
+  const { data: report } = await db
+    .from("reports")
+    .select("current_version, status")
+    .eq("id", reportId)
+    .single();
+  const current = report as { current_version?: number; status?: string } | null;
+  if (!current || current.status !== "issued" || !current.current_version) {
+    throw new Error("Issue this report before emailing its PDF.");
+  }
+  const { data: version } = await db
+    .from("report_versions")
+    .select("document")
+    .eq("report_id", reportId)
+    .eq("version", current.current_version)
+    .single();
+  const snapshot = (version as { document?: ReportDocument } | null)?.document;
+  if (!snapshot) throw new Error("The issued report copy could not be read, so nothing was sent.");
+
+  const paths = snapshot.photos.flatMap((photo) =>
+    [photo.storagePath, photo.thumbnailPath].filter((path): path is string => !!path),
+  );
+  const signed = new Map<string, string>();
+  if (paths.length > 0) {
+    const { data } = await db.storage.from(PHOTO_BUCKET).createSignedUrls([...new Set(paths)], 900);
+    for (const entry of data ?? []) {
+      if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
+    }
+  }
+  const photos = snapshot.photos.map((photo) => ({
+    ...photo,
+    url: photo.storagePath ? (signed.get(photo.storagePath) ?? null) : photo.url,
+    thumbUrl: photo.thumbnailPath
+      ? (signed.get(photo.thumbnailPath) ?? signed.get(photo.storagePath ?? "") ?? null)
+      : photo.storagePath
+        ? (signed.get(photo.storagePath) ?? null)
+        : photo.thumbUrl,
+  }));
+  const byId = new Map(photos.map((photo) => [photo.id, photo]));
+  const issued: ReportDocument = {
+    ...snapshot,
+    photos,
+    findings: snapshot.findings.map((finding) => ({
+      ...finding,
+      photos: finding.photos.flatMap((linked) => {
+        const photo = byId.get(linked.photo.id);
+        return photo ? [{ ...linked, photo }] : [];
+      }),
+    })),
+  };
+  const { documentForOutput } = await import("@/lib/i18n/report-translation.server");
+  const output = await documentForOutput(db, issued);
+  let built = await buildReportPdf(output, options);
+  if (built.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+    built = await buildReportPdf(output, { ...options, includePhotos: false });
+  }
+  if (built.bytes.byteLength > MAX_ATTACHMENT_BYTES) return null;
+  return { filename: built.filename, content: toBase64(built.bytes), contentType: "application/pdf" };
 }

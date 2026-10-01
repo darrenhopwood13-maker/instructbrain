@@ -363,6 +363,7 @@ describe("target dates", () => {
 const SEND_FUNCTIONS = [
   "sendInviteEmail",
   "sendReportSharedEmail",
+  "sendManualReportPdfEmail",
   "sendTradeExtractEmail",
   "sendCloseOutRequestEmail",
   "sendTestEmail",

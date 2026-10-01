@@ -141,6 +141,8 @@ export async function loadReportDocument(
     sequence: photo["sequence"] as number,
     filename: (photo["original_filename"] as string | null) ?? null,
     capturedAt: (photo["captured_at"] as string | null) ?? null,
+    storagePath: (photo["storage_path"] as string | null) ?? null,
+    thumbnailPath: (photo["thumbnail_path"] as string | null) ?? null,
     url: urls.get(photo["storage_path"] as string) ?? null,
     thumbUrl:
       (photo["thumbnail_path"] ? urls.get(photo["thumbnail_path"] as string) : null) ??

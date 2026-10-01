@@ -328,8 +328,8 @@ export async function sendReportSharedEmail(
     throw new Error("That share link has been revoked. Create a new link before sending.");
   }
 
-  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
-  const attachment = await buildEmailPdf(db, input.reportId, { variant: "full" });
+  const { buildIssuedEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildIssuedEmailPdf(db, input.reportId, { variant: "full" });
 
   const message: EmailMessage = {
     template: "REPORT_SHARED",
