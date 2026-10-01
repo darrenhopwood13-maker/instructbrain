@@ -41,6 +41,7 @@ import { Route as AuthenticatedProjectsIdDirectoryRouteImport } from './routes/_
 import { Route as AuthenticatedReportsIdIndexRouteImport } from './routes/_authenticated/reports.$id.index'
 import { Route as AuthenticatedReportsIdDistributeRouteImport } from './routes/_authenticated/reports.$id.distribute'
 import { Route as AuthenticatedReportsIdPrintRouteImport } from './routes/_authenticated/reports.$id.print'
+import { Route as ApiPublicSharedReportPdfTokenRouteImport } from './routes/api/public/shared-report-pdf.$token'
 import { Route as ApiPublicSharedReportTokenRouteImport } from './routes/api/public/shared-report.$token'
 import { Route as ApiPublicTradeAccessTokenRouteImport } from './routes/api/public/trade-access.$token'
 import { Route as AuthenticatedProjectsIdComplianceIndexRouteImport } from './routes/_authenticated/projects.$id.compliance.index'
@@ -218,6 +219,12 @@ const AuthenticatedReportsIdPrintRoute =
     path: '/print',
     getParentRoute: () => AuthenticatedReportsIdRoute,
   } as any)
+const ApiPublicSharedReportPdfTokenRoute =
+  ApiPublicSharedReportPdfTokenRouteImport.update({
+    id: '/api/public/shared-report-pdf/$token',
+    path: '/api/public/shared-report-pdf/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSharedReportTokenRoute =
   ApiPublicSharedReportTokenRouteImport.update({
     id: '/api/public/shared-report/$token',
@@ -279,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report-pdf/$token': typeof ApiPublicSharedReportPdfTokenRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
@@ -314,6 +322,7 @@ export interface FileRoutesByTo {
   '/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report-pdf/$token': typeof ApiPublicSharedReportPdfTokenRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/projects/$id': typeof AuthenticatedProjectsIdIndexRoute
@@ -354,6 +363,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id/directory': typeof AuthenticatedProjectsIdDirectoryRoute
   '/_authenticated/reports/$id/distribute': typeof AuthenticatedReportsIdDistributeRoute
   '/_authenticated/reports/$id/print': typeof AuthenticatedReportsIdPrintRoute
+  '/api/public/shared-report-pdf/$token': typeof ApiPublicSharedReportPdfTokenRoute
   '/api/public/shared-report/$token': typeof ApiPublicSharedReportTokenRoute
   '/api/public/trade-access/$token': typeof ApiPublicTradeAccessTokenRoute
   '/_authenticated/projects/$id/': typeof AuthenticatedProjectsIdIndexRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/projects/$id/directory'
     | '/reports/$id/distribute'
     | '/reports/$id/print'
+    | '/api/public/shared-report-pdf/$token'
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id/'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/projects/$id/directory'
     | '/reports/$id/distribute'
     | '/reports/$id/print'
+    | '/api/public/shared-report-pdf/$token'
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/projects/$id'
@@ -468,6 +480,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id/directory'
     | '/_authenticated/reports/$id/distribute'
     | '/_authenticated/reports/$id/print'
+    | '/api/public/shared-report-pdf/$token'
     | '/api/public/shared-report/$token'
     | '/api/public/trade-access/$token'
     | '/_authenticated/projects/$id/'
@@ -491,6 +504,7 @@ export interface RootRouteChildren {
   SharedTokenRoute: typeof SharedTokenRoute
   TradeTokenRoute: typeof TradeTokenRoute
   ApiPublicResendWebhookRoute: typeof ApiPublicResendWebhookRoute
+  ApiPublicSharedReportPdfTokenRoute: typeof ApiPublicSharedReportPdfTokenRoute
   ApiPublicSharedReportTokenRoute: typeof ApiPublicSharedReportTokenRoute
   ApiPublicTradeAccessTokenRoute: typeof ApiPublicTradeAccessTokenRoute
 }
@@ -721,6 +735,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsIdPrintRouteImport
       parentRoute: typeof AuthenticatedReportsIdRoute
     }
+    '/api/public/shared-report-pdf/$token': {
+      id: '/api/public/shared-report-pdf/$token'
+      path: '/api/public/shared-report-pdf/$token'
+      fullPath: '/api/public/shared-report-pdf/$token'
+      preLoaderRoute: typeof ApiPublicSharedReportPdfTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/shared-report/$token': {
       id: '/api/public/shared-report/$token'
       path: '/api/public/shared-report/$token'
@@ -869,6 +890,7 @@ const rootRouteChildren: RootRouteChildren = {
   SharedTokenRoute: SharedTokenRoute,
   TradeTokenRoute: TradeTokenRoute,
   ApiPublicResendWebhookRoute: ApiPublicResendWebhookRoute,
+  ApiPublicSharedReportPdfTokenRoute: ApiPublicSharedReportPdfTokenRoute,
   ApiPublicSharedReportTokenRoute: ApiPublicSharedReportTokenRoute,
   ApiPublicTradeAccessTokenRoute: ApiPublicTradeAccessTokenRoute,
 }
