@@ -14,6 +14,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorState } from "@/components/query-states";
 import { createProject } from "@/lib/data";
+import { uploadProjectCover } from "@/lib/project-cover";
+
+async function toCoverJpeg(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Photo could not be read."))), "image/jpeg", 0.85),
+  );
+}
 
 /**
  * Creating a project writes to the signed-in user's organisation. A rejected
@@ -37,11 +50,12 @@ export function CreateProjectDialog({
   const [clientName, setClientName] = useState("");
   const [address, setAddress] = useState("");
   const [principalContractor, setPrincipalContractor] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      return createProject({
+      const projectId = await createProject({
         organisationId,
         name,
         reference,
@@ -49,6 +63,14 @@ export function CreateProjectDialog({
         address,
         principalContractor,
       });
+      if (coverFile) {
+        try {
+          await uploadProjectCover(organisationId, projectId, await toCoverJpeg(coverFile));
+        } catch {
+          toast.error("Project created, but the project photo could not be uploaded.");
+        }
+      }
+      return projectId;
     },
     onSuccess: async (projectId) => {
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -59,6 +81,7 @@ export function CreateProjectDialog({
       setClientName("");
       setAddress("");
       setPrincipalContractor("");
+      setCoverFile(null);
       onCreated?.(projectId);
     },
   });
@@ -96,6 +119,21 @@ export function CreateProjectDialog({
             />
             <p id="project-name-help" className="text-xs text-muted-foreground">
               Required. Appears on the cover of every report raised against this project.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-cover">Project photo (optional)</Label>
+            <Input
+              id="project-cover"
+              type="file"
+              accept="image/*"
+              className="min-h-11"
+              onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
+              aria-describedby="project-cover-help"
+            />
+            <p id="project-cover-help" className="text-xs text-muted-foreground">
+              Used as the title page photo on every report for this project.
             </p>
           </div>
 

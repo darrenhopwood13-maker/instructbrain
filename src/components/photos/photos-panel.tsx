@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import {
   ContinuousCamera,
-  analyseWhileShooting,
   canUseInAppCamera,
 } from "@/components/photos/continuous-camera";
 import { useQueryClient } from "@tanstack/react-query";
@@ -351,7 +350,7 @@ export function PhotosPanel({
                   .then(() => queryClient.invalidateQueries())
                   .catch(() => undefined);
               }
-              if (!inventoryWorkflow && !manual && analyseWhileShooting() && uploaded?.photo?.id) {
+              if (!inventoryWorkflow && !manual && uploaded?.photo?.id) {
                 void analyseOnArrival(uploaded.photo.id);
               }
               return uploaded;
@@ -368,7 +367,7 @@ export function PhotosPanel({
                 ?.countsAsCover === true
             );
           });
-        if (!coverPhotoId && firstCover) {
+        if (inventoryWorkflow && !coverPhotoId && firstCover) {
           await setCoverPhoto(reportId, firstCover.id);
           setCoverPhotoId(firstCover.id);
         }
@@ -861,18 +860,6 @@ export function PhotosPanel({
             </div>
           </div>
 
-          {!inventoryWorkflow ? (
-            <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
-              <span className="font-semibold">Title page photograph: </span>
-              {coverPhotoId
-                ? `#${photos.find((photo) => photo.id === coverPhotoId)?.sequence ?? "—"} — ${
-                    photos.find((photo) => photo.id === coverPhotoId)?.original_filename ??
-                    "chosen photograph"
-                  }`
-                : "the first photograph will be used. Choose any photograph below instead."}
-            </p>
-          ) : null}
-
           {inventoryWorkflow ? (
             <h3 className="mt-4 text-sm font-semibold">Not in a room · {groupedForGrid.count}</h3>
           ) : null}
@@ -890,19 +877,6 @@ export function PhotosPanel({
             selected={selected}
             onToggle={toggle}
             coverPhotoId={coverPhotoId}
-            {...(!inventoryWorkflow ? { onSetCover: (photo: PhotoRow) => {
-              void (async () => {
-                try {
-                  await setCoverPhoto(reportId, photo.id);
-                  setCoverPhotoId(photo.id);
-                  toast.success(`Photograph #${photo.sequence} is now the title page.`);
-                } catch (error) {
-                  toast.error(
-                    error instanceof Error ? error.message : "The title page could not be changed.",
-                  );
-                }
-              })();
-            } } : {})}
             snapshot={snapshot}
             {...(workflow ? { onSetRole: setPhotoRole } : {})}
             {...(isManualOnly(snapshot) ? { openLabel: "Describe & mark up" } : {})}
@@ -1084,24 +1058,6 @@ export function PhotosPanel({
             idPrefix="edit"
           />
           <DialogFooter>
-            <Button
-              variant="quiet"
-              disabled={!editing || editing.id === coverPhotoId}
-              onClick={() => {
-                if (!editing) return;
-                void (async () => {
-                  try {
-                    await setCoverPhoto(reportId, editing.id);
-                    setCoverPhotoId(editing.id);
-                    toast.success("Photograph set as the report cover.");
-                  } catch (error) {
-                    toast.error(error instanceof Error ? error.message : "The cover could not be set.");
-                  }
-                })();
-              }}
-            >
-              {editing && editing.id === coverPhotoId ? "Cover photo" : "Use as cover"}
-            </Button>
             <Button variant="quiet" onClick={() => setEditing(null)}>
               Cancel
             </Button>

@@ -1394,10 +1394,8 @@ export async function buildReportPdf(
   }
 
   if (manualFull) {
-    const cover =
-      document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
-      document.photos[0] ??
-      null;
+    const coverUrl = document.project?.coverUrl ?? null;
+    const cover = coverUrl ? { id: "project-cover", url: coverUrl, thumbUrl: null } : null;
     if (cover && fetcher) {
       const image = await embedPhoto(writer, fetcher, cover);
       if (image) {
