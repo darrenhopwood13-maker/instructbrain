@@ -12,7 +12,7 @@ import {
   tradesOf,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
-import { briefPromptSection, type ReportBrief } from "@/lib/report/brief";
+import { briefPromptSection, toneById, type ReportBrief } from "@/lib/report/brief";
 import type { BriefFindingsRule } from "@/lib/ai/observation";
 
 /**
@@ -72,6 +72,11 @@ export function buildSystemPrompt(
   const sections: Array<string | null> = [
     // The house voice is DATA on the definition. Nothing here supplies it.
     houseVoiceOf(snapshot),
+    // The chosen tone governs wording. Stated up front so the house voice
+    // does not flatten it; it never touches status, severity or abstention.
+    brief
+      ? `Writing tone for this report: ${toneById(brief.tone).label}. Where the voice above conflicts with this tone on wording, register or sentence style, follow this tone. ${toneById(brief.tone).instruction} Every factual, status, severity and abstention rule below still applies in full.`
+      : null,
     `Survey type: ${definitionLabel(snapshot)}.`,
     list("Survey-specific guidance", orderedGuidance(snapshot).map((entry) => `${entry.label}: ${entry.text}`)),
     ...UNIVERSAL_RULES,
