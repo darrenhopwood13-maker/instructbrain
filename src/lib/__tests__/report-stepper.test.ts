@@ -5,8 +5,8 @@ describe("report step derivation", () => {
   it("opens on photos with no findings", () => {
     expect(defaultStep({ hasFindings: false, unresolved: 0, issued: false })).toBe("photos");
   });
-  it("opens on review while anything is unresolved", () => {
-    expect(defaultStep({ hasFindings: true, unresolved: 3, issued: false })).toBe("review");
+  it("opens on photos & findings while anything is unresolved", () => {
+    expect(defaultStep({ hasFindings: true, unresolved: 3, issued: false })).toBe("photos");
   });
   it("opens on issue once resolved, or when issued", () => {
     expect(defaultStep({ hasFindings: true, unresolved: 0, issued: false })).toBe("output");

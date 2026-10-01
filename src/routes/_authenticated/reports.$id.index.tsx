@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
+import { toast } from "sonner";
 import { ReportStepper, defaultStep, readyToIssue, type ReportStep } from "@/components/report/report-stepper";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
@@ -209,13 +210,14 @@ function ReportWorkspace() {
   });
   // While a run is going, the step never re-derives itself: the first results
   // arriving must not move the screen away and cut the run short.
-  const step: ReportStep =
+  const rawStep: ReportStep =
     tab ?? (analysisStatus.running ? "photos" : loadedEnough ? defaultStep(stepState) : "photos");
+  // Two steps: photos and findings share one screen, then the PDF.
+  const step: ReportStep = rawStep === "output" ? "output" : "photos";
   const ready = readyToIssue(stepState);
 
   const goTo = useCallback(
     (next: ReportStep) => {
-      setAutoAdvance(false);
       void navigate({ search: (current) => ({ ...current, tab: next }) });
       if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     },
@@ -223,8 +225,11 @@ function ReportWorkspace() {
   );
 
   const onRunComplete = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["findings", id] }).then(() => goTo("review"));
-  }, [queryClient, id, goTo]);
+    void queryClient.invalidateQueries({ queryKey: ["findings", id] }).then(() => {
+      if (typeof window !== "undefined")
+        window.document.getElementById("report-findings")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [queryClient, id]);
 
   // The photos step's one next action, from the photos and the analysis state.
   const [photoStatus, setPhotoStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
@@ -248,20 +253,7 @@ function ReportWorkspace() {
     });
   }, [analyse, nextAction.kind, analysisStatus.pending, navigate]);
 
-  // Once everything on the review step becomes resolved, offer to move on and
-  // go there after a short moment unless the person chooses to stay.
-  const [autoAdvance, setAutoAdvance] = useState(false);
-  const wasReady = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (!loadedEnough) return;
-    if (wasReady.current === false && ready && step === "review") setAutoAdvance(true);
-    wasReady.current = ready;
-  }, [ready, step, loadedEnough]);
-  useEffect(() => {
-    if (!autoAdvance) return;
-    const timer = window.setTimeout(() => goTo("output"), 3000);
-    return () => window.clearTimeout(timer);
-  }, [autoAdvance, goTo]);
+  void ready;
 
   if (query.isPending) {
     return (
@@ -394,14 +386,17 @@ function ReportWorkspace() {
                 <Button
                   type="button"
                   className="min-h-12 w-full whitespace-normal"
-                  disabled={!nextAction.enabled}
-                  onClick={() =>
-                    nextAction.kind === "review"
-                      ? goTo("review")
-                      : setConfirmSignal((value) => value + 1)
-                  }
+                  aria-describedby={nextAction.enabled ? undefined : "next-action-hint"}
+                  onClick={() => {
+                    if (nextAction.kind === "analyse") setConfirmSignal((value) => value + 1);
+                    else if (nextAction.kind === "review" || nextAction.kind === "nothing")
+                      goTo("output");
+                    else toast.info(nextAction.label);
+                  }}
                 >
-                  {nextAction.label}
+                  {nextAction.kind === "review" || nextAction.kind === "nothing"
+                    ? "Get PDF →"
+                    : nextAction.label}
                 </Button>
               )
             }
@@ -409,47 +404,9 @@ function ReportWorkspace() {
         </div>
       ) : null}
 
-      {/* Always mounted, so moving between steps never stops a run. */}
-      {!isManualOnly(report.surveyTypeSnapshot) ? (
-        <div className={step === "photos" ? "mt-8 pb-40 sm:pb-0" : "hidden"}>
-          <AnalysisPanel
-          reportId={report.id}
-          snapshot={report.surveyTypeSnapshot}
-          onRunComplete={onRunComplete}
-          confirmSignal={confirmSignal}
-          onStatus={setAnalysisStatus}
-          photoCount={photoStatus.photoCount}
-          />
-        </div>
-      ) : null}
-
-      {!isManualOnly(report.surveyTypeSnapshot) && step !== "photos" && !locked && (analysisStatus.running || (analysisStatus.pending ?? 0) > 0) ? (
-        <div
-          role="status"
-          className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <p className="text-sm">
-            {analysisStatus.running
-              ? `Analysing ${analysisStatus.completed} of ${analysisStatus.total} photos…`
-              : `${analysisStatus.pending} photo${analysisStatus.pending === 1 ? "" : "s"} not analysed yet.`}
-          </p>
-          {!analysisStatus.running ? (
-            <Button
-              type="button"
-              className="min-h-11"
-              onClick={() => {
-                goTo("photos");
-                setConfirmSignal((value) => value + 1);
-              }}
-            >
-              Analyse remaining
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {step === "review" ? (
-        <div className="mt-8">
+      {step === "photos" && findingList.length > 0 ? (
+        <div id="report-findings" className="mt-8 scroll-mt-24 pb-40 sm:pb-0">
+          <h2 className="editorial-title mb-4 text-lg font-semibold">Findings</h2>
           {isManualOnly(report.surveyTypeSnapshot) && !findings.isPending && !findings.isError ? (
             <ManualReviewList
               reportId={report.id}
@@ -489,6 +446,45 @@ function ReportWorkspace() {
               onAssignTrade={onAssignTrade}
             />
           )}
+        </div>
+      ) : null}
+
+      {/* Always mounted, so moving between steps never stops a run. */}
+      {!isManualOnly(report.surveyTypeSnapshot) ? (
+        <div className={step === "photos" ? "mt-8 pb-40 sm:pb-0" : "hidden"}>
+          <AnalysisPanel
+          reportId={report.id}
+          snapshot={report.surveyTypeSnapshot}
+          onRunComplete={onRunComplete}
+          confirmSignal={confirmSignal}
+          onStatus={setAnalysisStatus}
+          photoCount={photoStatus.photoCount}
+          />
+        </div>
+      ) : null}
+
+      {!isManualOnly(report.surveyTypeSnapshot) && step !== "photos" && !locked && (analysisStatus.running || (analysisStatus.pending ?? 0) > 0) ? (
+        <div
+          role="status"
+          className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-sm">
+            {analysisStatus.running
+              ? `Analysing ${analysisStatus.completed} of ${analysisStatus.total} photos…`
+              : `${analysisStatus.pending} photo${analysisStatus.pending === 1 ? "" : "s"} not analysed yet.`}
+          </p>
+          {!analysisStatus.running ? (
+            <Button
+              type="button"
+              className="min-h-11"
+              onClick={() => {
+                goTo("photos");
+                setConfirmSignal((value) => value + 1);
+              }}
+            >
+              Analyse remaining
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -613,49 +609,6 @@ function ReportWorkspace() {
         </div>
       ) : null}
 
-      {/* Thumb-zone bar on review. The photos step carries its next action
-          inside the photos bar, next to Take photo / Add photos. */}
-      {!locked && step === "review" ? (
-        <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 mt-8 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:bottom-4">
-          <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <p className="text-sm text-muted-foreground" aria-live="polite">
-                {findingList.length - toConfirm} of {findingList.length} confirmed
-              </p>
-              <Button
-                type="button"
-                className="min-h-11 w-full sm:w-auto"
-                variant={ready ? "default" : "quiet"}
-                onClick={() => goTo("output")}
-              >
-                Continue to issue
-              </Button>
-            </div>
-        </div>
-      ) : null}
-
-      {autoAdvance ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-4 bottom-[calc(10rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:bottom-24"
-        >
-          <p className="font-semibold">All findings confirmed</p>
-          <p className="mt-1 text-sm text-muted-foreground">Taking you to Issue…</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <Button type="button" className="min-h-11 w-full" onClick={() => goTo("output")}>
-              Continue to issue
-            </Button>
-            <Button
-              type="button"
-              variant="quiet"
-              className="min-h-11 w-full sm:w-auto"
-              onClick={() => setAutoAdvance(false)}
-            >
-              Stay here
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </AppShell>
   );
 }
