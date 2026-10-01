@@ -182,26 +182,30 @@ function ComplianceRun() {
 
   const [pointOpen, setPointOpen] = useState(false);
   const [location, setLocation] = useState("");
-  const [unitRef, setUnitRef] = useState("");
-  const [unitType, setUnitType] = useState(definition.unitTypes[0] ?? "");
+  const [units, setUnits] = useState<{ ref: string; type: string }[]>([
+    { ref: "", type: definition.unitTypes[0] ?? "" },
+  ]);
+  const filledUnits = units.filter((unit) => unit.ref.trim());
 
   const addPoint = useMutation({
     mutationFn: async () => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
-      const point = await createPoint({
-        organisationId,
-        projectId: id,
-        checkType: type,
-        location: location.trim(),
-        unitRef: unitRef.trim(),
-        unitType: unitType || null,
-      });
-      await addPointToRun({ organisationId, runId, pointId: point.id });
+      for (const unit of filledUnits) {
+        const point = await createPoint({
+          organisationId,
+          projectId: id,
+          checkType: type,
+          location: location.trim(),
+          unitRef: unit.ref.trim(),
+          unitType: unit.type || null,
+        });
+        await addPointToRun({ organisationId, runId, pointId: point.id });
+      }
     },
     onSuccess: () => {
       setPointOpen(false);
       setLocation("");
-      setUnitRef("");
+      setUnits([{ ref: "", type: definition.unitTypes[0] ?? "" }]);
       void refresh();
     },
     onError: (error: Error) => toast.error(error.message),
