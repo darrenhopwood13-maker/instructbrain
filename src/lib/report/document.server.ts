@@ -135,7 +135,7 @@ export async function loadReportDocument(
     ...photos.map((photo) => photo["storage_path"] as string),
     ...photos.map((photo) => photo["thumbnail_path"] as string),
     ...(logoPath ? [logoPath] : []),
-    ...(project ? [projectCoverPath(project["organisation_id"] ?? report["organisation_id"], project["id"])] : []),
+    ...(project ? [projectCoverPath(report["organisation_id"], project["id"])] : []),
   ]);
 
   const docPhotos: DocPhoto[] = photos.map((photo) => ({
@@ -229,7 +229,7 @@ export async function loadReportDocument(
           address: project["address"] ?? null,
           principalContractor: project["principal_contractor"] ?? null,
           coverUrl:
-            urls.get(projectCoverPath(project["organisation_id"] ?? report["organisation_id"], project["id"])) ?? null,
+            urls.get(projectCoverPath(report["organisation_id"], project["id"])) ?? null,
         }
       : null,
     organisation: organisation

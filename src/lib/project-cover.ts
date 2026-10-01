@@ -1,14 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 
-/**
- * A project's cover photograph lives at a fixed storage path inside the
- * organisation's folder, so no extra column is needed and existing storage
- * policies (organisation-scoped by first folder) apply unchanged.
- */
-export function projectCoverPath(organisationId: string, projectId: string): string {
-  return `${organisationId}/projects/${projectId}/cover.jpg`;
-}
+import { projectCoverPath } from "@/lib/project-cover-path";
+
+export { projectCoverPath };
 
 export async function uploadProjectCover(
   organisationId: string,

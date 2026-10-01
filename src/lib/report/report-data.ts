@@ -1,3 +1,4 @@
+import { projectCoverUrl } from "@/lib/project-cover";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DataError, coerceSnapshot } from "@/lib/data";
@@ -236,6 +237,7 @@ export const reportDocumentQuery = (reportId: string) =>
               clientName: project.client_name ?? null,
               address: project.address ?? null,
               principalContractor: project.principal_contractor ?? null,
+              coverUrl: await projectCoverUrl(report.organisation_id, project.id),
             }
           : null,
         organisation: organisation

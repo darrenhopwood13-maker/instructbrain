@@ -733,10 +733,8 @@ function Section({
 /* ------------------------------------------------------------------ */
 
 function Cover({ document, manualBrand = true }: { document: ReportDocument; manualBrand?: boolean }) {
-  const cover =
-    document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
-    document.photos[0] ??
-    null;
+  // The title page photo is the project's photo; standalone reports have none.
+  const coverUrl = document.project?.coverUrl ?? null;
 
   return (
     <section aria-label="Cover" className="break-after-page">
@@ -800,9 +798,9 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
         </p>
       ) : null}
 
-      {cover ? (
+      {coverUrl ? (
         <img
-          src={cover.url ?? cover.thumbUrl ?? ""}
+          src={coverUrl}
           alt={`Cover photograph — ${document.project?.name ?? document.report.title}`}
           className="mt-8 max-h-96 w-full rounded-lg border border-border object-cover"
         />
