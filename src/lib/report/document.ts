@@ -101,6 +101,8 @@ export type ReportDocument = {
     clientName: string | null;
     address: string | null;
     principalContractor: string | null;
+    /** Project cover photograph, used on the title page. Absent for standalone reports. */
+    coverUrl?: string | null;
   } | null;
   organisation: {
     id: string;

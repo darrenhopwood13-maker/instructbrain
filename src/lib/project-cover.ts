@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { PHOTO_BUCKET } from "@/lib/photos/constants";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 
 /**
  * A project's cover photograph lives at a fixed storage path inside the
