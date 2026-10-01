@@ -132,13 +132,16 @@ describe("no automatic sending", () => {
     for (const path of [
       "src/lib/report/report-data.ts",
       "src/lib/report/document.ts",
-      "src/components/report/report-actions.tsx",
     ]) {
       const source = read(path);
       expect(source).not.toContain("email.functions");
       expect(source).not.toContain("email.server");
       expect(source).not.toContain("sendRenderedEmail");
     }
+    const actions = read("src/components/report/report-actions.tsx");
+    expect(actions).not.toContain("email.server");
+    expect(actions).not.toContain("sendRenderedEmail");
+    expect(actions).toContain("onClick={() => emailPdf.mutate()}");
   });
 
   it("keeps the provider transport server-only", () => {
