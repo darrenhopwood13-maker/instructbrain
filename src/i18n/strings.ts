@@ -12,6 +12,8 @@ export const STRINGS = {
   "nav.directory": "Directory",
   "nav.account": "Account",
   "nav.admin": "Admin",
+  "nav.sharePromo": "Share promo video",
+  "nav.sharePromoCopied": "Promo link copied",
   "action.signIn": "Sign in",
   "action.signOut": "Sign out",
   "action.newReport": "New report",

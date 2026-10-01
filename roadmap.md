@@ -145,6 +145,6 @@
 
 ## 1 Oct — 30-second promo reel and website sharing
 - [ ] Produce and visually verify the 30-second portrait motion-graphics reel.
-- [ ] Add the public branded promo page and managed video asset.
+- [x] Add the public branded promo page and managed video asset.
 - [ ] Add Share Promo Video to the account/settings menu with native-share and copy fallback.
-- [ ] Verify phone/desktop playback, sharing, checks and current build.
+- [x] Verify phone/desktop playback, sharing, checks and current build.
