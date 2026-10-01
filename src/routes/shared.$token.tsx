@@ -101,18 +101,18 @@ function SharedReport() {
   if (!query.data && (query.isPending || query.isError)) {
     // Branded wrapper for loading and dead links.
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-primary bg-blueprint px-4 text-primary-foreground">
-        <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-primary p-8 text-center shadow-lg">
+      <div style={{ backgroundImage: "var(--blueprint-grid)" }} className="flex min-h-dvh items-center justify-center bg-brand-blue px-4 text-white">
+        <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-brand-blue p-8 text-center shadow-lg">
           <Wordmark />
           {query.isPending ? (
-            <p className="mt-6 text-sm text-primary-foreground/80">Opening the shared report…</p>
+            <p className="mt-6 text-sm text-white/80">Opening the shared report…</p>
           ) : (
             <>
               <h1 className="mt-6 text-xl font-semibold">{problem.heading}</h1>
-              <p className="mt-2 text-sm text-primary-foreground/80">{problem.body}</p>
+              <p className="mt-2 text-sm text-white/80">{problem.body}</p>
             </>
           )}
-          <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-primary-foreground/60">{BRAND_CREDIT}</p>
+          <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60">{BRAND_CREDIT}</p>
         </div>
       </div>
     );
@@ -161,8 +161,8 @@ type PdfOnlyMeta = {
 function Wordmark() {
   return (
     <p className="font-[Audiowide] text-2xl" aria-label="instructBrain">
-      <span className="text-primary-foreground">instruct</span>
-      <span className="text-accent">Brain</span>
+      <span className="text-white">instruct</span>
+      <span className="text-brand-accent">Brain</span>
     </p>
   );
 }
@@ -170,16 +170,16 @@ function Wordmark() {
 function PdfLanding({ token, meta }: { token: string; meta: PdfOnlyMeta }) {
   const pdfUrl = `/api/public/shared-report-pdf/${token}`;
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-primary bg-blueprint px-4 py-10 text-primary-foreground">
-      <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-primary p-8 text-center shadow-lg">
+    <div style={{ backgroundImage: "var(--blueprint-grid)" }} className="flex min-h-dvh items-center justify-center bg-brand-blue px-4 py-10 text-white">
+      <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-brand-blue p-8 text-center shadow-lg">
         <Wordmark />
         {meta.organisationName ? (
-          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-brand-accent">
             {meta.organisationName}
           </p>
         ) : null}
         <h1 className="mt-2 text-2xl font-semibold">{meta.title}</h1>
-        <p className="mt-2 text-sm text-primary-foreground/80">
+        <p className="mt-2 text-sm text-white/80">
           {[
             meta.reference ? `Ref ${meta.reference}` : null,
             meta.issuedAt ? `Issued ${new Date(meta.issuedAt).toLocaleDateString("en-GB")}` : null,
@@ -201,10 +201,10 @@ function PdfLanding({ token, meta }: { token: string; meta: PdfOnlyMeta }) {
             </a>
           </Button>
         </div>
-        <p className="mt-6 text-xs text-primary-foreground/70">
+        <p className="mt-6 text-xs text-white/70">
           This is the finished, issued report. Save your own copy — this link may be withdrawn.
         </p>
-        <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-primary-foreground/60">{BRAND_CREDIT}</p>
+        <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60">{BRAND_CREDIT}</p>
       </div>
     </div>
   );
