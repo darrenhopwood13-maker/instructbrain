@@ -13,7 +13,7 @@ export type StepState = {
 export function defaultStep(state: StepState): ReportStep {
   if (state.issued) return "output";
   if (!state.hasFindings) return "photos";
-  return state.unresolved === 0 ? "output" : "review";
+  return state.unresolved === 0 ? "output" : "photos";
 }
 
 /** Whether the "all confirmed — continue to issue" prompt may show. */
@@ -22,14 +22,13 @@ export function readyToIssue(state: StepState): boolean {
 }
 
 const STEPS: { id: ReportStep; label: string }[] = [
-  { id: "photos", label: "Photos" },
-  { id: "review", label: "Review" },
-  { id: "output", label: "Issue" },
+  { id: "photos", label: "Photos & findings" },
+  { id: "output", label: "Get PDF" },
 ];
 
 /**
- * A progress indicator, not a set of tabs: it shows where you are, and a
- * finished step can be tapped to go back. The flow moves you on by itself.
+ * Two steps: work on photos and findings together, then get the PDF.
+ * Both steps are always tappable — nothing is greyed out.
  */
 export function ReportStepper({
   current,
@@ -40,10 +39,11 @@ export function ReportStepper({
   onSelect: (step: ReportStep) => void;
   reviewCount?: number;
 }) {
-  const currentIndex = STEPS.findIndex((step) => step.id === current);
+  // Review now lives on the same screen as photos.
+  const currentIndex = current === "output" ? 1 : 0;
   return (
     <nav aria-label="Report progress">
-      <ol className="grid grid-cols-3 gap-2">
+      <ol className="grid grid-cols-2 gap-2">
         {STEPS.map((step, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
@@ -57,9 +57,7 @@ export function ReportStepper({
                   "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border-b-2 px-2 text-sm font-medium transition-colors",
                   active
                     ? "border-accent text-foreground"
-                    : done
-                      ? "border-border text-foreground"
-                      : "border-border text-muted-foreground",
+                    : "border-border text-foreground",
                 )}
               >
                 {done ? (
@@ -68,7 +66,7 @@ export function ReportStepper({
                   <span aria-hidden="true">{index + 1}</span>
                 )}
                 <span className="truncate">{step.label}</span>
-                {step.id === "review" && reviewCount ? (
+                {step.id === "photos" && reviewCount ? (
                   <span className="rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
                     {reviewCount}
                     <span className="sr-only"> to confirm</span>
