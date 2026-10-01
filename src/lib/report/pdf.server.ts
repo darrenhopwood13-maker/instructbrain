@@ -1099,6 +1099,7 @@ async function buildInventoryReportPdf(
 
   const titlePhotos = inventoryTitlePhotos(document);
   const coverPage = writer.cursor.page;
+  drawManualBrandHeader(writer, null);
   const organisationName = document.organisation?.name ?? "instructBrain";
   let coverY = 430;
   coverY = drawCenteredText(coverPage, bold, organisationName.toUpperCase(), coverY, 27, LANDSCAPE_LETTER.width);
