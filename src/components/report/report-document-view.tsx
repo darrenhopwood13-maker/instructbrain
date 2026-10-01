@@ -178,7 +178,7 @@ function ManualPhotoDocument({ document, print }: { document: ReportDocument; pr
       className="report-document manual-photo-document space-y-10"
     >
       <div className="manual-photo-cover">
-        <Cover document={document} manualBrand />
+        <Cover document={document} />
       </div>
       {pages.map((pageFindings, pageIndex) => (
         <section
@@ -732,7 +732,7 @@ function Section({
 
 /* ------------------------------------------------------------------ */
 
-function Cover({ document, manualBrand = false }: { document: ReportDocument; manualBrand?: boolean }) {
+function Cover({ document, manualBrand = true }: { document: ReportDocument; manualBrand?: boolean }) {
   const cover =
     document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
     document.photos[0] ??

@@ -1326,11 +1326,7 @@ export async function buildReportPdf(
   doc.setCreator("instructBrain");
 
   /* Cover */
-  if (manualFull) {
-    drawManualBrandHeader(writer, document.organisation?.name ?? null);
-  } else {
-    eyebrow(writer, document.organisation?.name ?? "instructBrain");
-  }
+  drawManualBrandHeader(writer, document.organisation?.name ?? null);
   drawText(writer, document.report.title, {
     size: manualFull ? 26 : 24,
     bold: true,
