@@ -58,6 +58,21 @@ export async function buildIssuedEmailPdf(
   reportId: string,
   options: BuildPdfOptions,
 ): Promise<EmailAttachment | null> {
+  const built = await buildIssuedPdfBytes(db, reportId, options);
+  if (!built) return null;
+  return { filename: built.filename, content: toBase64(built.bytes), contentType: "application/pdf" };
+}
+
+/**
+ * The frozen issued PDF of a report — shared by the email attachment and the
+ * PDF-only share link. Confidential items never leave the server.
+ */
+export async function buildIssuedPdfBytes(
+  db: Db,
+  reportId: string,
+  options: BuildPdfOptions,
+  maxBytes: number = MAX_ATTACHMENT_BYTES,
+): Promise<{ filename: string; bytes: Uint8Array } | null> {
   const { data: report } = await db
     .from("reports")
     .select("current_version, status")
@@ -99,20 +114,22 @@ export async function buildIssuedEmailPdf(
   const issued: ReportDocument = {
     ...snapshot,
     photos,
-    findings: snapshot.findings.map((finding) => ({
-      ...finding,
-      photos: finding.photos.flatMap((linked) => {
-        const photo = byId.get(linked.photo.id);
-        return photo ? [{ ...linked, photo }] : [];
-      }),
-    })),
+    findings: snapshot.findings
+      .filter((finding) => !finding.isConfidential)
+      .map((finding) => ({
+        ...finding,
+        photos: finding.photos.flatMap((linked) => {
+          const photo = byId.get(linked.photo.id);
+          return photo ? [{ ...linked, photo }] : [];
+        }),
+      })),
   };
   const { documentForOutput } = await import("@/lib/i18n/report-translation.server");
   const output = await documentForOutput(db, issued);
   let built = await buildReportPdf(output, options);
-  if (built.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+  if (built.bytes.byteLength > maxBytes) {
     built = await buildReportPdf(output, { ...options, includePhotos: false });
   }
-  if (built.bytes.byteLength > MAX_ATTACHMENT_BYTES) return null;
-  return { filename: built.filename, content: toBase64(built.bytes), contentType: "application/pdf" };
+  if (built.bytes.byteLength > maxBytes) return null;
+  return built;
 }
