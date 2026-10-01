@@ -38,6 +38,7 @@ import {
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionLabel, isManualOnly, tradesOf } from "@/lib/survey-types";
 import { ManualReviewList } from "@/components/photos/manual-review-list";
+import { ToneSelector } from "@/components/report/tone-selector";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
@@ -363,6 +364,9 @@ function ReportWorkspace() {
           {report.title}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">Updated {report.updated}</p>
+        {!isManualOnly(report.surveyTypeSnapshot) ? (
+          <ToneSelector reportId={report.id} disabled={locked} />
+        ) : null}
 
 
         <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
