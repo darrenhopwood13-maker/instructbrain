@@ -124,14 +124,30 @@ export function CreateProjectDialog({
 
           <div className="space-y-2">
             <Label htmlFor="project-cover">Project photo (optional)</Label>
-            <Input
+            <input
               id="project-cover"
               type="file"
               accept="image/*"
-              className="min-h-11"
+              className="sr-only"
               onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
               aria-describedby="project-cover-help"
             />
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="quiet"
+                className="min-h-11"
+                onClick={() => document.getElementById("project-cover")?.click()}
+              >
+                <ImagePlus aria-hidden="true" />
+                {coverFile ? "Change photo" : "Choose photo"}
+              </Button>
+              {coverFile ? (
+                <span className="min-w-0 truncate text-sm text-muted-foreground">
+                  {coverFile.name}
+                </span>
+              ) : null}
+            </div>
             <p id="project-cover-help" className="text-xs text-muted-foreground">
               Used as the title page photo on every report for this project.
             </p>
