@@ -140,3 +140,4 @@
 - [x] Manual reports: two large photographs per PDF page, showing only item number, capture date and capture time
 
 - [x] Manual photographic report: no confirmation needed; rebuilt markup editor (draw/drag/resize, pen, line, numbered markers, sizes)
+- [x] Manual photographic report: bounded cover photo, selection-order output, two photos per page, issued PDF email attachment only

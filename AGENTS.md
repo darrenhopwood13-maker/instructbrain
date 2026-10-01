@@ -16,3 +16,4 @@
 - Use the Instruct family accent architecture: shared navy surfaces, white “instruct”, product-coloured name, and one semantic per-product accent token family; instructBrain uses Laser Green #57FF00. This lets future Instruct apps change one accent slot without restyling components.
 - Model no-AI report behavior as a frozen `manualOnly` survey-definition capability, and persist normalized vector photo markup separately from original image bytes so templates remain data-driven and issued evidence stays immutable.
 - Render `manualOnly` report output through its own two-items-per-A4-page presentation, showing only stable item reference and capture date/time, so other templates retain their established document layouts.
+- Distribute `manualOnly` reports as an explicitly sent issued PDF attachment, never as a recipient review page, so the delivered artifact is final and deliberate.

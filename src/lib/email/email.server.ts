@@ -14,7 +14,7 @@ import {
   type EmailMessage,
   type ExtractItem,
 } from "./templates";
-import { resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { isManualOnly, resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
 import { shareUrlForToken } from "@/lib/report/share-url";
 
@@ -365,6 +365,61 @@ export async function sendReportSharedEmail(
       action: "email.report_shared",
       after: { to: input.email, share_id: input.shareId },
     },
+    actor.id,
+  );
+  return outcome;
+}
+
+export async function sendManualReportPdfEmail(
+  db: Db,
+  input: { reportId: string; email: string; name?: string | null },
+  actor: { id: string; claims: Record<string, unknown> | null },
+): Promise<SendOutcome> {
+  const { data: report, error } = await db
+    .from("reports")
+    .select("id, title, reference, report_date, issued_at, status, survey_type_snapshot, projects(name)")
+    .eq("id", input.reportId)
+    .single();
+  if (error || !report) throw new Error("That report could not be read, so nothing was sent.");
+  const row = report as Record<string, any>;
+  if (!isManualOnly(row["survey_type_snapshot"] as SurveyTypeSnapshot)) {
+    throw new Error("Email PDF is available only for manual photographic reports.");
+  }
+  if (row["status"] !== "issued") {
+    throw new Error("Issue this report before emailing its PDF.");
+  }
+
+  const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
+  const attachment = await buildEmailPdf(db, input.reportId, { variant: "full" });
+  if (!attachment) {
+    throw new Error("This report is too large to attach. Download it and share it from your device instead.");
+  }
+  const message: EmailMessage = {
+    template: "MANUAL_REPORT_PDF",
+    data: {
+      reportTitle: row["title"] as string,
+      projectName: (row["projects"]?.["name"] as string) ?? "this project",
+      reference: (row["reference"] as string | null) ?? null,
+      issueDate: gbDate((row["issued_at"] as string | null) ?? (row["report_date"] as string)),
+      sentByName: actorName(actor.claims, "Your surveyor"),
+      attachment,
+    },
+  };
+  const outcome = await dispatch(
+    db,
+    {
+      reportId: input.reportId,
+      findingIds: [],
+      recipient: { email: input.email, name: input.name ?? null },
+      message,
+      sentBy: actor.id,
+    },
+    input.email,
+    message,
+  );
+  await audit(
+    db,
+    { reportId: input.reportId, action: "email.manual_report_pdf_sent", after: { to: input.email } },
     actor.id,
   );
   return outcome;

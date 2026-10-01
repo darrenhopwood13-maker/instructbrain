@@ -66,6 +66,19 @@ describe("finding display order", () => {
     ]);
   });
 
+  it("keeps manual report order tied to photographs when items were created later", () => {
+    const findings = [
+      { id: "opened-first", photoSequence: 3, sequence: 1 },
+      { id: "uploaded-first", photoSequence: 1, sequence: 3 },
+      { id: "uploaded-second", photoSequence: 2, sequence: 2 },
+    ];
+    expect(sortByPhotoOrder(findings, (finding) => finding).map((finding) => finding.id)).toEqual([
+      "uploaded-first",
+      "uploaded-second",
+      "opened-first",
+    ]);
+  });
+
   it("keeps several findings on one photograph in their created order", () => {
     const findings = [
       { id: "b", photoSequence: 1, sequence: 5 },

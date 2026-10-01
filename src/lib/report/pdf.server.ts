@@ -1319,6 +1319,22 @@ export async function buildReportPdf(
   }
 
   if (options.variant === "full" && isManualOnly(document.snapshot)) {
+    const cover =
+      document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
+      document.photos[0] ??
+      null;
+    if (cover && fetcher) {
+      const image = await embedPhoto(writer, fetcher, cover);
+      if (image) {
+        const availableHeight = Math.max(110, writer.cursor.y - writer.margin - 34);
+        const scale = Math.min(writer.contentWidth / image.width, availableHeight / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        const x = writer.margin + (writer.contentWidth - width) / 2;
+        const y = writer.cursor.y - 18 - height;
+        writer.cursor.page.drawImage(image, { x, y, width, height });
+      }
+    }
     await drawManualPhotoPages(writer, findings, fetcher);
     drawFooters(writer);
     const bytes = await doc.save();
