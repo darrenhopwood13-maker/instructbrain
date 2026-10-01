@@ -346,7 +346,7 @@ describe("property inventory", () => {
       "manual-photo-print-surface",
     );
     expect(readFileSync("src/routes/shared.$token.tsx", "utf8")).toContain(
-      "reportPrintPageClass(query.data)",
+      "reportPrintPageClass(doc)",
     );
   });
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Printer } from "lucide-react";
+import { Download, FileText, Printer } from "lucide-react";
+import { BRAND_CREDIT } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/query-states";
 import { ReportDocumentView } from "@/components/report/report-document-view";
@@ -83,7 +84,10 @@ function SharedReport() {
         error.reason = payload?.reason ?? null;
         throw error;
       }
-      return sharedDocument(payload);
+      if (payload?.pdfOnly) {
+        return { pdfOnly: true as const, ...(payload as PdfOnlyMeta) };
+      }
+      return { pdfOnly: false as const, document: sharedDocument(payload) };
     },
     retry: false,
   });
@@ -91,12 +95,36 @@ function SharedReport() {
   const reason = (query.error as (Error & { reason?: string }) | null)?.reason ?? null;
   const problem = problemFor(reason);
 
+  if (query.data?.pdfOnly) {
+    return <PdfLanding token={token} meta={query.data} />;
+  }
+  if (!query.data && (query.isPending || query.isError)) {
+    // Branded wrapper for loading and dead links.
+    return (
+      <div style={{ backgroundImage: "var(--blueprint-grid)" }} className="flex min-h-dvh items-center justify-center bg-brand-blue px-4 text-white">
+        <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-brand-blue p-8 text-center shadow-lg">
+          <Wordmark />
+          {query.isPending ? (
+            <p className="mt-6 text-sm text-white/80">Opening the shared report…</p>
+          ) : (
+            <>
+              <h1 className="mt-6 text-xl font-semibold">{problem.heading}</h1>
+              <p className="mt-2 text-sm text-white/80">{problem.body}</p>
+            </>
+          )}
+          <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60">{BRAND_CREDIT}</p>
+        </div>
+      </div>
+    );
+  }
+  const doc = query.data && !query.data.pdfOnly ? query.data.document : null;
+
   return (
     <div className="min-h-dvh bg-surface">
       <header className="no-print border-b border-border bg-surface-raised">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 py-4">
           <p className="editorial-title text-base font-semibold">instructBrain</p>
-          {query.data ? (
+          {doc ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted-foreground">
                 Save your own copy — this link may be withdrawn.
@@ -111,21 +139,73 @@ function SharedReport() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        {query.isPending ? (
+        {doc ? (
+          <div className={`paper paper-sheet px-5 py-8 sm:px-10 sm:py-12 ${reportPrintPageClass(doc)}`}>
+            <ReportDocumentView document={doc} print />
+          </div>
+        ) : (
           <LoadingState label="Opening the shared report…" />
-        ) : query.isError ? (
-          <div className="mx-auto max-w-xl rounded-xl border border-border bg-surface-raised p-6 text-center">
-            <h1 className="editorial-title text-xl font-semibold">{problem.heading}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{problem.body}</p>
-          </div>
-        ) : query.data ? (
-          <div
-            className={`paper paper-sheet px-5 py-8 sm:px-10 sm:py-12 ${reportPrintPageClass(query.data)}`}
-          >
-            <ReportDocumentView document={query.data} print />
-          </div>
-        ) : null}
+        )}
       </main>
+    </div>
+  );
+}
+
+type PdfOnlyMeta = {
+  title: string;
+  reference: string | null;
+  issuedAt: string | null;
+  organisationName: string | null;
+};
+
+function Wordmark() {
+  return (
+    <p className="font-[Audiowide] text-2xl" aria-label="instructBrain">
+      <span className="text-white">instruct</span>
+      <span className="text-brand-accent">Brain</span>
+    </p>
+  );
+}
+
+function PdfLanding({ token, meta }: { token: string; meta: PdfOnlyMeta }) {
+  const pdfUrl = `/api/public/shared-report-pdf/${token}`;
+  return (
+    <div style={{ backgroundImage: "var(--blueprint-grid)" }} className="flex min-h-dvh items-center justify-center bg-brand-blue px-4 py-10 text-white">
+      <div className="w-full max-w-xl rounded-xl border border-primary-foreground/20 bg-brand-blue p-8 text-center shadow-lg">
+        <Wordmark />
+        {meta.organisationName ? (
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-brand-accent">
+            {meta.organisationName}
+          </p>
+        ) : null}
+        <h1 className="mt-2 text-2xl font-semibold">{meta.title}</h1>
+        <p className="mt-2 text-sm text-white/80">
+          {[
+            meta.reference ? `Ref ${meta.reference}` : null,
+            meta.issuedAt ? `Issued ${new Date(meta.issuedAt).toLocaleDateString("en-GB")}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button asChild variant="brand" size="lg" className="min-h-12">
+            <a href={pdfUrl} target="_blank" rel="noopener">
+              <FileText aria-hidden="true" className="mr-1.5 size-4" />
+              Open PDF
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="min-h-12">
+            <a href={`${pdfUrl}?download=1`}>
+              <Download aria-hidden="true" className="mr-1.5 size-4" />
+              Download PDF
+            </a>
+          </Button>
+        </div>
+        <p className="mt-6 text-xs text-white/70">
+          This is the finished, issued report. Save your own copy — this link may be withdrawn.
+        </p>
+        <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60">{BRAND_CREDIT}</p>
+      </div>
     </div>
   );
 }

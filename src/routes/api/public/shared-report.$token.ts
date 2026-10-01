@@ -90,6 +90,29 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
         const rawReport = reports?.[0];
         if (!rawReport) return Response.json({ error: "Report not found." }, { status: 404 });
 
+        // Manual photographic reports are shared as the finished PDF only —
+        // no review page, so no report content leaves through this endpoint.
+        if (rawReport.survey_type_snapshot?.manualOnly === true) {
+          if (rawReport.status !== "issued") {
+            return Response.json(
+              { reason: "unknown", error: "This report is not currently issued." },
+              { status: 404 },
+            );
+          }
+          const { data: org } = await admin
+            .from("organisations")
+            .select("name")
+            .eq("id", rawReport.organisation_id)
+            .limit(1);
+          return Response.json({
+            pdfOnly: true,
+            title: rawReport.title,
+            reference: rawReport.reference,
+            issuedAt: rawReport.issued_at,
+            organisationName: org?.[0]?.name ?? null,
+          });
+        }
+
         // The report is presented in the language it was issued in. The English
         // rows in the database are the record copy and are never overwritten;
         // if the translation cannot be produced, English is shown.

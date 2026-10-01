@@ -279,14 +279,24 @@ export function ReportActions({
               </Link>
             </DropdownMenuItem>
             {isManualOnly(document.snapshot) ? (
-              <DropdownMenuItem
-                className="min-h-11"
-                disabled={!issued}
-                onSelect={() => setEmailOpen(true)}
-              >
-                <Send aria-hidden="true" className="size-4" />
-                {issued ? "Email PDF" : "Issue before emailing"}
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem
+                  className="min-h-11"
+                  disabled={!issued}
+                  onSelect={() => link.mutate()}
+                >
+                  <Link2 aria-hidden="true" className="size-4" />
+                  {issued ? "Create PDF link" : "Issue before creating a link"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="min-h-11"
+                  disabled={!issued}
+                  onSelect={() => setEmailOpen(true)}
+                >
+                  <Send aria-hidden="true" className="size-4" />
+                  {issued ? "Email PDF" : "Issue before emailing"}
+                </DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem className="min-h-11" onSelect={() => link.mutate()}>
                 <Link2 aria-hidden="true" className="size-4" />
