@@ -176,14 +176,9 @@ function ManualPhotoDocument({ document, print }: { document: ReportDocument; pr
   return (
     <article
       className="report-document manual-photo-document space-y-10"
-      style={
-        document.organisation?.brandColour
-          ? ({ "--brand-accent": document.organisation.brandColour } as React.CSSProperties)
-          : undefined
-      }
     >
       <div className="manual-photo-cover">
-        <Cover document={document} />
+        <Cover document={document} manualBrand />
       </div>
       {pages.map((pageFindings, pageIndex) => (
         <section
@@ -737,7 +732,7 @@ function Section({
 
 /* ------------------------------------------------------------------ */
 
-function Cover({ document }: { document: ReportDocument }) {
+function Cover({ document, manualBrand = false }: { document: ReportDocument; manualBrand?: boolean }) {
   const cover =
     document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
     document.photos[0] ??
@@ -745,6 +740,16 @@ function Cover({ document }: { document: ReportDocument }) {
 
   return (
     <section aria-label="Cover" className="break-after-page">
+      {manualBrand ? (
+        <div className="manual-report-brand flex min-h-14 items-center justify-between gap-4 border-l-4 border-brand-accent bg-brand-blue px-5 py-3 text-primary-foreground">
+          <p className="font-[Audiowide] text-xl" aria-label="instructBrain">
+            <span>instruct</span><span className="text-brand-accent">Brain</span>
+          </p>
+          {document.organisation?.name ? (
+            <p className="text-right text-xs font-semibold">{document.organisation.name}</p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b-4 border-brand-blue pb-5">
         <div className="flex items-center gap-3">
           {document.organisation?.logoUrl ? (

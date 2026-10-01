@@ -65,7 +65,10 @@ const CONTENT_WIDTH = A4.width - MARGIN * 2;
 const INK = rgb(0.06, 0.11, 0.2);
 const MUTED = rgb(0.35, 0.39, 0.47);
 const RULE = rgb(0.85, 0.87, 0.91);
-const ACCENT = rgb(1, 0.37, 0);
+/** instructBrain Laser Green #57FF00 — graphic accents only on white paper. */
+const ACCENT = rgb(87 / 255, 1, 0);
+const BRAND_NAVY = rgb(36 / 255, 65 / 255, 123 / 255);
+const PAPER_WHITE = rgb(250 / 255, 250 / 255, 250 / 255);
 const MARKUP_COLOURS: Record<MarkupColour, ReturnType<typeof rgb>> = {
   accent: ACCENT,
   red: rgb(0.8, 0.08, 0.1),
@@ -381,7 +384,7 @@ function drawFooters(writer: Writer): void {
       color: MUTED,
       opacity: 0.7,
     });
-    // Subtle brand touch: a thin orange rule across the top of every page.
+    // Subtle brand touch: a thin Laser Green rule across the top of every page.
     sheet.drawRectangle({
       x: writer.margin,
       y: writer.pageSize.height - writer.margin / 2,
@@ -398,6 +401,56 @@ function drawFooters(writer: Writer): void {
       color: MUTED,
     });
   });
+}
+
+function drawManualBrandHeader(writer: Writer, organisationName: string | null): void {
+  const page = writer.cursor.page;
+  const bandHeight = 42;
+  const bandY = writer.pageSize.height - writer.margin - bandHeight;
+  page.drawRectangle({
+    x: writer.margin,
+    y: bandY,
+    width: writer.contentWidth,
+    height: bandHeight,
+    color: BRAND_NAVY,
+  });
+  page.drawRectangle({
+    x: writer.margin,
+    y: bandY,
+    width: 5,
+    height: bandHeight,
+    color: ACCENT,
+  });
+  const instruct = "instruct";
+  const brain = "Brain";
+  const wordmarkSize = 16;
+  const wordmarkX = writer.margin + 18;
+  page.drawText(instruct, {
+    x: wordmarkX,
+    y: bandY + 14,
+    size: wordmarkSize,
+    font: writer.bold,
+    color: PAPER_WHITE,
+  });
+  page.drawText(brain, {
+    x: wordmarkX + writer.bold.widthOfTextAtSize(instruct, wordmarkSize),
+    y: bandY + 14,
+    size: wordmarkSize,
+    font: writer.bold,
+    color: ACCENT,
+  });
+  if (organisationName) {
+    const safeName = sanitise(organisationName).slice(0, 58);
+    page.drawText(safeName, {
+      x: writer.pageSize.width - writer.margin - 18 - writer.regular.widthOfTextAtSize(safeName, 8),
+      y: bandY + 17,
+      size: 8,
+      font: writer.regular,
+      color: PAPER_WHITE,
+      opacity: 0.86,
+    });
+  }
+  writer.cursor.y = bandY - 30;
 }
 
 function drawCellText(
@@ -924,8 +977,16 @@ async function drawManualPhotoPages(
     const attachment = finding.photos[0];
     const captured = formatCaptureDateTime(attachment?.photo.capturedAt ?? null);
 
-    writer.cursor.page.drawText(sanitise(itemLabel(finding.ref)), {
+    writer.cursor.page.drawRectangle({
       x: writer.margin,
+      y: top - 14,
+      width: 3,
+      height: 14,
+      color: ACCENT,
+    });
+
+    writer.cursor.page.drawText(sanitise(itemLabel(finding.ref)), {
+      x: writer.margin + 10,
       y: top - 12,
       size: 11,
       font: writer.bold,
@@ -1250,6 +1311,7 @@ export async function buildReportPdf(
   };
 
   const findings = selectFindings(document, options);
+  const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
   const fetcher: PhotoFetcher | null =
     options.includePhotos === false ? null : { spent: 0, cache: new Map() };
 
@@ -1258,8 +1320,18 @@ export async function buildReportPdf(
   doc.setCreator("instructBrain");
 
   /* Cover */
-  eyebrow(writer, document.organisation?.name ?? "instructBrain");
-  drawText(writer, document.report.title, { size: 24, bold: true, lineGap: 6, gapAfter: 4, align: "center" });
+  if (manualFull) {
+    drawManualBrandHeader(writer, document.organisation?.name ?? null);
+  } else {
+    eyebrow(writer, document.organisation?.name ?? "instructBrain");
+  }
+  drawText(writer, document.report.title, {
+    size: manualFull ? 26 : 24,
+    bold: true,
+    lineGap: 6,
+    gapAfter: manualFull ? 6 : 4,
+    align: "center",
+  });
   if (document.report.subtitle) {
     drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, gapAfter: 6, align: "center" });
   }
@@ -1318,7 +1390,7 @@ export async function buildReportPdf(
     drawText(writer, notice, { size: 9, colour: MUTED, gapAfter: 2 });
   }
 
-  if (options.variant === "full" && isManualOnly(document.snapshot)) {
+  if (manualFull) {
     const cover =
       document.photos.find((photo) => photo.id === document.report.coverPhotoId) ??
       document.photos[0] ??

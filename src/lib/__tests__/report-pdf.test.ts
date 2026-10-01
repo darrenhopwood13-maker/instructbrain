@@ -159,6 +159,8 @@ describe("report PDF", () => {
     );
     const pdf = await PDFDocument.load(built.bytes);
     expect(pdf.getPageCount()).toBe(4);
+    expect(pdf.getProducer()).toBe("instructBrain");
+    expect(pdf.getCreator()).toBe("instructBrain");
   });
 
   it("uses the landscape room-schedule format for property inventory reports", async () => {

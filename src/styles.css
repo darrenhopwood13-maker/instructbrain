@@ -1040,6 +1040,12 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
     overflow: hidden;
   }
 
+  .manual-photo-print-surface .manual-report-brand {
+    margin-bottom: 7mm;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   .manual-photo-print-surface .manual-photo-cover img {
     width: 100%;
     height: 105mm;
@@ -1059,6 +1065,8 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
     min-height: 0;
     break-inside: avoid;
     page-break-inside: avoid;
+    border-left: 1mm solid var(--brand-accent);
+    padding-left: 4mm;
   }
 
   .manual-photo-print-surface .manual-photo-figure,

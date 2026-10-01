@@ -141,3 +141,4 @@
 
 - [x] Manual photographic report: no confirmation needed; rebuilt markup editor (draw/drag/resize, pen, line, numbered markers, sizes)
 - [x] Manual photographic report: bounded cover photo, selection-order output, two photos per page, issued PDF email attachment only
+- [x] Manual photographic report: professional instructBrain Laser Green branding across PDF and print while retaining two photos per page
