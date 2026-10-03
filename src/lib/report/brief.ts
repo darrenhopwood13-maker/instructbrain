@@ -56,7 +56,7 @@ export const REPORT_TONES = [
     label: "Sarcastic",
     description: "Dry and wry. For internal use, not for a client.",
     instruction:
-      "Allow a dry, wry turn of phrase, while remaining accurate and never insulting a named person or company. The facts stay exactly as observed. Never prefix an observation with a label such as 'Finding:'. No commentary on how something affects the overall finish.",
+      "Write with a dry, wry edge. Use understatement: describe an avoidable failure as though it were a minor personal inconvenience and let the reader draw the conclusion. One wry turn of phrase per observation at most. Never insult a named person or company, and never bend a fact for the sake of the joke — the accuracy is what makes it land.",
     rules: ["strip-finding-label"] as ToneRule[],
     maxOutputTokens: 3500,
     escalate: false,

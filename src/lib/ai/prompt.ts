@@ -27,7 +27,7 @@ const UNIVERSAL_RULES = [
   "Never describe, identify, count, characterise or speculate about any person. If a person appears, set involves_person to true and describe only the condition, never the person.",
   "Abstention is preferred to guessing. Set assessable to false with a short abstain_reason when the photograph cannot support an assessment, and return a low confidence whenever you are unsure. Being marked as not assessed and reviewed by a person is the correct outcome.",
   "Naming a responsible trade is a commercial act. Return suggested_trade as null unless the photograph itself makes attribution reasonable, and always give your reasoning and a separate trade_confidence.",
-  "Return British English. Be factual and unemotional; this text is issued to a client as part of a formal document.",
+  "Return British English. Be factual: describe only what you can support from the photograph.",
   "confidence and trade_confidence are numbers between 0 and 1. region is normalised to the image: x, y, w and h between 0 and 1, or null.",
 ];
 
@@ -73,14 +73,28 @@ export function buildSystemPrompt(
   const sections: Array<string | null> = [
     // The house voice is DATA on the definition. Nothing here supplies it.
     houseVoiceOf(snapshot),
-    // The chosen tone governs wording. Stated up front so the house voice
-    // does not flatten it; it never touches status, severity or abstention.
-    brief
-      ? `Writing tone for this report: ${toneById(brief.tone).label}. Where the voice above conflicts with this tone on wording, register or sentence style, follow this tone. ${toneById(brief.tone).instruction} Every factual, status, severity and abstention rule below still applies in full.`
-      : null,
+    // The chosen tone is NOT stated here. It used to be, up front — but a
+    // ~500 character tone instruction sitting in front of a ~5,500 character
+    // voice was being flattened by it, and the model followed the character
+    // brief instead. The tone now lands at the END of the prompt, after the
+    // voice and after every rule, where the last writing instruction is the
+    // one that actually takes effect. See the tone block below.
     `Survey type: ${definitionLabel(snapshot)}.`,
     list("Survey-specific guidance", orderedGuidance(snapshot).map((entry) => `${entry.label}: ${entry.text}`)),
     ...UNIVERSAL_RULES,
+    // The DEFAULT register, stated only when no brief supplies a tone.
+    //
+    // This used to sit in UNIVERSAL_RULES as "Be factual and unemotional; this
+    // text is issued to a client as part of a formal document" — and that one
+    // clause was silently countermanding every tone in the product, because a
+    // hard universal rule beats a style instruction. Factuality is not
+    // negotiable and still lives in UNIVERSAL_RULES above; the register is not
+    // universal, so it belongs here. With a brief, the tone owns the register
+    // (see the tone block at the end of this prompt). Without one, behaviour is
+    // exactly as it was before.
+    brief
+      ? null
+      : "Be unemotional; this text may be issued to a client as part of a formal document.",
     multiple
       ? "A single photograph may contain several separate observations. Return one array entry per distinct observation."
       : "Record at most one observation per photograph. Where a photograph shows more than one thing, combine them into a single observation describing the overall condition — do not split them. Return an array containing at most one entry, and an empty array if there is nothing to record.",
@@ -145,6 +159,22 @@ export function buildSystemPrompt(
     // the size. Swap to REGULATION_REFERENCE if a stage ever needs to cite a
     // specific clause in prose.
     regulationIndex(),
+    // THE TONE — last, deliberately. This is the final writing instruction the
+    // model reads before it generates, which is where a style instruction
+    // actually takes hold. It states the boundary explicitly rather than
+    // relying on a phrase 5,000 characters earlier: the voice sets the
+    // expertise and the priorities, the tone sets the prose, and the tone has
+    // no authority at all over a status, a severity, a fact or an abstention.
+    // Do not move this above the rules — that is the bug it fixes.
+    brief
+      ? [
+          `WRITING TONE FOR THIS REPORT: ${toneById(brief.tone).label}.`,
+          "This governs the prose only — wording, register and sentence style. Where the voice above differs from it on style, follow this tone; the voice sets your expertise and your priorities, not your sentences.",
+          "It has no authority over anything else. Every status, severity, factual observation, capture field and abstention rule above still applies in full, and a reader must never be able to tell which tone was used from the facts alone.",
+          toneById(brief.tone).instruction,
+          "Apply this tone firmly and consistently across every observation in this response. A flat, generic or neutral register is a failure of this instruction, not a safe default.",
+        ].join(" ")
+      : null,
     "Return the envelope: assessable, abstain_reason and the observations array.",
   ];
 

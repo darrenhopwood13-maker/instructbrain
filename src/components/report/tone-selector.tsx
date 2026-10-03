@@ -22,7 +22,17 @@ export function ToneSelector({ reportId, disabled }: { reportId: string; disable
   async function rewriteAll(label: string) {
     const states = await loadState({ data: { reportId } });
     const ids = states.filter((s) => s.analysed).map((s) => s.photoId);
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      // Never return silently. The tone HAS been saved by the time we get here,
+      // so an early return with no message makes a working control look broken.
+      // Say what was saved and what will happen.
+      toast.info(
+        states.length === 0
+          ? `Tone set to ${label}. There are no photographs on this report yet — it applies as they are analysed.`
+          : `Tone set to ${label}. There is nothing written to rewrite yet — it applies as photographs are analysed.`,
+      );
+      return;
+    }
     const id = toast.loading(`Rewriting ${ids.length} photo${ids.length === 1 ? "" : "s"} in ${label} tone…`);
     let done = 0;
     let failed = 0;
