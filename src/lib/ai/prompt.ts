@@ -1,3 +1,4 @@
+import { regulationIndex } from "@/lib/oracle-persona";
 import {
   aiCaptureFieldsOf,
   aiGuidanceOf,
@@ -129,6 +130,21 @@ export function buildSystemPrompt(
     // The brief shapes style and emphasis only. It is placed AFTER the status
     // rules so it can never be read as overriding them.
     briefPromptSection(brief ?? null),
+    // The shared citation set, from the single persona file every app in the
+    // family now uses. Reference material, so it goes last: the voice leads and
+    // this follows it, rather than sitting in the middle where it could dilute
+    // the character. It names instruments, not disciplines, statuses, hazards,
+    // trades or defects, so Invariant 5 is not touched by its presence here.
+    //
+    // The INDEX, not the full set. This prompt is built once per photograph, so
+    // anything added here is paid for on every photo of every report: the full
+    // set would add ~17kb (about 4,300 tokens) each time, for clause numbers
+    // that this prompt's output schema has nowhere to put — regulatory_reference
+    // is an id chosen from the survey type's own list. The index carries the
+    // instrument names and the never-invent-a-number rule at roughly a third of
+    // the size. Swap to REGULATION_REFERENCE if a stage ever needs to cite a
+    // specific clause in prose.
+    regulationIndex(),
     "Return the envelope: assessable, abstain_reason and the observations array.",
   ];
 

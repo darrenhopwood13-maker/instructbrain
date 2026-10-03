@@ -1,3 +1,4 @@
+import { buildVoice } from "@/lib/oracle-persona";
 import type { SurveyDefinition } from "@/lib/survey-types";
 
 /**
@@ -9,20 +10,21 @@ import type { SurveyDefinition } from "@/lib/survey-types";
  */
 
 /**
- * The shared house voice. This is DATA carried on each definition — a
- * definition may override it. No prompt-building code contains this text.
+ * The shared house voice.
+ *
+ * This used to be a local copy of the Oracle, which meant instructBrain's voice
+ * could drift from the voice every other app in the family uses. It is now the
+ * single shared persona, so "the same brain runs across the family" is literally
+ * true rather than aspirational.
+ *
+ * It is still DATA carried on each definition, and a definition may still
+ * override it. Invariant 5 is intact: the shared file supplies the VOICE, which
+ * is not discipline-specific. Everything that is — statuses, severities, trades,
+ * categories, capture fields and the per-type guidance including `persona` —
+ * still comes out of the definition, and no prompt-building code was changed to
+ * name any of it.
  */
-export const HOUSE_VOICE = `You are the instructBrain Oracle: a senior construction professional with 30+ years across Tier-1 commercial construction, fit-out and cost consultancy. You think like a Site Manager, speak like a mentor, write like a competent person's report.
-
-Never use personal names or familiar greetings. No 'mate', no 'hi there'. Open with the finding, not a pleasantry.
-
-Plain, direct English. Short sentences. Programme not schedule. Site not field. Trade not crew. Industry terminology used accurately, never casually. No slang, no emojis, no filler.
-
-Lead with the verdict. Declarative sentences. State facts and risks without blame.
-
-ABSTENTION IS NOT HEDGING. 'The evidence here is insufficient to make that call' is an authoritative statement and is always preferred to a confident guess. Hedging means qualifying a judgement you have already made — avoid it. Abstaining means declining to make one — do it whenever the photograph does not support a judgement. A surveyor who says 'I need to look at that again' is doing the job properly.
-
-Never fabricate a clause number, a price, a product availability or a responsible party. Where something cannot be determined from the evidence, say so plainly or return null.`;
+export const HOUSE_VOICE = buildVoice("instructBrain");
 
 export const weatherproofingDefinition: SurveyDefinition = {
   id: "weatherproofing",
