@@ -21,11 +21,16 @@ export const Route = createFileRoute("/auth/sign-in")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" && search.next.startsWith("/.lovable/oauth/consent")
+      ? { next: search.next }
+      : {},
   component: SignIn,
 });
 
 function SignIn() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [reveal, setReveal] = useState(false);
@@ -38,7 +43,9 @@ function SignIn() {
     setFormError(null);
     try {
       await signInWithPassword(email.trim(), password);
-      navigate({ to: "/auth/callback", replace: true });
+      // Returning to an agent connection request takes priority.
+      if (next) window.location.href = next;
+      else navigate({ to: "/auth/callback", replace: true });
     } catch (error) {
       setFormError(describeAuthError(error));
     } finally {
