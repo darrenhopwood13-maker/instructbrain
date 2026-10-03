@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { analysePhoto, analysisState } from "@/lib/ai/analyse.functions";
 import { coerceBrief, EMPTY_BRIEF, REPORT_TONES, toneById, type ReportToneId } from "@/lib/report/brief";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -13,6 +15,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function ToneSelector({ reportId, disabled }: { reportId: string; disabled?: boolean }) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const loadState = useServerFn(analysisState);
+  const runPhoto = useServerFn(analysePhoto);
+
+  /** Rewrites every unconfirmed AI draft in the new tone. Confirmed or edited findings are kept. */
+  async function rewriteAll(label: string) {
+    const states = await loadState({ data: { reportId } });
+    const ids = states.filter((s) => s.analysed).map((s) => s.photoId);
+    if (ids.length === 0) return;
+    const id = toast.loading(`Rewriting ${ids.length} photo${ids.length === 1 ? "" : "s"} in ${label} tone…`);
+    let done = 0;
+    let failed = 0;
+    const queue = [...ids];
+    await Promise.all(
+      Array.from({ length: Math.min(6, queue.length) }, async () => {
+        while (queue.length) {
+          const photoId = queue.shift()!;
+          try {
+            await runPhoto({ data: { reportId, photoId, force: true, fast: false } });
+          } catch {
+            failed += 1;
+          }
+          done += 1;
+          toast.loading(`Rewriting in ${label} tone… ${done} of ${ids.length}`, { id });
+          void queryClient.invalidateQueries({ queryKey: ["findings", reportId] });
+        }
+      }),
+    );
+    await queryClient.invalidateQueries({ queryKey: ["report", reportId] });
+    await queryClient.invalidateQueries({ queryKey: ["report-document", reportId] });
+    if (failed) toast.error(`${failed} photo${failed === 1 ? "" : "s"} could not be rewritten. Try again.`, { id });
+    else toast.success(`Findings rewritten in ${label} tone. Confirmed or edited findings were left as they are.`, { id });
+  }
   const brief = useQuery({
     queryKey: ["report-brief", reportId],
     queryFn: async () => {
@@ -42,9 +76,7 @@ export function ToneSelector({ reportId, disabled }: { reportId: string; disable
       return;
     }
     queryClient.setQueryData(["report-brief", reportId], updated);
-    toast.success(
-      `Tone set to ${toneById(next).label}. New photos use it now — press Re-analyse on a photo to rewrite its findings.`,
-    );
+    await rewriteAll(toneById(next).label);
   }
 
   return (
