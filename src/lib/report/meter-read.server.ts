@@ -82,6 +82,43 @@ async function openai(prompts: { system: string; user: string }, dataUrl: string
   };
 }
 
+async function deepseek(prompts: { system: string; user: string }, dataUrl: string, config: AiConfig): Promise<Result> {
+  // DeepSeek takes max_tokens, and accepts only json_object (never json_schema),
+  // which in turn requires the literal word "json" in the prompt.
+  // Mirrors the deepseek adapter in lib/ai/adapters.server.ts.
+  const response = await post(
+    "https://api.deepseek.com/chat/completions",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` },
+      body: JSON.stringify({
+        model: config.models.triage,
+        max_tokens: 300,
+        messages: [
+          { role: "system", content: `${prompts.system}\n\nReturn valid JSON only.` },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompts.user },
+              { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    },
+    config.requestTimeoutMs,
+  );
+  const raw = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string | null } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  return {
+    payload: json(raw.choices?.[0]?.message?.content ?? ""),
+    usage: { inputTokens: raw.usage?.prompt_tokens ?? 0, outputTokens: raw.usage?.completion_tokens ?? 0 },
+  };
+}
+
 async function anthropic(prompts: { system: string; user: string }, dataUrl: string, config: AiConfig): Promise<Result> {
   const inline = dataUrlParts(dataUrl);
   const response = await post(
@@ -157,7 +194,7 @@ async function google(prompts: { system: string; user: string }, dataUrl: string
   };
 }
 
-const callers = { openai, anthropic, google } as const;
+const callers = { deepseek, openai, anthropic, google } as const;
 
 export async function suggestMeterReading(
   client: AnyClient,

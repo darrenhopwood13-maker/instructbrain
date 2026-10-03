@@ -175,7 +175,10 @@ export function buildSystemPrompt(
           "Apply this tone firmly and consistently across every observation in this response. A flat, generic or neutral register is a failure of this instruction, not a safe default.",
         ].join(" ")
       : null,
-    "Return the envelope: assessable, abstain_reason and the observations array.",
+    // Names JSON deliberately. DeepSeek's json_object response mode requires the
+    // word "json" to be present in the prompt and answers 400 without it — and
+    // DeepSeek is the default provider. Harmless for every other provider.
+    "Return the envelope as JSON: assessable, abstain_reason and the observations array.",
   ];
 
   return sections.filter((section): section is string => !!section).join("\n\n");

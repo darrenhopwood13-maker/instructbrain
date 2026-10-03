@@ -177,6 +177,42 @@ async function callModel(
       };
     }
 
+    if (config.provider === "deepseek") {
+      // Same OpenAI-compatible shape, with DeepSeek's two differences: it takes
+      // `max_tokens`, and it accepts only `json_object` — never `json_schema`.
+      // json_object also requires the literal word "json" in the prompt, so the
+      // expected shape is named here rather than enforced by the API. The reply
+      // is still run through coerce() below, so a malformed answer is caught.
+      const response = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: config.maxOutputTokens,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: `${prompt.system}\n\nReturn valid JSON only.` },
+            { role: "user", content: prompt.user },
+          ],
+        }),
+      });
+      const raw = await response.json();
+      if (!response.ok) throw new AiProviderError(JSON.stringify(raw), response.status);
+      const text = raw?.choices?.[0]?.message?.content ?? "";
+      return {
+        payload: JSON.parse(text),
+        raw,
+        usage: {
+          inputTokens: raw?.usage?.prompt_tokens ?? 0,
+          outputTokens: raw?.usage?.completion_tokens ?? 0,
+        },
+      };
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,

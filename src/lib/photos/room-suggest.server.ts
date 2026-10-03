@@ -113,6 +113,50 @@ async function openai({ prompts, images, config }: Call): Promise<unknown> {
   return parseJson(content);
 }
 
+async function deepseek({ prompts, images, config }: Call): Promise<unknown> {
+  // DeepSeek takes max_tokens, and accepts only json_object (never json_schema),
+  // which in turn requires the literal word "json" in the prompt.
+  // Mirrors the deepseek adapter in lib/ai/adapters.server.ts.
+  const response = await post(
+    "https://api.deepseek.com/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.models.triage,
+        max_tokens: config.maxOutputTokens,
+        messages: [
+          { role: "system", content: `${prompts.system}\n\nReturn valid JSON only.` },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompts.user },
+              ...images.flatMap((image, index) => [
+                { type: "text", text: `Photograph ${index + 1}` },
+                { type: "image_url", image_url: { url: image.dataUrl, detail: "low" } },
+              ]),
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    },
+    config.requestTimeoutMs,
+  );
+  await failIfNotOk(response);
+  const raw = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string | null } }>;
+  };
+  const content = raw.choices?.[0]?.message?.content;
+  if (typeof content !== "string" || content.trim() === "") {
+    throw new AiProviderError("the model returned an empty response.");
+  }
+  return parseJson(content);
+}
+
 async function anthropic({ prompts, images, config }: Call): Promise<unknown> {
   const response = await post(
     "https://api.anthropic.com/v1/messages",
@@ -202,7 +246,7 @@ async function google({ prompts, images, config }: Call): Promise<unknown> {
   return parseJson(text);
 }
 
-const callers = { openai, anthropic, google } as const;
+const callers = { deepseek, openai, anthropic, google } as const;
 
 /**
  * One batched pass over the photographs. Batches are sequential so each one

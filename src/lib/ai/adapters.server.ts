@@ -147,6 +147,70 @@ async function openai(request: AdapterRequest): Promise<AdapterResponse> {
   };
 }
 
+/**
+ * DeepSeek — OpenAI-compatible wire format, with the differences that matter:
+ *
+ *  - the base URL is api.deepseek.com, not api.openai.com;
+ *  - it takes `max_tokens`; `max_completion_tokens` is an OpenAI parameter;
+ *  - it accepts `response_format: { type: "json_object" }` but rejects
+ *    `json_schema` outright ("This response_format type is unavailable now"),
+ *    so the shape is described in the prompt rather than enforced by the API —
+ *    the reply is still validated afterwards by the same coercion the other
+ *    adapters use, so a malformed answer is caught, not trusted.
+ *  - json_object mode also requires the literal word "json" to appear in the
+ *    prompt, otherwise it answers 400. buildSystemPrompt's closing line
+ *    therefore names JSON explicitly; do not remove it.
+ *
+ * Vision is on `deepseek-flash` only — see the profile in config.ts.
+ */
+async function deepseek(request: AdapterRequest): Promise<AdapterResponse> {
+  const response = await post(
+    "https://api.deepseek.com/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${request.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: request.model,
+        max_tokens: request.config.maxOutputTokens,
+        messages: [
+          { role: "system", content: request.systemPrompt },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: request.userPrompt },
+              { type: "image_url", image_url: { url: request.imageUrl, detail: "high" } },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    },
+    request.config.requestTimeoutMs,
+  );
+  await failIfNotOk(response);
+
+  const raw = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string | null } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  const content = raw.choices?.[0]?.message?.content;
+  if (typeof content !== "string" || content.trim() === "") {
+    throw new AiProviderError("the model returned an empty response.");
+  }
+
+  return {
+    payload: parseJson(content),
+    raw,
+    usage: {
+      inputTokens: raw.usage?.prompt_tokens ?? 0,
+      outputTokens: raw.usage?.completion_tokens ?? 0,
+    },
+  };
+}
+
 async function anthropic(request: AdapterRequest): Promise<AdapterResponse> {
   const response = await post(
     "https://api.anthropic.com/v1/messages",
@@ -287,4 +351,4 @@ async function google(request: AdapterRequest): Promise<AdapterResponse> {
   };
 }
 
-export const adapters = { openai, anthropic, google } as const;
+export const adapters = { deepseek, openai, anthropic, google } as const;

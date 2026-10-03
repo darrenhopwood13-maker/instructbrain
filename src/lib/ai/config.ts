@@ -10,7 +10,7 @@
  *              A false negative on a defect costs far more than the tokens.
  */
 
-export type ProviderId = "anthropic" | "openai" | "google";
+export type ProviderId = "deepseek" | "anthropic" | "openai" | "google";
 export type AnalysisTier = "triage" | "escalation";
 
 export type ProviderProfile = {
@@ -61,6 +61,26 @@ function envNumber(name: string, fallback: number): number {
 /** Order matters: the first provider with a key present is the one used. */
 export function providerProfiles(): ProviderProfile[] {
   return [
+    {
+      // DeepSeek first, so it wins wherever a key is present.
+      //
+      // TWO CONSTRAINTS, both from DeepSeek's own published table:
+      //
+      //  1. Vision is supported on `deepseek-flash` and NOT on
+      //     `deepseek-v4-pro`. This product analyses photographs, so the
+      //     escalation tier — which is a second attempt at the same image —
+      //     MUST also be a vision model. Pointing escalation at v4-pro would
+      //     make every escalation fail on image input. Both tiers therefore
+      //     sit on flash until DeepSeek ships a vision-capable pro.
+      //  2. DeepSeek takes `max_tokens`, and accepts `response_format:
+      //     json_object` but NOT `json_schema` (it answers json_schema with
+      //     "This response_format type is unavailable now"). The adapter
+      //     below handles both. Do not reuse the OpenAI adapter for this.
+      id: "deepseek",
+      keyEnv: "DEEPSEEK_API_KEY",
+      triageModel: env("AI_TRIAGE_MODEL") ?? "deepseek-flash",
+      escalationModel: env("AI_ESCALATION_MODEL") ?? "deepseek-flash",
+    },
     {
       id: "anthropic",
       keyEnv: "ANTHROPIC_API_KEY",
@@ -126,6 +146,15 @@ export function aiIsConfigured(): boolean {
 export type ModelPrice = { inputPerMillion: number; outputPerMillion: number };
 
 const PRICES: Record<string, ModelPrice> = {
+  // DeepSeek bills by time of day: off-peak is exactly half of peak, and peak
+  // is 01:00-04:00 and 06:00-10:00 UTC, Monday to Friday. A flat rate has to
+  // choose one, and the thing being protected here is the monthly spend cap, so
+  // these are the PEAK, cache-miss rates — an off-peak job then costs less than
+  // recorded rather than more, and the cap cannot be blown by an underestimate.
+  // Source: api-docs.deepseek.com/quick_start/pricing, read 3 Oct 2026.
+  // Override per deployment with AI_PRICE_<MODEL> if a different basis is wanted.
+  "deepseek-flash": { inputPerMillion: 0.3, outputPerMillion: 1.2 },
+  "deepseek-v4-pro": { inputPerMillion: 1.32, outputPerMillion: 3.96 },
   "claude-3-5-haiku-latest": { inputPerMillion: 0.8, outputPerMillion: 4 },
   "claude-sonnet-4-5": { inputPerMillion: 3, outputPerMillion: 15 },
   "gpt-4.1-mini": { inputPerMillion: 0.4, outputPerMillion: 1.6 },
