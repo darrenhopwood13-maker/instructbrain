@@ -1,0 +1,72 @@
+name: CI
+
+# Runs the checks that nothing else runs.
+#
+# Why this exists: the ESLint config was pinned to a TypeScript version no
+# `typescript-eslint` release supports, so ESLint died on startup and the linter
+# silently stopped checking anything for months. Nothing went red - there was no
+# red to go to. This workflow is the thing that goes red.
+#
+# It catches: a broken linter, a failing test, a failing build, and a lint error.
+# It does NOT catch the existing lint warning backlog (~240 warnings, mostly
+# `no-explicit-any`). That is deliberate - see the note at the bottom.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          # Pinned to the version this repo was verified against. Bumping this is
+          # a deliberate change, not something that should drift on its own.
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+# ---------------------------------------------------------------------------
+# 🔴 DO NOT ADD A SUPABASE SERVICE-ROLE KEY TO THIS WORKFLOW'S SECRETS.
+#
+# Two test files are guarded by `describe.skipIf(!serviceKey)` and fall back to
+# the LIVE project URL:
+#
+#   src/lib/__tests__/photo-refs.db.test.ts
+#   src/lib/__tests__/review-confirm.db.test.tsx
+#
+# With no key present they skip - which is exactly what CI wants. Add a
+# service-role key and these tests start writing test organisations into the
+# PRODUCTION database on every push, and every pull request from a fork.
+#
+# If you ever need them to run, run them locally against a scratch project.
+# Never here.
+# ---------------------------------------------------------------------------
+#
+# Not yet enforced, on purpose:
+#
+#   * Prettier. The tree is not format-clean (~2700 diffs). Run `bun run format`
+#     as its own deliberate commit first, then add a `--check` step here.
+#   * Type checking. There is no `typecheck` script. Add one before wiring it in,
+#     otherwise this step would fail for reasons unrelated to the change.
+# ---------------------------------------------------------------------------
