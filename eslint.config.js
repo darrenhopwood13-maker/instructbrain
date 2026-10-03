@@ -62,5 +62,16 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
+  // 3. `prefer-const` is switched off for the Lovable preview auth shim, and only
+  //    that file. Its `timer` must be declared `let`: the timeout callback calls
+  //    `finish`, and `finish` clears the timeout, so the two reference each other
+  //    and neither can be declared `const` first. The exception used to live as an
+  //    inline `eslint-disable` comment inside that file, where a Lovable rewrite
+  //    of the file silently dropped it and turned CI red. Holding the exception
+  //    here means an external rewrite cannot un-fix it by accident.
+  {
+    files: ["src/integrations/supabase/previewAuthStorage.ts"],
+    rules: { "prefer-const": "off" },
+  },
   prettierConfig,
 );
