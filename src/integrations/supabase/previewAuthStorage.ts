@@ -35,6 +35,11 @@ export function brokeredPreviewStorage() {
     new Promise((resolve) => {
       const requestId = newId();
       let done = false;
+      // `finish` clears `timer`, so the two reference each other and the timer
+      // cannot be declared const without reordering this function. The order is
+      // load-bearing and this shim only runs inside Lovable's preview iframe,
+      // where it cannot be exercised by the test suite — so it is left alone.
+      // eslint-disable-next-line prefer-const
       let timer: ReturnType<typeof setTimeout>;
       const finish = (r: { ok: boolean; value?: string | null } | null) => {
         if (done) return;
