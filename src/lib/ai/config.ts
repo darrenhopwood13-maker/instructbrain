@@ -37,12 +37,19 @@ export type AiConfig = {
   /** A multi-observation array needs room. */
   maxOutputTokens: number;
   escalationEnabled: boolean;
+  /**
+   * Whether a tier may reason before it answers. Honoured by the DeepSeek
+   * adapter, which is the only provider wired here that exposes a switch for
+   * it; a provider without one ignores the field rather than guessing. Off by
+   * default — the measurement behind that is in resolveThinking below.
+   */
+  thinking: Record<AnalysisTier, boolean>;
 };
 
 export class AiNotConfiguredError extends Error {
   constructor() {
     super(
-      "No AI provider key is configured on the server. Add ANTHROPIC_API_KEY, OPENAI_API_KEY or GOOGLE_API_KEY in project settings — nothing was assessed.",
+      "No AI provider key is configured on the server. Add ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY or DEEPSEEK_API_KEY in project settings — nothing was assessed.",
     );
     this.name = "AiNotConfiguredError";
   }
@@ -104,6 +111,37 @@ function resolveModel(provider: ProviderId, tier: AnalysisTier, fallback: string
     return fallback;
   }
   return candidate;
+}
+
+/**
+ * Whether a tier may reason before it answers.
+ *
+ * MEASURED, not assumed. The real production prompt (15,415 chars), a real
+ * photograph from public/demo, deepseek-flash, two runs each:
+ *
+ *   thinking on    3,067 output tokens    $0.004892 / photo
+ *   thinking off     478 output tokens    $0.001776 / photo
+ *
+ * Both runs returned a valid envelope carrying the same keys, so on this task
+ * the reasoning was not buying a better answer — it was buying 2,600 tokens
+ * that are billed at the output rate and then thrown away. Against the model
+ * this replaced (gpt-4.1-mini, ~$0.0039 / photo) that is the difference between
+ * DeepSeek costing 26% more and costing 54% less.
+ *
+ * So the default is OFF, and a deployment that wants it asks per tier:
+ *
+ *   AI_<TIER>_THINKING, then AI_THINKING, then off.
+ *
+ * Escalation is the tier where a second opinion is actually worth paying for,
+ * so AI_ESCALATION_THINKING=true is the sensible way to spend it. Note that
+ * escalation cannot currently fire at all on DeepSeek: both of its tiers
+ * resolve to the same model, and analysePhotograph only escalates when the two
+ * differ. See the profile in providerProfiles().
+ */
+function resolveThinking(tier: AnalysisTier): boolean {
+  const scoped = env(`AI_${tier.toUpperCase()}_THINKING`);
+  const value = scoped ?? env("AI_THINKING");
+  return value === "true" || value === "1";
 }
 
 /** Order matters: the first provider with a key present is the one used. */
@@ -178,6 +216,7 @@ export function aiConfig(): AiConfig {
     requestTimeoutMs: envNumber("AI_REQUEST_TIMEOUT_MS", 120_000),
     maxOutputTokens: envNumber("AI_MAX_OUTPUT_TOKENS", 6000),
     escalationEnabled: env("AI_ESCALATION_DISABLED") !== "true",
+    thinking: { triage: resolveThinking("triage"), escalation: resolveThinking("escalation") },
   };
 }
 

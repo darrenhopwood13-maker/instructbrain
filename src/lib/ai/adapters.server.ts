@@ -160,6 +160,22 @@ async function openai(request: AdapterRequest): Promise<AdapterResponse> {
  *  - json_object mode also requires the literal word "json" to appear in the
  *    prompt, otherwise it answers 400. buildSystemPrompt's closing line
  *    therefore names JSON explicitly; do not remove it.
+ *  - thinking is ON by default, and it is billed as output. It is therefore
+ *    switched off unless a tier asks for it (config.thinking). Two spellings
+ *    disable it — `thinking: { type: "disabled" }` and `reasoning_effort:
+ *    "none"` — and two that look like they should do NOT work: `enable_thinking:
+ *    false` and `chat_template_kwargs` are ignored, and `reasoning_effort:
+ *    "minimal"` reasons MORE than the default, not less. Measured on the real
+ *    prompt with a real photograph (2 runs, deepseek-flash):
+ *
+ *      baseline                      256 output tokens
+ *      thinking: disabled             57 output tokens   <- ships
+ *      reasoning_effort: none         52 output tokens
+ *      reasoning_effort: minimal     426 output tokens   <- trap
+ *      enable_thinking: false        338 output tokens   <- ignored
+ *
+ *    See resolveThinking in config.ts for the cost measurement on the full
+ *    15,415-char prompt.
  *
  * Vision is on `deepseek-flash` only — see the profile in config.ts.
  */
@@ -186,6 +202,9 @@ async function deepseek(request: AdapterRequest): Promise<AdapterResponse> {
           },
         ],
         response_format: { type: "json_object" },
+        // Omitting the key leaves the provider default (thinking on), so only
+        // the off case is ever sent.
+        ...(request.config.thinking[request.tier] ? {} : { thinking: { type: "disabled" } }),
       }),
     },
     request.config.requestTimeoutMs,

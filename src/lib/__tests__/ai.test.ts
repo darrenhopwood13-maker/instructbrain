@@ -11,6 +11,7 @@ import {
   type Observation,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
+import { aiConfig, providerProfiles } from "@/lib/ai/config";
 import { mapWithConcurrency } from "@/lib/ai/provider.server";
 import { resolveStatus, statusesOf } from "@/lib/survey-types";
 import { systemDefinitions, weatherproofingDefinition } from "@/lib/survey-definitions";
@@ -347,5 +348,125 @@ describe("intermediate statuses are reachable", () => {
     expect(prompt).not.toContain("Oracle");
     expect(prompt).toContain("A UK chartered building surveyor");
     expect(resolveStatus(legacy, "monitor").id).toBe("not_assessed");
+  });
+});
+
+describe("ai config — thinking, and which model a tier actually gets", () => {
+  /**
+   * Everything below reads process.env, so each case runs with a scrubbed
+   * environment and puts it back afterwards. Without the scrub a stray key on
+   * the developer's machine decides which provider is selected and the test
+   * proves nothing.
+   */
+  const MANAGED = [
+    "DEEPSEEK_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
+    "GOOGLE_API_KEY",
+    "AI_PROVIDER",
+    "AI_THINKING",
+    "AI_TRIAGE_THINKING",
+    "AI_ESCALATION_THINKING",
+    "AI_TRIAGE_MODEL",
+    "AI_ESCALATION_MODEL",
+    "AI_TRIAGE_MODEL_DEEPSEEK",
+    "AI_ESCALATION_MODEL_DEEPSEEK",
+  ];
+
+  function withEnv(vars: Record<string, string>, run: () => void): void {
+    const before = MANAGED.map((name) => [name, process.env[name]] as const);
+    for (const name of MANAGED) delete process.env[name];
+    Object.assign(process.env, vars);
+    try {
+      run();
+    } finally {
+      for (const [name, value] of before) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  }
+
+  const DEEPSEEK = { DEEPSEEK_API_KEY: "test-key-not-used" };
+
+  it("defaults thinking to OFF on both tiers", () => {
+    // Not a style choice: reasoning is billed as output and, measured on the
+    // real prompt with a real photograph, it tripled the cost of a photograph
+    // while returning the same envelope. See resolveThinking in config.ts.
+    withEnv(DEEPSEEK, () => {
+      const config = aiConfig();
+      expect(config.thinking.triage).toBe(false);
+      expect(config.thinking.escalation).toBe(false);
+    });
+  });
+
+  it("turns both tiers on from AI_THINKING", () => {
+    withEnv({ ...DEEPSEEK, AI_THINKING: "true" }, () => {
+      const config = aiConfig();
+      expect(config.thinking.triage).toBe(true);
+      expect(config.thinking.escalation).toBe(true);
+    });
+  });
+
+  it("turns one tier on with the per-tier variable, leaving the other alone", () => {
+    withEnv({ ...DEEPSEEK, AI_ESCALATION_THINKING: "true" }, () => {
+      const config = aiConfig();
+      expect(config.thinking.triage).toBe(false);
+      expect(config.thinking.escalation).toBe(true);
+    });
+  });
+
+  it("lets the per-tier variable override the global one, including back to off", () => {
+    withEnv({ ...DEEPSEEK, AI_THINKING: "true", AI_TRIAGE_THINKING: "false" }, () => {
+      const config = aiConfig();
+      expect(config.thinking.triage).toBe(false);
+      expect(config.thinking.escalation).toBe(true);
+    });
+  });
+
+  it("puts DeepSeek first, and keeps both of its tiers on a vision model", () => {
+    // deepseek-v4-pro cannot accept an image, and escalation re-examines the
+    // same photograph, so escalation must be vision-capable too.
+    withEnv(DEEPSEEK, () => {
+      const profiles = providerProfiles();
+      expect(profiles[0].id).toBe("deepseek");
+      expect(profiles[0].triageModel).toBe("deepseek-flash");
+      expect(profiles[0].escalationModel).toBe("deepseek-flash");
+      const config = aiConfig();
+      expect(config.provider).toBe("deepseek");
+      expect(config.models.escalation).toBe(config.models.triage);
+    });
+  });
+
+  it("discards a model name belonging to another provider, and says why", () => {
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (message?: unknown) => warnings.push(String(message));
+    try {
+      withEnv({ ...DEEPSEEK, AI_TRIAGE_MODEL: "claude-sonnet-4-5" }, () => {
+        const config = aiConfig();
+        expect(config.models.triage).toBe("deepseek-flash");
+      });
+    } finally {
+      console.warn = original;
+    }
+    expect(warnings.join("\n")).toContain("claude-sonnet-4-5");
+    expect(warnings.join("\n")).toContain("deepseek-flash");
+  });
+
+  it("still lets a deliberate DeepSeek model through the shared variable", () => {
+    withEnv({ ...DEEPSEEK, AI_TRIAGE_MODEL: "deepseek-flash" }, () => {
+      expect(aiConfig().models.triage).toBe("deepseek-flash");
+    });
+  });
+
+  it("lets a provider-scoped variable win, and an unknown name pass untouched", () => {
+    withEnv({ ...DEEPSEEK, AI_TRIAGE_MODEL_DEEPSEEK: "deepseek-flash" }, () => {
+      expect(aiConfig().models.triage).toBe("deepseek-flash");
+    });
+    // A custom or gateway name is not a mismatch — it must not be discarded.
+    withEnv({ ...DEEPSEEK, AI_TRIAGE_MODEL: "my-gateway-alias-v2" }, () => {
+      expect(aiConfig().models.triage).toBe("my-gateway-alias-v2");
+    });
   });
 });

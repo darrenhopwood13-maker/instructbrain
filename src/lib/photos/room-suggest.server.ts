@@ -142,6 +142,9 @@ async function deepseek({ prompts, images, config }: Call): Promise<unknown> {
           },
         ],
         response_format: { type: "json_object" },
+        // Thinking is billed as output and buys nothing on this task — see
+        // resolveThinking in lib/ai/config.ts for the measurement.
+        ...(config.thinking.triage ? {} : { thinking: { type: "disabled" } }),
       }),
     },
     config.requestTimeoutMs,
