@@ -22,8 +22,8 @@ export const Route = createFileRoute("/auth/sign-in")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
-    typeof search.next === "string" && search.next.startsWith("/.lovable/oauth/consent")
-      ? { next: search.next }
+    typeof search["next"] === "string" && search["next"].startsWith("/.lovable/oauth/consent")
+      ? { next: search["next"] }
       : {},
   component: SignIn,
 });

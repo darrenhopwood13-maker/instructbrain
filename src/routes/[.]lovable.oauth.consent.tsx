@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 
-type OAuthResult = { data: Record<string, any> | null; error: { message: string } | null };
+type OAuthResult = { data: { redirect_url?: string; redirect_to?: string; client?: { name?: string } } | null; error: { message: string } | null };
 type OAuthApi = {
   getAuthorizationDetails: (id: string) => Promise<OAuthResult>;
   approveAuthorization: (id: string) => Promise<OAuthResult>;
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     ],
   }),
   validateSearch: (s: Record<string, unknown>) => ({
-    authorization_id: typeof s.authorization_id === "string" ? s.authorization_id : "",
+    authorization_id: typeof s["authorization_id"] === "string" ? s["authorization_id"] : "",
   }),
   beforeLoad: async ({ search, location }) => {
     if (!search.authorization_id) throw new Error("Missing authorization_id");
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   },
   component: Consent,
   errorComponent: ({ error }) => (
-    <AuthLayout title="Connection request unavailable" subtitle={String((error as Error)?.message ?? error)}>
+    <AuthLayout title="Connection request unavailable" intro={String((error as Error)?.message ?? error)}>
       <span />
     </AuthLayout>
   ),
@@ -72,7 +72,7 @@ function Consent() {
   }
 
   return (
-    <AuthLayout title={`Connect ${name}`} subtitle="It will be able to read your projects and reports as you. It cannot send or change anything.">
+    <AuthLayout title={`Connect ${name}`} intro="It will be able to read your projects and reports as you. It cannot send or change anything.">
       {error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}
       <div className="flex flex-col gap-3">
         <Button variant="brand" className="min-h-11 w-full" disabled={busy} onClick={() => decide(true)}>Approve</Button>
