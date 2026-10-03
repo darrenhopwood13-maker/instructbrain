@@ -58,6 +58,54 @@ function envNumber(name: string, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/**
+ * Which model names belong to which provider. Used ONLY to catch a mismatch —
+ * a name that plainly belongs to somebody else. Anything not recognised is let
+ * through, so a custom, aliased or gateway model name is never rejected by
+ * accident. The cost of a false negative here is a confusing 400; the cost of a
+ * false positive is a silently wrong model, so the test is deliberately narrow.
+ */
+const PROVIDER_MODEL_PREFIXES: Record<ProviderId, string[]> = {
+  deepseek: ["deepseek-"],
+  anthropic: ["claude-"],
+  openai: ["gpt-", "o1", "o3", "o4"],
+  google: ["gemini-"],
+};
+
+function belongsToAnotherProvider(model: string, provider: ProviderId): boolean {
+  return (Object.keys(PROVIDER_MODEL_PREFIXES) as ProviderId[])
+    .filter((id) => id !== provider)
+    .some((id) => PROVIDER_MODEL_PREFIXES[id].some((prefix) => model.startsWith(prefix)));
+}
+
+/**
+ * The model for a tier, resolved with the provider kept firmly in mind.
+ *
+ * AI_TRIAGE_MODEL and AI_ESCALATION_MODEL are shared by every provider, so a
+ * value left over from a previous provider gets handed to the new one — and
+ * DeepSeek simply rejects a Claude model name. Rather than let that surface as
+ * a 400 on the first photograph of the first report, a name that plainly
+ * belongs to another provider is discarded here and the provider's own default
+ * is used, with a warning that says exactly why.
+ *
+ * Precedence: AI_<TIER>_MODEL_<PROVIDER>, then AI_<TIER>_MODEL, then default.
+ * The provider-scoped form is the one to use in a deployment that might move.
+ */
+function resolveModel(provider: ProviderId, tier: AnalysisTier, fallback: string): string {
+  const scopedName = `AI_${tier.toUpperCase()}_MODEL_${provider.toUpperCase()}`;
+  const genericName = `AI_${tier.toUpperCase()}_MODEL`;
+  const scoped = env(scopedName);
+  const candidate = scoped ?? env(genericName);
+  if (!candidate) return fallback;
+  if (belongsToAnotherProvider(candidate, provider)) {
+    console.warn(
+      `[ai-config] ignoring ${scoped ? scopedName : genericName}="${candidate}" for provider "${provider}" — that model belongs to a different provider. Using "${fallback}".`,
+    );
+    return fallback;
+  }
+  return candidate;
+}
+
 /** Order matters: the first provider with a key present is the one used. */
 export function providerProfiles(): ProviderProfile[] {
   return [
@@ -78,26 +126,26 @@ export function providerProfiles(): ProviderProfile[] {
       //     below handles both. Do not reuse the OpenAI adapter for this.
       id: "deepseek",
       keyEnv: "DEEPSEEK_API_KEY",
-      triageModel: env("AI_TRIAGE_MODEL") ?? "deepseek-flash",
-      escalationModel: env("AI_ESCALATION_MODEL") ?? "deepseek-flash",
+      triageModel: resolveModel("deepseek", "triage", "deepseek-flash"),
+      escalationModel: resolveModel("deepseek", "escalation", "deepseek-flash"),
     },
     {
       id: "anthropic",
       keyEnv: "ANTHROPIC_API_KEY",
-      triageModel: env("AI_TRIAGE_MODEL") ?? "claude-3-5-haiku-latest",
-      escalationModel: env("AI_ESCALATION_MODEL") ?? "claude-sonnet-4-5",
+      triageModel: resolveModel("anthropic", "triage", "claude-3-5-haiku-latest"),
+      escalationModel: resolveModel("anthropic", "escalation", "claude-sonnet-4-5"),
     },
     {
       id: "openai",
       keyEnv: "OPENAI_API_KEY",
-      triageModel: env("AI_TRIAGE_MODEL") ?? "gpt-4.1-mini",
-      escalationModel: env("AI_ESCALATION_MODEL") ?? "gpt-4.1",
+      triageModel: resolveModel("openai", "triage", "gpt-4.1-mini"),
+      escalationModel: resolveModel("openai", "escalation", "gpt-4.1"),
     },
     {
       id: "google",
       keyEnv: "GOOGLE_API_KEY",
-      triageModel: env("AI_TRIAGE_MODEL") ?? "gemini-2.5-flash",
-      escalationModel: env("AI_ESCALATION_MODEL") ?? "gemini-2.5-pro",
+      triageModel: resolveModel("google", "triage", "gemini-2.5-flash"),
+      escalationModel: resolveModel("google", "escalation", "gemini-2.5-pro"),
     },
   ];
 }
