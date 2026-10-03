@@ -31,5 +31,7 @@ export function complianceDefinition(checkTypeId: string): SurveyDefinition {
     requiresTradeAssignment: false,
     requiresLifecycle: true,
     supportsDistribution: false,
+    // The run holds the project; the report is only meaningful alongside it.
+    projectBound: true,
   };
 }

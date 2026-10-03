@@ -410,10 +410,65 @@ export async function createReport(input: NewReport): Promise<string> {
  * A quick report stands alone until someone chooses to attach it to a
  * project. Once attached, the existing project-scoped distribution and
  * directory machinery picks it up automatically — nothing else changes.
+ *
+ * Attaching and detaching are a matched pair and both are recorded in the
+ * audit log. Detaching is safe: every report-scoped table keys on report_id,
+ * so nothing is orphaned and nothing is deleted — the report simply loses the
+ * project's directory and close-out context.
  */
 export async function attachReportToProject(reportId: string, projectId: string): Promise<void> {
   const { error } = await from("reports").update({ project_id: projectId }).eq("id", reportId);
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+  await writeProjectLinkAudit(reportId, "report.attached_to_project", {
+    before: { project_id: null },
+    after: { project_id: projectId },
+  });
+}
+
+/**
+ * The reverse of {@link attachReportToProject}: the report goes back to
+ * standing alone. Everything it holds — photographs, findings, versions,
+ * shares, trade links and the distribution history — stays exactly where it
+ * is, because all of it keys on report_id rather than on the project.
+ *
+ * What it gives up is the project's directory, so there is no longer anyone to
+ * distribute to, and the close-out tracking that project membership provides.
+ * The caller passes the project it is leaving so the audit entry can record
+ * both sides of the move.
+ */
+export async function detachReportFromProject(
+  reportId: string,
+  fromProjectId: string | null,
+): Promise<void> {
+  const { error } = await from("reports").update({ project_id: null }).eq("id", reportId);
+  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+  await writeProjectLinkAudit(reportId, "report.detached_from_project", {
+    before: { project_id: fromProjectId },
+    after: { project_id: null },
+  });
+}
+
+/**
+ * Project-link changes are evidence-relevant, so they belong in the audit log
+ * alongside the trade-link entries. Best-effort by design: if the audit write
+ * fails the move has already happened, and turning that into a user-facing
+ * error would report a failure that did not occur.
+ */
+async function writeProjectLinkAudit(
+  reportId: string,
+  action: string,
+  changes: { before: unknown; after: unknown },
+): Promise<void> {
+  const { data } = await supabase.auth.getUser();
+  const actorId = data.user?.id ?? null;
+  if (!actorId) return;
+  await from("audit_log").insert({
+    report_id: reportId,
+    actor_id: actorId,
+    action,
+    before: changes.before as never,
+    after: changes.after as never,
+  });
 }
 
 /* ------------------------------------------------------------------ */

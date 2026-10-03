@@ -130,6 +130,13 @@ export type SurveyDefinition = {
   supportsDistribution?: boolean;
   /** Manual-only reports never invoke photograph, summary or translation AI. */
   manualOnly?: boolean;
+  /**
+   * A project-bound report belongs to its project and must not be detached
+   * from it. Compliance registers are the case that exists today: the run
+   * that produced the report holds the project, so the report only makes
+   * sense alongside it. Frozen at creation like the other capability flags.
+   */
+  projectBound?: boolean;
   defaultDistributionGrouping?: string;
   /**
    * Whether this type writes its own document header (title, subtitle, date)
@@ -162,6 +169,18 @@ export function isManualOnly(
   snapshot: SurveyTypeSnapshot | null | undefined,
 ): boolean {
   return snapshot?.manualOnly === true;
+}
+
+/**
+ * A second frozen capability flag. A project-bound report cannot be detached
+ * from its project: the compliance run that produced it holds the project, so
+ * the report is only meaningful alongside it. Sharing this module with a new
+ * project-bound template is a data change, not a code change.
+ */
+export function isProjectBound(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): boolean {
+  return snapshot?.projectBound === true;
 }
 
 const TONES: StatusTone[] = ["pass", "fail", "warn", "flag", "neutral"];

@@ -7,6 +7,7 @@ import {
   Download,
   Eye,
   FolderInput,
+  FolderOutput,
   Link2,
   Loader2,
   Send,
@@ -56,11 +57,13 @@ export function ReportActions({
   resultView = "severity",
   prepareSummary = false,
   onAddToProject,
+  onDetachFromProject,
 }: {
   document: ReportDocument;
   resultView?: ResultView;
   prepareSummary?: boolean;
   onAddToProject?: (() => void) | undefined;
+  onDetachFromProject?: (() => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
@@ -317,6 +320,12 @@ export function ReportActions({
               <DropdownMenuItem className="min-h-11" onSelect={onAddToProject}>
                 <FolderInput aria-hidden="true" className="size-4" />
                 Add to project
+              </DropdownMenuItem>
+            ) : null}
+            {onDetachFromProject ? (
+              <DropdownMenuItem className="min-h-11" onSelect={onDetachFromProject}>
+                <FolderOutput aria-hidden="true" className="size-4" />
+                Detach from project
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>

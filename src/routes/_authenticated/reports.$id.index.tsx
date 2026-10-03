@@ -36,7 +36,7 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
-import { definitionLabel, isManualOnly, tradesOf } from "@/lib/survey-types";
+import { definitionLabel, isManualOnly, isProjectBound, tradesOf } from "@/lib/survey-types";
 import { ManualReviewList } from "@/components/photos/manual-review-list";
 import { ToneSelector } from "@/components/report/tone-selector";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
@@ -76,7 +76,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
 });
 
 function ReportWorkspace() {
-  const [attaching, setAttaching] = useState(false);
+  const [projectLinkOpen, setProjectLinkOpen] = useState(false);
   const { id } = Route.useParams();
   const { tab, view, analyse } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -369,7 +369,12 @@ function ReportWorkspace() {
         ) : null}
 
 
-        <AttachToProjectDialog open={attaching} onOpenChange={setAttaching} reportId={report.id} />
+        <AttachToProjectDialog
+          open={projectLinkOpen}
+          onOpenChange={setProjectLinkOpen}
+          reportId={report.id}
+          project={project ? { id: project.id, name: project.name } : null}
+        />
       </header>
 
       <div className="mt-8">
@@ -509,7 +514,12 @@ function ReportWorkspace() {
                   document={doc}
                   resultView={resultView}
                prepareSummary={!isManualOnly(report.surveyTypeSnapshot)}
-                  onAddToProject={!project ? () => setAttaching(true) : undefined}
+                  onAddToProject={!project ? () => setProjectLinkOpen(true) : undefined}
+                  onDetachFromProject={
+                    project && !isProjectBound(report.surveyTypeSnapshot)
+                      ? () => setProjectLinkOpen(true)
+                      : undefined
+                  }
                 />
               </div>
               {locked ? (
