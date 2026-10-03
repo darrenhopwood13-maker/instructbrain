@@ -6,7 +6,13 @@
  * costs far more than the extra tokens.
  */
 import { adapters, AiProviderError, type AdapterResponse } from "@/lib/ai/adapters.server";
-import { aiConfig, estimateCostUsd, type AiConfig, type AnalysisTier } from "@/lib/ai/config";
+import {
+  aiConfig,
+  escalationTarget,
+  estimateCostUsd,
+  type AiConfig,
+  type AnalysisTier,
+} from "@/lib/ai/config";
 import {
   needsEscalation,
   parseEnvelope,
@@ -107,10 +113,32 @@ export async function analysePhotograph(
   const triage = await callTier(input, "triage", config);
   attempts.push(triage);
 
+  // Escalation is optional and may live on another provider entirely — see
+  // escalationTarget. The derived config differs from the triage config only in
+  // which provider answers and which model it is asked for, so the adapter,
+  // the key and the price all follow from it.
+  const target = escalationTarget();
+  const escalationConfig: AiConfig | null = target
+    ? {
+        ...config,
+        provider: target.provider,
+        apiKey: target.apiKey,
+        models: { ...config.models, escalation: target.model },
+      }
+    : null;
+
+  const escalationModel = escalationConfig?.models.escalation ?? config.models.escalation;
+  const escalationProvider = escalationConfig?.provider ?? config.provider;
+  // Escalating to the same provider on the same model as triage is paying twice
+  // for one opinion, so it is skipped. This is the case DeepSeek falls into of
+  // its own accord, and the reason a target is worth naming at all.
+  const escalationDiffers =
+    escalationProvider !== config.provider || escalationModel !== config.models.triage;
+
   let chosen = triage;
   if (
     config.escalationEnabled &&
-    config.models.escalation !== config.models.triage &&
+    escalationDiffers &&
     (triage.envelope === null ||
       needsEscalation(
         triage.envelope,
@@ -119,7 +147,7 @@ export async function analysePhotograph(
         input.findingsRule,
       ))
   ) {
-    const escalation = await callTier(input, "escalation", config);
+    const escalation = await callTier(input, "escalation", escalationConfig ?? config);
     attempts.push(escalation);
     if (escalation.envelope !== null) chosen = escalation;
   }

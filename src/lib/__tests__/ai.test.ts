@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   SchemaValidationError,
   draftsFromEnvelope,
@@ -11,8 +11,9 @@ import {
   type Observation,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
-import { aiConfig, providerProfiles } from "@/lib/ai/config";
-import { mapWithConcurrency } from "@/lib/ai/provider.server";
+import { aiConfig, escalationTarget, providerProfiles } from "@/lib/ai/config";
+import { adapters } from "@/lib/ai/adapters.server";
+import { analysePhotograph, mapWithConcurrency } from "@/lib/ai/provider.server";
 import { resolveStatus, statusesOf } from "@/lib/survey-types";
 import { systemDefinitions, weatherproofingDefinition } from "@/lib/survey-definitions";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -371,6 +372,8 @@ describe("ai config — thinking, and which model a tier actually gets", () => {
     "AI_ESCALATION_MODEL",
     "AI_TRIAGE_MODEL_DEEPSEEK",
     "AI_ESCALATION_MODEL_DEEPSEEK",
+    "AI_ESCALATION_PROVIDER",
+    "AI_ESCALATION_MODEL_ANTHROPIC",
   ];
 
   function withEnv(vars: Record<string, string>, run: () => void): void {
@@ -467,6 +470,177 @@ describe("ai config — thinking, and which model a tier actually gets", () => {
     // A custom or gateway name is not a mismatch — it must not be discarded.
     withEnv({ ...DEEPSEEK, AI_TRIAGE_MODEL: "my-gateway-alias-v2" }, () => {
       expect(aiConfig().models.triage).toBe("my-gateway-alias-v2");
+    });
+  });
+});
+
+describe("escalation may live on another provider", () => {
+  const ANTHROPIC = { ANTHROPIC_API_KEY: "test-key-not-used" };
+  const DEEPSEEK = { DEEPSEEK_API_KEY: "test-key-not-used" };
+
+  // aiConfig and escalationTarget both read process.env, so this block needs the
+  // same scrub as the one above.
+  const MANAGED = [
+    "DEEPSEEK_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
+    "GOOGLE_API_KEY",
+    "AI_PROVIDER",
+    "AI_TRIAGE_MODEL",
+    "AI_ESCALATION_MODEL",
+    "AI_TRIAGE_MODEL_DEEPSEEK",
+    "AI_ESCALATION_MODEL_DEEPSEEK",
+    "AI_ESCALATION_PROVIDER",
+    "AI_ESCALATION_MODEL_ANTHROPIC",
+    "AI_ESCALATION_DISABLED",
+  ];
+
+  function withEnv(vars: Record<string, string>, run: () => void): void {
+    const before = MANAGED.map((name) => [name, process.env[name]] as const);
+    for (const name of MANAGED) delete process.env[name];
+    Object.assign(process.env, vars);
+    try {
+      run();
+    } finally {
+      for (const [name, value] of before) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  }
+
+  function silenceWarnings(run: () => void): string[] {
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (message?: unknown) => warnings.push(String(message));
+    try {
+      run();
+    } finally {
+      console.warn = original;
+    }
+    return warnings;
+  }
+
+  it("is off unless asked for, so nothing changes by default", () => {
+    withEnv(DEEPSEEK, () => expect(escalationTarget()).toBeNull());
+  });
+
+  it("resolves the named provider, its key and its own escalation model", () => {
+    withEnv({ ...DEEPSEEK, ...ANTHROPIC, AI_ESCALATION_PROVIDER: "anthropic" }, () => {
+      expect(escalationTarget()).toEqual({
+        provider: "anthropic",
+        apiKey: "test-key-not-used",
+        model: "claude-sonnet-4-5",
+      });
+    });
+  });
+
+  it("discards a model name belonging to the triage provider", () => {
+    // The trap: AI_ESCALATION_MODEL is shared, so a DeepSeek name left over
+    // from the triage side would be handed to Anthropic and rejected.
+    withEnv(
+      { ...DEEPSEEK, ...ANTHROPIC, AI_ESCALATION_PROVIDER: "anthropic", AI_ESCALATION_MODEL: "deepseek-flash" },
+      () => {
+        const warnings = silenceWarnings(() => {
+          expect(escalationTarget()?.model).toBe("claude-sonnet-4-5");
+        });
+        expect(warnings.join("\n")).toContain("deepseek-flash");
+      },
+    );
+  });
+
+  it("refuses a provider it does not know, and says so", () => {
+    withEnv({ ...DEEPSEEK, AI_ESCALATION_PROVIDER: "mistral" }, () => {
+      let target: unknown = "unset";
+      const warnings = silenceWarnings(() => {
+        target = escalationTarget();
+      });
+      expect(target).toBeNull();
+      expect(warnings.join("\n")).toContain("mistral");
+    });
+  });
+
+  it("refuses a provider whose key is missing, rather than sending a bad call", () => {
+    withEnv({ ...DEEPSEEK, AI_ESCALATION_PROVIDER: "anthropic" }, () => {
+      let target: unknown = "unset";
+      const warnings = silenceWarnings(() => {
+        target = escalationTarget();
+      });
+      expect(target).toBeNull();
+      expect(warnings.join("\n")).toContain("ANTHROPIC_API_KEY");
+    });
+  });
+
+  describe("and actually runs there, or does not", () => {
+    const original = { deepseek: adapters.deepseek, anthropic: adapters.anthropic };
+
+    function stub(label: string, calls: string[], payload: unknown) {
+      return (async () => {
+        calls.push(label);
+        return { payload, raw: {}, usage: { inputTokens: 10, outputTokens: 5 } };
+      }) as unknown as typeof adapters.deepseek;
+    }
+
+    // confidence 0.3 is below the 0.6 threshold, so triage asks for a second look.
+    const unsure = envelope({ observations: [observation({ confidence: 0.3 })] });
+    const definite = envelope({ observations: [observation({ confidence: 0.9 })] });
+
+    const input = {
+      snapshot: roofing,
+      systemPrompt: "system",
+      userPrompt: "user",
+      imageUrl: "data:image/jpeg;base64,AAAA",
+    };
+
+    afterEach(() => {
+      adapters.deepseek = original.deepseek;
+      adapters.anthropic = original.anthropic;
+    });
+
+    async function run(vars: Record<string, string>) {
+      const calls: string[] = [];
+      (adapters as Record<string, unknown>).deepseek = stub("deepseek", calls, unsure);
+      (adapters as Record<string, unknown>).anthropic = stub("anthropic", calls, definite);
+      let outcome: Awaited<ReturnType<typeof analysePhotograph>> | null = null;
+      // withEnv is synchronous, so the env must be applied around the await.
+      const before = MANAGED.map((name) => [name, process.env[name]] as const);
+      for (const name of MANAGED) delete process.env[name];
+      Object.assign(process.env, vars);
+      try {
+        outcome = await analysePhotograph(input, aiConfig());
+      } finally {
+        for (const [name, value] of before) {
+          if (value === undefined) delete process.env[name];
+          else process.env[name] = value;
+        }
+      }
+      return { calls, outcome: outcome! };
+    }
+
+    it("skips escalation entirely when both tiers are the same model", async () => {
+      // This is DeepSeek as shipped: one vision model, so the second look has
+      // nowhere to go and silently never happens.
+      const { calls, outcome } = await run(DEEPSEEK);
+      expect(calls).toEqual(["deepseek"]);
+      expect(outcome.tier).toBe("triage");
+      expect(outcome.attempts).toHaveLength(1);
+    });
+
+    it("escalates to the named provider, and records which model answered", async () => {
+      const { calls, outcome } = await run({
+        ...DEEPSEEK,
+        ...ANTHROPIC,
+        AI_ESCALATION_PROVIDER: "anthropic",
+      });
+      expect(calls).toEqual(["deepseek", "anthropic"]);
+      expect(outcome.tier).toBe("escalation");
+      expect(outcome.attempts.map((attempt) => attempt.provider)).toEqual(["deepseek", "anthropic"]);
+      expect(outcome.attempts[1].model).toBe("claude-sonnet-4-5");
+      // The escalation's own answer is the one kept. parseEnvelope normalises
+      // the payload on the way through, so this checks the answer rather than
+      // the object identity.
+      expect(outcome.envelope?.observations[0].confidence).toBe(0.9);
+      expect(outcome.attempts[0].envelope?.observations[0].confidence).toBe(0.3);
     });
   });
 });
