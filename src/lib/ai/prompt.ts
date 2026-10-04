@@ -61,6 +61,30 @@ function orderedGuidance(snapshot: SurveyTypeSnapshot) {
   return [...entries].sort((a, b) => rank(a.key) - rank(b.key));
 }
 
+/**
+ * The register, SHOWN rather than described, for tones that declare examples.
+ *
+ * Why this exists. The tone instruction is ~600 characters sitting in a ~20,000
+ * character prompt, and on DeepSeek the register landed in 1 run of 6 — measured
+ * on this exact prompt with real photographs from a real snagging report. The
+ * instruction is correct and it is not enough. A register is mimicked far more
+ * reliably than it is obeyed, so a few examples in the voice do the work the
+ * description cannot.
+ *
+ * The examples are chosen to carry no subject matter from any survey type and no
+ * numbers, so nothing in them can be read as a fact about the photograph in
+ * front of the model. The wording says so as well, twice.
+ */
+function voiceExamplesOf(tone: ReportBrief["tone"] | string | null): string | null {
+  const examples = toneById(tone).voiceExamples ?? [];
+  if (examples.length === 0) return null;
+  return [
+    "Here is the register itself, written in the voice. Copy HOW these are written, never WHAT they are about:",
+    examples.map((example) => `"${example}"`).join(" "),
+    "Their subjects are unrelated to this survey and must not appear anywhere in your answer. Take the dryness and the understatement, and leave their subject matter behind.",
+  ].join(" ");
+}
+
 export function buildSystemPrompt(
   snapshot: SurveyTypeSnapshot,
   brief?: ReportBrief | null,
@@ -182,6 +206,7 @@ export function buildSystemPrompt(
           "This governs the prose only — wording, register and sentence style. Where the voice above differs from it on style, follow this tone; the voice sets your expertise and your priorities, not your sentences.",
           "It has no authority over anything else. Every status, severity, factual observation, capture field and abstention rule above still applies in full, and a reader must never be able to tell which tone was used from the facts alone.",
           toneById(brief.tone).instruction,
+          voiceExamplesOf(brief.tone),
           "Apply this tone firmly and consistently across every observation in this response. A flat, generic or neutral register is a failure of this instruction, not a safe default.",
         ].join(" ")
       : null,

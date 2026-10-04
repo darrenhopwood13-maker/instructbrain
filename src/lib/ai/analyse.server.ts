@@ -27,6 +27,7 @@ import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
 import { promptFingerprint } from "@/lib/ai/prompt-fingerprint";
 import { coerceBrief, toneById } from "@/lib/report/brief";
 import { applyToneRules } from "@/lib/report/tone-post-process";
+import { applyVoicePass } from "@/lib/ai/tone-pass.server";
 import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
 import { getDefinition } from "@/lib/survey-definitions";
 import { analysePhotograph, type TierAttempt } from "@/lib/ai/provider.server";
@@ -523,11 +524,45 @@ export async function analysePhotoForReport(
     ...(dropSeverity ? { severity: null, severity_rationale: null } : {}),
   }));
 
+  // THE VOICE PASS — a second, text-only call whose whole prompt is the tone.
+  // The register does not survive the vision prompt: measured 1 run in 6 with the
+  // instruction alone, and 2 findings in 18 once examples in the voice were added
+  // to it. Statuses, severities, refs, capture fields and confidence are not sent
+  // and are never written back, and a rewrite that changes a number or drifts in
+  // length is discarded — see tone-pass.server.ts.
+  const withText = drafts
+    .map((draft, index) => ({ draft, index }))
+    .filter(({ draft }) => !!draft.finding_text?.trim());
+  const voiced =
+    withText.length > 0
+      ? await applyVoicePass(
+          withText.map(({ draft }) => draft.finding_text!),
+          tone.id,
+          config,
+        )
+      : null;
+  const voicedDrafts: DraftFinding[] = voiced
+    ? drafts.map((draft, index) => {
+        const position = withText.findIndex((entry) => entry.index === index);
+        const replacement = position === -1 ? undefined : voiced.texts[position];
+        return replacement ? { ...draft, finding_text: replacement } : draft;
+      })
+    : drafts;
+
+  // Kept on the stored row, so the cost and the hit rate are readable later
+  // without adding a second tier to ai_usage_events.
+  const rawWithTone = voiced
+    ? {
+        ...(typeof raw === "object" && raw !== null ? raw : { raw }),
+        tone_pass: voiced.usage,
+      }
+    : raw;
+
   result.error = failure;
 
-  if (drafts.length === 0) return result;
+  if (voicedDrafts.length === 0) return result;
 
-  for (const draft of drafts) {
+  for (const draft of voicedDrafts) {
     // Invariant 4: the database hands out the next ref under a per-report lock,
     // so photographs analysed concurrently can never claim the same number.
     const allocated = await allocateRef(client, input.reportId);
@@ -550,7 +585,7 @@ export async function analysePhotoForReport(
             // covering several types can be sectioned in the document.
             [SURVEY_TYPE_FIELD]: String((snapshot as { id?: unknown }).id ?? ""),
           },
-          ai_raw_output: (raw ?? null) as never,
+          ai_raw_output: (rawWithTone ?? null) as never,
           ...payload,
         })
         .select("id")

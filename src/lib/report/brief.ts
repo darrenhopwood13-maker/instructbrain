@@ -17,6 +17,11 @@ export const REPORT_TONES = [
     description: "Measured professional register, suitable for issue to a client.",
     instruction:
       "Write in a measured, formal professional register. Complete sentences, no contractions, no colloquialism. State the observed condition precisely and without emotion.",
+    voiceExamples: [] as string[],
+    // The register reaches the model through the vision prompt for this tone and
+    // does not need a second call. Only a tone whose voice the vision call
+    // measurably fails to carry sets this — see tone-pass.server.ts.
+    voicePass: false,
     rules: [] as ToneRule[],
     maxOutputTokens: 4500,
     escalate: true,
@@ -27,6 +32,8 @@ export const REPORT_TONES = [
     description: "Plain, direct wording a non-specialist can follow.",
     instruction:
       "Write plainly and directly, as if talking a non-specialist through it on site. Start each observation with the thing itself rather than with 'The' or 'There is'. Never prefix an observation with a label such as 'Finding:'. No commentary on how something looks or how it affects the overall finish.",
+    voiceExamples: [] as string[],
+    voicePass: false,
     rules: ["strip-finding-label", "strip-leading-article"] as ToneRule[],
     maxOutputTokens: 3000,
     escalate: false,
@@ -37,6 +44,8 @@ export const REPORT_TONES = [
     description: "Terse. The shortest wording that carries the fact.",
     instruction:
       "Be terse. One short sentence per observation wherever possible. Cut every word that is not carrying information. No preamble, no impact commentary.",
+    voiceExamples: [] as string[],
+    voicePass: false,
     rules: [] as ToneRule[],
     maxOutputTokens: 2500,
     escalate: false,
@@ -47,6 +56,8 @@ export const REPORT_TONES = [
     description: "Fuller technical description for a specialist reader.",
     instruction:
       "Write for a chartered surveyor or specialist contractor. Describe the observed condition precisely, including location within the photograph, materials and extent where they are visible. Do not speculate beyond the photograph.",
+    voiceExamples: [] as string[],
+    voicePass: false,
     rules: [] as ToneRule[],
     maxOutputTokens: 6000,
     escalate: true,
@@ -57,6 +68,23 @@ export const REPORT_TONES = [
     description: "Dry and wry. For internal use, not for a client.",
     instruction:
       "Write with a dry, wry edge. Use understatement: describe an avoidable failure as though it were a minor personal inconvenience and let the reader draw the conclusion. One wry turn of phrase per observation at most. Never insult a named person or company, and never bend a fact for the sake of the joke — the accuracy is what makes it land.",
+    // SHOWN, not described. The instruction above was measured on DeepSeek over
+    // the real prompt and real photographs and the register landed in 1 run of 6:
+    // a 600-character style instruction competing with 20,000 characters of
+    // technical rules loses. Register is mimicked far more reliably than it is
+    // obeyed, so these are examples of the voice with the subject matter kept
+    // deliberately unrelated (and free of numbers) so nothing in them can be
+    // mistaken for a fact about the photograph in front of it.
+    voiceExamples: [
+      "The corner is quietly handing in its resignation, one arris at a time.",
+      "Sealant applied as a gesture of intent rather than a weather seal.",
+      "The mortar has been left to find its own way out of the joint.",
+    ],
+    // Measured: the instruction alone landed in 1 run of 6, and adding examples
+    // in the voice moved it to 2 findings of 18 — not a fix either. The register
+    // is not reachable from inside the vision prompt, so this tone buys a
+    // second, text-only call whose whole prompt is the voice.
+    voicePass: true,
     rules: ["strip-finding-label"] as ToneRule[],
     maxOutputTokens: 3500,
     escalate: false,
