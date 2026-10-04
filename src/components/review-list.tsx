@@ -517,17 +517,12 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <div className="grid min-w-0 gap-4 rounded-xl border border-border bg-surface-raised p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">
-            {confirmed} of {items.length} findings confirmed
-          </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Review each AI-drafted finding before the report can be issued.
-          </p>
-        </div>
-        <Button variant="brand" className="w-full sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
-          Confirm all
+      <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-surface-raised p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <p className="min-w-0 text-sm font-semibold">
+          {confirmed} of {items.length} accepted
+        </p>
+        <Button variant="brand" className="min-h-11 w-full sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
+          Accept all
         </Button>
       </div>
 
@@ -574,20 +569,6 @@ export function ReviewList({
         </DialogContent>
       </Dialog>
 
-      <div className="mt-3">
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="min-h-11 text-muted-foreground"
-          aria-haspopup="dialog"
-          onClick={() => setShortcutsOpen(true)}
-        >
-          <Keyboard aria-hidden="true" className="mr-1.5 size-4" />
-          Keyboard shortcuts
-        </Button>
-      </div>
 
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
         <DialogContent>
@@ -626,125 +607,80 @@ export function ReviewList({
         </DialogContent>
       </Dialog>
 
-      {position ? (
-        <div className="mt-4 rounded-xl border border-border bg-surface-raised p-3">
-          {photoUrl.get(position.photoId) ? (
-            <img
-              src={photoUrl.get(position.photoId) ?? ""}
-              alt={`Photo ${position.photoIndex} of ${position.photoTotal} under review`}
-              className="mx-auto max-h-[42vh] w-auto rounded-lg object-contain"
-            />
-          ) : (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              No photograph is attached to this finding.
-            </p>
-          )}
-          <p className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Photo {position.photoIndex} of {position.photoTotal}
-          </p>
-          {position.findingTotal > 1 ? (
-            <p className="mt-1 text-center text-xs text-muted-foreground">
-              {position.findingTotal} findings on this photo · this is {position.findingIndex}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="mt-3 grid grid-cols-2 items-center gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-        <Button
-          variant="quiet"
-          className="min-h-11 w-full px-3"
-          disabled={active === 0}
-          onClick={() => setActive((i) => Math.max(i - 1, 0))}
-        >
-          <ChevronLeft aria-hidden="true" className="size-4" />
-          Previous
-        </Button>
-        <div className="col-span-2 w-full sm:col-span-1 sm:w-auto sm:flex-1">
-          <label htmlFor="go-to-finding" className="sr-only">
-            Go to finding
-          </label>
-          <Select
-            value={items[active]?.id ?? ""}
-            onValueChange={(id) => {
-              const next = items.findIndex((item) => item.id === id);
-              if (next >= 0) setActive(next);
-            }}
-          >
-            <SelectTrigger
-              id="go-to-finding"
-              aria-label="Go to finding"
-              className="h-11 w-full bg-surface-raised text-sm sm:mx-auto sm:max-w-sm"
-            >
-              <SelectValue placeholder="Go to finding…" />
-            </SelectTrigger>
-            <SelectContent>
-              {items.map((item, i) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {itemLabel(item.ref)} — {item.title || "Untitled finding"} ·{" "}
-                  {resolved[i]?.label ?? ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button
-          variant="quiet"
-          className="min-h-11 w-full px-3"
-          disabled={!unresolvedOnly && active >= items.length - 1}
-          onClick={() =>
-            unresolvedOnly
-              ? goToFinding(nextUnresolved(active, 1))
-              : setActive((i) => Math.min(i + 1, items.length - 1))
-          }
-        >
-          Next
-          <ChevronRight aria-hidden="true" className="size-4" />
-        </Button>
-      </div>
-
-
       <ul
         aria-label="Findings for review"
         className="mt-4 space-y-2"
         onKeyDown={onKeyDown}
-        onTouchStart={(event) => {
-          touchStart.current = event.touches[0]?.clientX ?? null;
-        }}
-        onTouchEnd={(event) => {
-          const start = touchStart.current;
-          const end = event.changedTouches[0]?.clientX ?? null;
-          touchStart.current = null;
-          if (start === null || end === null) return;
-          const delta = end - start;
-          if (Math.abs(delta) < 60) return;
-          setActive((i) =>
-            delta < 0 ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0),
-          );
-        }}
       >
         {items.map((item, index) => {
-          if (index !== active) return null;
           const status = resolved[index] ?? resolveStatus(snapshot, item.status);
           const blocked = status.id === NOT_ASSESSED_ID;
+          const thumb = photoUrl.get(item.photoIds?.[0] ?? "") ?? null;
+          if (index !== active) {
+            if (unresolvedOnly && !blocked) return null;
+            const done = item.confirmed && !blocked;
+            return (
+              <li
+                key={item.id}
+                ref={(el) => {
+                  rowRefs.current[index] = el;
+                }}
+                tabIndex={-1}
+                className={cn(
+                  "flex min-w-0 items-center gap-3 rounded-xl border bg-surface-raised p-2 outline-none",
+                  blocked ? "border-flag/40" : "border-border",
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActive(index)}
+                  className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-brand-accent"
+                  aria-label={`Open ${itemLabel(item.ref)}: ${item.title || "Untitled finding"}`}
+                >
+                  {thumb ? (
+                    <img src={thumb} alt="" loading="lazy" className="size-14 shrink-0 rounded-md bg-surface object-cover" />
+                  ) : (
+                    <span aria-hidden="true" className="size-14 shrink-0 rounded-md bg-surface-sunken" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-semibold text-muted-foreground">{itemLabel(item.ref)}</span>
+                    <span className="block truncate text-sm font-semibold">
+                      {item.captureFields?.["item"]?.trim() || item.title || "Untitled finding"}
+                    </span>
+                    <span className="mt-0.5 block">
+                      <StatusPill status={status} />
+                    </span>
+                  </span>
+                </button>
+                {done ? (
+                  <span className="shrink-0 px-2 text-xs font-semibold text-muted-foreground">Accepted</span>
+                ) : blocked ? null : (
+                  <Button
+                    variant="quiet"
+                    className="min-h-11 shrink-0 px-3"
+                    onClick={() =>
+                      void persist(item.id, { confirmed: true }, { confirmed_at: new Date().toISOString() })
+                    }
+                  >
+                    Accept
+                  </Button>
+                )}
+              </li>
+            );
+          }
           return (
             <li
               key={item.id}
               ref={(el) => {
                 rowRefs.current[index] = el;
               }}
-              tabIndex={index === active ? 0 : -1}
-              aria-current={index === active ? "true" : undefined}
-              onFocus={() => setActive(index)}
-              className={cn(
-                "rounded-xl border bg-surface-raised p-4 outline-none transition-colors",
-                index === active
-                  ? "border-brand-accent ring-2 ring-brand-accent/30"
-                  : blocked
-                    ? "border-flag/40"
-                    : "border-border hover:border-border-strong",
-              )}
+              tabIndex={0}
+              aria-current="true"
+              className="rounded-xl border border-brand-accent bg-surface-raised p-4 outline-none ring-2 ring-brand-accent/30"
             >
+              {thumb ? (
+                <img src={thumb} alt={`Photograph for ${itemLabel(item.ref)}`} className="mb-3 max-h-[40vh] w-full rounded-lg bg-surface object-contain" />
+              ) : null}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="eyebrow">{itemLabel(item.ref)}</span>
                 {item.aiDrafted ? (
