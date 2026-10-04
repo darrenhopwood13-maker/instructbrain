@@ -14,7 +14,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import { briefPromptSection, toneById, type ReportBrief } from "@/lib/report/brief";
-import type { BriefFindingsRule } from "@/lib/ai/observation";
+import { envelopeFieldGuide, type BriefFindingsRule } from "@/lib/ai/observation";
 
 /**
  * Invariant 5: every discipline-specific word in the prompt comes out of the
@@ -159,6 +159,16 @@ export function buildSystemPrompt(
     // the size. Swap to REGULATION_REFERENCE if a stage ever needs to cite a
     // specific clause in prose.
     regulationIndex(),
+    // THE FIELD NAMES. Not every provider can be handed a schema: DeepSeek
+    // rejects json_schema, so its adapter sends json_object alone and the model
+    // is left to infer the key names. Measured on this prompt with real
+    // photographs it named the description "description" and the cause "cause",
+    // so the description was discarded on every photograph and the report read
+    // "The model could not describe this photograph". Generated from the same
+    // schema the coercion reads, so a name can never be described here and
+    // expected differently there. It sits before the tone so the tone is still
+    // the last writing instruction.
+    envelopeFieldGuide(snapshot),
     // THE TONE — last, deliberately. This is the final writing instruction the
     // model reads before it generates, which is where a style instruction
     // actually takes hold. It states the boundary explicitly rather than

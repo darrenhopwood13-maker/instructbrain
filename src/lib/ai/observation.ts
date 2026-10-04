@@ -158,6 +158,67 @@ export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
   } as const;
 }
 
+function schemaTypeName(definition: Record<string, unknown>): string {
+  const enumValues = definition.enum;
+  if (Array.isArray(enumValues)) {
+    const named = enumValues.filter((value) => value !== null);
+    return named.length > 0 ? named.join(" | ") : "null";
+  }
+  const declared = definition.type;
+  const types = (Array.isArray(declared) ? declared : [declared]).filter(
+    (value): value is string => typeof value === "string",
+  );
+  const nullable = types.includes("null");
+  const present = types.filter((value) => value !== "null");
+  if (present.length === 1 && present[0] === "object") {
+    const properties = definition.properties;
+    const keys =
+      properties && typeof properties === "object" ? Object.keys(properties as object) : [];
+    const body = keys.length > 0 ? `object with keys ${keys.join(", ")}` : "object";
+    return nullable ? `${body}, or null` : body;
+  }
+  const base = present.join(" or ");
+  if (!base) return "null";
+  return nullable ? `${base}, or null` : base;
+}
+
+/**
+ * The field names, spelled out in prose, for a provider that cannot be handed a
+ * schema.
+ *
+ * OpenAI, Anthropic and Google each receive the JSON Schema itself, so the key
+ * names are enforced by the API and cannot drift. DeepSeek rejects
+ * `json_schema`, so its adapter sends `json_object` alone — which leaves the
+ * model to infer the key names from the surrounding prose. It does not infer
+ * them. Measured on the real snagging prompt with real photographs, every reply
+ * named the description `description` and the cause `cause`, so
+ * `observation.finding` and `observation.likely_cause` both read as null and the
+ * report filled with "The model could not describe this photograph with enough
+ * confidence" — a valid envelope, silently missing its content, on 7 of 7
+ * photographs.
+ *
+ * Generated from envelopeJsonSchema rather than written out by hand, so the
+ * names the model is given and the names the coercion reads cannot drift apart.
+ * A hand-written list would be the same bug waiting to happen again.
+ */
+export function envelopeFieldGuide(snapshot: SurveyTypeSnapshot): string {
+  const schema = envelopeJsonSchema(snapshot) as unknown as {
+    properties: Record<string, Record<string, unknown>>;
+  };
+  const observations = schema.properties.observations as {
+    items?: { properties?: Record<string, Record<string, unknown>> };
+  };
+  const fields = Object.entries(observations.items?.properties ?? {});
+
+  return [
+    "The key names below are exact and are part of the contract. A value returned under any other name is discarded, not translated, and the observation is lost.",
+    `Top level: ${Object.keys(schema.properties).join(", ")}.`,
+    "Each entry of observations — every key is required, and a value you cannot support from the photograph is null:",
+    ...fields.map(([key, definition]) => `  ${key} (${schemaTypeName(definition)})`),
+    "Describe what you can actually see in `finding`. That is the only key a description is read from.",
+  ].join("\n");
+}
+
 /* ------------------------------------------------------------------ */
 /* Parsing                                                             */
 /* ------------------------------------------------------------------ */

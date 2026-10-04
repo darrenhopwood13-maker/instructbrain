@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   SchemaValidationError,
   draftsFromEnvelope,
+  envelopeFieldGuide,
   envelopeJsonSchema,
   needsEscalation,
   notAssessedDraft,
@@ -11,6 +12,7 @@ import {
   type Observation,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt } from "@/lib/ai/prompt";
+import { EMPTY_BRIEF } from "@/lib/report/brief";
 import { aiConfig, escalationTarget, providerProfiles } from "@/lib/ai/config";
 import { adapters } from "@/lib/ai/adapters.server";
 import { analysePhotograph, mapWithConcurrency } from "@/lib/ai/provider.server";
@@ -642,5 +644,63 @@ describe("escalation may live on another provider", () => {
       expect(outcome.envelope?.observations[0].confidence).toBe(0.9);
       expect(outcome.attempts[0].envelope?.observations[0].confidence).toBe(0.3);
     });
+  });
+});
+
+describe("the prompt names every key the parser reads", () => {
+  // The measured failure this guards. DeepSeek rejects json_schema, so its
+  // adapter sends json_object alone and the prompt is the only place the key
+  // names exist. It answered with "description" for "finding" and "cause" for
+  // "likely_cause", so both read as null on 7 of 7 photographs and the report
+  // filled with "The model could not describe this photograph" — a valid
+  // envelope that had silently lost its content.
+  //
+  // Add a field to the schema and these fail until the prompt names it too.
+  function schemaKeys(definition: SurveyTypeSnapshot): string[] {
+    const schema = envelopeJsonSchema(definition) as unknown as {
+      properties: Record<string, unknown> & {
+        observations: { items: { properties: Record<string, unknown> } };
+      };
+    };
+    return Object.keys(schema.properties.observations.items.properties);
+  }
+
+  it("lists every observation key, as a field line, for every system definition", () => {
+    for (const definition of systemDefinitions) {
+      const guide = envelopeFieldGuide(definition);
+      for (const key of schemaKeys(definition)) {
+        expect(guide, `${definition.id} is missing "${key}"`).toContain(`${key} (`);
+      }
+    }
+  });
+
+  it("names the envelope keys too, so the top level cannot drift either", () => {
+    const guide = envelopeFieldGuide(weatherproofingDefinition);
+    for (const key of ["assessable", "abstain_reason", "observations"]) {
+      expect(guide).toContain(key);
+    }
+  });
+
+  it("says plainly that finding is where a description is read from", () => {
+    // The exact pair DeepSeek renamed. "finding" has to be unmistakable.
+    const guide = envelopeFieldGuide(weatherproofingDefinition);
+    expect(guide).toContain("finding (");
+    expect(guide).toContain("in `finding`");
+  });
+
+  it("carries the guide in the system prompt", () => {
+    expect(buildSystemPrompt(weatherproofingDefinition)).toContain(
+      envelopeFieldGuide(weatherproofingDefinition),
+    );
+  });
+
+  it("puts the guide before the tone, so the tone is still the last writing instruction", () => {
+    const brief = { ...EMPTY_BRIEF, tone: "sarcastic" as const };
+    const prompt = buildSystemPrompt(weatherproofingDefinition, brief);
+    const guideAt = prompt.indexOf("The key names below are exact");
+    const toneAt = prompt.indexOf("Apply this tone firmly and consistently");
+    expect(guideAt).toBeGreaterThan(-1);
+    expect(toneAt).toBeGreaterThan(-1);
+    expect(guideAt).toBeLessThan(toneAt);
   });
 });
