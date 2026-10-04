@@ -15,6 +15,8 @@ import { buildSystemPrompt } from "@/lib/ai/prompt";
 import { EMPTY_BRIEF } from "@/lib/report/brief";
 import { aiConfig, escalationTarget, providerProfiles } from "@/lib/ai/config";
 import { adapters } from "@/lib/ai/adapters.server";
+import { snapshotKey } from "@/lib/ai/analyse.server";
+import { promptFingerprint } from "@/lib/ai/prompt-fingerprint";
 import { analysePhotograph, mapWithConcurrency } from "@/lib/ai/provider.server";
 import { resolveStatus, statusesOf } from "@/lib/survey-types";
 import { systemDefinitions, weatherproofingDefinition } from "@/lib/survey-definitions";
@@ -702,5 +704,50 @@ describe("the prompt names every key the parser reads", () => {
     expect(guideAt).toBeGreaterThan(-1);
     expect(toneAt).toBeGreaterThan(-1);
     expect(guideAt).toBeLessThan(toneAt);
+  });
+});
+
+describe("analysis cache key", () => {
+  it("fingerprints the prompt itself, so it cannot be forgotten", async () => {
+    const a = await promptFingerprint("a prompt");
+    const b = await promptFingerprint("a prompt");
+    const c = await promptFingerprint("a prompt, edited");
+    expect(a).toBe(b);
+    expect(a).not.toBe(c);
+    expect(a).toMatch(/^(?:[0-9a-f]{16}|fnv[0-9a-f]{8})$/);
+  });
+
+  it("changes the key when the prompt changes, retiring stale analyses", async () => {
+    // THE PRODUCTION BUG THIS CLOSES. The key was built from the snapshot, the
+    // models and the brief only. The prompt is built from the CODE, so a prompt
+    // fix changed what the model was asked while leaving the key identical — and
+    // photographs already in ai_analysis_cache were answered under the old prompt
+    // indefinitely. On 4 Oct 2026 a report at 11:45 was served the cache row
+    // written at 10:03, byte for byte, from before the field-name fix, and lost
+    // 3 of 5 findings. A report an hour earlier, whose key happened to differ,
+    // read 15 of 15. That is the intermittency: which row the key collided with.
+    const models = { triage: "deepseek-flash", escalation: "gpt-4.1" };
+    const briefKey = "sarcastic:one:";
+    const before = snapshotKey(
+      weatherproofingDefinition,
+      models,
+      briefKey,
+      await promptFingerprint("the prompt as it was"),
+    );
+    const after = snapshotKey(
+      weatherproofingDefinition,
+      models,
+      briefKey,
+      await promptFingerprint("the prompt after the fix"),
+    );
+    expect(before).not.toBe(after);
+    expect(before).toContain("|p");
+    expect(after).toContain("|p");
+  });
+
+  it("keeps the previous key shape when no fingerprint is given", () => {
+    const key = snapshotKey(weatherproofingDefinition, { triage: "t", escalation: "e" }, "b");
+    expect(key.endsWith("|t|e|b")).toBe(true);
+    expect(key).not.toContain("|p");
   });
 });

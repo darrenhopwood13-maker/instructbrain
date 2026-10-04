@@ -24,6 +24,7 @@ import {
   type Envelope,
 } from "@/lib/ai/observation";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompt";
+import { promptFingerprint } from "@/lib/ai/prompt-fingerprint";
 import { coerceBrief, toneById } from "@/lib/report/brief";
 import { applyToneRules } from "@/lib/report/tone-post-process";
 import { SURVEY_TYPE_FIELD } from "@/lib/report/sections";
@@ -141,14 +142,24 @@ function resolvePhotoSnapshot(
   return definition ? coerceSnapshot(definition) : primary;
 }
 
-function snapshotKey(
+export function snapshotKey(
   snapshot: SurveyTypeSnapshot,
   models: { triage: string; escalation: string },
   briefKey = "",
+  promptVersion = "",
 ) {
   // The brief changes the prompt, so a cached answer written under a different
   // tone or special request must not be reused.
-  return `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}${briefKey ? `|${briefKey}` : ""}`;
+  //
+  // So does the CODE — the voice, the universal rules, the field guide, the
+  // regulation index. That is the whole reason promptVersion is here: without it
+  // a prompt fix leaves the key identical and photographs already cached are
+  // answered under the old prompt forever. On 4 Oct 2026 a report was served a
+  // cache row from before the field-name fix, byte for byte, and lost 3 of 5
+  // findings. The version is a fingerprint of the built prompt itself, so it
+  // cannot be forgotten. See prompt-fingerprint.ts.
+  const base = `${snapshot.id}@${snapshot.version ?? 0}|${models.triage}|${models.escalation}${briefKey ? `|${briefKey}` : ""}`;
+  return promptVersion ? `${base}|p${promptVersion}` : base;
 }
 
 async function loadReport(client: AnyClient, reportId: string) {
@@ -367,10 +378,15 @@ export async function analysePhotoForReport(
     isFirstPhoto: firstSequence,
   });
 
+  // Built here, before the key, because the key carries a fingerprint of it: a
+  // prompt that has changed must not match an answer written under an older one.
+  const systemPrompt = buildSystemPrompt(snapshot, brief, findingsRule);
+
   const key = snapshotKey(
     snapshot,
     config.models,
     [tone.id, findingsRule?.findingsPerPhoto ?? "template", brief?.specialRequest ?? ""].join(":"),
+    await promptFingerprint(systemPrompt),
   );
 
   if (input.force) await clearPreviousDrafts(client, input.reportId, photo.id);
@@ -392,7 +408,13 @@ export async function analysePhotoForReport(
   let failure: string | null = null;
   let attempts: TierAttempt[] = [];
 
-  const cached = await readCache(client, report.organisation_id, photo.checksum, key);
+  // A forced re-analysis is a request for a NEW answer, so it must not be served
+  // the stored one. Without this guard, readCache answered any photograph whose
+  // checksum had been seen before under the same key, and "re-analyse" handed
+  // back the identical envelope — which reads as the button doing nothing.
+  const cached = input.force
+    ? null
+    : await readCache(client, report.organisation_id, photo.checksum, key);
   if (cached) {
     envelope = cached.envelope;
     raw = cached.raw;
@@ -414,7 +436,7 @@ export async function analysePhotoForReport(
       const outcome = await analysePhotograph(
         {
           snapshot,
-          systemPrompt: buildSystemPrompt(snapshot, brief, findingsRule),
+          systemPrompt,
           findingsRule,
           userPrompt: buildUserPrompt(
             {
