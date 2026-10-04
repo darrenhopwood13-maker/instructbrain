@@ -432,9 +432,9 @@ describe("ai config — thinking, and which model a tier actually gets", () => {
     // same photograph, so escalation must be vision-capable too.
     withEnv(DEEPSEEK, () => {
       const profiles = providerProfiles();
-      expect(profiles[0].id).toBe("deepseek");
-      expect(profiles[0].triageModel).toBe("deepseek-flash");
-      expect(profiles[0].escalationModel).toBe("deepseek-flash");
+      expect(profiles[0]!.id).toBe("deepseek");
+      expect(profiles[0]!.triageModel).toBe("deepseek-flash");
+      expect(profiles[0]!.escalationModel).toBe("deepseek-flash");
       const config = aiConfig();
       expect(config.provider).toBe("deepseek");
       expect(config.models.escalation).toBe(config.models.triage);
