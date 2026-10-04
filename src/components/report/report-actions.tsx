@@ -38,7 +38,7 @@ import { issueBlockers, type ReportDocument } from "@/lib/report/document";
 import { createShareLink, issueReport, reopenReport } from "@/lib/report/report-data";
 import { shareUrlForToken } from "@/lib/report/share-url";
 import { synthesiseReport } from "@/lib/ai/synthesis.functions";
-import { itemLabels } from "@/lib/item-label";
+import { itemLabel } from "@/lib/item-label";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
 import {
   canSharePdf,
@@ -387,6 +387,34 @@ export function ReportActions({
   );
 }
 
+/**
+ * The items a blocker names, each one a tap that lands on the finding itself.
+ * A list of bare names ("Item 4, Item 3") tells a person what is wrong and gives
+ * them no way to act on it, which is the whole complaint this answers.
+ */
+function BlockerRefs({
+  findings,
+  onJump,
+}: {
+  findings: Array<{ ref: string | null }>;
+  onJump: (ref: string | null) => void;
+}) {
+  return (
+    <span className="mt-1 flex flex-wrap gap-1.5">
+      {findings.map((finding, index) => (
+        <button
+          key={finding.ref ?? index}
+          type="button"
+          onClick={() => onJump(finding.ref)}
+          className="min-h-9 rounded-md border border-flag/50 bg-surface-raised px-2 py-1 font-semibold text-flag underline decoration-dotted underline-offset-2"
+        >
+          {itemLabel(finding.ref)}
+        </button>
+      ))}
+    </span>
+  );
+}
+
 function IssueDialog({
   open,
   onOpenChange,
@@ -403,6 +431,21 @@ function IssueDialog({
   onIssue: () => void;
 }) {
   const nextVersion = (document.report.currentVersion ?? 0) + 1;
+
+  /**
+   * Close first, then scroll: the dialog holds a scroll lock while it is open, so
+   * scrolling with it still up does nothing at all. `window.document`, because
+   * the report document shadows the global here.
+   */
+  const jumpTo = (ref: string | null) => {
+    onOpenChange(false);
+    window.setTimeout(() => {
+      if (!ref) return;
+      window.document
+        .getElementById(`finding-${ref}`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 150);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -421,31 +464,34 @@ function IssueDialog({
               <AlertTriangle aria-hidden="true" className="size-4" />
               This report cannot be issued yet
             </p>
-            <ul className="list-disc space-y-1 pl-5">
+            <ul className="space-y-2">
               {blockers.notAssessed.length > 0 ? (
                 <li>
                   {blockers.notAssessed.length} finding
-                  {blockers.notAssessed.length === 1 ? " is" : "s are"} still not assessed:{" "}
-                  {itemLabels(blockers.notAssessed.map((finding) => finding.ref))}
+                  {blockers.notAssessed.length === 1 ? " is" : "s are"} still not assessed:
+                  <BlockerRefs findings={blockers.notAssessed} onJump={jumpTo} />
                 </li>
               ) : null}
               {blockers.tradeMissing.length > 0 ? (
                 <li>
                   {blockers.tradeMissing.length} finding
                   {blockers.tradeMissing.length === 1 ? " has" : "s have"} no confirmed responsible
-                  trade: {itemLabels(blockers.tradeMissing.map((finding) => finding.ref))}
+                  trade:
+                  <BlockerRefs findings={blockers.tradeMissing} onJump={jumpTo} />
                 </li>
               ) : null}
               {blockers.unconfirmed.length > 0 ? (
                 <li>
                   {blockers.unconfirmed.length} finding
                   {blockers.unconfirmed.length === 1 ? " has" : "s have"} not been confirmed by a
-                  person: {itemLabels(blockers.unconfirmed.map((finding) => finding.ref))}
+                  person:
+                  <BlockerRefs findings={blockers.unconfirmed} onJump={jumpTo} />
                 </li>
               ) : null}
             </ul>
             <p className="text-xs text-muted-foreground">
-              Resolve them in the schedule below, or in the Review tab.
+              Tap an item to jump straight to it. It is in the schedule below, and in the Review
+              tab.
             </p>
           </div>
         ) : (

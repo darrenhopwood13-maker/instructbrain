@@ -109,6 +109,7 @@ export function ReviewList({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [unresolvedOnly, setUnresolvedOnly] = useState(false);
+  const [tradesOnly, setTradesOnly] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState("");
   const [draftItem, setDraftItem] = useState("");
@@ -354,6 +355,16 @@ export function ReviewList({
   ).length;
   const confirmed = items.length - unconfirmed;
 
+  // The trades the report is still waiting on. Named here rather than left to be
+  // found by scrolling: on a phone, a 30-finding schedule hides five outstanding
+  // trades completely, and the issue gate then reads as a wall.
+  const missingTrade = showTrade
+    ? items.filter((item) => (item.assignedTrade ?? "").trim() === "").length
+    : 0;
+  const firstMissingTrade = showTrade
+    ? items.findIndex((item) => (item.assignedTrade ?? "").trim() === "")
+    : -1;
+
   const firstNotAssessed = resolved.findIndex((status) => status.id === NOT_ASSESSED_ID);
 
   /** Next (or previous) not-assessed finding from `from`, wrapping; stays put if none. */
@@ -369,6 +380,10 @@ export function ReviewList({
   useEffect(() => {
     if (notAssessedCount === 0 && unresolvedOnly) setUnresolvedOnly(false);
   }, [notAssessedCount, unresolvedOnly]);
+
+  useEffect(() => {
+    if (missingTrade === 0 && tradesOnly) setTradesOnly(false);
+  }, [missingTrade, tradesOnly]);
 
   function startEdit(item: Finding) {
     setEditingId(item.id);
@@ -541,6 +556,24 @@ export function ReviewList({
         </div>
       ) : null}
 
+      {missingTrade > 0 ? (
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant={tradesOnly ? "brand" : "outline"}
+            aria-pressed={tradesOnly}
+            className="min-h-11 w-full sm:w-auto"
+            onClick={() => {
+              const turningOn = !tradesOnly;
+              setTradesOnly(turningOn);
+              if (turningOn && firstMissingTrade >= 0) goToFinding(firstMissingTrade);
+            }}
+          >
+            {tradesOnly ? "Showing" : "Show"} trades to confirm · {missingTrade} left
+          </Button>
+        </div>
+      ) : null}
+
       <Dialog open={bulkOpen} onOpenChange={(open) => !bulkBusy && setBulkOpen(open)}>
         <DialogContent>
           <DialogHeader>
@@ -618,6 +651,7 @@ export function ReviewList({
           const thumb = photoUrl.get(item.photoIds?.[0] ?? "") ?? null;
           if (index !== active) {
             if (unresolvedOnly && !blocked) return null;
+            if (tradesOnly && (item.assignedTrade ?? "").trim() !== "") return null;
             const done = item.confirmed && !blocked;
             return (
               <li

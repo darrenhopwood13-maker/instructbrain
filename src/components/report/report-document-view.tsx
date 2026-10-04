@@ -996,8 +996,12 @@ function FindingRow({
 
   return (
     <div
+      // Stable anchor so a blocker list can send a person straight to the item
+      // that is holding the report up. Keyed on the persisted `ref`, which never
+      // changes (Invariant 4), not on position.
+      id={`finding-${finding.ref ?? ""}`}
       className={
-        "break-inside-avoid rounded-xl border bg-surface-raised p-4 shadow-raised " +
+        "scroll-mt-24 break-inside-avoid rounded-xl border bg-surface-raised p-4 shadow-raised " +
         (notAssessed ? "border-flag/50" : "border-border")
       }
     >
