@@ -36,13 +36,21 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
-import { definitionLabel, isManualOnly, isProjectBound, tradesOf } from "@/lib/survey-types";
+import {
+  definitionLabel,
+  isManualOnly,
+  isProjectBound,
+  requiresTradeAssignment,
+  tradesOf,
+} from "@/lib/survey-types";
 import { ManualReviewList } from "@/components/photos/manual-review-list";
 import { ToneSelector } from "@/components/report/tone-selector";
 import { projectDirectoryQuery } from "@/lib/directory/directory-data";
 import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
+import { TradeOrganiser } from "@/components/review/trade-organiser";
+import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
 import { safeResultView, type ResultView } from "@/lib/report/grouping";
 
 type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView; analyse?: boolean };
@@ -183,6 +191,42 @@ function ReportWorkspace() {
         due_date: before?.dueDate ?? null,
       },
     );
+    await refresh();
+  };
+
+  /**
+   * Allocating a batch: the same write as a single assignment, once per snag,
+   * with each target date derived from that snag's own severity. A date a
+   * reviewer has already set is left alone.
+   */
+  const assignTradeToMany = async (findingIds: string[], trade: string) => {
+    if (findingIds.length === 0) return;
+    const { data: user } = await supabase.auth.getUser();
+    const confirmedAt = new Date();
+    const snapshot = query.data?.report.surveyTypeSnapshot ?? null;
+    const all = findings.data ?? [];
+
+    for (const findingId of findingIds) {
+      const before = all.find((item) => item.id === findingId);
+      if (!before) continue;
+      const derived = deriveDueDate(snapshot, before.severity ?? null, confirmedAt);
+      await updateFinding(
+        id,
+        findingId,
+        {
+          assigned_trade: trade,
+          due_date: before.dueDateOverridden ? (before.dueDate ?? null) : derived.dueDate,
+          confirmed_at: confirmedAt.toISOString(),
+          confirmed_by: user.user?.id ?? null,
+          lifecycle_state: stateAfterAssignment(before.lifecycleState),
+        },
+        {
+          assigned_trade: before.assignedTrade ?? null,
+          ai_suggested_trade: before.aiSuggestedTrade ?? null,
+          due_date: before.dueDate ?? null,
+        },
+      );
+    }
     await refresh();
   };
 
@@ -456,6 +500,18 @@ function ReportWorkspace() {
             />
           )}
         </div>
+      ) : null}
+
+      {step === "photos" &&
+      findingList.length > 0 &&
+      requiresTradeAssignment(report.surveyTypeSnapshot) ? (
+        <TradeOrganiser
+          findings={findingList}
+          tradeOptions={tradeOptions}
+          threshold={BULK_TRADE_CONFIRM_THRESHOLD}
+          onAssign={assignTradeToMany}
+          disabled={locked}
+        />
       ) : null}
 
       {/* Always mounted, so moving between steps never stops a run. */}

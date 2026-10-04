@@ -807,6 +807,7 @@ export type Database = {
           due_date_overridden: boolean
           finding_text: string | null
           hazard_category: string | null
+          hs_notes?: string | null
           human_edited: boolean
           id: string
           is_confidential: boolean
@@ -814,6 +815,7 @@ export type Database = {
           lifecycle_state: string
           lifecycle_updated_at: string | null
           likely_cause: string | null
+          rectification_alt?: string | null
           ref: string
           regulatory_reference: string | null
           remedial_text: string | null
@@ -823,7 +825,9 @@ export type Database = {
           sequence: number
           severity: string | null
           severity_rationale: string | null
+          snag_title?: string | null
           status: string
+          tradesman_hack?: string | null
           updated_at: string
         }
         Insert: {
@@ -845,6 +849,7 @@ export type Database = {
           due_date_overridden?: boolean
           finding_text?: string | null
           hazard_category?: string | null
+          hs_notes?: string | null
           human_edited?: boolean
           id?: string
           is_confidential?: boolean
@@ -852,6 +857,7 @@ export type Database = {
           lifecycle_state?: string
           lifecycle_updated_at?: string | null
           likely_cause?: string | null
+          rectification_alt?: string | null
           ref: string
           regulatory_reference?: string | null
           remedial_text?: string | null
@@ -861,7 +867,9 @@ export type Database = {
           sequence?: number
           severity?: string | null
           severity_rationale?: string | null
+          snag_title?: string | null
           status?: string
+          tradesman_hack?: string | null
           updated_at?: string
         }
         Update: {
@@ -883,6 +891,7 @@ export type Database = {
           due_date_overridden?: boolean
           finding_text?: string | null
           hazard_category?: string | null
+          hs_notes?: string | null
           human_edited?: boolean
           id?: string
           is_confidential?: boolean
@@ -890,6 +899,7 @@ export type Database = {
           lifecycle_state?: string
           lifecycle_updated_at?: string | null
           likely_cause?: string | null
+          rectification_alt?: string | null
           ref?: string
           regulatory_reference?: string | null
           remedial_text?: string | null
@@ -899,7 +909,9 @@ export type Database = {
           sequence?: number
           severity?: string | null
           severity_rationale?: string | null
+          snag_title?: string | null
           status?: string
+          tradesman_hack?: string | null
           updated_at?: string
         }
         Relationships: [

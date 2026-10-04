@@ -33,9 +33,13 @@ export type Observation = {
   status: string | null;
   confidence: number | null;
   finding: string | null;
+  snag_title: string | null;
   severity: string | null;
   severity_rationale: string | null;
   remedial: string | null;
+  rectification_alt: string | null;
+  tradesman_hack: string | null;
+  hs_notes: string | null;
   suggested_trade: string | null;
   trade_reasoning: string | null;
   trade_confidence: number | null;
@@ -61,7 +65,11 @@ export type DraftFinding = {
   severity_rationale: string | null;
   hazard_category: string | null;
   finding_text: string | null;
+  snag_title: string | null;
   remedial_text: string | null;
+  rectification_alt: string | null;
+  tradesman_hack: string | null;
+  hs_notes: string | null;
   likely_cause: string | null;
   regulatory_reference: string | null;
   ai_suggested_trade: string | null;
@@ -109,9 +117,13 @@ export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
     status: { type: "string", enum: statusIds },
     confidence: { type: "number" },
     finding: { type: ["string", "null"] },
+    snag_title: { type: ["string", "null"] },
     severity: { type: ["string", "null"] },
     severity_rationale: { type: ["string", "null"] },
     remedial: { type: ["string", "null"] },
+    rectification_alt: { type: ["string", "null"] },
+    tradesman_hack: { type: ["string", "null"] },
+    hs_notes: { type: ["string", "null"] },
     suggested_trade: { type: ["string", "null"] },
     trade_reasoning: { type: ["string", "null"] },
     trade_confidence: { type: ["number", "null"] },
@@ -275,9 +287,13 @@ export function parseEnvelope(raw: unknown): Envelope {
       status: text(item["status"]),
       confidence: score(item["confidence"]),
       finding: text(item["finding"]) ?? text(item["observation"]),
+      snag_title: text(item["snag_title"]),
       severity: text(item["severity"]),
       severity_rationale: text(item["severity_rationale"]),
       remedial: text(item["remedial"]),
+      rectification_alt: text(item["rectification_alt"]),
+      tradesman_hack: text(item["tradesman_hack"]),
+      hs_notes: text(item["hs_notes"]),
       suggested_trade: text(item["suggested_trade"]),
       trade_reasoning: text(item["trade_reasoning"]),
       trade_confidence: score(item["trade_confidence"]),
@@ -384,10 +400,18 @@ export function toDraftFinding(
       (status === NOT_ASSESSED_ID
         ? "The model could not describe this photograph with enough confidence. A person must assess it."
         : null),
+    snag_title: observation.snag_title,
     remedial_text: observation.remedial,
+    rectification_alt: observation.rectification_alt,
+    tradesman_hack: observation.tradesman_hack,
+    hs_notes: observation.hs_notes,
     likely_cause: definesField(snapshot, "likely_cause") ? observation.likely_cause : null,
     regulatory_reference: reference,
-    ai_suggested_trade: tradeTrusted ? observation.suggested_trade : null,
+    // The name is kept whatever its confidence. The suggestion and its number
+    // travel together and a person decides between them: dropping the name under
+    // the threshold left findings reading "no trade" beside a trade confidence of
+    // 0.55, which is not a suggestion and is not an answer either.
+    ai_suggested_trade: observation.suggested_trade,
     ai_trade_confidence: observation.trade_confidence,
     ai_trade_reasoning: observation.trade_reasoning,
     ai_confidence: observation.confidence,
@@ -456,7 +480,11 @@ export function notAssessedDraft(
     severity_rationale: null,
     hazard_category: null,
     finding_text: `Not assessed automatically: ${reason} A person must assess this photograph before the report can be issued.`,
+    snag_title: null,
     remedial_text: null,
+    rectification_alt: null,
+    tradesman_hack: null,
+    hs_notes: null,
     likely_cause: null,
     regulatory_reference: null,
     ai_suggested_trade: null,

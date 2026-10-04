@@ -54,9 +54,13 @@ function observation(overrides: Partial<Observation> = {}): Observation {
     status: "compliant",
     confidence: 0.9,
     finding: "Lead flashing dressed correctly into the brick joint.",
+    snag_title: null,
     severity: null,
     severity_rationale: null,
     remedial: null,
+    rectification_alt: null,
+    tradesman_hack: null,
+    hs_notes: null,
     suggested_trade: null,
     trade_reasoning: null,
     trade_confidence: null,
@@ -179,13 +183,47 @@ describe("invariant 6 — trade attribution is a suggestion", () => {
     expect(draft.ai_trade_reasoning).toBe("Lead detail.");
   });
 
-  it("drops a low-confidence trade suggestion", () => {
+  it("keeps a low-confidence trade suggestion, with its number, for a person to decide", () => {
     const draft = toDraftFinding(
       observation({ suggested_trade: "Roofing", trade_confidence: 0.2 }),
       roofing,
       options,
     );
-    expect(draft.ai_suggested_trade).toBeNull();
+    // The name and its confidence travel together. Dropping the name under the
+    // threshold left findings reading "no trade assigned" beside a trade
+    // confidence of 0.2 — neither a suggestion nor an answer, and the one thing
+    // a person needs in order to make the decision.
+    expect(draft.ai_suggested_trade).toBe("Roofing");
+    expect(draft.ai_trade_confidence).toBe(0.2);
+    // Invariant 6 is untouched: a suggestion is still never an assignment.
+    expect(draft).not.toHaveProperty("assigned_trade");
+  });
+});
+
+describe("the snag write-up travels with the finding", () => {
+  it("keeps the title, second fix, trade tip and H&S notes the model returned", () => {
+    const draft = toDraftFinding(
+      observation({
+        snag_title: "Torn breather membrane at eaves",
+        rectification_alt: "Over-tape with compatible membrane tape.",
+        tradesman_hack: "Warm the tape with a hot air gun, it grips in the cold.",
+        hs_notes: "Eaves access from a tower, not a ladder.",
+      }),
+      roofing,
+      options,
+    );
+    expect(draft.snag_title).toBe("Torn breather membrane at eaves");
+    expect(draft.rectification_alt).toBe("Over-tape with compatible membrane tape.");
+    expect(draft.tradesman_hack).toContain("hot air gun");
+    expect(draft.hs_notes).toBe("Eaves access from a tower, not a ladder.");
+  });
+
+  it("leaves them null rather than padding an answer that was not given", () => {
+    const draft = toDraftFinding(observation({}), roofing, options);
+    expect(draft.snag_title).toBeNull();
+    expect(draft.rectification_alt).toBeNull();
+    expect(draft.tradesman_hack).toBeNull();
+    expect(draft.hs_notes).toBeNull();
   });
 });
 
