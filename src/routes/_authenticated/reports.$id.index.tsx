@@ -51,7 +51,7 @@ import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
 import { TradeOrganiser } from "@/components/review/trade-organiser";
 import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
-import { safeResultView, type ResultView } from "@/lib/report/grouping";
+import { defaultResultView, safeResultView, type ResultView } from "@/lib/report/grouping";
 
 type ReportSearch = { tab?: "photos" | "review" | "output"; view?: ResultView; analyse?: boolean };
 
@@ -88,9 +88,14 @@ function ReportWorkspace() {
   const { id } = Route.useParams();
   const { tab, view, analyse } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const resultView = safeResultView(view);
   const queryClient = useQueryClient();
   const query = useQuery(reportQuery(id));
+  // A survey that assigns trades opens on the by-trade reading, so the report is
+  // handed out the way it is worked. A view in the URL always wins over this.
+  const resultView = safeResultView(
+    view,
+    defaultResultView(query.data?.report.surveyTypeSnapshot ?? null),
+  );
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
   const versions = useQuery(reportVersionsQuery(id));

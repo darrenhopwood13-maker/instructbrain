@@ -20,7 +20,11 @@ function finding(overrides: Partial<DocFinding>): DocFinding {
     severityId: overrides.severityId ?? null,
     categoryId: null,
     findingText: overrides.findingText ?? "Mortar missing to the parapet coping joints.",
+    snagTitle: overrides.snagTitle ?? null,
     remedialText: overrides.remedialText ?? "Rake out and repoint.",
+    rectificationAlt: overrides.rectificationAlt ?? null,
+    tradesmanHack: overrides.tradesmanHack ?? null,
+    hsNotes: overrides.hsNotes ?? null,
     captureFields: overrides.captureFields ?? { location: "Roof, north parapet" },
     assignedTrade: overrides.assignedTrade ?? null,
     suggestedTrade: null,
@@ -122,6 +126,38 @@ describe("report PDF", () => {
 
   it("names the file after the report reference", () => {
     expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
+  });
+
+  /**
+   * The drawn text itself cannot be read back here: the writer deflates its
+   * content streams, so a byte search finds nothing and a `not.toContain`
+   * assertion would pass on an empty string for the wrong reason. What can be
+   * asserted is that the write-up is drawn at all — the same item with the four
+   * fields produces a strictly larger file than the same item without them.
+   * The labels and the copy are asserted on the rendered report in
+   * report-write-up.test.tsx.
+   */
+  it("draws more when an item carries the snag write-up", async () => {
+    const bare = finding({ id: "bare", ref: "B-1" });
+    const written = finding({
+      id: "written",
+      ref: "B-1",
+      snagTitle: "SNAGTITLEMARKER",
+      rectificationAlt: "ALTMARKER",
+      tradesmanHack: "HACKMARKER",
+      hsNotes: "HSMARKER",
+    });
+
+    const without = await buildReportPdf(
+      { ...document, findings: [bare] },
+      { variant: "full", includePhotos: false },
+    );
+    const with_ = await buildReportPdf(
+      { ...document, findings: [written] },
+      { variant: "full", includePhotos: false },
+    );
+
+    expect(with_.bytes.byteLength).toBeGreaterThan(without.bytes.byteLength);
   });
 
   it("puts no more than two manual photographic items on each page after the title page", async () => {

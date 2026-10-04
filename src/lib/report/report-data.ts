@@ -189,7 +189,11 @@ export const reportDocumentQuery = (reportId: string) =>
           severityId: row.severity ?? null,
           categoryId: row.hazard_category ?? null,
           findingText: row.finding_text ?? "",
+          snagTitle: row.snag_title ?? null,
           remedialText: row.remedial_text ?? "",
+          rectificationAlt: row.rectification_alt ?? null,
+          tradesmanHack: row.tradesman_hack ?? null,
+          hsNotes: row.hs_notes ?? null,
           captureFields: fields(row.capture_fields),
           assignedTrade: row.assigned_trade ?? null,
           suggestedTrade: row.ai_suggested_trade ?? null,
@@ -312,7 +316,11 @@ export async function updateReportFields(
 
 export type FindingPatch = Partial<{
   finding_text: string;
+  snag_title: string | null;
   remedial_text: string;
+  rectification_alt: string | null;
+  tradesman_hack: string | null;
+  hs_notes: string | null;
   capture_fields: Record<string, string>;
   status: string;
   severity: string | null;

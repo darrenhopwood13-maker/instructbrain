@@ -48,7 +48,12 @@ export type DocFinding = {
   severityId: string | null;
   categoryId: string | null;
   findingText: string;
+  /** The Snag Master write-up: what the defect is called, and how it is put right. */
+  snagTitle: string | null;
   remedialText: string;
+  rectificationAlt: string | null;
+  tradesmanHack: string | null;
+  hsNotes: string | null;
   captureFields: Record<string, string>;
   assignedTrade: string | null;
   suggestedTrade: string | null;

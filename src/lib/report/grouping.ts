@@ -1,5 +1,6 @@
 import type { DocFinding, FindingGroup, ReportDocument } from "@/lib/report/document";
-import { NOT_ASSESSED_ID, resolveStatus, severitiesOf } from "@/lib/survey-types";
+import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+import { NOT_ASSESSED_ID, requiresTradeAssignment, resolveStatus, severitiesOf } from "@/lib/survey-types";
 
 /**
  * One set of results, three ways of reading it. Every item appears exactly
@@ -14,10 +15,22 @@ export const RESULT_VIEW_LABELS: Record<ResultView, string> = {
   deadline: "By deadline",
 };
 
-export function safeResultView(value: unknown): ResultView {
+export function safeResultView(value: unknown, fallback: ResultView = "severity"): ResultView {
   return typeof value === "string" && (RESULT_VIEWS as readonly string[]).includes(value)
     ? (value as ResultView)
-    : "severity";
+    : fallback;
+}
+
+/**
+ * The view a report opens on, before anyone has chosen one.
+ *
+ * A survey that assigns trades exists to be handed out by trade, so its report
+ * opens grouped that way — that is the reading the person holding it needs, and
+ * the unallocated bucket is the work still to be done. Every other survey opens
+ * on severity. An explicit choice always wins over this.
+ */
+export function defaultResultView(snapshot: SurveyTypeSnapshot | null | undefined): ResultView {
+  return requiresTradeAssignment(snapshot) ? "trade" : "severity";
 }
 
 const UNASSIGNED_TRADE = "Trade not yet confirmed";

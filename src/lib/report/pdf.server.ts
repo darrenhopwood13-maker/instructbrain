@@ -13,7 +13,7 @@ import { LineCapStyle, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFIm
 import { BRAND_CREDIT } from "@/lib/brand";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
-import { groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
+import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor } from "@/lib/report/sections";
@@ -934,10 +934,23 @@ async function drawFinding(
     );
   }
 
+  if (finding.snagTitle) drawText(writer, finding.snagTitle, { size: 11, bold: true, gapAfter: 2 });
   if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
   if (finding.remedialText) {
     drawText(writer, "Required action", { size: 8, bold: true, colour: MUTED });
     drawText(writer, finding.remedialText, { size: 10, gapAfter: 4, align: "justify" });
+  }
+  if (finding.rectificationAlt) {
+    drawText(writer, "Alternative", { size: 8, bold: true, colour: MUTED });
+    drawText(writer, finding.rectificationAlt, { size: 10, gapAfter: 4, align: "justify" });
+  }
+  if (finding.tradesmanHack) {
+    drawText(writer, "Trade tip", { size: 8, bold: true, colour: MUTED });
+    drawText(writer, finding.tradesmanHack, { size: 10, gapAfter: 4, align: "justify" });
+  }
+  if (finding.hsNotes) {
+    drawText(writer, "Health and safety", { size: 8, bold: true, colour: MUTED });
+    drawText(writer, finding.hsNotes, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.likelyCause) {
     drawText(writer, `Likely cause: ${finding.likelyCause}`, { size: 9, colour: MUTED });
@@ -1465,7 +1478,7 @@ export async function buildReportPdf(
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
   } else if (options.variant === "full") {
-    const view = safeResultView(options.view);
+    const view = safeResultView(options.view, defaultResultView(document.snapshot));
     for (const section of sectioned ? sections : [{ id: "all", label: "", findings }]) {
       if (sectioned) {
         ensure(writer, 70);

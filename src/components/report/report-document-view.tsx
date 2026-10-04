@@ -17,6 +17,7 @@ import {
 import {
   RESULT_VIEWS,
   RESULT_VIEW_LABELS,
+  defaultResultView,
   groupResults,
   safeResultView,
   type ResultView,
@@ -97,8 +98,9 @@ export function ReportDocumentView({
 } & Handlers) {
   const sections = documentSections(document.snapshot);
   const readOnly = !editable || !onReportPatch;
-  const [localView, setLocalView] = useState<ResultView>(safeResultView(view));
-  const activeView = safeResultView(view ?? localView);
+  const opensOn = defaultResultView(document.snapshot);
+  const [localView, setLocalView] = useState<ResultView>(safeResultView(view, opensOn));
+  const activeView = safeResultView(view ?? localView, opensOn);
   const setView = (next: ResultView) => {
     setLocalView(next);
     onViewChange?.(next);
@@ -1069,6 +1071,16 @@ function FindingRow({
           ) : null}
 
           <div className="mt-3 space-y-3">
+            {finding.snagTitle ? (
+              <InlineField
+                label="Snag"
+                value={finding.snagTitle}
+                readOnly={readOnly}
+                onSave={async (next) =>
+                  patch({ snag_title: next || null }, { snag_title: finding.snagTitle })
+                }
+              />
+            ) : null}
             <InlineField
               label="Finding"
               value={finding.findingText}
@@ -1091,6 +1103,48 @@ function FindingRow({
                 }
               />
             )}
+
+            {finding.rectificationAlt ? (
+              <InlineField
+                label="Alternative fix"
+                value={finding.rectificationAlt}
+                readOnly={readOnly}
+                multiline
+                rows={2}
+                onSave={async (next) =>
+                  patch(
+                    { rectification_alt: next || null },
+                    { rectification_alt: finding.rectificationAlt },
+                  )
+                }
+              />
+            ) : null}
+
+            {finding.tradesmanHack ? (
+              <InlineField
+                label="Trade tip"
+                value={finding.tradesmanHack}
+                readOnly={readOnly}
+                multiline
+                rows={2}
+                onSave={async (next) =>
+                  patch({ tradesman_hack: next || null }, { tradesman_hack: finding.tradesmanHack })
+                }
+              />
+            ) : null}
+
+            {finding.hsNotes ? (
+              <InlineField
+                label="Health and safety"
+                value={finding.hsNotes}
+                readOnly={readOnly}
+                multiline
+                rows={2}
+                onSave={async (next) =>
+                  patch({ hs_notes: next || null }, { hs_notes: finding.hsNotes })
+                }
+              />
+            ) : null}
 
             {definesField(snapshot, "likely_cause") ? (
               <InlineField
