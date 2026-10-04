@@ -481,6 +481,9 @@ describe("ai config — thinking, and which model a tier actually gets", () => {
 describe("escalation may live on another provider", () => {
   const ANTHROPIC = { ANTHROPIC_API_KEY: "test-key-not-used" };
   const DEEPSEEK = { DEEPSEEK_API_KEY: "test-key-not-used" };
+  const OPENAI = { OPENAI_API_KEY: "test-key-not-used" };
+  const OPENAI_KEY = OPENAI;
+  const GOOGLE = { GOOGLE_API_KEY: "test-key-not-used" };
 
   // aiConfig and escalationTarget both read process.env, so this block needs the
   // same scrub as the one above.
@@ -496,6 +499,11 @@ describe("escalation may live on another provider", () => {
     "AI_ESCALATION_MODEL_DEEPSEEK",
     "AI_ESCALATION_PROVIDER",
     "AI_ESCALATION_MODEL_ANTHROPIC",
+    "AI_ESCALATION_MODEL_OPENAI",
+    "AI_ESCALATION_MODEL_GOOGLE",
+    "AI_TRIAGE_MODEL_ANTHROPIC",
+    "AI_TRIAGE_MODEL_OPENAI",
+    "AI_TRIAGE_MODEL_GOOGLE",
     "AI_ESCALATION_DISABLED",
   ];
 
@@ -525,8 +533,66 @@ describe("escalation may live on another provider", () => {
     return warnings;
   }
 
-  it("is off unless asked for, so nothing changes by default", () => {
-    withEnv(DEEPSEEK, () => expect(escalationTarget()).toBeNull());
+  it("has nothing to fall back to when no second key exists, and says so", () => {
+    // DeepSeek on its own. Both tiers are deepseek-flash, so escalation cannot
+    // run there, and there is no other key to run it on.
+    withEnv(DEEPSEEK, () => {
+      let target: unknown = "unset";
+      const warnings = silenceWarnings(() => {
+        target = escalationTarget();
+      });
+      expect(target).toBeNull();
+      expect(warnings.join("\n")).toContain("OPENAI_API_KEY");
+    });
+  });
+
+  it("finds another provider on its own, so the second look is not silently lost", () => {
+    // THE PRODUCTION BUG THIS CLOSES. AI_ESCALATION_PROVIDER unset used to mean
+    // escalation never ran at all on DeepSeek — every finding had exactly one
+    // attempt, including fail-tone snags that should escalate, for two days of
+    // reports, with nothing alerting. An unset variable is not a decision to
+    // switch the safety net off.
+    withEnv({ ...DEEPSEEK, ...ANTHROPIC }, () => {
+      const warnings = silenceWarnings(() => {
+        expect(escalationTarget()).toEqual({
+          provider: "anthropic",
+          apiKey: "test-key-not-used",
+          model: "claude-sonnet-4-5",
+        });
+      });
+      expect(warnings.join("\n")).toContain("AI_ESCALATION_PROVIDER is unset");
+    });
+  });
+
+  it("prefers a cheap vision model first, then the others", () => {
+    withEnv({ ...DEEPSEEK, ...ANTHROPIC }, () => {
+      silenceWarnings(() => expect(escalationTarget()?.provider).toBe("anthropic"));
+    });
+    withEnv({ ...DEEPSEEK, ...ANTHROPIC, ...OPENAI }, () => {
+      silenceWarnings(() => {
+        expect(escalationTarget()?.provider).toBe("openai");
+        expect(escalationTarget()?.model).toBe("gpt-4.1");
+      });
+    });
+    withEnv({ ...DEEPSEEK, ...GOOGLE }, () => {
+      silenceWarnings(() => expect(escalationTarget()?.provider).toBe("google"));
+    });
+  });
+
+  it("leaves a provider that can escalate within itself completely alone", () => {
+    // OpenAI's own two tiers differ (gpt-4.1-mini -> gpt-4.1), so it needs no
+    // help and gets none. This is the branch that keeps a working deployment
+    // untouched.
+    withEnv(OPENAI_KEY, () => {
+      const warnings = silenceWarnings(() => expect(escalationTarget()).toBeNull());
+      expect(warnings).toEqual([]);
+    });
+  });
+
+  it("lets a named provider win over the automatic choice", () => {
+    withEnv({ ...DEEPSEEK, ...ANTHROPIC, ...OPENAI, AI_ESCALATION_PROVIDER: "anthropic" }, () => {
+      expect(escalationTarget()?.provider).toBe("anthropic");
+    });
   });
 
   it("resolves the named provider, its key and its own escalation model", () => {
@@ -628,6 +694,18 @@ describe("escalation may live on another provider", () => {
       expect(calls).toEqual(["deepseek"]);
       expect(outcome.tier).toBe("triage");
       expect(outcome.attempts).toHaveLength(1);
+    });
+
+    it("escalates on the provider it found by itself, with nothing configured", async () => {
+      // The end-to-end proof: no AI_ESCALATION_PROVIDER, two keys present, and
+      // the second look actually runs — two adapter calls, the escalation's
+      // answer kept, and the model named on the attempt that ran.
+      const { calls, outcome } = await run({ ...DEEPSEEK, ...ANTHROPIC });
+      expect(calls).toEqual(["deepseek", "anthropic"]);
+      expect(outcome.tier).toBe("escalation");
+      expect(outcome.attempts.map((attempt) => attempt.provider)).toEqual(["deepseek", "anthropic"]);
+      expect(outcome.attempts[1]!.model).toBe("claude-sonnet-4-5");
+      expect(outcome.envelope?.observations[0]!.confidence).toBe(0.9);
     });
 
     it("escalates to the named provider, and records which model answered", async () => {

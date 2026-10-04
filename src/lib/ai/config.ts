@@ -134,9 +134,10 @@ function resolveModel(provider: ProviderId, tier: AnalysisTier, fallback: string
  *
  * Escalation is the tier where a second opinion is actually worth paying for,
  * so AI_ESCALATION_THINKING=true is the sensible way to spend it. Note that
- * escalation does not fire on DeepSeek of its own accord: both of its tiers
+ * escalation cannot fire on DeepSeek of its own accord: both of its tiers
  * resolve to the same model, and analysePhotograph only escalates when the two
- * differ. AI_ESCALATION_PROVIDER is what restores it — see escalationTarget().
+ * differ. escalationTarget() fixes that — it names a provider when
+ * AI_ESCALATION_PROVIDER is set, and otherwise picks one automatically.
  */
 function resolveThinking(tier: AnalysisTier): boolean {
   const scoped = env(`AI_${tier.toUpperCase()}_THINKING`);
@@ -160,9 +161,11 @@ export function providerProfiles(): ProviderProfile[] {
       //     sit on flash until DeepSeek ships a vision-capable pro.
       //
       //     The consequence: with both tiers on one model there is nothing to
-      //     escalate TO, so the second look never runs. Point escalation at a
-      //     different provider with AI_ESCALATION_PROVIDER to get it back —
-      //     see escalationTarget() below. Triage stays here, on the cost.
+      //     escalate TO, so the second look never runs. escalationTarget()
+      //     points it at a different provider — named by AI_ESCALATION_PROVIDER,
+      //     or chosen automatically from whichever other key is present, so an
+      //     unset variable can no longer switch the safety net off in silence.
+      //     Triage stays here, on the cost.
       //  2. DeepSeek takes `max_tokens`, and accepts `response_format:
       //     json_object` but NOT `json_schema` (it answers json_schema with
       //     "This response_format type is unavailable now"). The adapter
@@ -233,10 +236,14 @@ export type EscalationTarget = {
  *
  * Returns null — and says why — when nothing usable is configured, in which
  * case escalation behaves exactly as it did before.
+ *
+ * WHEN NOTHING IS NAMED, a fallback is chosen automatically — see below. Leaving
+ * the variable unset used to mean the second look never ran at all on DeepSeek,
+ * silently, which is a safety net quietly switched off rather than a saving.
  */
 export function escalationTarget(): EscalationTarget | null {
   const forced = env("AI_ESCALATION_PROVIDER");
-  if (!forced) return null;
+  if (!forced) return autoEscalationTarget();
 
   const profile = providerProfiles().find((candidate) => candidate.id === forced);
   if (!profile) {
@@ -262,6 +269,55 @@ export function escalationTarget(): EscalationTarget | null {
     apiKey,
     model: resolveModel(profile.id, "escalation", profile.escalationModel),
   };
+}
+
+/**
+ * Fallback providers for the escalation tier, cheapest credible second opinion
+ * first. DeepSeek is deliberately absent: its one vision model is the model
+ * triage has just used, so escalating to it is paying twice for one opinion.
+ */
+const ESCALATION_FALLBACK_ORDER: ProviderId[] = ["openai", "anthropic", "google"];
+
+/**
+ * The escalation tier solved without being asked.
+ *
+ * Only the broken shape is touched: a provider whose two tiers resolve to the
+ * same model cannot escalate within itself, and analysePhotograph then skips
+ * the second look entirely. An unset AI_ESCALATION_PROVIDER used to mean that
+ * stayed silent for months. If another provider's key is present, it is used
+ * for escalation alone — triage keeps running where the volume is, which is the
+ * cost decision. Naming AI_ESCALATION_PROVIDER always wins over this.
+ *
+ * A provider that CAN escalate within itself is left exactly as it was, so this
+ * changes nothing for OpenAI, Anthropic or Google deployments.
+ */
+function autoEscalationTarget(): EscalationTarget | null {
+  const triage = selectProfile();
+  if (!triage) return null;
+  // Both tiers on one model is the only case that needs help.
+  if (triage.triageModel !== triage.escalationModel) return null;
+
+  for (const id of ESCALATION_FALLBACK_ORDER) {
+    if (id === triage.id) continue;
+    const profile = providerProfiles().find((candidate) => candidate.id === id);
+    if (!profile) continue;
+    const apiKey = env(profile.keyEnv);
+    if (!apiKey) continue;
+    const model = resolveModel(profile.id, "escalation", profile.escalationModel);
+    console.warn(
+      `[ai-config] "${triage.id}" runs one vision model on both tiers, so escalation cannot run there. ` +
+        `AI_ESCALATION_PROVIDER is unset; escalating on "${profile.id}" (${model}). ` +
+        `Set AI_ESCALATION_PROVIDER to choose a different one.`,
+    );
+    return { provider: profile.id, apiKey, model };
+  }
+
+  console.warn(
+    `[ai-config] "${triage.id}" runs one vision model on both tiers, and no other provider key is set, ` +
+      `so the escalation tier cannot run at all. Add OPENAI_API_KEY, ANTHROPIC_API_KEY or GOOGLE_API_KEY ` +
+      `beside it, or set AI_ESCALATION_PROVIDER.`,
+  );
+  return null;
 }
 
 export function aiConfig(): AiConfig {
