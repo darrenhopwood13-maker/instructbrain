@@ -432,9 +432,9 @@ describe("ai config — thinking, and which model a tier actually gets", () => {
     // same photograph, so escalation must be vision-capable too.
     withEnv(DEEPSEEK, () => {
       const profiles = providerProfiles();
-      expect(profiles[0].id).toBe("deepseek");
-      expect(profiles[0].triageModel).toBe("deepseek-flash");
-      expect(profiles[0].escalationModel).toBe("deepseek-flash");
+      expect(profiles[0]!.id).toBe("deepseek");
+      expect(profiles[0]!.triageModel).toBe("deepseek-flash");
+      expect(profiles[0]!.escalationModel).toBe("deepseek-flash");
       const config = aiConfig();
       expect(config.provider).toBe("deepseek");
       expect(config.models.escalation).toBe(config.models.triage);
@@ -593,14 +593,14 @@ describe("escalation may live on another provider", () => {
     };
 
     afterEach(() => {
-      adapters.deepseek = original.deepseek;
-      adapters.anthropic = original.anthropic;
+      (adapters as Record<string, unknown>)["deepseek"] = original["deepseek"];
+      (adapters as Record<string, unknown>)["anthropic"] = original["anthropic"];
     });
 
     async function run(vars: Record<string, string>) {
       const calls: string[] = [];
-      (adapters as Record<string, unknown>).deepseek = stub("deepseek", calls, unsure);
-      (adapters as Record<string, unknown>).anthropic = stub("anthropic", calls, definite);
+      (adapters as Record<string, unknown>)["deepseek"] = stub("deepseek", calls, unsure);
+      (adapters as Record<string, unknown>)["anthropic"] = stub("anthropic", calls, definite);
       let outcome: Awaited<ReturnType<typeof analysePhotograph>> | null = null;
       // withEnv is synchronous, so the env must be applied around the await.
       const before = MANAGED.map((name) => [name, process.env[name]] as const);
@@ -635,12 +635,12 @@ describe("escalation may live on another provider", () => {
       expect(calls).toEqual(["deepseek", "anthropic"]);
       expect(outcome.tier).toBe("escalation");
       expect(outcome.attempts.map((attempt) => attempt.provider)).toEqual(["deepseek", "anthropic"]);
-      expect(outcome.attempts[1].model).toBe("claude-sonnet-4-5");
+      expect(outcome.attempts[1]!.model).toBe("claude-sonnet-4-5");
       // The escalation's own answer is the one kept. parseEnvelope normalises
       // the payload on the way through, so this checks the answer rather than
       // the object identity.
-      expect(outcome.envelope?.observations[0].confidence).toBe(0.9);
-      expect(outcome.attempts[0].envelope?.observations[0].confidence).toBe(0.3);
+      expect(outcome.envelope?.observations[0]!.confidence).toBe(0.9);
+      expect(outcome.attempts[0]!.envelope?.observations[0]!.confidence).toBe(0.3);
     });
   });
 });

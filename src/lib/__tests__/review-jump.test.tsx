@@ -24,7 +24,7 @@ const asFinding = (id: string, ref: string, status: string, title: string): Find
   }) as unknown as Finding;
 
 const visibleTitle = () =>
-  document.querySelector("ul[aria-label='Findings for review'] li p.font-semibold")?.textContent;
+  document.querySelector("ul[aria-label='Findings for review'] li[aria-current='true'] p.font-semibold")?.textContent;
 
 describe("go to first unresolved", () => {
   it("jumps back to the first not assessed finding and focuses its card", () => {
@@ -39,8 +39,7 @@ describe("go to first unresolved", () => {
         onConfirm={() => Promise.resolve()}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Open .*Third fail/i }));
     expect(visibleTitle()).toBe("Third fail");
     fireEvent.click(screen.getByRole("button", { name: /go to first unresolved/i }));
     expect(visibleTitle()).toBe("Blocked one");
