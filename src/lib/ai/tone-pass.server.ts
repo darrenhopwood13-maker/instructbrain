@@ -78,8 +78,20 @@ function userPrompt(texts: string[], toneId: ReportToneId): string {
   return [
     `VOICE: ${tone.label}. ${tone.instruction}`,
     examples ? `Examples of the voice, for register only — copy how they are written, never their subject matter: ${examples}` : null,
+    // The transformation, shown rather than described. Telling a model the voice
+    // is called "wry understatement" asks it to interpret a label; showing one
+    // straight line and the same line in the voice asks it to copy a move. The
+    // subject here is deliberately unlike any survey type and carries no numbers,
+    // so nothing in it can be taken as a fact about the photograph.
+    [
+      "THE TRANSFORMATION, shown once. Straight:",
+      '"Sealant has been applied inconsistently, leaving gaps at the frame head."',
+      "In this voice:",
+      '"Sealant applied in places, and the frame head remains open to the weather — a bold approach to keeping the rain out."',
+      "Nothing factual moved: same defect, same location, same extent. Only the register changed.",
+    ].join(" "),
     "Rewrite each of the items below in that voice. Keep each to one or two sentences and roughly the length of the original. Do not summarise, do not add a conclusion, do not explain the cause.",
-    "Every item must carry exactly one dry, understated aside of the kind a site manager would say to a colleague — never two, and never a joke that costs a fact. Where the original already contains one, keep it rather than replacing it.",
+    "Every item must carry exactly one dry, understated aside of the kind a site manager would say to a colleague — never two, and never a joke that costs a fact. An item that comes back as plain technical description has failed this task. Where the original already contains an aside, keep it rather than replacing it.",
     `Return json as {"texts": [...]} with exactly ${texts.length} items, in the same order.`,
     texts.map((text, index) => `${index + 1}. ${text}`).join("\n"),
   ]

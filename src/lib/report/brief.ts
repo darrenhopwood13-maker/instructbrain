@@ -75,10 +75,12 @@ export const REPORT_TONES = [
     // obeyed, so these are examples of the voice with the subject matter kept
     // deliberately unrelated (and free of numbers) so nothing in them can be
     // mistaken for a fact about the photograph in front of it.
+    // Shown to the model, and to the voice pass that follows. Kept to two: a
+    // longer list was measured and one of the lines came back verbatim in a
+    // report, which reads as formulaic the second time anyone sees it.
     voiceExamples: [
       "The corner is quietly handing in its resignation, one arris at a time.",
       "Sealant applied as a gesture of intent rather than a weather seal.",
-      "The mortar has been left to find its own way out of the joint.",
     ],
     // Measured: the instruction alone landed in 1 run of 6, and adding examples
     // in the voice moved it to 2 findings of 18 — not a fix either. The register
