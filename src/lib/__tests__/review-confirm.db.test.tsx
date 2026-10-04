@@ -146,7 +146,7 @@ describe.skipIf(!enabled)("Review tab confirmations reach the database", () => {
       />,
     );
 
-    screen.getByRole("button", { name: /confirm all/i }).click();
+    screen.getByRole("button", { name: /accept all/i }).click();
 
     await waitFor(async () => {
       const { data } = await db
