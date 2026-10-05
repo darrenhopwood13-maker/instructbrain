@@ -18,3 +18,4 @@
 - Render `manualOnly` report output through its own two-items-per-A4-page presentation, showing only stable item reference and capture date/time, so other templates retain their established document layouts.
 - Distribute `manualOnly` reports as an explicitly sent issued PDF attachment, never as a recipient review page, so the delivered artifact is final and deliberate.
 - Brand `manualOnly` PDF and print output with the fixed instructBrain navy, white, and Laser Green identity rather than organisation accent overrides, while keeping customer identity secondary and readable.
+- The field cockpit lives on the fixed /field path (QR payload) using AppShell chrome="field"; it only renders existing photo upload and hand-off modules, never owns queue or report logic, so the shell and logic can be built independently.
