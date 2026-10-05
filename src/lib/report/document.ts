@@ -59,6 +59,14 @@ export type DocFinding = {
   suggestedTrade: string | null;
   tradeReasoning: string | null;
   tradeConfidence: number | null;
+  /**
+   * The person's confirmed condition grade (A–D), or null until one is
+   * confirmed. Null reads as "to be confirmed", never as a default grade.
+   */
+  conditionGrade: string | null;
+  /** The assessment's proposed grade, and its confidence, kept beside the decision. */
+  suggestedGrade: string | null;
+  gradeConfidence: number | null;
   dueDate: string | null;
   lifecycleState: string;
   isConfidential: boolean;

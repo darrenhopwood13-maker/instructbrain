@@ -791,8 +791,10 @@ export type Database = {
         Row: {
           ai_abstain_reason: string | null
           ai_confidence: number | null
+          ai_grade_confidence?: number | null
           ai_raw_output: Json | null
           ai_region: Json | null
+          ai_suggested_grade?: string | null
           ai_suggested_trade: string | null
           ai_tier: string | null
           ai_trade_confidence: number | null
@@ -800,6 +802,7 @@ export type Database = {
           assigned_contact_id: string | null
           assigned_trade: string | null
           capture_fields: Json
+          condition_grade?: string | null
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
@@ -833,8 +836,10 @@ export type Database = {
         Insert: {
           ai_abstain_reason?: string | null
           ai_confidence?: number | null
+          ai_grade_confidence?: number | null
           ai_raw_output?: Json | null
           ai_region?: Json | null
+          ai_suggested_grade?: string | null
           ai_suggested_trade?: string | null
           ai_tier?: string | null
           ai_trade_confidence?: number | null
@@ -842,6 +847,7 @@ export type Database = {
           assigned_contact_id?: string | null
           assigned_trade?: string | null
           capture_fields?: Json
+          condition_grade?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
@@ -875,8 +881,10 @@ export type Database = {
         Update: {
           ai_abstain_reason?: string | null
           ai_confidence?: number | null
+          ai_grade_confidence?: number | null
           ai_raw_output?: Json | null
           ai_region?: Json | null
+          ai_suggested_grade?: string | null
           ai_suggested_trade?: string | null
           ai_tier?: string | null
           ai_trade_confidence?: number | null
@@ -884,6 +892,7 @@ export type Database = {
           assigned_contact_id?: string | null
           assigned_trade?: string | null
           capture_fields?: Json
+          condition_grade?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string

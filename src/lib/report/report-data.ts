@@ -111,7 +111,7 @@ export const reportDocumentQuery = (reportId: string) =>
           .limit(1),
         from("findings")
           .select(
-            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
+            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
@@ -199,6 +199,9 @@ export const reportDocumentQuery = (reportId: string) =>
           suggestedTrade: row.ai_suggested_trade ?? null,
           tradeReasoning: row.ai_trade_reasoning ?? null,
           tradeConfidence: row.ai_trade_confidence ?? null,
+          conditionGrade: row.condition_grade ?? null,
+          suggestedGrade: row.ai_suggested_grade ?? null,
+          gradeConfidence: row.ai_grade_confidence ?? null,
           dueDate: row.due_date ?? null,
           lifecycleState: row.lifecycle_state ?? "open",
           isConfidential: !!row.is_confidential,
@@ -325,6 +328,8 @@ export type FindingPatch = Partial<{
   status: string;
   severity: string | null;
   assigned_trade: string | null;
+  /** A person's condition-grade decision. The AI's ai_suggested_grade is never touched. */
+  condition_grade: string | null;
   due_date: string | null;
   likely_cause: string | null;
   regulatory_reference: string | null;

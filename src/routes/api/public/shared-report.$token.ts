@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
           admin
             .from("findings")
             .select(
-              "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, due_date, lifecycle_state, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
+              "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
             )
             .eq("report_id", share.report_id)
             // Invariant 7: confidential findings are excluded from every

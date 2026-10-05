@@ -118,6 +118,9 @@ describe("property inventory", () => {
       likelyCause: null,
       regulatoryReference: null,
       abstainReason: null,
+      conditionGrade: null,
+      suggestedGrade: null,
+      gradeConfidence: null,
       photos: [{ photo: linked, role: "primary", region: null }],
     });
     const document = {
@@ -260,6 +263,9 @@ describe("property inventory", () => {
       likelyCause: null,
       regulatoryReference: null,
       abstainReason: null,
+      conditionGrade: null,
+      suggestedGrade: null,
+      gradeConfidence: null,
       photos: [{ photo: movedPhoto, role: "primary", region: null }],
     } as DocFinding;
     const document = {
@@ -319,6 +325,9 @@ describe("property inventory", () => {
       likelyCause: null,
       regulatoryReference: null,
       abstainReason: null,
+      conditionGrade: null,
+      suggestedGrade: null,
+      gradeConfidence: null,
       photos: [{ photo: overviewPhoto, role: "primary", region: null }],
     } satisfies DocFinding;
     const document = {

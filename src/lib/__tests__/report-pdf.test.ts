@@ -37,6 +37,9 @@ function finding(overrides: Partial<DocFinding>): DocFinding {
     likelyCause: null,
     regulatoryReference: null,
     abstainReason: overrides.abstainReason ?? null,
+    conditionGrade: null,
+    suggestedGrade: null,
+    gradeConfidence: null,
     photos: [],
   } as DocFinding;
 }
@@ -80,6 +83,9 @@ const document: ReportDocument = {
       ref: "2",
       statusId: NOT_ASSESSED_ID,
       abstainReason: "The photograph was too dark to read.",
+      conditionGrade: null,
+      suggestedGrade: null,
+      gradeConfidence: null,
     }),
     finding({
       id: "c",

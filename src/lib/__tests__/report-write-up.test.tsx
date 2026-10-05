@@ -38,6 +38,9 @@ function finding(overrides: Partial<DocFinding> = {}): DocFinding {
     likelyCause: null,
     regulatoryReference: null,
     abstainReason: null,
+    conditionGrade: null,
+    suggestedGrade: null,
+    gradeConfidence: null,
     photos: [],
   };
 }

@@ -15,13 +15,22 @@ import {
   type ReportDocument,
 } from "@/lib/report/document";
 import {
-  RESULT_VIEWS,
   RESULT_VIEW_LABELS,
   defaultResultView,
   groupResults,
+  resultViewsFor,
   safeResultView,
   type ResultView,
 } from "@/lib/report/grouping";
+import {
+  SCHEDULE_OF_CONDITION_HEADING,
+  SCHEDULE_OF_CONDITION_LIMITATIONS,
+} from "@/lib/report/schedule-of-condition";
+import {
+  CONDITION_GRADE_LEGEND,
+  conditionGradeOf,
+  conditionGradeSummary,
+} from "@/lib/review/condition-grade";
 import { itemLabel, itemLabels } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import {
@@ -53,6 +62,7 @@ import {
   regulatoryReferencesOf,
   requiresLifecycle,
   requiresTradeAssignment,
+  requiresConditionGrade,
   resolveCategory,
   resolveSeverity,
   resolveStatus,
@@ -908,12 +918,14 @@ function Results({
   onViewChange: (next: ResultView) => void;
 } & Handlers) {
   const groups = groupResults(document, view);
+  const condition = requiresConditionGrade(document.snapshot);
+  const views = resultViewsFor(document.snapshot);
 
   return (
     <section aria-labelledby="section-results">
       <div className="grid justify-items-center gap-3 text-center">
         <h2 id="section-results" className="editorial-title text-xl font-semibold">
-          Results
+          {condition ? SCHEDULE_OF_CONDITION_HEADING : "Results"}
         </h2>
         {print ? (
           <p className="text-xs text-muted-foreground">
@@ -925,7 +937,7 @@ function Results({
             aria-label="Order the results"
             className="inline-flex rounded-lg border border-border bg-surface-sunken p-1"
           >
-            {RESULT_VIEWS.map((option) => {
+            {views.map((option) => {
               const active = option === view;
               return (
                 <button
@@ -948,6 +960,8 @@ function Results({
           </div>
         )}
       </div>
+
+      {condition ? <ConditionsAndLimitations /> : null}
 
       {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
@@ -975,7 +989,58 @@ function Results({
           </div>
         ))
       )}
+
+      {condition ? <ConditionGradeCount document={document} /> : null}
     </section>
+  );
+}
+
+/**
+ * The scope and limitations block. Mandatory on a Schedule of Condition and
+ * printed ON the artifact, never held in conversation — the wording comes from
+ * one shared list so the screen and the PDF cannot disagree.
+ */
+function ConditionsAndLimitations() {
+  return (
+    <div className="mt-5 rounded-xl border border-border bg-surface-sunken p-4 text-left">
+      <h3 className="eyebrow">Scope and limitations</h3>
+      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+        {SCHEDULE_OF_CONDITION_LIMITATIONS.map((clause) => (
+          <li key={clause}>{clause}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The closing count: how many elements fall in each grade, and how many are unconfirmed. */
+function ConditionGradeCount({ document }: { document: ReportDocument }) {
+  const summary = conditionGradeSummary(
+    document.findings.map((finding) => ({
+      id: finding.id,
+      ref: finding.ref,
+      conditionGrade: finding.conditionGrade,
+      aiSuggestedGrade: finding.suggestedGrade,
+      aiGradeConfidence: finding.gradeConfidence,
+    })),
+  );
+
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-surface-raised p-4">
+      <h3 className="eyebrow">Items by grade</h3>
+      <p className="mt-2 text-sm">
+        {summary.byGrade
+          .map((grade) => `${grade.code} — ${grade.label}: ${grade.count}`)
+          .join("   ·   ")}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {summary.graded} graded
+        {summary.ungraded > 0
+          ? ` · ${summary.ungraded} still to be confirmed by a person`
+          : " · every element has a confirmed grade"}
+        .
+      </p>
+    </div>
   );
 }
 
@@ -992,6 +1057,8 @@ function FindingRow({
   const notAssessed = status.id === NOT_ASSESSED_ID;
   const primary = finding.photos[0];
   const references = regulatoryReferencesOf(snapshot);
+  const condition = requiresConditionGrade(snapshot);
+  const grade = conditionGradeOf(finding.conditionGrade);
 
   const patch = async (values: FindingPatch, before: Record<string, unknown>) =>
     onFindingPatch?.(finding, values, before);
@@ -1068,6 +1135,22 @@ function FindingRow({
                 </div>
               ))}
             </dl>
+          ) : null}
+
+          {condition ? (
+            <p className="mt-2 text-xs">
+              <span className="font-semibold">Grade: </span>
+              {grade ? (
+                <>
+                  {grade.code} — {grade.label}.{" "}
+                  <span className="text-muted-foreground">{grade.meaning}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  To be confirmed — a person must grade this element.
+                </span>
+              )}
+            </p>
           ) : null}
 
           <div className="mt-3 space-y-3">
@@ -1173,6 +1256,11 @@ function FindingRow({
               {requiresTradeAssignment(snapshot) ? (
                 <span>Trade: {finding.assignedTrade ?? "Not confirmed"}</span>
               ) : null}
+              {requiresConditionGrade(snapshot) ? (
+                <span>
+                  Grade: {grade ? `${grade.code} — ${grade.label}` : "To be confirmed"}
+                </span>
+              ) : null}
               {requiresLifecycle(snapshot) ? (
                 <span>Target date: {formatDocumentDate(finding.dueDate)}</span>
               ) : null}
@@ -1245,6 +1333,39 @@ function FindingRow({
                         ? ` (confidence ${Math.round(finding.tradeConfidence * 100)}%)`
                         : ""}
                       {finding.tradeReasoning ? ` — ${finding.tradeReasoning}` : ""}
+                    </span>
+                  ) : null}
+                </label>
+              ) : null}
+
+              {requiresConditionGrade(snapshot) ? (
+                <label className="eyebrow block">
+                  Condition grade (your decision)
+                  <select
+                    aria-label={`Condition grade for ${finding.ref}`}
+                    className="mt-1 min-h-11 w-full rounded-md border border-border bg-surface-raised px-2 text-sm"
+                    value={grade?.code ?? ""}
+                    onChange={(event) =>
+                      void patch(
+                        { condition_grade: event.target.value || null },
+                        { condition_grade: finding.conditionGrade },
+                      )
+                    }
+                  >
+                    <option value="">To be confirmed</option>
+                    {CONDITION_GRADE_LEGEND.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.code} — {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  {finding.suggestedGrade ? (
+                    <span className="mt-1 block text-xs font-normal normal-case tracking-normal text-muted-foreground">
+                      AI suggested {finding.suggestedGrade}
+                      {typeof finding.gradeConfidence === "number"
+                        ? ` (confidence ${Math.round(finding.gradeConfidence * 100)}%)`
+                        : ""}
+                      . A person confirms it.
                     </span>
                   ) : null}
                 </label>

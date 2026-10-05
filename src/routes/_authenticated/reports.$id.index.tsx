@@ -41,6 +41,7 @@ import {
   isManualOnly,
   isProjectBound,
   requiresTradeAssignment,
+  requiresConditionGrade,
   tradesOf,
 } from "@/lib/survey-types";
 import { ManualReviewList } from "@/components/photos/manual-review-list";
@@ -50,6 +51,7 @@ import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
 import { TradeOrganiser } from "@/components/review/trade-organiser";
+import { ConditionGradeOrganiser } from "@/components/review/condition-grade-organiser";
 import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
 import { defaultResultView, safeResultView, type ResultView } from "@/lib/report/grouping";
 
@@ -229,6 +231,43 @@ function ReportWorkspace() {
           assigned_trade: before.assignedTrade ?? null,
           ai_suggested_trade: before.aiSuggestedTrade ?? null,
           due_date: before.dueDate ?? null,
+        },
+      );
+    }
+    await refresh();
+  };
+
+  /**
+   * A person's condition-grade decision. The assessment's own suggestion and its
+   * confidence are never overwritten — this writes `condition_grade` only.
+   */
+  const gradeFinding = async (findingId: string, grade: string | null) => {
+    const before = (findings.data ?? []).find((item) => item.id === findingId);
+    await updateFinding(
+      id,
+      findingId,
+      { condition_grade: grade },
+      {
+        condition_grade: before?.conditionGrade ?? null,
+        ai_suggested_grade: before?.aiSuggestedGrade ?? null,
+      },
+    );
+    await refresh();
+  };
+
+  /** Grading a batch: the same write, once per element. */
+  const gradeMany = async (findingIds: string[], grade: string) => {
+    if (findingIds.length === 0) return;
+    const all = findings.data ?? [];
+    for (const findingId of findingIds) {
+      const before = all.find((item) => item.id === findingId);
+      await updateFinding(
+        id,
+        findingId,
+        { condition_grade: grade },
+        {
+          condition_grade: before?.conditionGrade ?? null,
+          ai_suggested_grade: before?.aiSuggestedGrade ?? null,
         },
       );
     }
@@ -502,6 +541,7 @@ function ReportWorkspace() {
               onEditText={onEditText}
               tradeOptions={tradeOptions}
               onAssignTrade={onAssignTrade}
+              onAssignGrade={gradeFinding}
             />
           )}
         </div>
@@ -515,6 +555,17 @@ function ReportWorkspace() {
           tradeOptions={tradeOptions}
           threshold={BULK_TRADE_CONFIRM_THRESHOLD}
           onAssign={assignTradeToMany}
+          disabled={locked}
+        />
+      ) : null}
+
+      {step === "photos" &&
+      findingList.length > 0 &&
+      requiresConditionGrade(report.surveyTypeSnapshot) ? (
+        <ConditionGradeOrganiser
+          findings={findingList}
+          threshold={BULK_TRADE_CONFIRM_THRESHOLD}
+          onGrade={gradeMany}
           disabled={locked}
         />
       ) : null}

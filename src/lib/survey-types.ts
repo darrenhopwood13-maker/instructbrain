@@ -124,6 +124,11 @@ export type SurveyDefinition = {
   defaultRemedial?: string;
   outputSections?: string[];
   requiresTradeAssignment?: boolean;
+  /**
+   * Whether this type grades each element's condition against the four-tier
+   * legend. A condition grade is a decision by a person; the AI only proposes.
+   */
+  requiresConditionGrade?: boolean;
   /** Trades offered on every finding regardless of category. */
   standardTrades?: string[];
   requiresLifecycle?: boolean;
@@ -404,6 +409,18 @@ export function requiresTradeAssignment(
   snapshot: SurveyTypeSnapshot | null | undefined,
 ): boolean {
   return snapshot?.requiresTradeAssignment === true;
+}
+
+/**
+ * A second frozen capability flag, mirroring `requiresTradeAssignment` for the
+ * condition grade. A survey type that grades its elements presents its report
+ * as a Schedule of Condition. Data, not code: no renderer decides this by
+ * naming a discipline.
+ */
+export function requiresConditionGrade(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): boolean {
+  return snapshot?.requiresConditionGrade === true;
 }
 
 export function requiresLifecycle(snapshot: SurveyTypeSnapshot | null | undefined): boolean {

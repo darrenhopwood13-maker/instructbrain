@@ -64,6 +64,8 @@ function observation(overrides: Partial<Observation> = {}): Observation {
     suggested_trade: null,
     trade_reasoning: null,
     trade_confidence: null,
+    suggested_grade: null,
+    grade_confidence: null,
     region: null,
     involves_person: false,
     likely_cause: null,
@@ -197,6 +199,57 @@ describe("invariant 6 — trade attribution is a suggestion", () => {
     expect(draft.ai_trade_confidence).toBe(0.2);
     // Invariant 6 is untouched: a suggestion is still never an assignment.
     expect(draft).not.toHaveProperty("assigned_trade");
+  });
+});
+
+describe("the condition grade is the same bargain as the trade", () => {
+  it("keeps the model's grade and its confidence side by side, and writes no grade", () => {
+    const draft = toDraftFinding(
+      observation({ suggested_grade: "c", grade_confidence: 0.42 }),
+      roofing,
+      options,
+    );
+    // The letter is normalised to the legend; the number is kept with it.
+    expect(draft.ai_suggested_grade).toBe("C");
+    expect(draft.ai_grade_confidence).toBe(0.42);
+    // `condition_grade` is a PERSON's decision and is left untouched here.
+    expect(draft).not.toHaveProperty("condition_grade");
+  });
+
+  it("does not delete a low-confidence grade to tidy up", () => {
+    const draft = toDraftFinding(
+      observation({ suggested_grade: "D", grade_confidence: 0.2 }),
+      roofing,
+      options,
+    );
+    expect(draft.ai_suggested_grade).toBe("D");
+    expect(draft.ai_grade_confidence).toBe(0.2);
+  });
+
+  it("rejects a value the legend does not define rather than inventing a grade", () => {
+    const draft = toDraftFinding(
+      observation({ suggested_grade: "excellent", grade_confidence: 0.9 }),
+      roofing,
+      options,
+    );
+    expect(draft.ai_suggested_grade).toBeNull();
+    // The number is kept even when the letter was not a grade.
+    expect(draft.ai_grade_confidence).toBe(0.9);
+  });
+
+  it("carries no grade on a finding the model could not assess", () => {
+    const draft = notAssessedDraft("the provider returned 500.", "escalation");
+    expect(draft.ai_suggested_grade).toBeNull();
+    expect(draft.ai_grade_confidence).toBeNull();
+  });
+
+  it("hands the provider the four-letter legend in the schema", () => {
+    const schema = envelopeJsonSchema(roofing) as unknown as {
+      properties: { observations: { items: { properties: Record<string, { enum?: unknown[] }> } } };
+    };
+    const properties = schema.properties.observations.items.properties;
+    expect(properties["suggested_grade"]?.enum).toEqual(["A", "B", "C", "D", null]);
+    expect(properties["grade_confidence"]).toBeTruthy();
   });
 });
 

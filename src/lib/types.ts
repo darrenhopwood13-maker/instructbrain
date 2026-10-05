@@ -94,6 +94,13 @@ export type Finding = {
   aiSuggestedTrade?: string | null;
   aiTradeConfidence?: number | null;
   aiTradeReasoning?: string | null;
+  /**
+   * The condition grade. The person's decision, and the only value that reads
+   * as fact; null until someone confirms one. The AI's proposal lives beside it.
+   */
+  conditionGrade?: string | null;
+  aiSuggestedGrade?: string | null;
+  aiGradeConfidence?: number | null;
   /** Derived from the severity's target window, then editable by a person. */
   dueDate?: string | null;
   dueDateOverridden?: boolean;

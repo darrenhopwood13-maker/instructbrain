@@ -22,6 +22,7 @@ import {
   resolveSeverity,
   resolveStatus,
   requiresTradeAssignment,
+  requiresConditionGrade,
   reviewShortcuts,
   aiCaptureFieldsOf,
   type StatusDefinition,
@@ -31,6 +32,7 @@ import {
   TradeAssignmentCard,
   type TradeAssignment,
 } from "@/components/review/trade-assignment-card";
+import { ConditionGradeCard } from "@/components/review/condition-grade-card";
 import { AlertTriangle, Keyboard, Lock, Sparkles } from "lucide-react";
 import {
   Dialog,
@@ -70,6 +72,7 @@ export function ReviewList({
   onAssignTrade,
   onAddTradeToDirectory,
   onEditText,
+  onAssignGrade,
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
@@ -89,6 +92,8 @@ export function ReviewList({
     findingId: string,
     edit: { findingText: string; captureFields?: Record<string, string> },
   ) => Promise<void>;
+  /** Persists a person's condition-grade decision. Null clears it. */
+  onAssignGrade?: (findingId: string, grade: string | null) => Promise<void>;
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -196,6 +201,7 @@ export function ReviewList({
   const showReference = definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
   const showTrade = requiresTradeAssignment(snapshot) && !!onAssignTrade;
+  const showGrade = requiresConditionGrade(snapshot) && !!onAssignGrade;
   const usesRoomSchedule = reportLayoutOf(snapshot)?.kind === "inventory_room_schedule";
   // A minimal record template carries no repairs, so no remedial box is shown.
   const showRemedial =
@@ -923,6 +929,31 @@ export function ReviewList({
                         );
                       } catch (error) {
                         toast.error("That assignment could not be saved", {
+                          description:
+                            error instanceof Error
+                              ? error.message
+                              : "Nothing was written to the report.",
+                        });
+                      }
+                    }}
+                  />
+                ) : null}
+
+                {showGrade ? (
+                  <ConditionGradeCard
+                    finding={item}
+                    threshold={BULK_TRADE_CONFIRM_THRESHOLD}
+                    onGrade={async (grade) => {
+                      try {
+                        await onAssignGrade!(item.id, grade);
+                        applyOverride(item.id, { conditionGrade: grade });
+                        toast.success(grade ? `Graded ${grade}` : "Grade cleared", {
+                          description: grade
+                            ? "A person's decision. The assessment's own suggestion is kept beside it."
+                            : "This element is back to to be confirmed.",
+                        });
+                      } catch (error) {
+                        toast.error("That grade could not be saved", {
                           description:
                             error instanceof Error
                               ? error.message

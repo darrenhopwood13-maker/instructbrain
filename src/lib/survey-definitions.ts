@@ -1019,10 +1019,73 @@ export const manualPhotoReportDefinition: SurveyDefinition = {
   supportsDistribution: false,
 };
 
+/**
+ * A Schedule of Condition. Each element is graded A–D on its visible condition
+ * at the date of inspection, and a person confirms the grade. The report opens
+ * on the grade and carries its mandatory scope-and-limitations block; the grade
+ * is a decision by a person, and the AI only proposes it.
+ */
+export const scheduleOfConditionDefinition: SurveyDefinition = {
+  id: "schedule_of_condition",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Schedule of Condition",
+  category: "condition",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "graded", label: "Graded — condition assessed", tone: "neutral" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [],
+  captureFields: [
+    {
+      id: "element",
+      label: "Element",
+      type: "text",
+      required: true,
+      hint: "The building element, e.g. Rear elevation brickwork",
+    },
+    { id: "location", label: "Location", type: "text", hint: "Room, elevation or level" },
+  ],
+  aiGuidance: {
+    persona: `Recording the visible condition of building elements for a Schedule of Condition. Describe the element and what is visible to it, plainly and without exaggeration.
+
+Grade the element's condition against the four-tier legend. The grade is a suggestion: a person confirms it. State the grade you judge from the photograph and a separate grade_confidence that says how sure you are.`,
+    focus:
+      "The element the photograph is focused on and the visible condition of it: wear, deterioration, damage, decay, distortion, staining, and any missing or defective part.",
+    descriptionGuidance:
+      "Name the element and its location, then describe the visible condition in one or two sentences. Say what the photograph supports and nothing beyond it.",
+    gradeGuidance:
+      "Grade the visible condition only, against the four-tier legend, and give grade_confidence. A grade offered at low confidence is useful; a grade stated as certain when the photograph does not support it is not.",
+    remedialGuidance:
+      "State the action the condition calls for in plain terms — no action, routine maintenance, planned repair or replacement, or urgent attention — matching the grade. Do not write a specification.",
+    failCriteria:
+      "Any element showing deterioration, damage or a defect is recorded with its grade; nothing visible is passed over as 'in order' without saying so.",
+    excludeCriteria:
+      "Do not report on concealed areas, do not infer what is behind a finish, and do not treat work in progress as a defect.",
+    peopleGuidance:
+      "Describe elements only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "Where the trade needed for the action can be reasonably inferred, suggest it with a reason. If not, return null rather than guessing.",
+    abstainGuidance:
+      "If the photograph is too dark, distant, blurred or obstructed to identify the element and its condition, return not_assessed.",
+  },
+  defaultRemedial: "",
+  outputSections: ["cover", "scope", "methodology", "schedule", "appendix"],
+  requiresConditionGrade: true,
+  // A Schedule of Condition also names who carries out the action, so it
+  // exercises both flags at once and neither behaviour regresses.
+  requiresTradeAssignment: true,
+  standardTrades: ["Principal contractor"],
+  requiresLifecycle: false,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
   siteWalkDefinition,
+  scheduleOfConditionDefinition,
   weatherproofingDefinition,
   propertyInventoryDefinition,
   electricalInstallationDefinition,

@@ -10,6 +10,7 @@ import {
   statusesOf,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import { CONDITION_GRADE_CODES, normaliseConditionGrade } from "@/lib/review/condition-grade";
 
 /**
  * The only part of the brief this module needs: whether the report has been
@@ -43,6 +44,8 @@ export type Observation = {
   suggested_trade: string | null;
   trade_reasoning: string | null;
   trade_confidence: number | null;
+  suggested_grade: string | null;
+  grade_confidence: number | null;
   region: Region | null;
   involves_person: boolean;
   likely_cause: string | null;
@@ -75,6 +78,9 @@ export type DraftFinding = {
   ai_suggested_trade: string | null;
   ai_trade_confidence: number | null;
   ai_trade_reasoning: string | null;
+  /** The assessment's proposed condition grade, and its confidence beside it. */
+  ai_suggested_grade: string | null;
+  ai_grade_confidence: number | null;
   ai_confidence: number | null;
   ai_abstain_reason: string | null;
   ai_region: Region | null;
@@ -127,6 +133,10 @@ export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
     suggested_trade: { type: ["string", "null"] },
     trade_reasoning: { type: ["string", "null"] },
     trade_confidence: { type: ["number", "null"] },
+    // Constrained to the four-tier legend, so the provider cannot return a
+    // grade the application would then have to reject.
+    suggested_grade: { type: ["string", "null"], enum: [...CONDITION_GRADE_CODES, null] },
+    grade_confidence: { type: ["number", "null"] },
     region: REGION_SCHEMA,
     involves_person: { type: "boolean" },
   };
@@ -297,6 +307,8 @@ export function parseEnvelope(raw: unknown): Envelope {
       suggested_trade: text(item["suggested_trade"]),
       trade_reasoning: text(item["trade_reasoning"]),
       trade_confidence: score(item["trade_confidence"]),
+      suggested_grade: text(item["suggested_grade"]),
+      grade_confidence: score(item["grade_confidence"]),
       region: region(item["region"]),
       involves_person: item["involves_person"] === true,
       likely_cause: text(item["likely_cause"]),
@@ -414,6 +426,13 @@ export function toDraftFinding(
     ai_suggested_trade: observation.suggested_trade,
     ai_trade_confidence: observation.trade_confidence,
     ai_trade_reasoning: observation.trade_reasoning,
+    // The condition grade is the same bargain as the trade, and the same rule
+    // applies: the model's answer is kept even when it is unsure, and is never
+    // deleted to tidy up a low confidence. The grade and its number travel
+    // together, and until a person confirms one this is a suggestion only —
+    // `condition_grade` itself is left for the review step to fill.
+    ai_suggested_grade: normaliseConditionGrade(observation.suggested_grade),
+    ai_grade_confidence: observation.grade_confidence,
     ai_confidence: observation.confidence,
     ai_abstain_reason: unresolved,
     ai_region: observation.region,
@@ -490,6 +509,8 @@ export function notAssessedDraft(
     ai_suggested_trade: null,
     ai_trade_confidence: null,
     ai_trade_reasoning: null,
+    ai_suggested_grade: null,
+    ai_grade_confidence: null,
     ai_confidence: null,
     ai_abstain_reason: abstainReason ?? reason,
     ai_region: null,

@@ -494,13 +494,16 @@ type FindingRow = {
   sequence: number;
   ai_trade_confidence: number | null;
   ai_trade_reasoning: string | null;
+  condition_grade: string | null;
+  ai_suggested_grade: string | null;
+  ai_grade_confidence: number | null;
   due_date: string | null;
   due_date_overridden: boolean | null;
   lifecycle_state: string | null;
 };
 
 const findingColumns =
-  "id, ref, status, severity, hazard_category, finding_text, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
+  "id, ref, status, severity, hazard_category, finding_text, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
 
 function locationOf(captureFields: Record<string, string> | null): string {
   if (!captureFields) return "Location not recorded";
@@ -545,6 +548,11 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     aiSuggestedTrade: row.ai_suggested_trade,
     aiTradeConfidence: row.ai_trade_confidence,
     aiTradeReasoning: row.ai_trade_reasoning,
+    // The confirmed grade and the machine's proposal are stored, and read,
+    // separately — a grade is never written as fact until a person confirms it.
+    conditionGrade: row.condition_grade,
+    aiSuggestedGrade: row.ai_suggested_grade,
+    aiGradeConfidence: row.ai_grade_confidence,
     dueDate: row.due_date,
     dueDateOverridden: row.due_date_overridden === true,
     lifecycleState: row.lifecycle_state ?? "open",

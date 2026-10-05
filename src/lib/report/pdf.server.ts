@@ -36,7 +36,12 @@ import {
   meterReadingText,
   meterSlots,
 } from "@/lib/report/handover";
-import { isManualOnly, NOT_ASSESSED_ID, photoWorkflowOf, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import { isManualOnly, NOT_ASSESSED_ID, photoWorkflowOf, requiresConditionGrade, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import {
+  SCHEDULE_OF_CONDITION_HEADING,
+  SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT,
+} from "@/lib/report/schedule-of-condition";
+import { conditionGradeOf, conditionGradeSummary } from "@/lib/review/condition-grade";
 import { MARKER_UNITS, STROKE_UNITS, TEXT_UNITS, type MarkupColour, type MarkupLayer } from "@/lib/photos/markup";
 
 export type PdfVariant = "full" | "trade" | "item";
@@ -934,6 +939,18 @@ async function drawFinding(
     );
   }
 
+  // The condition grade, as a labelled line, and only when a person has
+  // confirmed one — an ungraded item is never given a grade it does not have.
+  const grade = conditionGradeOf(finding.conditionGrade);
+  if (grade) {
+    drawText(writer, `Condition grade: ${grade.code} — ${grade.label}. ${grade.meaning}`, {
+      size: 9,
+      bold: true,
+      colour: MUTED,
+      gapAfter: 4,
+    });
+  }
+
   if (finding.snagTitle) drawText(writer, finding.snagTitle, { size: 11, bold: true, gapAfter: 2 });
   if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
   if (finding.remedialText) {
@@ -1332,6 +1349,10 @@ export async function buildReportPdf(
 
   const findings = selectFindings(document, options);
   const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
+  // A condition survey is presented as a Schedule of Condition, with its
+  // mandatory scope-and-limitations block printed on the artifact.
+  const scheduleCondition =
+    options.variant === "full" && requiresConditionGrade(document.snapshot);
   const fetcher: PhotoFetcher | null =
     options.includePhotos === false ? null : { spent: 0, cache: new Map() };
 
@@ -1471,9 +1492,21 @@ export async function buildReportPdf(
     }
   }
 
-  /* Results */
-  drawRule(writer, 14, 10);
-  eyebrow(writer, options.variant === "item" ? "Item" : "Results");
+  /* Results — presented as a Schedule of Condition where the survey grades. */
+  if (scheduleCondition) {
+    drawRule(writer, 14, 10);
+    eyebrow(writer, SCHEDULE_OF_CONDITION_HEADING);
+    drawText(writer, "Scope and limitations", { size: 9, bold: true, colour: MUTED, gapAfter: 2 });
+    drawText(writer, SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT, {
+      size: 9,
+      colour: MUTED,
+      gapAfter: 4,
+      align: "justify",
+    });
+  } else {
+    drawRule(writer, 14, 10);
+    eyebrow(writer, options.variant === "item" ? "Item" : "Results");
+  }
 
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
@@ -1504,6 +1537,36 @@ export async function buildReportPdf(
     for (const finding of findings) {
       await drawFinding(writer, document, finding, fetcher);
     }
+  }
+
+  /* The closing count: how many elements fall in each grade. */
+  if (scheduleCondition) {
+    const summary = conditionGradeSummary(
+      findings.map((finding: DocFinding) => ({
+        id: finding.id,
+        ref: finding.ref,
+        conditionGrade: finding.conditionGrade,
+        aiSuggestedGrade: finding.suggestedGrade,
+        aiGradeConfidence: finding.gradeConfidence,
+      })),
+    );
+    ensure(writer, 60);
+    drawRule(writer, 14, 10);
+    eyebrow(writer, "Items by grade");
+    drawText(
+      writer,
+      summary.byGrade.map((grade) => `${grade.code} — ${grade.label}: ${grade.count}`).join("   ·   "),
+      { size: 10, gapAfter: 2 },
+    );
+    drawText(
+      writer,
+      `${summary.graded} graded` +
+        (summary.ungraded > 0
+          ? ` · ${summary.ungraded} still to be confirmed by a person`
+          : " · every element has a confirmed grade") +
+        ".",
+      { size: 9, colour: MUTED },
+    );
   }
 
   /* Advisory note, when the report's brief asks for one */

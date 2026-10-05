@@ -94,7 +94,7 @@ export async function loadReportDocument(
     db
       .from("findings")
       .select(
-        "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
+        "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
       )
       .eq("report_id", reportId)
       .order("sequence", { ascending: true }),
@@ -186,6 +186,9 @@ export async function loadReportDocument(
         suggestedTrade: (row["ai_suggested_trade"] as string | null) ?? null,
         tradeReasoning: (row["ai_trade_reasoning"] as string | null) ?? null,
         tradeConfidence: (row["ai_trade_confidence"] as number | null) ?? null,
+        conditionGrade: (row["condition_grade"] as string | null) ?? null,
+        suggestedGrade: (row["ai_suggested_grade"] as string | null) ?? null,
+        gradeConfidence: (row["ai_grade_confidence"] as number | null) ?? null,
         dueDate: (row["due_date"] as string | null) ?? null,
         lifecycleState: (row["lifecycle_state"] as string) ?? "open",
         isConfidential: row["is_confidential"] === true,

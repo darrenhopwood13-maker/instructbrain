@@ -92,7 +92,7 @@ async function resolveAndRun(
 }
 
 const FINDING_COLUMNS =
-  "id, ref, sequence, status, severity, finding_text, remedial_text, capture_fields, due_date, lifecycle_state, lifecycle_note, lifecycle_updated_at, is_confidential, assigned_trade";
+  "id, ref, sequence, status, severity, finding_text, remedial_text, capture_fields, due_date, lifecycle_state, lifecycle_note, lifecycle_updated_at, is_confidential, assigned_trade, condition_grade";
 
 /** The one query that defines what a token holder may see. */
 async function scopedFindings(context: Context) {
@@ -233,6 +233,7 @@ async function payload(context: Context): Promise<Response> {
           findingText: finding["finding_text"],
           remedialText: finding["remedial_text"],
           captureFields: finding["capture_fields"] ?? {},
+          conditionGrade: finding["condition_grade"] ?? null,
           dueDate: finding["due_date"],
           lifecycleState: coerceLifecycleState(finding["lifecycle_state"]),
           lifecycleNote: finding["lifecycle_note"] ?? null,
