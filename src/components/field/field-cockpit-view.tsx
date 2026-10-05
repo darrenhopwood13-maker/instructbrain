@@ -74,7 +74,7 @@ export function FieldCockpitView({
         )}
       />
       <Button asChild variant="brand" className="min-h-12 w-full text-base">
-        <Link to="/reports/$id" params={{ id: report.id }} search={{ tab: "review" } as never}>
+        <Link to="/reports/$id" params={{ id: report.id }} search={{ tab: "review" }}>
           <ClipboardCheck aria-hidden="true" className="size-5" />
           Review here
         </Link>
