@@ -124,6 +124,7 @@ const baseNav = [
 export function AppShell({
   children,
   surface = "console",
+  chrome = "full",
 }: {
   children: ReactNode;
   /**
@@ -132,13 +133,18 @@ export function AppShell({
    * work from outdoors — capture, photos, review, compliance register.
    */
   surface?: "console" | "light";
+  /**
+   * "field" is the on-site cockpit: on a phone, or installed to the home
+   * screen, the menus and bottom navigation are removed. Desktop is unchanged.
+   */
+  chrome?: "full" | "field";
 }) {
   const { t } = useI18n();
   const nav = [...baseNav];
 
   return (
     <div
-      className={`flex min-h-dvh flex-col ${surface === "light" ? "work-surface" : "console-surface"}`}
+      className={`flex min-h-dvh flex-col ${surface === "light" ? "work-surface" : "console-surface"}${chrome === "field" ? " field-chrome" : ""}`}
     >
       <a
         href="#main"
@@ -160,7 +166,7 @@ export function AppShell({
             </span>
           </Link>
 
-          <nav aria-label="Primary" className="ml-auto hidden items-center gap-1 sm:flex">
+          <nav aria-label="Primary" className="app-shell-primary-nav ml-auto hidden items-center gap-1 sm:flex">
             {nav.map((item) => (
               <Link
                 key={item.to}
@@ -177,10 +183,14 @@ export function AppShell({
         </div>
       </header>
 
-      <main id="main" className="shell-container flex-1 pb-28 pt-10 sm:pb-20 lg:pt-12">
+      <main
+        id="main"
+        className={`shell-container flex-1 ${chrome === "field" ? "pb-40 pt-4 sm:pb-20 sm:pt-10" : "pb-28 pt-10 sm:pb-20"} lg:pt-12`}
+      >
         {children}
       </main>
 
+      {chrome === "field" ? null : (
       <nav
         aria-label="Primary mobile"
         className="app-shell-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
@@ -203,6 +213,7 @@ export function AppShell({
           ))}
         </ul>
       </nav>
+      )}
 
       <HelpSheet />
     </div>
