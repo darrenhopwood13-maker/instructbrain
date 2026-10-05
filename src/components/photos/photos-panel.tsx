@@ -958,7 +958,7 @@ export function PhotosPanel({
 
       {/* One-handed controls on a phone: the next step on top, capture beneath,
           in one bar so nothing is ever hidden behind anything else. */}
-      <div className={`fixed inset-x-0 ${bottomFlush ? "bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"} z-20 space-y-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur sm:hidden`}>
+      <div className={`fixed inset-x-0 ${bottomFlush ? "bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(3.5rem+env(safe-area-inset-bottom))] pb-2"} z-20 space-y-1.5 border-t border-border bg-background/95 px-2 pt-2 backdrop-blur sm:hidden`}>
         {nextAction}
         {atPhotoCap ? (
           <p className="text-center text-sm text-fail-soft">
