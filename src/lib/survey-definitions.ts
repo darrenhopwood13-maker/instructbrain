@@ -1066,17 +1066,20 @@ Grade the element's condition against the four-tier legend. The grade is a sugge
     peopleGuidance:
       "Describe elements only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
     tradeGuidance:
-      "Where the trade needed for the action can be reasonably inferred, suggest it with a reason. If not, return null rather than guessing.",
+      "Do not suggest a trade. This survey records the condition of an element, not who repairs it; return null.",
     abstainGuidance:
       "If the photograph is too dark, distant, blurred or obstructed to identify the element and its condition, return not_assessed.",
   },
   defaultRemedial: "",
   outputSections: ["cover", "scope", "methodology", "schedule", "appendix"],
   requiresConditionGrade: true,
-  // A Schedule of Condition also names who carries out the action, so it
-  // exercises both flags at once and neither behaviour regresses.
-  requiresTradeAssignment: true,
-  standardTrades: ["Principal contractor"],
+  // The grade is the point of this report. A Schedule of Condition records the
+  // condition of an element, not who repairs it, and with a single standard
+  // trade the assessment named "Principal contractor" on every element - noise
+  // on the document, and on the organiser it asks a person to decide twenty
+  // times over something the report does not claim.
+  requiresTradeAssignment: false,
+  standardTrades: [],
   requiresLifecycle: false,
   supportsDistribution: false,
 };
