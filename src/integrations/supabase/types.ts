@@ -791,10 +791,10 @@ export type Database = {
         Row: {
           ai_abstain_reason: string | null
           ai_confidence: number | null
-          ai_grade_confidence?: number | null
+          ai_grade_confidence: number | null
           ai_raw_output: Json | null
           ai_region: Json | null
-          ai_suggested_grade?: string | null
+          ai_suggested_grade: string | null
           ai_suggested_trade: string | null
           ai_tier: string | null
           ai_trade_confidence: number | null
@@ -802,7 +802,7 @@ export type Database = {
           assigned_contact_id: string | null
           assigned_trade: string | null
           capture_fields: Json
-          condition_grade?: string | null
+          condition_grade: string | null
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
@@ -810,7 +810,7 @@ export type Database = {
           due_date_overridden: boolean
           finding_text: string | null
           hazard_category: string | null
-          hs_notes?: string | null
+          hs_notes: string | null
           human_edited: boolean
           id: string
           is_confidential: boolean
@@ -818,7 +818,7 @@ export type Database = {
           lifecycle_state: string
           lifecycle_updated_at: string | null
           likely_cause: string | null
-          rectification_alt?: string | null
+          rectification_alt: string | null
           ref: string
           regulatory_reference: string | null
           remedial_text: string | null
@@ -828,9 +828,9 @@ export type Database = {
           sequence: number
           severity: string | null
           severity_rationale: string | null
-          snag_title?: string | null
+          snag_title: string | null
           status: string
-          tradesman_hack?: string | null
+          tradesman_hack: string | null
           updated_at: string
         }
         Insert: {
