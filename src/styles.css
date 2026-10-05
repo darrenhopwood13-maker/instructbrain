@@ -1336,3 +1336,15 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 .paper dd { text-align: start; text-align-last: auto; hyphens: none; }
 .paper thead th:first-child { box-shadow: inset 3px 0 0 var(--paper-accent); }
 .paper .report-credit { font-variant: small-caps; }
+
+/* Field cockpit chrome: installed to the home screen, desktop menus go. */
+@media (display-mode: standalone) {
+  .field-chrome .app-shell-primary-nav {
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .field-chrome .app-shell-header > div {
+    padding-block: 0.75rem;
+  }
+}

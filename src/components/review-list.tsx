@@ -542,7 +542,7 @@ export function ReviewList({
         <p className="min-w-0 text-sm font-semibold">
           {confirmed} of {items.length} accepted
         </p>
-        <Button variant="brand" className="min-h-11 w-full sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
+        <Button variant="brand" className="min-h-12 w-full sm:min-h-11 sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
           Accept all
         </Button>
       </div>
@@ -697,7 +697,7 @@ export function ReviewList({
                 ) : blocked ? null : (
                   <Button
                     variant="quiet"
-                    className="min-h-11 shrink-0 px-3"
+                    className="min-h-12 shrink-0 px-3 sm:min-h-11"
                     onClick={() =>
                       void persist(item.id, { confirmed: true }, { confirmed_at: new Date().toISOString() })
                     }

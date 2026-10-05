@@ -97,6 +97,8 @@ export function PhotosPanel({
   onUploadedCount,
   nextAction,
   onStatus,
+  autoOpenCamera = false,
+  bottomFlush = false,
 }: {
   reportId: string;
   snapshot: SurveyTypeSnapshot;
@@ -114,6 +116,10 @@ export function PhotosPanel({
   nextAction?: ReactNode;
   /** Upload progress and room readiness, for the parent's next-step button. */
   onStatus?: (status: PhotoStatus) => void;
+  /** Field cockpit: open the camera as soon as the panel can upload. */
+  autoOpenCamera?: boolean;
+  /** Field cockpit: no mobile navigation underneath, so the bar sits on the edge. */
+  bottomFlush?: boolean;
 }) {
 
   const { session, loading: sessionLoading } = useSession();
@@ -420,6 +426,14 @@ export function PhotosPanel({
     },
     [runQueue, zoneValues, pinnedFields, remainingPhotos, photoCap],
   );
+
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!autoOpenCamera || autoOpenedRef.current) return;
+    if (ready !== "ready" || !organisationId) return;
+    autoOpenedRef.current = true;
+    if (canUseInAppCamera()) setCameraOpen(true);
+  }, [autoOpenCamera, ready, organisationId]);
 
   // Quick capture picks the photographs before the report exists; they are
   // enqueued once, as soon as this panel is able to upload.
@@ -944,7 +958,7 @@ export function PhotosPanel({
 
       {/* One-handed controls on a phone: the next step on top, capture beneath,
           in one bar so nothing is ever hidden behind anything else. */}
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 space-y-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur sm:hidden">
+      <div className={`fixed inset-x-0 ${bottomFlush ? "bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(3.5rem+env(safe-area-inset-bottom))] pb-2"} z-20 space-y-1.5 border-t border-border bg-background/95 px-2 pt-2 backdrop-blur sm:hidden`}>
         {nextAction}
         {atPhotoCap ? (
           <p className="text-center text-sm text-fail-soft">
