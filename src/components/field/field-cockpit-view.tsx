@@ -146,7 +146,7 @@ export function FieldCockpitView({
       <PhotosPanel
         reportId={report.id}
         snapshot={snapshot}
-        pinnedFields={pinned}
+        pinnedFields={pinned ?? {}}
         onStatus={setStatus}
         nextAction={actions}
         autoOpenCamera
