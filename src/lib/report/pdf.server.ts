@@ -11,6 +11,7 @@
  */
 import { LineCapStyle, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import { BRAND_CREDIT } from "@/lib/brand";
+import { REPORT_BRAND } from "@/lib/report/brand";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
 import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
@@ -44,6 +45,9 @@ import {
 import { conditionGradeOf, conditionGradeSummary } from "@/lib/review/condition-grade";
 import { MARKER_UNITS, STROKE_UNITS, TEXT_UNITS, type MarkupColour, type MarkupLayer } from "@/lib/photos/markup";
 
+/** Kept exported from here for existing callers; the values live in brand.ts. */
+export { MANUAL_REPORT_BRAND } from "@/lib/report/brand";
+
 export type PdfVariant = "full" | "trade" | "item";
 
 export type BuildPdfOptions = {
@@ -67,19 +71,14 @@ const LANDSCAPE_LETTER = { width: 792, height: 612 };
 const MARGIN = 48;
 const CONTENT_WIDTH = A4.width - MARGIN * 2;
 
-const INK = rgb(0.06, 0.11, 0.2);
-const MUTED = rgb(0.35, 0.39, 0.47);
-const RULE = rgb(0.85, 0.87, 0.91);
-/** Fixed instructBrain document palette; customer colours never replace it. */
-export const MANUAL_REPORT_BRAND = {
-  accentHex: "#57FF00",
-  navyHex: "#24417B",
-  credit: BRAND_CREDIT,
-} as const;
-
-const ACCENT = rgb(87 / 255, 1, 0);
-const BRAND_NAVY = rgb(36 / 255, 65 / 255, 123 / 255);
-const PAPER_WHITE = rgb(250 / 255, 250 / 255, 250 / 255);
+/* The document palette is stated once in brand.ts; these are the same values
+   wrapped for pdf-lib, so a draw call receives the identical RGB triple. */
+const INK = rgb(...REPORT_BRAND.inkRgb);
+const MUTED = rgb(...REPORT_BRAND.mutedRgb);
+const RULE = rgb(...REPORT_BRAND.ruleRgb);
+const ACCENT = rgb(...REPORT_BRAND.accentRgb);
+const BRAND_NAVY = rgb(...REPORT_BRAND.navyRgb);
+const PAPER_WHITE = rgb(...REPORT_BRAND.paperWhiteRgb);
 const MARKUP_COLOURS: Record<MarkupColour, ReturnType<typeof rgb>> = {
   accent: ACCENT,
   red: rgb(0.8, 0.08, 0.1),

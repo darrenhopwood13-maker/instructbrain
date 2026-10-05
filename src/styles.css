@@ -96,8 +96,14 @@
   --brand-blue-soft: oklch(0.323 0.059 262.7);
   --brand-blue-ink: oklch(0.887 0.011 261.8);
 
-  /* Product accent — instructBrain Laser Green #57FF00. */
-  --brand-accent: oklch(0.8773 0.2803 139.6);
+  /*
+   * Product accent — instructBrain Laser Green #57FF00. This is the single
+   * accent slot: the app surfaces read --brand-accent and the report/paper
+   * scope reads --paper-accent, both deriving from here, so a sibling Instruct
+   * product swaps one value and the whole product (report included) follows.
+   */
+  --product-accent: oklch(0.8773 0.2803 139.6);
+  --brand-accent: var(--product-accent);
   --brand-accent-light: oklch(0.9566 0.0929 133.5);
   --brand-accent-deep: oklch(0.5566 0.1764 139.3);
   --brand-accent-soft: oklch(0.8773 0.2803 139.6 / 16%);
@@ -227,8 +233,15 @@
 
   --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 6%), 0 8px 24px -12px oklch(0.3 0.06 262 / 14%);
 
-  /* Product accent on paper: bright rules, deep AA-safe green for text. */
-  --paper-accent: oklch(0.8773 0.2803 139.6);
+  /*
+   * Product accent on paper — derived from the one accent slot at :root, so a
+   * sibling product's accent reaches the report too. It cannot be written as
+   * var(--brand-accent) here: this scope re-points --brand-accent to the fixed
+   * report navy, while --product-accent is never redeclared in this scope.
+   */
+  --paper-accent: var(--product-accent);
+  /* Deep AA-safe green for report text on white — a distinct tone from the
+     bright accent fill above, so it is stated rather than derived from it. */
   --paper-accent-ink: oklch(0.4273 0.1344 138.9);
 
   background-color: var(--surface);
