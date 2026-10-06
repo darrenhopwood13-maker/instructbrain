@@ -316,13 +316,14 @@ export const siteWalkDefinition: SurveyDefinition = {
       label: "Location",
       type: "text",
       required: true,
-      hint: "Level, zone, grid ref or room",
+      hint: "The exact spot — level, grid reference or room",
     },
     {
       id: "area_type",
-      label: "Area",
+      label: "Area type",
       type: "select",
       options: ["Internal", "External", "Welfare", "Access route", "Storage", "Compound"],
+      hint: "Which sort of space it is, not where in it",
     },
   ],
   aiGuidance: {

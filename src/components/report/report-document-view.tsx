@@ -15,6 +15,7 @@ import {
   type ReportDocument,
 } from "@/lib/report/document";
 import { readableCaptureFields } from "@/lib/report/sections";
+import { resolveLocation } from "@/lib/report/location";
 import {
   RESULT_VIEW_LABELS,
   defaultResultView,
@@ -1080,7 +1081,12 @@ function FindingRow({
   const references = regulatoryReferencesOf(snapshot);
   const condition = requiresConditionGrade(snapshot);
   const grade = conditionGradeOf(finding.conditionGrade);
-  // Capture fields as a reader should see them: the survey-type marker dropped,
+  // Where the item is, resolved the one way every renderer resolves it, so the
+  // screen and the PDF cannot disagree. Absent when nothing recorded it: a
+  // document shows no location rather than "Location not recorded", which is a
+  // prompt for the person filling the form, not a line on a client's report.
+  const location = resolveLocation(finding.captureFields);
+  // Capture fields as a reader should see them: the location's own line above,
   // and any value that names a survey type shown by its label.
   const captureFields = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);
 
@@ -1148,6 +1154,10 @@ function FindingRow({
               Not assessed — a person must resolve this before the report can be issued.
               {finding.abstainReason ? ` Reason given: ${finding.abstainReason}` : ""}
             </p>
+          ) : null}
+
+          {location ? (
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">{location}</p>
           ) : null}
 
           {captureFields.length > 0 ? (

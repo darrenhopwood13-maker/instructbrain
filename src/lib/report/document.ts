@@ -7,6 +7,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import type { MarkupLayer } from "@/lib/photos/markup";
+import { resolveLocation } from "@/lib/report/location";
 
 /**
  * The assembled document model.
@@ -196,11 +197,7 @@ const UNASSIGNED_TRADE = "Trade not yet confirmed";
 const UNRECORDED_AREA = "Location not recorded";
 
 function areaOf(finding: DocFinding): string {
-  const fields = finding.captureFields ?? {};
-  const first = Object.values(fields)
-    .map((value) => (typeof value === "string" ? value.trim() : ""))
-    .find((value) => value !== "");
-  return first ?? UNRECORDED_AREA;
+  return resolveLocation(finding.captureFields) || UNRECORDED_AREA;
 }
 
 export function groupFindings(

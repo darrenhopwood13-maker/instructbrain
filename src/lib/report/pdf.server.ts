@@ -18,6 +18,7 @@ import { defaultResultView, groupResults, safeResultView, type ResultView } from
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor, readableCaptureFields } from "@/lib/report/sections";
+import { resolveLocation } from "@/lib/report/location";
 import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
@@ -892,11 +893,6 @@ function drawInventoryBackingPages(writer: Writer, document: ReportDocument): In
 /* Findings                                                             */
 /* ------------------------------------------------------------------ */
 
-function locationOf(finding: DocFinding): string {
-  const fields = finding.captureFields;
-  return fields["location"] ?? fields["zone"] ?? fields["area"] ?? fields["room"] ?? "";
-}
-
 async function drawFinding(
   writer: Writer,
   document: ReportDocument,
@@ -910,7 +906,8 @@ async function drawFinding(
   ensure(writer, 90);
   drawRule(writer, 10, 8);
 
-  drawText(writer, `${itemLabel(finding.ref)}${locationOf(finding) ? ` — ${locationOf(finding)}` : ""}`, {
+  const location = resolveLocation(finding.captureFields);
+  drawText(writer, `${itemLabel(finding.ref)}${location ? ` — ${location}` : ""}`, {
     size: 12,
     bold: true,
     align: "center",
@@ -975,9 +972,7 @@ async function drawFinding(
     drawText(writer, `Reference: ${finding.regulatoryReference}`, { size: 9, colour: MUTED });
   }
 
-  const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []).filter(
-    (field) => !["location", "zone", "area", "room"].includes(field.label.toLowerCase()),
-  );
+  const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);
   if (extras.length > 0) {
     drawText(
       writer,

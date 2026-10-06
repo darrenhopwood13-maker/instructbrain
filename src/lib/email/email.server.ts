@@ -17,6 +17,7 @@ import {
 import { isManualOnly, resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
 import { shareUrlForToken } from "@/lib/report/share-url";
+import { resolveLocation } from "@/lib/report/location";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -478,7 +479,7 @@ export async function buildTradeExtractItems(
     const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
     return {
       ref: row["ref"] as string,
-      location: fields["location"] ?? fields["zone"] ?? fields["area"] ?? "",
+      location: resolveLocation(fields),
       action:
         translated[`${row["id"] as string}.remedial_text`] ||
         translated[`${row["id"] as string}.finding_text`] ||
@@ -631,7 +632,7 @@ export async function sendCloseOutRequestEmail(
     template: "CLOSE_OUT_REQUEST",
     data: {
       ref: row["ref"] as string,
-      location: fields["location"] ?? fields["zone"] ?? fields["area"] ?? "Not recorded",
+      location: resolveLocation(fields) || "Not recorded",
       requiredAction: (row["remedial_text"] as string) || (row["finding_text"] as string) || "",
       targetDate: (row["due_date"] as string | null) ?? null,
       projectName: ((report as Record<string, any>)?.["projects"]?.["name"] as string) ?? "this project",

@@ -10,6 +10,7 @@
  * and persisted (invariant 4). Sections only change presentation order.
  */
 import type { DocFinding } from "@/lib/report/document";
+import { LOCATION_FIELD_SET } from "@/lib/report/location";
 
 /** The capture-field key that records which survey type assessed an item. */
 export const SURVEY_TYPE_FIELD = "__survey_type";
@@ -44,25 +45,34 @@ export function fieldLabel(key: string): string {
 /**
  * The capture fields as they should READ on a document.
  *
- * Two things were reaching client documents that should never appear on one.
- * The survey-type marker is an internal key: it exists so items can be grouped
- * into sections, and where a report covers more than one type the section
- * heading already names it, so it is dropped rather than printed. And where a
- * value IS one of those ids it was printed raw, which is how a client came to
- * read "survey type: weekly_compliance_fire" on their own report. Ids that
- * name a survey type are now resolved to the label the report already carries;
+ * Three kinds of field never belong in a details list. The survey-type marker
+ * is an internal key: it exists so items can be grouped into sections, and
+ * where a report covers more than one type the section heading already names
+ * it. The location fields have their own single line on every renderer, taken
+ * from `resolveLocation`, so printing them here as well is how the location
+ * came to appear twice. And where a value IS one of those ids it was printed
+ * raw, which is how a client came to read
+ * "survey type: weekly_compliance_fire" on their own report — ids that name a
+ * survey type are resolved to the label the report already carries, and
  * anything unrecognised is left exactly as stored rather than guessed at.
+ *
+ * Excluding the location here rather than at each render site is the point:
+ * the PDF used to filter its own hardcoded list of names while the shared page
+ * filtered nothing, so the two disagreed.
  */
 export function readableCaptureFields(
   fields: Record<string, string> | null | undefined,
   types: Array<{ id: string; label: string }> = [],
-): Array<{ label: string; value: string }> {
+): Array<{ id: string; label: string; value: string }> {
   const known = new Map(types.map((type) => [type.id, type.label]));
   return Object.entries(fields ?? {})
-    .filter(([key, value]) => key !== SURVEY_TYPE_FIELD && value.trim() !== "")
+    .filter(
+      ([key, value]) =>
+        key !== SURVEY_TYPE_FIELD && !LOCATION_FIELD_SET.has(key) && value.trim() !== "",
+    )
     .map(([key, value]) => {
       const trimmed = value.trim();
-      return { label: fieldLabel(key), value: known.get(trimmed) ?? trimmed };
+      return { id: key, label: fieldLabel(key), value: known.get(trimmed) ?? trimmed };
     });
 }
 

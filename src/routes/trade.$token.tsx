@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/query-states";
 import { allowedTransitions, lifecycleLabels, type LifecycleState } from "@/lib/lifecycle";
+import { locationLabel } from "@/lib/report/location";
 import { formatTarget } from "@/lib/findings/due-date";
 import { resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
@@ -91,10 +92,6 @@ function problemFor(reason: string | null) {
     heading: "This link could not be opened",
     body: "The link may be incomplete or no longer in use. Check you copied all of it, or ask the sender for a new one.",
   };
-}
-
-function locationOf(fields: Record<string, string>): string {
-  return fields["location"] ?? fields["zone"] ?? fields["area"] ?? fields["level"] ?? "";
 }
 
 function TradeList() {
@@ -252,7 +249,7 @@ function ItemCard({
 
       <div className="space-y-3 px-4 py-4">
         <p className="text-sm text-muted-foreground">
-          {locationOf(item.captureFields) || "Location not recorded"}
+          {locationLabel(item.captureFields)}
         </p>
 
         {item.photos.length > 0 ? (

@@ -94,6 +94,10 @@ function document(overrides: Partial<ReportDocument> = {}): ReportDocument {
 const renderShared = (doc: ReportDocument) =>
   render(<ReportDocumentView document={doc} print />).container.textContent ?? "";
 
+/** How many times a phrase appears in the rendered output. */
+const occurrences = (haystack: string, needle: string) =>
+  haystack.split(needle).length - 1;
+
 describe("a shared report shows no placeholders", () => {
   it("shows no author row at all when the report cannot name one", () => {
     const text = renderShared(document({ author: null }));
@@ -149,6 +153,47 @@ describe("a shared report shows no machine text", () => {
     );
     expect(text).toContain("Item name");
     expect(text).toContain("Fire door 12");
+  });
+});
+
+describe("a shared report states where the item is, once", () => {
+  it("shows the location, and does not also list it as a detail", () => {
+    const text = renderShared(
+      document({ findings: [finding({ captureFields: { location: "Level 2, Bay 4" } })] }),
+    );
+
+    expect(text).toContain("Level 2, Bay 4");
+    expect(occurrences(text, "Level 2, Bay 4")).toBe(1);
+    // The location must not reappear under its own field label.
+    expect(text).not.toContain("Location:");
+  });
+
+  it("shows the kind of area as a detail alongside the location", () => {
+    const text = renderShared(
+      document({
+        findings: [finding({ captureFields: { location: "Bay 4", area_type: "Internal" } })],
+      }),
+    );
+
+    expect(text).toContain("Bay 4");
+    expect(text).toContain("Area type");
+    expect(text).toContain("Internal");
+  });
+
+  it("prints no location line at all when nothing recorded one", () => {
+    // A document shows nothing rather than "Location not recorded" — that
+    // wording is a prompt for the person filling the form, not a client line.
+    const text = renderShared(document({ findings: [finding({ captureFields: {} })] }));
+    expect(text).not.toContain("Location not recorded");
+  });
+
+  it("resolves the location from the field the report filled, not the first one", () => {
+    const text = renderShared(
+      document({
+        findings: [finding({ captureFields: { item: "Fire door 12", location: "Bay 6" } })],
+      }),
+    );
+    expect(text).toContain("Bay 6");
   });
 });
 

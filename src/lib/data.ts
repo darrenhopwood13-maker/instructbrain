@@ -66,6 +66,7 @@ function from(table: string) {
 
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { sortByPhotoOrder } from "@/lib/report/finding-order";
+import { locationLabel } from "@/lib/report/location";
 export { coerceSnapshot };
 
 
@@ -508,14 +509,6 @@ type FindingRow = {
 const findingColumns =
   "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
 
-function locationOf(captureFields: Record<string, string> | null): string {
-  if (!captureFields) return "Location not recorded";
-  const parts = Object.values(captureFields)
-    .map((value) => (typeof value === "string" ? value.trim() : ""))
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Location not recorded";
-}
-
 function stringFields(value: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -566,7 +559,9 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     ref: row.ref,
     title: findingHeading({ snagTitle: row.snag_title, findingText: row.finding_text }),
     snagTitle: row.snag_title,
-    location: locationOf(row.capture_fields),
+    // One resolver, not a local opinion: the review card used to join every
+    // capture field value together as its "location".
+    location: locationLabel(row.capture_fields),
     // Trade attribution is a suggestion until a human confirms it.
     trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
     status: row.status ?? "",

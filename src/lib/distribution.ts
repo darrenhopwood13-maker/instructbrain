@@ -4,6 +4,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import { ConfidentialFindingError, type ExtractItem } from "@/lib/email/templates";
+import { resolveLocation } from "@/lib/report/location";
 
 /**
  * Invariant 7: findings involving a person are confidential and are EXCLUDED
@@ -51,14 +52,9 @@ export type GroupableFinding = {
 
 export const UNASSIGNED_GROUP = "__unassigned__";
 
+/** Kept as this module's own name for the shared answer, not a second opinion. */
 export function locationOf(captureFields: Record<string, string>): string {
-  return (
-    captureFields["location"] ??
-    captureFields["zone"] ??
-    captureFields["area"] ??
-    captureFields["level"] ??
-    ""
-  );
+  return resolveLocation(captureFields);
 }
 
 /** The group key for one finding under the definition's chosen grouping. */
