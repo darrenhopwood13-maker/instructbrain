@@ -24,6 +24,7 @@ import {
   type PhotoStatus,
 } from "@/lib/report/next-action";
 import { InlineField } from "@/components/report/inline-field";
+import { ReferenceField } from "@/components/report/reference-field";
 
 import { supabase } from "@/integrations/supabase/client";
 import { findingsQuery, reportQuery } from "@/lib/data";
@@ -656,14 +657,9 @@ function ReportWorkspace() {
                     onReportPatch({ subtitle: next || null }, { subtitle: doc.report.subtitle })
                   }
                 />
-                <InlineField
-                  label="Reference"
-                  value={doc.report.reference ?? ""}
-                  readOnly={locked}
-                  onSave={(next) =>
-                    onReportPatch({ reference: next || null }, { reference: doc.report.reference })
-                  }
-                />
+                {/* The reference is allocated by the database and locked there,
+                    so it is shown rather than offered for editing. */}
+                <ReferenceField value={doc.report.reference} />
                 <InlineField
                   label="Report date"
                   type="date"

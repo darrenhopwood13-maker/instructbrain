@@ -177,7 +177,6 @@ function FieldHome() {
           projectId: project?.id ?? null,
           isQuick: !project,
           title: `${label} — ${project?.name ?? today}`,
-          reference: "",
           definition: frozen,
           authorId: userId,
           brief,

@@ -288,7 +288,6 @@ function CustomReport() {
             asksForHeader && docTitle.trim() !== ""
               ? docTitle
               : `${definitionLabel(frozen)} — ${project?.name ?? todayLabel()}`,
-          reference: "",
           ...(asksForHeader ? { subtitle: docSubtitle, reportDate: docDate } : {}),
           definition: frozen,
           authorId: userId,

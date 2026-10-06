@@ -364,7 +364,12 @@ export type NewReport = {
   /** Null for a quick report: it stands alone, with no project behind it. */
   projectId: string | null;
   title: string;
-  reference: string;
+  /**
+   * There is deliberately no `reference` here. The database allocates the
+   * reference on insert and refuses every later change, so passing one would be
+   * a lie - it is overwritten before it is stored. See
+   * `supabase/migrations/20261006151232_report_reference_builder.sql`.
+   */
   /** Optional header details, entered by hand where the survey type asks for them. */
   subtitle?: string;
   reportDate?: string;
@@ -388,7 +393,6 @@ export async function createReport(input: NewReport): Promise<string> {
       organisation_id: input.organisationId,
       project_id: input.projectId,
       title: input.title.trim(),
-      reference: input.reference.trim() || null,
       subtitle: input.subtitle?.trim() || null,
       status: "draft",
       report_date: input.reportDate?.trim() || today(),

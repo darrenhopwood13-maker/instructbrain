@@ -367,7 +367,6 @@ export async function startRun(input: {
     organisationId: input.organisationId,
     projectId: input.projectId,
     title: `Weekly compliance register — ${checkType(input.checkType).label}`,
-    reference: input.reportNumber ?? "",
     reportDate: input.checkDate,
     definition: complianceDefinition(input.checkType),
     authorId: input.authorId,
