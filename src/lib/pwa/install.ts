@@ -42,6 +42,20 @@ function detectPlatform(): InstallPlatform {
   return "other";
 }
 
+/**
+ * True on a device whose primary input is touch: a phone or a tablet.
+ *
+ * Deliberately `(hover: none) and (pointer: coarse)` rather than a screen width.
+ * A width rule was what excluded tablets in the first place, and width is the
+ * wrong question - a tablet has a home screen and a desktop does not. This query
+ * asks about the input instead, so it catches phones and tablets of any size and
+ * still excludes a touchscreen laptop, whose primary pointer is a mouse.
+ */
+export function isHandheldDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia?.("(hover: none) and (pointer: coarse)")?.matches === true;
+}
+
 /** True once hydrated and running from an installed home-screen launch. */
 export function useStandalone(): boolean {
   const [standalone, setStandalone] = useState(false);
@@ -62,10 +76,14 @@ export function useInstallPrompt(): {
   canPrompt: boolean;
   needsManualSteps: boolean;
   platform: InstallPlatform;
+  /** Whether this device has a home screen to add the app to at all. */
+  handheld: boolean;
   install: () => Promise<void>;
 } {
   const [event, setEvent] = useState<InstallEvent | null>(null);
   const [platform, setPlatform] = useState<InstallPlatform>("other");
+  // Starts false so a desktop never flashes the offer before the effect runs.
+  const [handheld, setHandheld] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -75,6 +93,7 @@ export function useInstallPrompt(): {
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     setPlatform(detectPlatform());
+    setHandheld(isHandheldDevice());
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
@@ -87,6 +106,7 @@ export function useInstallPrompt(): {
      */
     needsManualSteps: event === null && (platform === "ios" || platform === "android"),
     platform,
+    handheld,
     install: async () => {
       if (!event) return;
       await event.prompt();

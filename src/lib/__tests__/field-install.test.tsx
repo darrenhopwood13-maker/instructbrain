@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { InstallBar } from "@/components/field/install-bar";
-import { registerServiceWorker, useInstallPrompt } from "@/lib/pwa/install";
+import { registerServiceWorker, isHandheldDevice, useInstallPrompt } from "@/lib/pwa/install";
 
 /**
  * The field app must reach a phone's home screen when someone scans the QR code.
@@ -26,6 +26,30 @@ const DESKTOP_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 
 function setUserAgent(ua: string) {
   Object.defineProperty(window.navigator, "userAgent", { value: ua, configurable: true });
+}
+
+/**
+ * jsdom has no real media queries, so matchMedia is stubbed. "touch" is a phone
+ * OR a tablet - they are the same thing to this code, which is the point of the
+ * change: width is not what decides it any more.
+ */
+function setInputMode(mode: "touch" | "mouse") {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: (query: string) => {
+      const handheld = query.includes("hover: none") && query.includes("pointer: coarse");
+      return {
+        matches: handheld ? mode === "touch" : false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      };
+    },
+  });
 }
 
 function fireInstallPrompt() {
@@ -168,12 +192,14 @@ describe("the install offer", () => {
 
 describe("the install bar", () => {
   it("shows an Android user what to tap when there is no automatic prompt", () => {
+    setInputMode("touch");
     setUserAgent(ANDROID_UA);
     render(<InstallBar />);
     expect(screen.getByText(/open your browser menu/i)).toBeTruthy();
   });
 
   it("shows the Share steps on iOS", () => {
+    setInputMode("touch");
     setUserAgent(IOS_UA);
     render(<InstallBar />);
     expect(screen.getByText(/tap Share/i)).toBeTruthy();
@@ -181,15 +207,73 @@ describe("the install bar", () => {
   });
 
   it("shows a button once the browser offers a real prompt", () => {
+    setInputMode("touch");
     setUserAgent(ANDROID_UA);
     render(<InstallBar />);
     fireInstallPrompt();
     expect(screen.getByRole("button", { name: /add to home screen/i })).toBeTruthy();
   });
 
-  it("stays out of the way on a desktop", () => {
+  /**
+   * The widening. A tablet is touch-only, exactly like a phone, and it has a
+   * home screen - so it must get the offer. Nothing here depends on how wide the
+   * screen is, which is why this test does not set a width.
+   */
+  it("offers it on a touch device whatever its screen size", () => {
+    setInputMode("touch");
+    setUserAgent(ANDROID_UA);
+    const { container } = render(<InstallBar />);
+    expect(container.textContent).not.toBe("");
+    expect(screen.getByText(/home screen/i)).toBeTruthy();
+  });
+
+  /**
+   * Width must not come back as the gate. `sm:hidden` read as "phones only" and
+   * meant "under 640px", which is precisely what locked tablets out.
+   */
+  it("carries no viewport-width cap on the bar itself", () => {
+    const bar = executableJs(readFileSync("src/components/field/install-bar.tsx", "utf8"));
+    for (const widthRule of ["sm:hidden", "md:hidden", "lg:hidden", "max-sm:"]) {
+      expect(bar, widthRule).not.toContain(widthRule);
+    }
+  });
+
+  it("stays out of the way on a desktop, which has no home screen", () => {
+    setInputMode("mouse");
     setUserAgent(DESKTOP_UA);
     const { container } = render(<InstallBar />);
     expect(container.textContent).toBe("");
+  });
+
+  /** Widening to tablets must NOT have widened it to desktops as a side effect. */
+  it("stays out of the way on a desktop even when the browser offers a prompt", () => {
+    setInputMode("mouse");
+    setUserAgent(DESKTOP_UA);
+    const { container } = render(<InstallBar />);
+    fireInstallPrompt();
+    expect(container.textContent).toBe("");
+  });
+});
+
+describe("isHandheldDevice", () => {
+  it("is true for touch-only input, which is a phone or a tablet", () => {
+    setInputMode("touch");
+    expect(isHandheldDevice()).toBe(true);
+  });
+
+  /**
+   * A touchscreen laptop reports a mouse as its primary pointer, so it must not
+   * be treated as handheld - otherwise the offer follows people onto desktops.
+   */
+  it("is false where the primary input is a mouse", () => {
+    setInputMode("mouse");
+    expect(isHandheldDevice()).toBe(false);
+  });
+
+  it("asks about the input device, not the width", () => {
+    const source = executableJs(readFileSync("src/lib/pwa/install.ts", "utf8"));
+    expect(source).toContain("(hover: none) and (pointer: coarse)");
+    expect(source).not.toContain("min-width");
+    expect(source).not.toContain("max-width");
   });
 });
