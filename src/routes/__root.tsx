@@ -15,6 +15,7 @@ import { I18nProvider } from "@/i18n/i18n-provider";
 
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerServiceWorker } from "@/lib/pwa/install";
 
 function NotFoundComponent() {
   return (
@@ -137,6 +138,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  /**
+   * Register the installability worker once, for the whole app.
+   *
+   * It has to happen somewhere that runs on a phone's very first visit from the
+   * QR code, because Chrome will not fire `beforeinstallprompt` - and so the
+   * field app's "Add to home screen" offer never appears - until a service
+   * worker with a fetch handler is registered and active.
+   */
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

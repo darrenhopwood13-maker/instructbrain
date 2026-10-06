@@ -9,7 +9,7 @@ import { useInstallPrompt, useStandalone } from "@/lib/pwa/install";
  */
 export function InstallBar() {
   const standalone = useStandalone();
-  const { canPrompt, needsManualSteps, install } = useInstallPrompt();
+  const { canPrompt, needsManualSteps, platform, install } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(false);
 
   if (standalone || dismissed || (!canPrompt && !needsManualSteps)) return null;
@@ -20,7 +20,9 @@ export function InstallBar() {
       <p className="min-w-0 flex-1">
         {canPrompt
           ? "Add instructBrain to your home screen so it opens like an app."
-          : "Add to your home screen: tap Share, then “Add to Home Screen”."}
+          : platform === "android"
+            ? "Add to your home screen: open your browser menu and choose “Add to Home screen”."
+            : "Add to your home screen: tap Share, then “Add to Home Screen”."}
       </p>
       {canPrompt ? (
         <Button type="button" variant="brand" size="sm" className="min-h-11" onClick={() => void install()}>
