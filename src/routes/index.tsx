@@ -48,7 +48,7 @@ export const Route = createFileRoute("/")({
           offers: [
             { "@type": "Offer", name: "Free", price: "0", priceCurrency: "GBP" },
             { "@type": "Offer", name: "Standard", price: "49", priceCurrency: "GBP" },
-            { "@type": "Offer", name: "Practice", price: "99", priceCurrency: "GBP" },
+            { "@type": "Offer", name: "Pro", price: "99", priceCurrency: "GBP" },
           ],
         }),
       },
@@ -552,7 +552,7 @@ const tiers = [
     featured: true,
   },
   {
-    name: "Practice",
+    name: "Pro",
     price: "£99",
     cadence: "/month",
     summary: "30 reports a month, roughly 1,500 photos.",
