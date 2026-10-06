@@ -1080,16 +1080,43 @@ export function selectFindings(document: ReportDocument, options: BuildPdfOption
   return document.findings;
 }
 
-function safeName(value: string): string {
-  const cleaned = sanitise(value)
+/** A filename-safe token. Empty in, empty out, so a missing field is skipped
+ * rather than named. `safeName` is this with a floor under it. */
+function slug(value: string | null | undefined): string {
+  return sanitise(value ?? "")
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/-{2,}/g, "-")
     .replace(/^-|-$/g, "");
-  return cleaned || "report";
+}
+
+function safeName(value: string): string {
+  return slug(value) || "report";
+}
+
+/**
+ * The filename is the only part of a report a person meets OUTSIDE the
+ * document — in a downloads folder, an attachment list, a shared drive. Naming
+ * it after the reference alone produced `001.pdf` for a report referenced
+ * `001`: a file that identifies nothing and cannot be told apart from the next
+ * one. Name it after what the report IS, then which one it is, then when —
+ * each token skipped when it is missing, and never printed twice (a title that
+ * already carries its own reference or date, which survey types often do).
+ */
+export function reportFilenameBase(document: ReportDocument): string {
+  const { title, reference, reportDate, issuedAt } = document.report;
+  const tokens: string[] = [];
+  for (const value of [title, reference, (reportDate || issuedAt || "").slice(0, 10)]) {
+    const token = slug(value);
+    if (!token) continue;
+    const lower = token.toLowerCase();
+    if (tokens.some((seen) => seen.toLowerCase().includes(lower))) continue;
+    tokens.push(token);
+  }
+  return tokens.join("-") || "report";
 }
 
 export function pdfFilename(document: ReportDocument, options: BuildPdfOptions): string {
-  const base = safeName(document.report.reference || document.report.title);
+  const base = reportFilenameBase(document);
   if (options.variant === "trade") return `${base}-${safeName(options.trade ?? "unassigned")}.pdf`;
   if (options.variant === "item") return `${base}-item.pdf`;
   return `${base}.pdf`;

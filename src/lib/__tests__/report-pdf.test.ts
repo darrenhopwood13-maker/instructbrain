@@ -130,8 +130,68 @@ describe("report PDF", () => {
   });
 
 
-  it("names the file after the report reference", () => {
-    expect(pdfFilename(document, { variant: "full" })).toBe("IB-0001.pdf");
+  it("names the file after what the report is, then its reference, then its date", () => {
+    expect(pdfFilename(document, { variant: "full" })).toBe(
+      "Condition-survey-IB-0001-2026-09-01.pdf",
+    );
+  });
+
+  /**
+   * The defect this guards: a report referenced `001` was saved as `001.pdf`,
+   * because the filename was built from the reference alone. Nothing about the
+   * file said what was in it, and a downloads folder cannot tell it apart from
+   * the next one. The title must appear even when a reference is present.
+   */
+  it("never names a file after its reference alone when a title exists", () => {
+    const weak: ReportDocument = {
+      ...document,
+      report: {
+        ...document.report,
+        reference: "001",
+        title: "Property inventory and schedule of condition",
+      },
+    };
+    const name = pdfFilename(weak, { variant: "full" });
+    expect(name).toBe("Property-inventory-and-schedule-of-condition-001-2026-09-01.pdf");
+    expect(name).not.toBe("001.pdf");
+  });
+
+  it("still names the file when the report carries no title, reference or date", () => {
+    const anonymous: ReportDocument = {
+      ...document,
+      report: { ...document.report, title: "", reference: null, reportDate: "", issuedAt: null },
+    };
+    expect(pdfFilename(anonymous, { variant: "full" })).toBe("report.pdf");
+  });
+
+  it("uses the issue date when the report has no report date", () => {
+    const issued: ReportDocument = {
+      ...document,
+      report: { ...document.report, reportDate: "", issuedAt: "2026-10-06T09:14:00.000Z" },
+    };
+    expect(pdfFilename(issued, { variant: "full" })).toBe(
+      "Condition-survey-IB-0001-2026-10-06.pdf",
+    );
+  });
+
+  /** A title that already carries the date (or the reference) must not print it again. */
+  it("never prints the same token twice", () => {
+    const repeated: ReportDocument = {
+      ...document,
+      report: { ...document.report, title: "Condition survey 2026-09-01" },
+    };
+    expect(pdfFilename(repeated, { variant: "full" })).toBe(
+      "Condition-survey-2026-09-01-IB-0001.pdf",
+    );
+  });
+
+  it("still names a trade extract for its trade, and an item for its own variant", () => {
+    expect(pdfFilename(document, { variant: "trade", trade: "Roofing" })).toBe(
+      "Condition-survey-IB-0001-2026-09-01-Roofing.pdf",
+    );
+    expect(pdfFilename(document, { variant: "item" })).toBe(
+      "Condition-survey-IB-0001-2026-09-01-item.pdf",
+    );
   });
 
   /**
