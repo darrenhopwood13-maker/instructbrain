@@ -89,7 +89,6 @@ function Landing() {
 
       <main id="main" className="flex-1">
         <Hero />
-        <StatsStrip />
         <FireRegister />
         <RoiSection />
         <UseCases />
@@ -159,27 +158,36 @@ function Hero() {
       `}</style>
       <div className="land-hero-grid">
         <div>
-          <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,5rem)] leading-none">
+          <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,3rem)] leading-none">
             <span className="text-foreground">instruct</span>
             <span className="text-brand-accent">Brain</span>
           </p>
           <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
             Photos in. Client-ready reports out.
           </p>
-          <h1 className="editorial-title mt-4 text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
+          <h1 className="editorial-title mt-4 text-left text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
             Walk the site. Issue the same afternoon.
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
             Point, shoot, done. instructBrain turns your site photos into a referenced
             construction report — with the proof and the dates regulators ask for.
           </p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link to="/auth/sign-up" className="ib-btn-split">
+              <span className="txt">Start free</span>
+              <span className="arrow">
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </span>
+            </Link>
+            <a href="#how-it-works" className="ib-btn-minline orange">
+              See how it works
+            </a>
+          </div>
         </div>
         <ConsoleMock />
       </div>
 
       <div className="rule-top mt-10 max-w-4xl pt-8">
-        <span className="eyebrow">Pick what you're making</span>
-
         <div className="cta-deck mt-10 max-w-4xl">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Link to="/auth/sign-up" className="ib-btn-3d">
@@ -198,9 +206,9 @@ function Hero() {
                 <img src="/3d/blueprints-t.png" alt="3D blueprints" />
               </span>
             </Link>
-            <Link to="/auth/sign-up" className="ib-btn-3d">
+            <Link to="/auth/sign-up" className="ib-btn-3d whitespace-nowrap">
               <ShieldCheck aria-hidden="true" />
-              Create compliance register
+              Create register
               <span className="obj">
                 <ArrowRight aria-hidden="true" />
                 <img src="/3d/clipboard-t.png" alt="3D clipboard" />
@@ -226,7 +234,7 @@ const SLOGANS = [
   "AI drafts the findings. You confirm and issue.",
   "Full-resolution image analysis. Structured output. Human sign-off.",
   "Per-trade extracts, close-out tracking and shared links — in English or issued in another language.",
-  "When it can't tell, it says so. No guesswork becomes a pass.",
+  "When it can’t tell, it says so. No guesswork becomes a pass.",
 ];
 
 function RotatingSlogans() {
@@ -257,7 +265,6 @@ function RoiSection() {
     <section className="py-12 lg:py-16" aria-labelledby="roi-heading">
       <div className="shell-container">
         <Reveal>
-          <p className="eyebrow">What it gives you back</p>
           <h2 id="roi-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
             The write-up gap, in numbers.
           </h2>
@@ -302,7 +309,6 @@ function UseCases() {
   return (
     <section className="shell-container py-12 lg:py-16" aria-labelledby="cases-heading">
       <Reveal>
-        <p className="eyebrow">Where it earns its keep</p>
         <h2 id="cases-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
           Built for what you actually do on site
         </h2>
@@ -349,15 +355,15 @@ function ConsoleMock() {
         </div>
         <div className="f">
           <span className="chip pass">Pass</span>
-          <span className="f-text">F-001 Sealant — perimeter</span>
+          <span className="f-text">F-001 Sealant: perimeter</span>
         </div>
         <div className="f">
           <span className="chip warn">Warn</span>
-          <span className="f-text">F-002 Ponding — valley gutter</span>
+          <span className="f-text">F-002 Ponding: valley gutter</span>
         </div>
         <div className="f">
           <span className="chip na">Not assessed</span>
-          <span className="f-text">F-003 Cavity tray — human review</span>
+          <span className="f-text">F-003 Cavity tray: human review</span>
         </div>
       </div>
       <div className="dock">
@@ -369,33 +375,6 @@ function ConsoleMock() {
   );
 }
 
-const STATS = [
-  { num: "150", suffix: "+", label: "inspections issued" },
-  { num: "2", suffix: " min", label: "to first AI draft" },
-  { num: "17", suffix: "", label: "trades covered" },
-  { num: "25", suffix: " min", label: "report turnaround" },
-];
-
-function StatsStrip() {
-  return (
-    <section className="py-12 lg:py-16" aria-label="instructBrain by the numbers">
-      <div className="shell-container">
-        <div className="land-stats">
-          {STATS.map((s) => (
-            <div key={s.label} className="land-stat">
-              <div className="num">
-                {s.num}
-                <em>{s.suffix}</em>
-              </div>
-              <div className="lab">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const QUOTES = [
   {
     img: "/demo/photo-4.jpg",
@@ -404,13 +383,13 @@ const QUOTES = [
   },
   {
     img: "/demo/photo-5.jpg",
-    text: "\u201CThe AI never guesses. If it can't tell, it says so — and the report blocks until a human looks.\u201D",
+    text: "\u201CThe AI never guesses. If it can’t tell, it says so — and the report blocks until a human looks.\u201D",
     who: "Not-assessed invariant · every report",
   },
   {
     img: "/demo/photo-2.jpg",
-    text: "\u201COne walk, four reports, issued before lunch. That's the whole pitch.\u201D",
-    who: "Site walk → custom report",
+    text: "\u201COne walk, four reports, issued before lunch. That’s the whole pitch.\u201D",
+    who: "Site walk · custom report",
   },
 ];
 
@@ -418,21 +397,9 @@ function TrustStrip() {
   return (
     <section className="py-14 lg:py-20" aria-labelledby="trust-heading">
       <div className="shell-container">
-        <p className="eyebrow">From the field</p>
         <h2 id="trust-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
           Real sites. Real photos. Real proof.
         </h2>
-        <figure className="glass-panel mt-8 rounded-2xl p-6 sm:p-10">
-          <blockquote className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
-            &ldquo;Honestly, I used to dread the monthly condition and weatherproofing reports —
-            they&rsquo;d take me 2 or 3 days, and they have to be bang on, because they go to the
-            client team and the insurers. With instructBrain, I snap the photos, review the AI
-            findings, and issue. That&rsquo;s literally it. A client-ready report in minutes.&rdquo;
-          </blockquote>
-          <figcaption className="mt-5">
-            <span className="eyebrow">Senior Site Manager · Tier 1 contractor · London</span>
-          </figcaption>
-        </figure>
         <div className="land-trust mt-8">
           {QUOTES.map((q) => (
             <figure key={q.who} className="land-quote">
@@ -489,7 +456,6 @@ function HowItWorks() {
               delayMs={index * 100}
               className="glass-panel rounded-2xl p-6 sm:p-7"
             >
-              <span className="eyebrow">Step {index + 1}</span>
               <div className="mt-4 flex items-center gap-3">
                 <step.icon aria-hidden="true" className="size-5 text-brand-accent-ink" />
                 <h3 className="editorial-title text-xl font-semibold">{step.title}</h3>
@@ -509,7 +475,6 @@ function FireRegister() {
   return (
     <section className="shell-container py-12 lg:py-16" aria-labelledby="fire-register-heading">
       <Reveal>
-        <p className="eyebrow">The weekly register</p>
         <h2 id="fire-register-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
           Six checks, every week
         </h2>
@@ -534,27 +499,25 @@ function PlainEnglish() {
         <Reveal delayMs={100}>
           <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
             You photograph the site as you always have. instructBrain looks at every photo,
-            describes what it sees in the language you'd use, decides how serious it is, and says
+            describes what it sees in the language you’d use, decides how serious it is, and says
             what to do about it. It only describes conditions and hazards — never people.
           </p>
         </Reveal>
         <Reveal delayMs={200}>
           <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
-            When it can't tell — bad light, awkward angle — it says so rather than guessing. You
+            When it can’t tell — bad light, awkward angle — it says so rather than guessing. You
             review, correct anything wrong, and issue.
           </p>
         </Reveal>
         <Reveal delayMs={300}>
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
             <li className="glass-panel rounded-xl p-5">
-              <p className="eyebrow">Trade attribution</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Suggested trades are suggestions, not assertions. A human confirms every assignment
                 before anything is distributed.
               </p>
             </li>
             <li className="glass-panel rounded-xl p-5">
-              <p className="eyebrow">Confidential findings</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Findings involving people are restricted to supervisors and above, and excluded
                 from every subcontractor distribution at the database level.
@@ -575,6 +538,7 @@ const tiers = [
     summary: "3 reports across Custom Reports, Project Reports and Compliance Registers. Up to 30 photos each.",
     points: ["No card required", "Every report template", "Issued PDF and share link"],
     cta: "Start free",
+    note: "",
     featured: false,
   },
   {
@@ -583,7 +547,8 @@ const tiers = [
     cadence: "/month",
     summary: "10 reports a month, roughly 500 photos.",
     points: ["Per-trade extracts", "Close-out tracking", "Overage available per photo"],
-    cta: "Start free, upgrade later",
+    cta: "Start free",
+    note: "Upgrade later",
     featured: true,
   },
   {
@@ -592,7 +557,8 @@ const tiers = [
     cadence: "/month",
     summary: "30 reports a month, roughly 1,500 photos.",
     points: ["Everything in Standard", "Multiple surveyors", "Organisation branding"],
-    cta: "Start free, upgrade later",
+    cta: "Start free",
+    note: "Upgrade later",
     featured: false,
   },
   {
@@ -602,6 +568,7 @@ const tiers = [
     summary: "Teams and enterprise.",
     points: ["Volume pricing", "Bespoke report templates", "Onboarding support"],
     cta: "Contact us",
+    note: "",
     featured: false,
   },
 ];
@@ -679,6 +646,9 @@ function Pricing() {
                     </Button>
                   )}
                 </div>
+                {tier.note ? (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">{tier.note}</p>
+                ) : null}
             </Reveal>
           ))}
         </ul>
@@ -711,7 +681,7 @@ function ClosingCta() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button variant="brand" size="lg" asChild>
                 <Link to="/auth/sign-up">
-                  Start free — 3 reports
+                  Start free
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
