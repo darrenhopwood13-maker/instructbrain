@@ -62,6 +62,22 @@ export type ConfirmPatch = {
   confirmed_by?: string | null;
 };
 
+/**
+ * The card's heading — or null when there is nothing to add.
+ *
+ * The observation is rendered once, under Description. A heading that merely
+ * restates it printed the same sentence twice, which is exactly what a short
+ * finding looked like on screen: a one-line observation bounded to 60
+ * characters has a heading identical to its own body. Saying it once is the
+ * whole point, so when the two would match, the heading gives way.
+ */
+function cardHeading(item: Finding): string | null {
+  const label = item.captureFields?.["item"]?.trim() || item.title.trim();
+  if (!label) return null;
+  const body = (item.description ?? item.note ?? "").replace(/\s+/g, " ").trim();
+  return label === body ? null : label;
+}
+
 export function ReviewList({
   snapshot,
   findings,
@@ -708,6 +724,7 @@ export function ReviewList({
               </li>
             );
           }
+          const heading = cardHeading(item);
           return (
             <li
               key={item.id}
@@ -739,9 +756,9 @@ export function ReviewList({
                   <StatusPill status={status} />
                 </span>
               </div>
-              <p className="mt-2 break-words font-semibold leading-snug">
-                {item.captureFields?.["item"]?.trim() || item.title}
-              </p>
+              {heading ? (
+                <p className="mt-2 break-words font-semibold leading-snug">{heading}</p>
+              ) : null}
               <p className="mt-1 break-words text-sm text-muted-foreground">
                 {item.location} · {item.trade}
               </p>

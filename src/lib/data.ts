@@ -482,6 +482,7 @@ type FindingRow = {
   severity: string | null;
   hazard_category: string | null;
   finding_text: string | null;
+  snag_title: string | null;
   remedial_text: string | null;
   capture_fields: Record<string, string> | null;
   human_edited: boolean;
@@ -503,7 +504,7 @@ type FindingRow = {
 };
 
 const findingColumns =
-  "id, ref, status, severity, hazard_category, finding_text, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
+  "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
 
 function locationOf(captureFields: Record<string, string> | null): string {
   if (!captureFields) return "Location not recorded";
@@ -523,11 +524,46 @@ function stringFields(value: unknown): Record<string, string> {
   return out;
 }
 
+/**
+ * The heading for a finding, wherever one is listed.
+ *
+ * A heading is a LABEL, never the observation. It used to be the first line of
+ * `finding_text` while the whole of `finding_text` rendered again underneath as
+ * the description — so a model that wrote one paragraph with no line break,
+ * which is what it usually does, had the same sentence printed twice on the
+ * same card. That is what "the information is repeated, it's ridiculous"
+ * looked like on screen, and it appeared on every report because it was the
+ * default path for every finding.
+ *
+ * Priority: the assessment's own short title, else a bounded excerpt so the
+ * lists that scan findings still have something to show. The excerpt is capped
+ * at the 60 characters the item field itself already uses, so it can only ever
+ * read as a label and can never stand in for the description.
+ */
+export const HEADING_MAX_CHARS = 60;
+
+function excerpt(text: string | null | undefined): string {
+  const flat = (text ?? "").replace(/\s+/g, " ").trim();
+  if (flat.length <= HEADING_MAX_CHARS) return flat;
+  const cut = flat.slice(0, HEADING_MAX_CHARS - 1).replace(/[\s,;:.!?-]+$/, "");
+  return `${cut}…`;
+}
+
+export function findingHeading(input: {
+  snagTitle?: string | null;
+  findingText?: string | null;
+}): string {
+  const named = excerpt(input.snagTitle);
+  if (named) return named;
+  return excerpt(input.findingText) || "Finding awaiting description";
+}
+
 function toFinding(row: FindingRow, photoIds: string[]): Finding {
   return {
     id: row.id,
     ref: row.ref,
-    title: row.finding_text?.split("\n")[0]?.trim() || "Finding awaiting description",
+    title: findingHeading({ snagTitle: row.snag_title, findingText: row.finding_text }),
+    snagTitle: row.snag_title,
     location: locationOf(row.capture_fields),
     // Trade attribution is a suggestion until a human confirms it.
     trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
@@ -626,7 +662,7 @@ function toOverdueItem(row: OverdueFindingRow): OverdueItem {
   return {
     id: row.id,
     ref: row.ref,
-    title: row.finding_text?.split("\n")[0]?.trim() || "Finding awaiting description",
+    title: findingHeading({ findingText: row.finding_text }),
     trade: row.assigned_trade ?? row.ai_suggested_trade ?? "Trade not assigned",
     due: overdueLabel(row.due_date),
     reportId: row.report_id,

@@ -87,6 +87,11 @@ export type Finding = {
   remedial?: string;
   /** Per-finding capture fields, e.g. a short `item` label on inventory templates. */
   captureFields?: Record<string, string>;
+  /**
+   * The assessment's own one-line title for the item, where it wrote one.
+   * A label, never the observation — see `findingHeading` in `lib/data`.
+   */
+  snagTitle?: string | null;
 
   /** The human's decision. Null until someone assigns a trade. */
   assignedTrade?: string | null;
