@@ -181,19 +181,19 @@ export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
 }
 
 function schemaTypeName(definition: Record<string, unknown>): string {
-  const enumValues = definition.enum;
+  const enumValues = definition["enum"];
   if (Array.isArray(enumValues)) {
     const named = enumValues.filter((value) => value !== null);
     return named.length > 0 ? named.join(" | ") : "null";
   }
-  const declared = definition.type;
+  const declared = definition["type"];
   const types = (Array.isArray(declared) ? declared : [declared]).filter(
     (value): value is string => typeof value === "string",
   );
   const nullable = types.includes("null");
   const present = types.filter((value) => value !== "null");
   if (present.length === 1 && present[0] === "object") {
-    const properties = definition.properties;
+    const properties = definition["properties"];
     const keys =
       properties && typeof properties === "object" ? Object.keys(properties as object) : [];
     const body = keys.length > 0 ? `object with keys ${keys.join(", ")}` : "object";
@@ -227,7 +227,7 @@ export function envelopeFieldGuide(snapshot: SurveyTypeSnapshot): string {
   const schema = envelopeJsonSchema(snapshot) as unknown as {
     properties: Record<string, Record<string, unknown>>;
   };
-  const observations = schema.properties.observations as {
+  const observations = schema.properties["observations"] as {
     items?: { properties?: Record<string, Record<string, unknown>> };
   };
   const fields = Object.entries(observations.items?.properties ?? {});

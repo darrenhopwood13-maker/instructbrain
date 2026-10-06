@@ -154,7 +154,7 @@ describe("groupByTrade", () => {
     const groups = groupByTrade(findings);
 
     expect(groups.map((group) => group.trade)).toEqual([null, "Groundworks", "Roofing"]);
-    expect(groups[0].findings.map((item) => item.id)).toEqual(["b"]);
+    expect(groups[0]?.findings.map((item) => item.id)).toEqual(["b"]);
   });
 
   it("always returns the unallocated bucket, even when it is empty", () => {
@@ -169,7 +169,7 @@ describe("groupByTrade", () => {
       finding({ id: "c", ref: "S-003", assignedTrade: "Roofing" }),
     ];
     const groups = groupByTrade(findings);
-    expect(groups[1].findings.map((item) => item.id)).toEqual(["a", "b", "c"]);
+    expect(groups[1]?.findings.map((item) => item.id)).toEqual(["a", "b", "c"]);
   });
 
   it("does not split one trade over two spellings or two cases", () => {
@@ -180,8 +180,8 @@ describe("groupByTrade", () => {
     const groups = groupByTrade(findings);
 
     expect(groups).toHaveLength(2);
-    expect(groups[0].findings).toEqual([]);
-    expect(groups[1].findings).toHaveLength(2);
+    expect(groups[0]?.findings).toEqual([]);
+    expect(groups[1]?.findings).toHaveLength(2);
   });
 });
 

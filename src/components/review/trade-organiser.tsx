@@ -100,10 +100,11 @@ export function TradeOrganiser({
     try {
       // Throws on an unnamed trade before anything is written.
       const plan = allocationPlan(allocatable, ids, trade);
-      if (plan.assignments.length > 0) {
+      const [firstAssignment] = plan.assignments;
+      if (firstAssignment) {
         await onAssign(
           plan.assignments.map((item) => item.id),
-          plan.assignments[0].trade,
+          firstAssignment.trade,
         );
       }
       setSelected([]);
@@ -301,7 +302,7 @@ export function TradeOrganiser({
                       {finding.assignedTrade ? null : finding.aiSuggestedTrade ? (
                         <span className="mt-0.5 block text-xs text-muted-foreground">
                           Suggested {finding.aiSuggestedTrade},{" "}
-                          {confidenceLabel(finding.aiTradeConfidence)}, unconfirmed
+                          {confidenceLabel(finding.aiTradeConfidence ?? null)}, unconfirmed
                         </span>
                       ) : (
                         <span className="mt-0.5 block text-xs text-muted-foreground">
