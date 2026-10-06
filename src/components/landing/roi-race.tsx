@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useInView } from "@/components/landing/reveal";
 
 /**
  * Live ROI model. Presentation only — no data, no network, no business logic.
@@ -26,13 +27,19 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/** Runs 0 → 1 whenever `key` changes. Reduced motion jumps straight to 1. */
-function useRace(key: string, reduced: boolean) {
+/**
+ * Runs 0 → 1 whenever `key` changes, once the section is on screen.
+ *
+ * The settled value is the default state (and the server-rendered state), so
+ * a non-JavaScript render, a print or a screenshot always sees the finished
+ * numbers rather than a fraction of the claim. Reduced motion stays settled.
+ */
+function useRace(key: string, reduced: boolean, active: boolean) {
   const [progress, setProgress] = useState(1);
   const frame = useRef<number | null>(null);
 
   useEffect(() => {
-    if (reduced) {
+    if (reduced || !active) {
       setProgress(1);
       return;
     }
@@ -47,7 +54,7 @@ function useRace(key: string, reduced: boolean) {
     return () => {
       if (frame.current !== null) cancelAnimationFrame(frame.current);
     };
-  }, [key, reduced]);
+  }, [key, reduced, active]);
 
   return progress;
 }
@@ -60,6 +67,7 @@ const money = new Intl.NumberFormat("en-GB", {
 
 export function RoiRace() {
   const reduced = usePrefersReducedMotion();
+  const { ref, seen } = useInView<HTMLDivElement>();
   const [photos, setPhotos] = useState(150);
   const [surveys, setSurveys] = useState(2);
   const [dayRateInput, setDayRateInput] = useState("300");
@@ -74,13 +82,16 @@ export function RoiRace() {
   const daysPerYear = (savedPerMonth * 12) / 8;
   const moneyPerYear = daysPerYear * dayRate;
 
-  const progress = useRace(`${photos}-${surveys}`, reduced);
+  const progress = useRace(`${photos}-${surveys}`, reduced, seen);
   // The app bar finishes almost immediately; the gap is the whole point.
   const appShare = Math.max(0.02, appHoursPerSurvey / Math.max(manualHoursPerSurvey, 0.001));
   const appProgress = Math.min(1, progress / appShare);
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-14">
+    <div
+      ref={ref}
+      className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-14"
+    >
       <div className="space-y-8">
         <div>
           <div className="flex flex-wrap items-baseline justify-between gap-2">

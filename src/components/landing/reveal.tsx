@@ -39,8 +39,12 @@ export function useInView<T extends HTMLElement>(rootMargin = "-10% 0px") {
 }
 
 /**
- * Fades and lifts its children into place the first time they scroll into
- * view. Reduced motion renders them immediately, with no transform.
+ * Lifts its children into place the first time they scroll into view.
+ *
+ * Content is visible by default: the entrance is a transform-only
+ * enhancement, so a print, PDF export, screenshot, link preview or
+ * non-scrolling crawler always sees the section rather than empty navy.
+ * Reduced motion renders them immediately, with no transform.
  */
 export function Reveal({
   children,
@@ -55,7 +59,7 @@ export function Reveal({
 }) {
   const reduced = usePrefersReducedMotion();
   const { ref, seen } = useInView<HTMLDivElement>();
-  const visible = reduced || seen;
+  const settled = reduced || seen;
 
   return (
     <Tag
@@ -66,9 +70,8 @@ export function Reveal({
         reduced
           ? undefined
           : {
-              opacity: visible ? 1 : 0,
-              transform: visible ? "none" : "translateY(18px)",
-              transition: "opacity 520ms ease-out, transform 520ms ease-out",
+              transform: settled ? "none" : "translateY(18px)",
+              transition: "transform 520ms ease-out",
               transitionDelay: `${delayMs}ms`,
             }
       }
