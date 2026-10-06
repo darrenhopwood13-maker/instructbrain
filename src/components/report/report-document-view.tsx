@@ -751,9 +751,9 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
   return (
     <section aria-label="Cover" className="break-after-page">
       {manualBrand ? (
-        <div className="manual-report-brand flex min-h-14 items-center justify-between gap-4 border-l-4 border-brand-accent bg-brand-blue px-5 py-3 text-primary-foreground">
+        <div className="manual-report-brand flex min-h-14 items-center justify-between gap-4 border-l-4 bg-brand-blue px-5 py-3">
           <p className="font-[Audiowide] text-xl" aria-label="instructBrain">
-            <span>instruct</span><span className="text-brand-accent">Brain</span>
+            <span>instruct</span><span className="report-brand-wordmark-accent">Brain</span>
           </p>
           {document.organisation?.name ? (
             <p className="text-right text-xs font-semibold">{document.organisation.name}</p>

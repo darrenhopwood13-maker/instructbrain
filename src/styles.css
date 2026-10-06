@@ -1337,6 +1337,30 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 .paper thead th:first-child { box-shadow: inset 3px 0 0 var(--paper-accent); }
 .paper .report-credit { font-variant: small-caps; }
 
+/*
+ * The report's fixed-identity brand band — "identical in preview, share link
+ * and print", like the block above, so unlike everything else on the sheet it
+ * must NOT read a token the sheet re-points.
+ *
+ * `.paper` deliberately re-points `--brand-accent` to the report navy (see the
+ * `.paper` scope), which made both the inherited accent and
+ * `--primary-foreground` navy-on-navy inside this navy band: in the 6 October
+ * 2026 screen recording the wordmark's second half measured a contrast ratio of
+ * 1.00 against the band — no pixel differed from the background at all — so
+ * every report's letterhead read "instruct" and nothing more. The product
+ * accent reaches here as `--paper-accent` (never re-pointed, derived from the
+ * one accent slot); white is stated outright.
+ *
+ * Nothing in this block may be inherited from the sheet. There is a test.
+ */
+.manual-report-brand {
+  color: #fff;
+  border-left-color: var(--paper-accent, var(--product-accent));
+}
+.manual-report-brand .report-brand-wordmark-accent {
+  color: var(--paper-accent, var(--product-accent));
+}
+
 /* Field cockpit chrome: installed to the home screen, desktop menus go. */
 @media (display-mode: standalone) {
   .field-chrome .app-shell-primary-nav {
