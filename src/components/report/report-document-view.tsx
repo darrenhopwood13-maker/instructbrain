@@ -1190,7 +1190,7 @@ function FindingRow({
           <div className="mt-3 space-y-3">
             {finding.snagTitle ? (
               <InlineField
-                label="Snag"
+                label="Finding title"
                 value={finding.snagTitle}
                 readOnly={readOnly}
                 onSave={async (next) =>

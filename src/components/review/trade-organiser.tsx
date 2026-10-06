@@ -109,7 +109,7 @@ export function TradeOrganiser({
       }
       setSelected([]);
       setDraft("");
-      const parts = [`${plural(plan.assignments.length, "snag", "snags")} allocated to ${trade}`];
+      const parts = [`${plural(plan.assignments.length, "finding", "findings")} allocated to ${trade}`];
       if (plan.unchanged.length > 0) {
         parts.push(`${plan.unchanged.length} already there`);
       }
@@ -199,7 +199,7 @@ export function TradeOrganiser({
       </div>
 
       <p className="mt-1 text-xs text-muted-foreground">
-        {plural(summary.total, "snag", "snags")} · {summary.allocated} allocated ·{" "}
+        {plural(summary.total, "finding", "findings")} · {summary.allocated} allocated ·{" "}
         {summary.unallocated} unallocated
         {summary.suggested > 0 ? `, ${summary.suggested} of those with a suggestion ready` : ""}. A
         suggestion is applied only when someone accepts it.
@@ -261,7 +261,7 @@ export function TradeOrganiser({
               <p className="text-sm font-semibold">
                 {group.trade ?? "Unallocated"}{" "}
                 <span className="font-normal text-muted-foreground">
-                  {plural(group.findings.length, "snag", "snags")}
+                  {plural(group.findings.length, "finding", "findings")}
                 </span>
               </p>
               {group.trade ? (
@@ -282,7 +282,7 @@ export function TradeOrganiser({
 
             {group.findings.length === 0 ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                Nothing unallocated. Every snag has a trade.
+                Nothing unallocated. Every finding has a trade.
               </p>
             ) : (
               <ul className="mt-2 space-y-1">

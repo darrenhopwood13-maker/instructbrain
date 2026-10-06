@@ -65,7 +65,7 @@ describe("trade organiser", () => {
   it("shows the unallocated bucket first and counts what is outstanding", () => {
     renderOrganiser();
 
-    expect(screen.getByText(/5 snags . 2 allocated . 3 unallocated/)).toBeTruthy();
+    expect(screen.getByText(/5 findings . 2 allocated . 3 unallocated/)).toBeTruthy();
     expect(screen.getByText("Unallocated")).toBeTruthy();
 
     // Every snag is listed, grouped: the unallocated ones in the bucket first.

@@ -95,11 +95,11 @@ export const snaggingDefinition: SurveyDefinition = {
   id: "snagging",
   version: 2,
   houseVoice: HOUSE_VOICE,
-  label: "Snag identification & remedial schedule",
+  label: "Finding identification & remedial schedule",
   category: "snagging",
   findingsPerPhoto: "multiple",
   statuses: [
-    { id: "snag", label: "Snag — rectification required", tone: "fail" },
+    { id: "snag", label: "Finding — rectification required", tone: "fail" },
     { id: "acceptable", label: "Acceptable — no action", tone: "pass" },
     { id: "monitor", label: "Monitor — review before handover", tone: "warn" },
     { id: "not_assessed", label: "Not assessed", tone: "flag" },

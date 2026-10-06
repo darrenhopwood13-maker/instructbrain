@@ -310,7 +310,7 @@ function FieldHome() {
           className="flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-brand-accent px-5 text-lg font-semibold text-primary-foreground shadow-raised transition-transform active:scale-[0.99] disabled:opacity-70"
         >
           <Camera aria-hidden="true" className="size-6" />
-          {start.isPending ? "Starting…" : "Start site walk / snag"}
+          {start.isPending ? "Starting…" : "Start site walk"}
         </button>
         <Link
           to="/dashboard"
