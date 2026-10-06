@@ -26,6 +26,47 @@ export function surveyTypeOf(finding: DocFinding): string | null {
 }
 
 /**
+ * `survey_type` -> "Survey type". Capture-field keys are machine names; a
+ * document is read by people. Any leading marker underscores go, and every
+ * word after the first is left as written rather than lower-cased.
+ */
+export function fieldLabel(key: string): string {
+  const words = key
+    .replace(/^_+/, "")
+    .split(/[_\s]+/)
+    .filter(Boolean);
+  const first = words[0];
+  if (!first) return "Detail";
+  const head = first.charAt(0).toUpperCase() + first.slice(1);
+  return [head, ...words.slice(1)].join(" ");
+}
+
+/**
+ * The capture fields as they should READ on a document.
+ *
+ * Two things were reaching client documents that should never appear on one.
+ * The survey-type marker is an internal key: it exists so items can be grouped
+ * into sections, and where a report covers more than one type the section
+ * heading already names it, so it is dropped rather than printed. And where a
+ * value IS one of those ids it was printed raw, which is how a client came to
+ * read "survey type: weekly_compliance_fire" on their own report. Ids that
+ * name a survey type are now resolved to the label the report already carries;
+ * anything unrecognised is left exactly as stored rather than guessed at.
+ */
+export function readableCaptureFields(
+  fields: Record<string, string> | null | undefined,
+  types: Array<{ id: string; label: string }> = [],
+): Array<{ label: string; value: string }> {
+  const known = new Map(types.map((type) => [type.id, type.label]));
+  return Object.entries(fields ?? {})
+    .filter(([key, value]) => key !== SURVEY_TYPE_FIELD && value.trim() !== "")
+    .map(([key, value]) => {
+      const trimmed = value.trim();
+      return { label: fieldLabel(key), value: known.get(trimmed) ?? trimmed };
+    });
+}
+
+/**
  * `types` is the report's ordered survey type list. Sections follow that
  * order; anything unrecognised falls into the first section so no item is
  * ever dropped from the document.

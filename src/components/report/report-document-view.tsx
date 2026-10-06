@@ -14,6 +14,7 @@ import {
   type DocFinding,
   type ReportDocument,
 } from "@/lib/report/document";
+import { readableCaptureFields } from "@/lib/report/sections";
 import {
   RESULT_VIEW_LABELS,
   defaultResultView,
@@ -293,7 +294,7 @@ function InventoryDocument({
               <Pair label="Address" value={document.project?.address ?? "Not recorded"} />
               <Pair label="Report reference" value={document.report.reference ?? "Not recorded"} />
               <Pair label="Report date" value={formatDocumentDate(document.report.reportDate)} />
-              <Pair label="Author" value={document.author ?? "Not recorded"} />
+              <AuthorPair author={document.author} />
             </dl>
           </div>
           {titlePhotos.length > 0 ? (
@@ -708,6 +709,12 @@ function Section({
       },
     }[section];
 
+    // An empty section is omitted from a client-facing document, exactly as the
+    // PDF omits it, rather than printing "Not recorded" beneath its own heading
+    // on the client's own report. The editor still shows the field, so a person
+    // can see it is waiting to be filled in.
+    if (readOnly && map.value.trim() === "") return null;
+
     return (
       <section aria-labelledby={`section-${section}`} className="break-inside-avoid">
         <h2 id={`section-${section}`} className="editorial-title text-xl font-semibold">
@@ -793,7 +800,7 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
         />
         <Pair label="Report reference" value={document.report.reference ?? "Not recorded"} />
         <Pair label="Report date" value={formatDocumentDate(document.report.reportDate)} />
-        <Pair label="Author" value={document.author ?? "Not recorded"} />
+        <AuthorPair author={document.author} />
         <Pair
           label="Status"
           value={
@@ -819,6 +826,20 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
       ) : null}
     </section>
   );
+}
+
+/**
+ * The author row, or nothing at all.
+ *
+ * A report that could not name its author printed "Author: Not recorded" — an
+ * absence stated as a value, on the client's own document. The PDF has never
+ * printed the row; the screen now agrees with it. Where a real name is carried
+ * on the document, this is where it appears, and nowhere else can one appear.
+ */
+function AuthorPair({ author }: { author: string | null }) {
+  const name = author?.trim();
+  if (!name) return null;
+  return <Pair label="Author" value={name} />;
 }
 
 function Pair({ label, value }: { label: string; value: string }) {
@@ -1059,6 +1080,9 @@ function FindingRow({
   const references = regulatoryReferencesOf(snapshot);
   const condition = requiresConditionGrade(snapshot);
   const grade = conditionGradeOf(finding.conditionGrade);
+  // Capture fields as a reader should see them: the survey-type marker dropped,
+  // and any value that names a survey type shown by its label.
+  const captureFields = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);
 
   const patch = async (values: FindingPatch, before: Record<string, unknown>) =>
     onFindingPatch?.(finding, values, before);
@@ -1126,12 +1150,12 @@ function FindingRow({
             </p>
           ) : null}
 
-          {Object.keys(finding.captureFields).length > 0 ? (
+          {captureFields.length > 0 ? (
             <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {Object.entries(finding.captureFields).map(([key, value]) => (
-                <div key={key} className="flex gap-1">
-                  <dt className="font-medium capitalize">{key.replace(/_/g, " ")}:</dt>
-                  <dd>{value}</dd>
+              {captureFields.map((field) => (
+                <div key={field.label} className="flex gap-1">
+                  <dt className="font-medium">{field.label}:</dt>
+                  <dd>{field.value}</dd>
                 </div>
               ))}
             </dl>

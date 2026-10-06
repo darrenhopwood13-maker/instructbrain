@@ -61,7 +61,8 @@ export type Report = {
   photoCount: number;
   findingCount: number;
   updated: string;
-  author: string;
+  /** The author's name, or null. A placeholder is never acceptable here. */
+  author: string | null;
 };
 
 export type Finding = {

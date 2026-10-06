@@ -260,7 +260,11 @@ export const reportDocumentQuery = (reportId: string) =>
         findings: docFindings,
         photos: docPhotos,
         synthesis: synthesis(report.synthesis),
-        author: report.author_id ? "Recorded author" : null,
+        // A report records WHO authored it as an id, never their name, so there
+        // is no name to print. The document shows no author row rather than a
+        // placeholder: "Author: Recorded author" and "Author: Not recorded" are
+        // both absences dressed as values on a client's own report.
+        author: null,
       };
     },
   });

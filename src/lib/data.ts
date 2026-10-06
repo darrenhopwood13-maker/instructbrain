@@ -284,7 +284,9 @@ function toReport(row: ReportRow, photoCount: number, findingCount: number): Rep
     photoCount,
     findingCount,
     updated: dateFormatter.format(new Date(row.updated_at)),
-    author: row.author_id ? "Recorded author" : "Author not recorded",
+    // Never a placeholder. A report stores an author id, not a name, so until a
+    // real name is carried through there is nothing truthful to put here.
+    author: null,
   };
 }
 

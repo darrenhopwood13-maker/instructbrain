@@ -17,7 +17,7 @@ import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document
 import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
-import { sectionsFor } from "@/lib/report/sections";
+import { sectionsFor, readableCaptureFields } from "@/lib/report/sections";
 import {
   inventoryCheckoutComment,
   inventoryConditionLabel,
@@ -975,13 +975,13 @@ async function drawFinding(
     drawText(writer, `Reference: ${finding.regulatoryReference}`, { size: 9, colour: MUTED });
   }
 
-  const extras = Object.entries(finding.captureFields).filter(
-    ([key]) => !["location", "zone", "area", "room"].includes(key),
+  const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []).filter(
+    (field) => !["location", "zone", "area", "room"].includes(field.label.toLowerCase()),
   );
   if (extras.length > 0) {
     drawText(
       writer,
-      extras.map(([key, value]) => `${key.replace(/_/g, " ")}: ${value}`).join("   ·   "),
+      extras.map((field) => `${field.label}: ${field.value}`).join("   ·   "),
       { size: 9, colour: MUTED },
     );
   }
