@@ -134,6 +134,14 @@ export function PhotosPanel({
     [fields, inventoryWorkflow],
   );
   const keepWalking = allowsMultipleFindingsPerPhoto(snapshot);
+  /**
+   * The block below holds this template's capture fields - and for every survey
+   * on the site one of them, `location`, is required. Calling the whole block
+   * "(optional)" while the field inside it reads "Required / Not yet completed"
+   * is what left a surveyor unsure whether a location was needed, or which of
+   * the two questions the report would print. It is described honestly instead.
+   */
+  const zoneHasRequiredField = zoneFields.some((field) => field.required === true);
 
   const [organisationId, setOrganisationId] = useState<string | null>(null);
   const [ready, setReady] = useState<"checking" | "ready" | "unavailable">("checking");
@@ -685,9 +693,15 @@ export function PhotosPanel({
         {zoneFields.length > 0 && !inventoryWorkflow ? (
           <details className="mt-3 rounded-lg border border-border bg-surface px-3.5 py-2">
             <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">
-              Add a location tag (optional)
+              {zoneHasRequiredField
+                ? "Add the location and details for these photographs"
+                : "Add a location tag (optional)"}
             </summary>
             <div className="pb-2">
+              <p className="mb-2 text-xs text-muted-foreground">
+                These are stamped on every photograph you add from here, and are what the report
+                reads as the location for each finding.
+              </p>
               <CaptureFieldsForm
                 fields={zoneFields}
                 values={zoneValues}
