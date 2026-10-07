@@ -84,13 +84,22 @@ function AllReports() {
   return (
     <AppShell>
       <header className="border-b border-border pb-6">
-        <p className="eyebrow">Everything you have made</p>
-        <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">All reports</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          {reports.isSuccess
-            ? `${list.length} report${list.length === 1 ? "" : "s"}, newest first. Select to delete several at once.`
-            : "Every report on your account, newest first."}
-        </p>
+        <div className="grid min-w-0 gap-4 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
+          <div className="min-w-0">
+            <p className="eyebrow">Everything you have made</p>
+            <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">All reports</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {reports.isSuccess
+                ? `${list.length} report${list.length === 1 ? "" : "s"}, newest first. Select to delete several at once.`
+                : "Every report on your account, newest first."}
+            </p>
+          </div>
+          {/* The list of reports is where a person looks for one; starting one
+              belongs in the same place rather than back on the dashboard. */}
+          <Button asChild variant="brand" className="shrink-0">
+            <Link to="/reports/quick">New report</Link>
+          </Button>
+        </div>
       </header>
 
       {selected.size > 0 ? (
