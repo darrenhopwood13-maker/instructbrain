@@ -22,7 +22,7 @@ import { BRAND_CREDIT } from "@/lib/brand";
 // Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
 const TITLE = "instructBrain — construction reports from site photographs";
 const DESCRIPTION =
-  "instructBrain turns site photographs into client-ready construction reports: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and issue. Free for your first 3 reports.";
+  "instructBrain turns site photographs into client-ready construction reports: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and finalise. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -166,7 +166,7 @@ function Hero() {
             Photos in. Client-ready reports out.
           </p>
           <h1 className="editorial-title mt-4 text-left text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
-            Walk the site. Issue the same afternoon.
+            Walk the site. Finalise the same afternoon.
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
             Point, shoot, done. instructBrain turns your site photos into a referenced
@@ -231,9 +231,9 @@ function Hero() {
 }
 
 const SLOGANS = [
-  "AI drafts the findings. You confirm and issue.",
+  "AI drafts the findings. You confirm and finalise.",
   "Full-resolution image analysis. Structured output. Human sign-off.",
-  "Per-trade extracts, close-out tracking and shared links — in English or issued in another language.",
+  "Per-trade extracts, close-out tracking and shared links — in English or finalised in another language.",
   "When it can’t tell, it says so. No guesswork becomes a pass.",
 ];
 
@@ -286,7 +286,7 @@ const useCases = [
   {
     icon: ShieldCheck,
     title: "Custom Reports",
-    line: "One-off inspections, specialist audits, batch photo reviews — issued from a template, not a blank page.",
+    line: "One-off inspections, specialist audits, batch photo reviews — finalised from a template, not a blank page.",
   },
   {
     icon: FileText,
@@ -300,8 +300,8 @@ const useCases = [
   },
   {
     icon: Languages,
-    title: "Issue in another language",
-    line: "Issue the PDF and shared links in the client's language while English stays the record copy.",
+    title: "Finalise in another language",
+    line: "Finalise the PDF and shared links in the client's language while English stays the record copy.",
   },
 ];
 
@@ -367,7 +367,7 @@ function ConsoleMock() {
         </div>
       </div>
       <div className="dock">
-        <span className="mini-btn solid">Issue report</span>
+        <span className="mini-btn solid">Finalise report</span>
         <span className="mini-btn">Preview</span>
         <span className="mini-btn">Share</span>
       </div>
@@ -388,7 +388,7 @@ const QUOTES = [
   },
   {
     img: "/demo/photo-2.jpg",
-    text: "\u201COne walk, four reports, issued before lunch. That’s the whole pitch.\u201D",
+    text: "\u201COne walk, four reports, finalised before lunch. That’s the whole pitch.\u201D",
     who: "Site walk · custom report",
   },
 ];
@@ -429,8 +429,8 @@ const steps = [
   },
   {
     icon: CheckCircle2,
-    title: "Review and issue",
-    body: "Confirm or correct on the keyboard. Then issue a PDF with a contents page, per-trade extracts, close-out tracking where required, and a share link in the issue language.",
+    title: "Review and finalise",
+    body: "Confirm or correct on the keyboard. Then finalise a PDF with a contents page, per-trade extracts, close-out tracking where required, and a share link in the report's language.",
   },
 ];
 
@@ -445,7 +445,7 @@ function HowItWorks() {
         <Reveal>
           <p className="eyebrow">How it works</p>
           <h2 id="how-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
-            Three steps, start to issued
+            Three steps, start to finalised
           </h2>
         </Reveal>
         <ol className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -506,7 +506,7 @@ function PlainEnglish() {
         <Reveal delayMs={200}>
           <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
             When it can’t tell — bad light, awkward angle — it says so rather than guessing. You
-            review, correct anything wrong, and issue.
+            review, correct anything wrong, and finalise.
           </p>
         </Reveal>
         <Reveal delayMs={300}>
@@ -536,7 +536,7 @@ const tiers = [
     price: "£0",
     cadence: "",
     summary: "3 reports across Custom Reports, Project Reports and Compliance Registers. Up to 30 photos each.",
-    points: ["No card required", "Every report template", "Issued PDF and share link"],
+    points: ["No card required", "Every report template", "Finalised PDF and share link"],
     cta: "Start free",
     note: "",
     featured: false,
@@ -587,7 +587,7 @@ function Pricing() {
             Priced in reports, not tokens
           </h2>
           <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-            A report is one job, from upload to issued PDF — whether it is a Custom Report, a
+            A report is one job, from upload to finalised PDF — whether it is a Custom Report, a
             Project Report or a Weekly Compliance Register. Go over your photo allowance and you can
             buy overage per photo — no tier jump required.
           </p>
@@ -654,7 +654,7 @@ function Pricing() {
         </ul>
 
         <p className="mt-8 max-w-2xl text-sm text-muted-foreground">
-          Billing is coming shortly. The free tier works today — create an account and issue your
+          Billing is coming shortly. The free tier works today — create an account and finalise your
           first three reports now.
         </p>
       </div>

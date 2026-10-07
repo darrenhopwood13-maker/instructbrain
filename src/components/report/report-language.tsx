@@ -39,8 +39,8 @@ export function ReportLanguageControl({
       await queryClient.invalidateQueries({ queryKey: ["report", reportId] });
       toast.success(
         language === "en"
-          ? "This report will be issued in English"
-          : `This report will be issued in ${languageLabel(language)}`,
+          ? "This report will be finalised in English"
+          : `This report will be finalised in ${languageLabel(language)}`,
         {
           description:
             language === "en"
@@ -59,7 +59,7 @@ export function ReportLanguageControl({
     <div className="flex min-h-11 items-center gap-2">
       <Languages aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
       <label htmlFor="report-language" className="text-sm text-muted-foreground">
-        Issue in
+        Finalise in
       </label>
       <Select
         value={value}

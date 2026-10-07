@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/upgrade")({
 });
 
 const highlights: Record<string, string[]> = {
-  free: ["Every survey type", "Issued PDF and share link", "No card required"],
+  free: ["Every survey type", "Finalised PDF and share link", "No card required"],
   standard: ["Per-trade extracts", "Close-out tracking", "Multiple projects"],
   pro: ["Everything in Standard", "Multiple surveyors", "Organisation branding"],
   custom: ["Volume allowances", "Bespoke survey types", "Onboarding support"],
@@ -61,7 +61,7 @@ function Upgrade() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           instructBrain is priced in reports, not tokens. A report is one survey, from upload to
-          issued PDF.
+          finalised PDF.
         </p>
       </header>
 

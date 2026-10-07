@@ -64,7 +64,7 @@ export async function buildIssuedEmailPdf(
 }
 
 /**
- * The frozen issued PDF of a report — shared by the email attachment and the
+ * The frozen finalised PDF of a report — shared by the email attachment and the
  * PDF-only share link. Confidential items never leave the server.
  */
 export async function buildIssuedPdfBytes(

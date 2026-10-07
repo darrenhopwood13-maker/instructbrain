@@ -69,7 +69,7 @@ function PrintReport() {
     document.report.title,
     document.report.reference ?? "No reference",
     document.report.status === "issued"
-      ? `Issued ${formatDocumentDate(document.report.issuedAt)}`
+      ? `Finalised ${formatDocumentDate(document.report.issuedAt)}`
       : `Draft — ${formatDocumentDate(document.report.reportDate)}`,
   ].join(" · ");
 

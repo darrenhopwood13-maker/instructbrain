@@ -340,24 +340,24 @@ function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
     : `${data.reportTitle} — ${data.projectName}`;
   const html = shell(subject, [
     h1(data.reportTitle),
-    p(`${data.sentByName} has sent you the issued photographic report.`),
+    p(`${data.sentByName} has sent you the finalised photographic report.`),
     definitions([
       ["Project", data.projectName],
       ["Reference", data.reference ?? ""],
       ["Issue date", data.issueDate ?? ""],
     ]),
-    small("The complete issued report is attached as a PDF."),
+    small("The complete finalised report is attached as a PDF."),
   ].join(""));
   const text = textShell([
     data.reportTitle,
     "",
-    `${data.sentByName} has sent you the issued photographic report.`,
+    `${data.sentByName} has sent you the finalised photographic report.`,
     "",
     `Project: ${data.projectName}`,
     data.reference ? `Reference: ${data.reference}` : "",
     data.issueDate ? `Issue date: ${data.issueDate}` : "",
     "",
-    "The complete issued report is attached as a PDF.",
+    "The complete finalised report is attached as a PDF.",
   ]);
   return { subject, html, text, attachments: [data.attachment] };
 }
@@ -414,7 +414,7 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
 
   const html = shell(subject, [
     h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
-    p(`${data.sentByName} has issued the items below from ${surveyPhrase}.`),
+    p(`${data.sentByName} has sent you the items below from ${surveyPhrase}.`),
     definitions([
       ...(data.projectName ? [["Project", data.projectName] as [string, string]] : []),
       ["Report reference", data.reportReference ?? ""],
@@ -432,7 +432,7 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   const text = textShell([
     `${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`,
     "",
-    `${data.sentByName} has issued the items below from ${surveyPhrase}.`,
+    `${data.sentByName} has sent you the items below from ${surveyPhrase}.`,
     "",
     data.projectName ? `Project: ${data.projectName}` : "",
     data.reportReference ? `Report reference: ${data.reportReference}` : "",

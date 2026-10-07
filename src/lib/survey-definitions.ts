@@ -503,13 +503,13 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
           "This inventory records the visible contents, fixtures and fittings photographed at the time of inspection. Each room section shows the room overview photographs first, followed by the item schedule recorded for that room.",
           "Item photographs are reproduced at the rear of the report in upload order. The photograph number shown in the table links the schedule entry to the matching photograph.",
           "The Check Out Comment column is left available for end-of-tenancy or close-out notes. It should be completed by a person before it is relied on as a check-out record.",
-          "Any item marked Not assessed was not resolved automatically and requires human review before the report is issued.",
+          "Any item marked Not assessed was not resolved automatically and requires human review before the report is finalised.",
         ],
       },
       {
         title: "Check-in notes",
         body: [
-          "The inventory should be checked at the start of occupation and any differences recorded before the report is issued or relied on.",
+          "The inventory should be checked at the start of occupation and any differences recorded before the report is finalised or relied on.",
           "Where a photograph does not support a condition judgement, the item remains Not assessed until a person resolves it.",
         ],
       },

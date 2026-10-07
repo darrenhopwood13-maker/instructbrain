@@ -72,7 +72,7 @@ export const Route = createFileRoute("/_authenticated/reports/$id/")({
   head: () => {
     const title = "Report workspace — instructBrain";
     const description =
-      "Photographs, AI-drafted findings review and the issued document for this report.";
+      "Photographs, AI-drafted findings review and the finalised document for this report.";
     return {
       meta: [
         { title },
@@ -400,11 +400,11 @@ function ReportWorkspace() {
   const toConfirm = findingList.filter((finding) => !finding.confirmed).length;
   const blockers = doc ? issueBlockers(doc) : null;
   const stepNote = locked
-    ? "Issued. Reopen it to make changes."
+    ? "Finalised. Reopen it to make changes."
     : findingList.length === 0
       ? "Add photographs, then draft the findings."
       : blockers?.blocked
-        ? `Not ready to issue yet: ${[
+        ? `Not ready to finalise yet: ${[
             blockers.notAssessed.length > 0
               ? `${blockers.notAssessed.length} still not assessed`
               : null,
@@ -417,7 +417,7 @@ function ReportWorkspace() {
           ]
             .filter(Boolean)
             .join(", ")}.`
-        : "Everything is assessed and confirmed — ready to issue.";
+        : "Everything is assessed and confirmed — ready to finalise.";
 
   return (
     <AppShell surface="light">
@@ -451,7 +451,7 @@ function ReportWorkspace() {
           <ReportStatusPill status={report.status} />
           {doc && doc.report.currentVersion > 0 ? (
             <span className="text-xs text-muted-foreground">
-              Version {doc.report.currentVersion} · issued{" "}
+              Version {doc.report.currentVersion} · finalised{" "}
               {formatDocumentDate(doc.report.issuedAt)}
             </span>
           ) : null}
@@ -647,8 +647,8 @@ function ReportWorkspace() {
               </div>
               {locked ? (
                 <p className="mb-5 rounded-lg border border-brand-blue/30 bg-brand-blue-soft px-4 py-3 text-sm text-brand-blue-ink">
-                  This report has been issued as version {doc.report.currentVersion} and is locked.
-                  Reopen it to make changes; the issued version is kept exactly as it was issued.
+                  This report has been finalised as version {doc.report.currentVersion} and is locked.
+                  Reopen it to make changes; the finalised version is kept exactly as it was finalised.
                 </p>
               ) : null}
 
@@ -697,7 +697,7 @@ function ReportWorkspace() {
               ) : null}
               {translation.isTranslatedView ? (
                 <p className="mt-4 rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
-                  This report will be issued in {languageLabel(translation.language)}. English
+                  This report will be finalised in {languageLabel(translation.language)}. English
                   remains the record copy, so editing is off until you set the report language back
                   to English.
                 </p>
@@ -720,11 +720,11 @@ function ReportWorkspace() {
               <section className="mt-10 rounded-xl border border-border bg-surface-raised p-4">
                 <h2 className="editorial-title flex items-center gap-2 text-base font-semibold">
                   <History aria-hidden="true" className="size-4" />
-                  Issued versions
+                  Finalised versions
                 </h2>
                 {(versions.data ?? []).length === 0 ? (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Nothing issued yet. Issuing freezes a copy of this document as version 1.
+                    Nothing finalised yet. Finalising freezes a copy of this document as version 1.
                   </p>
                 ) : (
                   <ul className="mt-2 space-y-1 text-sm">

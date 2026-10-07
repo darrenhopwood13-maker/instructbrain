@@ -56,7 +56,7 @@ function SignIn() {
   return (
     <AuthLayout
       title="Sign in"
-      intro="Access your projects, reviews and issued reports."
+      intro="Access your projects, reviews and finalised reports."
       footer={
         <span className="text-muted-foreground">
           No account?{" "}

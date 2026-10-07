@@ -22,7 +22,7 @@ export const Route = createFileRoute("/shared/$token")({
       loaderData?.title,
       loaderData?.reference ? `Ref ${loaderData.reference}` : null,
       loaderData?.issuedAt
-        ? `Issued ${new Date(loaderData.issuedAt).toLocaleDateString("en-GB")}`
+        ? `Finalised ${new Date(loaderData.issuedAt).toLocaleDateString("en-GB")}`
         : loaderData?.reportDate
           ? new Date(loaderData.reportDate).toLocaleDateString("en-GB")
           : null,
@@ -182,7 +182,7 @@ function PdfLanding({ token, meta }: { token: string; meta: PdfOnlyMeta }) {
         <p className="mt-2 text-sm text-white/80">
           {[
             meta.reference ? `Ref ${meta.reference}` : null,
-            meta.issuedAt ? `Issued ${new Date(meta.issuedAt).toLocaleDateString("en-GB")}` : null,
+            meta.issuedAt ? `Finalised ${new Date(meta.issuedAt).toLocaleDateString("en-GB")}` : null,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -202,7 +202,7 @@ function PdfLanding({ token, meta }: { token: string; meta: PdfOnlyMeta }) {
           </Button>
         </div>
         <p className="mt-6 text-xs text-white/70">
-          This is the finished, issued report. Save your own copy — this link may be withdrawn.
+          This is the finalised report. Save your own copy — this link may be withdrawn.
         </p>
         <p className="mt-8 text-[11px] uppercase tracking-[0.18em] text-white/60">{BRAND_CREDIT}</p>
       </div>

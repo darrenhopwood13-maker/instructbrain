@@ -123,7 +123,7 @@ function AllReports() {
                   Delete {selected.size} {selected.size === 1 ? "report" : "reports"}?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Each one is permanently deleted with every finding, photograph, issued version
+                  Each one is permanently deleted with every finding, photograph, finalised version
                   and share link. Any completed registers attached to them are archived as
                   evidence first. This cannot be undone.
                 </AlertDialogDescription>

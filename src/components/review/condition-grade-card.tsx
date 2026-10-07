@@ -63,7 +63,7 @@ export function ConditionGradeCard({
   return (
     <FieldCard
       label="Condition grade (your decision)"
-      popOutDescription="The grade is a decision, not a finding of fact. A person confirms every grade before anything is issued."
+      popOutDescription="The grade is a decision, not a finding of fact. A person confirms every grade before anything is finalised."
       badge={
         confirmed ? (
           <span className="inline-flex items-center gap-1 text-[0.6875rem] font-semibold text-muted-foreground">

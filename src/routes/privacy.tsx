@@ -29,13 +29,13 @@ function Privacy() {
       <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-muted-foreground">
         <p>
           instructBrain stores the site photographs you upload, the findings drafted from them and
-          the reports you issue. Photographs are held in private storage and are readable only by
+          the reports you finalise. Photographs are held in private storage and are readable only by
           members of your organisation.
         </p>
         <p>
           Account data is limited to your email address, your organisation membership and your
           role. We do not sell data and we do not share your reports with anyone outside your
-          organisation unless you issue or distribute them yourself.
+          organisation unless you finalise or distribute them yourself.
         </p>
         <p>
           Photographs are sent to an AI provider for analysis so findings can be drafted. Findings

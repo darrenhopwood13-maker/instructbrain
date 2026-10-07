@@ -10,13 +10,13 @@ export const Route = createFileRoute("/promo")({
       {
         name: "description",
         content:
-          "Photos in. Client-ready reports out. Watch how instructBrain turns site photographs into issued UK construction reports in 30 seconds.",
+          "Photos in. Client-ready reports out. Watch how instructBrain turns site photographs into finalised UK construction reports in 30 seconds.",
       },
       { property: "og:title", content: "instructBrain in 30 seconds" },
       {
         property: "og:description",
         content:
-          "Photos in. Client-ready reports out. Condition surveys, snagging, inventories and compliance — issued the same afternoon.",
+          "Photos in. Client-ready reports out. Condition surveys, snagging, inventories and compliance — finalised the same afternoon.",
       },
       { property: "og:type", content: "video.other" },
       { name: "twitter:card", content: "player" },
@@ -52,7 +52,7 @@ function PromoPage() {
         </h1>
         <p className="mt-2 max-w-xl text-center text-sm leading-relaxed text-muted-foreground">
           Photos in. Client-ready reports out — condition surveys, snagging, property inventories,
-          manual photographic reports and weekly compliance, issued the same afternoon.
+          manual photographic reports and weekly compliance, finalised the same afternoon.
         </p>
 
         <div className="mt-8 w-full max-w-[420px]">
