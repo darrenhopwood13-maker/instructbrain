@@ -37,8 +37,9 @@ import {
   type ReportPatch,
 } from "@/lib/report/report-data";
 import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
+import { definitionEyebrow } from "@/lib/report/letterhead";
+import { REFERENCE_LEGACY_NOTE, isAllocatedReference } from "@/lib/report/reference";
 import {
-  definitionLabel,
   isManualOnly,
   isProjectBound,
   requiresTradeAssignment,
@@ -386,6 +387,12 @@ function ReportWorkspace() {
   const { report, project } = query.data;
   const doc = document.data ?? null;
   const locked = doc?.report.status === "issued";
+  // The template name is only worth printing when the title has not already said
+  // it - see definitionEyebrow. The automatic title is `${label} — ${project/date}`.
+  const headerEyebrow = definitionEyebrow(report.title, report.surveyTypeSnapshot);
+  // References typed by hand before the builder existed are still shown, with a
+  // note saying why they do not look like the ones the system allocates.
+  const recordedReference = report.reference ?? "";
 
   // What is still outstanding, in plain words, so nothing is discovered only
   // when the report will not issue.
@@ -440,7 +447,7 @@ function ReportWorkspace() {
 
       <header className="border-b border-border pb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="eyebrow">{definitionLabel(report.surveyTypeSnapshot)}</p>
+          {headerEyebrow ? <p className="eyebrow">{headerEyebrow}</p> : null}
           <ReportStatusPill status={report.status} />
           {doc && doc.report.currentVersion > 0 ? (
             <span className="text-xs text-muted-foreground">
@@ -453,6 +460,9 @@ function ReportWorkspace() {
           {report.title}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">Updated {report.updated}</p>
+        {recordedReference && !isAllocatedReference(recordedReference) ? (
+          <p className="mt-1.5 text-xs text-muted-foreground">{REFERENCE_LEGACY_NOTE}</p>
+        ) : null}
         {!isManualOnly(report.surveyTypeSnapshot) ? (
           <ToneSelector reportId={report.id} disabled={locked} />
         ) : null}
