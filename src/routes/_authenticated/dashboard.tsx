@@ -82,7 +82,10 @@ function CollapsibleSection({
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  // A section that holds something worth reading opens itself. Hiding "Recent
+  // reports (8)" and "Overdue items (3)" behind a Show toggle made the field-app
+  // QR block the biggest thing on the home screen. Empty sections stay shut.
+  const [open, setOpen] = useState((count ?? 0) > 0);
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mt-6">
       <div className={action ? "grid gap-2 sm:flex sm:items-center sm:gap-3" : "flex items-center gap-3"}>
