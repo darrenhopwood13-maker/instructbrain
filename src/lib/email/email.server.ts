@@ -29,11 +29,46 @@ export type SendOutcome = {
   error: string | null;
 };
 
-function actorName(claims: Record<string, unknown> | null | undefined, fallback: string): string {
+/**
+ * The person behind a send, as a recipient should read it: a display name, or
+ * the human fallback. Never an email address — an address is not a name, and on
+ * a subcontractor's phone it reads as though a machine wrote the message.
+ */
+export function actorName(
+  claims: Record<string, unknown> | null | undefined,
+  fallback: string,
+): string {
   const meta = (claims?.["user_metadata"] ?? {}) as Record<string, unknown>;
   const name = typeof meta["full_name"] === "string" ? meta["full_name"].trim() : "";
-  const email = typeof claims?.["email"] === "string" ? (claims["email"] as string) : "";
-  return name || email || fallback;
+  return name || fallback;
+}
+
+/** An account's display name, or null when it has none set. */
+async function accountName(userId: string | null | undefined): Promise<string | null> {
+  if (!userId) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const meta = (data?.user?.user_metadata ?? {}) as Record<string, unknown>;
+    const name = typeof meta["full_name"] === "string" ? meta["full_name"].trim() : "";
+    return name || null;
+  } catch {
+    // A name is a courtesy. It never gets to stop a send.
+    return null;
+  }
+}
+
+/**
+ * Who the email speaks as, in the order a client would expect: the surveyor
+ * whose report it is, then whoever pressed send, then the human fallback. So a
+ * report issued by an office colleague still arrives in the surveyor's name.
+ */
+async function senderNameFor(
+  authorId: string | null | undefined,
+  claims: Record<string, unknown> | null | undefined,
+  fallback: string,
+): Promise<string> {
+  return (await accountName(authorId)) ?? actorName(claims, fallback);
 }
 
 function gbDate(value: string | null | undefined): string | null {
@@ -540,7 +575,7 @@ export async function sendTradeExtractEmail(
 ): Promise<SendOutcome> {
   const { data: report, error } = await db
     .from("reports")
-    .select("id, reference, project_id, projects(name)")
+    .select("id, reference, title, report_date, author_id, project_id, projects(name)")
     .eq("id", input.reportId)
     .single();
   if (error || !report) throw new Error("That report could not be read, so nothing was sent.");
@@ -555,7 +590,10 @@ export async function sendTradeExtractEmail(
     );
   }
 
+  // "Unassigned items" is how the app talks to itself, and it stays in the audit
+  // trail. A recipient reads the report's own title instead.
   const tradeLabel = input.trade ?? "Unassigned items";
+  const heading = input.trade ?? (row["title"] as string | null) ?? "Your report";
 
   // Confidential items are already excluded above; the PDF builder excludes
   // them again for the trade variant.
@@ -568,12 +606,13 @@ export async function sendTradeExtractEmail(
   const message: EmailMessage = {
     template: "TRADE_EXTRACT",
     data: {
-      projectName: (row["projects"]?.["name"] as string) ?? "this project",
+      projectName: (row["projects"]?.["name"] as string | null) ?? null,
+      surveyDate: gbDate(row["report_date"] as string | null),
       reportReference: (row["reference"] as string | null) ?? null,
-      trade: tradeLabel,
+      trade: heading,
       items,
       itemListUrl: await itemListUrlFor(db, input.reportId, input.trade),
-      sentByName: actorName(actor.claims, "Your surveyor"),
+      sentByName: await senderNameFor(row["author_id"] as string | null, actor.claims, "Your surveyor"),
       attachment,
     },
   };

@@ -74,7 +74,10 @@ export type ManualReportPdfPayload = {
 
 
 export type TradeExtractPayload = {
-  projectName: string;
+  /** Null for a custom report, which belongs to no project. */
+  projectName: string | null;
+  /** Plain-English survey date, used to name the survey when there is no project. */
+  surveyDate?: string | null;
   reportReference: string | null;
   trade: string;
   items: ExtractItem[];
@@ -364,10 +367,21 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   const count = data.items.length;
   const breakdown = severityBreakdown(data.items);
   const earliest = earliestTargetDate(data.items);
-  const subject = `${data.trade} — ${count} item${count === 1 ? "" : "s"} — ${data.projectName}${
-    data.reportReference ? ` (${data.reportReference})` : ""
-  }`;
+  // A custom report has no project to name, so the subject leaves it out rather
+  // than naming a placeholder.
+  const subject = [data.trade, `${count} item${count === 1 ? "" : "s"}`, data.projectName]
+    .filter(Boolean)
+    .join(" — ")
+    .concat(data.reportReference ? ` (${data.reportReference})` : "");
   const breakdownLine = breakdown.map((entry) => `${entry.label}: ${entry.count}`).join(", ");
+
+  // With no project to point at, the survey is identified by the day it was
+  // carried out, never by the words "this project".
+  const surveyPhrase = data.projectName
+    ? `a survey of ${data.projectName}`
+    : data.surveyDate
+      ? `a survey carried out on ${data.surveyDate}`
+      : "a survey";
 
   // What the recipient can actually do. A link is only ever included when it
   // opens without an account. A whole-report send has no such list, so it says
@@ -383,9 +397,9 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
 
   const html = shell(subject, [
     h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
-    p(`${data.sentByName} has issued the items below from a survey of ${data.projectName}.`),
+    p(`${data.sentByName} has issued the items below from ${surveyPhrase}.`),
     definitions([
-      ["Project", data.projectName],
+      ...(data.projectName ? [["Project", data.projectName] as [string, string]] : []),
       ["Report reference", data.reportReference ?? ""],
       ["Items", String(count)],
       ["Severity", breakdownLine],
@@ -399,9 +413,9 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   const text = textShell([
     `${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`,
     "",
-    `${data.sentByName} has issued the items below from a survey of ${data.projectName}.`,
+    `${data.sentByName} has issued the items below from ${surveyPhrase}.`,
     "",
-    `Project: ${data.projectName}`,
+    data.projectName ? `Project: ${data.projectName}` : "",
     data.reportReference ? `Report reference: ${data.reportReference}` : "",
     `Items: ${count}`,
     `Severity: ${breakdownLine}`,

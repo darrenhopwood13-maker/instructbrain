@@ -15,6 +15,7 @@ import {
   type ExtractItem,
   type TradeExtractPayload,
 } from "@/lib/email/templates";
+import { actorName } from "@/lib/email/email.server";
 
 const item = (over: Partial<ExtractItem> = {}): ExtractItem => ({
   ref: "F-001",
@@ -159,6 +160,35 @@ describe("email templates", () => {
     expect(rendered.html).toContain("A PDF of these items is attached.");
     expect(rendered.html).not.toContain("without an account");
     expect(rendered.text).toContain("A PDF of these items is attached.");
+  });
+
+  it("names the survey by its date when there is no project to name", () => {
+    const rendered = renderEmail(
+      tradeExtract({
+        projectName: null,
+        surveyDate: "6 October 2026",
+        trade: "Site condition — 6 October 2026",
+        reportReference: "SW-2026-10-002",
+      }),
+    );
+    expect(rendered.html).toContain("a survey carried out on 6 October 2026");
+    expect(rendered.html).not.toContain("this project");
+    expect(rendered.text).not.toContain("this project");
+    expect(rendered.text).not.toContain("Project:");
+    expect(rendered.subject).toBe("Site condition — 6 October 2026 — 1 item (SW-2026-10-002)");
+  });
+
+  it("never turns an email address into a person's name", () => {
+    // The chain used to be name, then address, then phrase — so an account with
+    // no display name introduced itself to a subcontractor as an address.
+    expect(actorName({ email: "someone@example.com" }, "Your surveyor")).toBe("Your surveyor");
+    expect(actorName({ user_metadata: { full_name: "A. Fenwick" } }, "Your surveyor")).toBe(
+      "A. Fenwick",
+    );
+    expect(actorName({ email: "someone@example.com", user_metadata: {} }, "A colleague")).toBe(
+      "A colleague",
+    );
+    expect(actorName(null, "Your surveyor")).toBe("Your surveyor");
   });
 });
 
