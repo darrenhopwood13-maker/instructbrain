@@ -162,6 +162,22 @@ describe("email templates", () => {
     expect(rendered.text).toContain("A PDF of these items is attached.");
   });
 
+  it("hands a client a read-only copy when the report is issued", () => {
+    const rendered = renderEmail(
+      tradeExtract({
+        itemListUrl: "https://instructbrain.com/shared/abc123",
+        itemListIsReadOnly: true,
+        attachment: { filename: "items.pdf", content: "JVBERi0=" },
+      }),
+    );
+    expect(rendered.html).toContain("Open the report");
+    expect(rendered.html).not.toContain("Open the live item list");
+    expect(rendered.html).toContain("A read-only copy of the report is also online.");
+    // A client reads it; only a trade link promises a page to respond on.
+    expect(rendered.html).not.toContain("without an account");
+    expect(rendered.text).toContain("Open the report: https://instructbrain.com/shared/abc123");
+  });
+
   it("names the survey by its date when there is no project to name", () => {
     const rendered = renderEmail(
       tradeExtract({

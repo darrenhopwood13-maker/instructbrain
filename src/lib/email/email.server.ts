@@ -6,6 +6,7 @@
  * automatic path — invariant 6 is absolute.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
 import { EmailConfigurationError, EmailProviderError, isResendConfigured } from "./config";
 import { sendRenderedEmail } from "./resend.server";
 import {
@@ -534,31 +535,101 @@ export async function buildTradeExtractItems(
 }
 
 /**
- * Where the recipient can respond, or null when there is no page they can
- * open. Only a live trade link opens without an account. The in-app report URL
- * is never emailed: it would send a subcontractor to a sign-in page they cannot
- * pass. A whole-report send therefore carries no link at all, and the email
- * says what is attached instead of promising a list that would ask them to sign
- * in.
+ * Where the recipient can open the work, or null when there is no page they can
+ * open. Only a page that works without an account is ever sent, and the two
+ * kinds say different things: a trade link lets the recipient respond, a share
+ * link is a read-only copy of the report.
+ *
+ * The in-app report URL is never emailed: it would send a subcontractor to a
+ * sign-in page they cannot pass.
  */
-async function itemListUrlFor(
+type ItemListLink = { url: string; readOnly: boolean };
+
+async function itemListLinkFor(
+  db: Db,
+  input: {
+    reportId: string;
+    organisationId: string | null;
+    trade: string | null;
+    status: string | null;
+  },
+): Promise<ItemListLink | null> {
+  // A trade send: their own items, live, and they can respond on them.
+  if (input.trade !== null) {
+    const { data } = await db
+      .from("trade_access")
+      .select("token, revoked_at, expires_at")
+      .eq("report_id", input.reportId)
+      .eq("trade", input.trade)
+      .is("revoked_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const row = ((data ?? []) as Array<Record<string, any>>)[0];
+    const expires = row?.["expires_at"] as string | null | undefined;
+    const live = row && (!expires || new Date(expires).getTime() > Date.now());
+    return live ? { url: absoluteUrl(`/trade/${row["token"] as string}`), readOnly: false } : null;
+  }
+
+  // A whole-report send is a report going out to a client, and a client reads it
+  // rather than responding to it. The online copy is only offered once the report
+  // is issued: before that there is nothing final to show, and the public page
+  // refuses an unissued report anyway.
+  if (input.status !== "issued" || !input.organisationId) return null;
+  const share = await ensureShareLink(db, input.reportId, input.organisationId);
+  return share ? { url: share, readOnly: true } : null;
+}
+
+/** A 40-character token for a shared report link. */
+function shareToken(): string {
+  return randomBytes(30).toString("base64url");
+}
+
+/**
+ * A live share link for the report, reusing one that is already open. Minted
+ * against the caller's own session, so the same rules apply as creating one by
+ * hand in the app, and recorded in the audit trail either way.
+ */
+async function ensureShareLink(
   db: Db,
   reportId: string,
-  trade: string | null,
+  organisationId: string,
 ): Promise<string | null> {
-  if (trade === null) return null;
   const { data } = await db
-    .from("trade_access")
-    .select("token, revoked_at, expires_at")
+    .from("report_shares")
+    .select("id, token, expires_at")
     .eq("report_id", reportId)
-    .eq("trade", trade)
     .is("revoked_at", null)
     .order("created_at", { ascending: false })
     .limit(1);
-  const row = ((data ?? []) as Array<Record<string, any>>)[0];
-  const expires = row?.["expires_at"] as string | null | undefined;
-  const live = row && (!expires || new Date(expires).getTime() > Date.now());
-  return live ? absoluteUrl(`/trade/${row["token"] as string}`) : null;
+  const existing = ((data ?? []) as Array<{ token: string; expires_at: string | null }>)[0];
+  const expiresAt = existing?.expires_at;
+  if (existing && (!expiresAt || new Date(expiresAt).getTime() > Date.now())) {
+    return shareUrlForToken(existing.token);
+  }
+
+  const expires = new Date(Date.now() + 30 * 86_400_000).toISOString();
+  const { data: created, error } = await db
+    .from("report_shares")
+    .insert({
+      report_id: reportId,
+      organisation_id: organisationId,
+      token: shareToken(),
+      label: "Sent by email",
+      expires_at: expires,
+    })
+    .select("id, token")
+    .single();
+  if (error || !created) return null;
+
+  const share = created as { id: string; token: string };
+  await db.from("audit_log").insert({
+    report_id: reportId,
+    actor_id: null,
+    action: "report.share_created",
+    before: null,
+    after: { share_id: share.id, expires_at: expires, via: "trade_extract_send" },
+  });
+  return shareUrlForToken(share.token);
 }
 
 export async function sendTradeExtractEmail(
@@ -575,7 +646,9 @@ export async function sendTradeExtractEmail(
 ): Promise<SendOutcome> {
   const { data: report, error } = await db
     .from("reports")
-    .select("id, reference, title, report_date, author_id, project_id, projects(name)")
+    .select(
+      "id, reference, title, report_date, status, organisation_id, author_id, project_id, projects(name)",
+    )
     .eq("id", input.reportId)
     .single();
   if (error || !report) throw new Error("That report could not be read, so nothing was sent.");
@@ -603,6 +676,13 @@ export async function sendTradeExtractEmail(
     trade: input.trade,
   });
 
+  const link = await itemListLinkFor(db, {
+    reportId: input.reportId,
+    organisationId: (row["organisation_id"] as string | null) ?? null,
+    trade: input.trade,
+    status: (row["status"] as string | null) ?? null,
+  });
+
   const message: EmailMessage = {
     template: "TRADE_EXTRACT",
     data: {
@@ -611,7 +691,8 @@ export async function sendTradeExtractEmail(
       reportReference: (row["reference"] as string | null) ?? null,
       trade: heading,
       items,
-      itemListUrl: await itemListUrlFor(db, input.reportId, input.trade),
+      itemListUrl: link?.url ?? null,
+      itemListIsReadOnly: link?.readOnly ?? false,
       sentByName: await senderNameFor(row["author_id"] as string | null, actor.claims, "Your surveyor"),
       attachment,
     },

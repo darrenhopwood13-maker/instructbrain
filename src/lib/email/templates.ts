@@ -82,11 +82,14 @@ export type TradeExtractPayload = {
   trade: string;
   items: ExtractItem[];
   /**
-   * Live list the recipient can open and respond on, without an account.
-   * Null when no such link exists: nothing that demands an account is ever
-   * emailed, so a whole-report send carries no link rather than a dead one.
+   * Live list the recipient can open, without an account. Null when there is no
+   * such page: nothing that demands an account is ever emailed, so the message
+   * says what is attached instead of promising a page that would ask them to
+   * sign in.
    */
   itemListUrl: string | null;
+  /** True when the link opens a read-only copy of the report, not a live list. */
+  itemListIsReadOnly?: boolean;
   sentByName: string;
   attachment?: EmailAttachment | null;
 };
@@ -360,6 +363,28 @@ function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
 }
 
 
+/** What the recipient can actually do with what they have been sent. */
+function closingLine(data: TradeExtractPayload): string {
+  if (!data.itemListUrl) {
+    return data.attachment
+      ? "A PDF of these items is attached."
+      : "This is the record of the items above.";
+  }
+  if (data.itemListIsReadOnly) {
+    return data.attachment
+      ? "A PDF of these items is attached. A read-only copy of the report is also online."
+      : "A read-only copy of the report is online.";
+  }
+  return data.attachment
+    ? "A PDF of these items is attached. You can respond on the item list without an account."
+    : "You can respond on the item list without an account.";
+}
+
+/** The label on the button that opens the link, in the recipient's own terms. */
+function listLinkLabel(data: TradeExtractPayload): string {
+  return data.itemListIsReadOnly ? "Open the report" : "Open the live item list";
+}
+
 function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   // Second line of defence: refuse to render rather than send.
   assertNoConfidentialItems(data.items);
@@ -383,17 +408,9 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
       ? `a survey carried out on ${data.surveyDate}`
       : "a survey";
 
-  // What the recipient can actually do. A link is only ever included when it
-  // opens without an account. A whole-report send has no such list, so it says
-  // plainly what is attached rather than promising a page that would ask the
-  // recipient to sign in to an account they do not have.
-  const closing = data.itemListUrl
-    ? data.attachment
-      ? "A PDF of these items is attached. You can respond on the item list without an account."
-      : "You can respond on the item list without an account."
-    : data.attachment
-      ? "A PDF of these items is attached."
-      : "This is the record of the items above.";
+  // What the recipient can actually do, in their own terms: respond on a live
+  // list, read a shared copy, or simply receive the attachment.
+  const closing = closingLine(data);
 
   const html = shell(subject, [
     h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
@@ -406,7 +423,9 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
       ["Earliest target date", earliest ?? "Not set"],
     ]),
     itemTable(data.items),
-    ...(data.itemListUrl ? [button("Open the live item list", data.itemListUrl)] : []),
+    ...(data.itemListUrl
+      ? [button(listLinkLabel(data), data.itemListUrl)]
+      : []),
     small(closing),
   ].join(""));
 
@@ -426,7 +445,7 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
         `${itemLabel(item.ref)} — ${item.location || "location not recorded"} — ${item.action || "action not recorded"} — ${item.severityLabel || "Unclassified"} — target ${item.dueDate ?? "not set"}`,
     ),
     "",
-    ...(data.itemListUrl ? [`Open the live item list: ${data.itemListUrl}`, ""] : []),
+    ...(data.itemListUrl ? [`${listLinkLabel(data)}: ${data.itemListUrl}`, ""] : []),
     closing,
   ]);
 
