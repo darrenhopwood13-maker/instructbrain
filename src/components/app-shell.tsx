@@ -1,7 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, FolderOpen, HardHat, Users, UserCog } from "lucide-react";
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth";
+import { organisationQuery } from "@/lib/data";
+import { useOrganisations } from "@/lib/use-organisations";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
@@ -140,7 +143,14 @@ export function AppShell({
   chrome?: "full" | "field";
 }) {
   const { t } = useI18n();
-  const nav = [...baseNav];
+  const { organisationId } = useOrganisations();
+  const organisation = useQuery(organisationQuery(organisationId));
+  // The trade layer is optional: with it switched off the recipient directory has
+  // nothing to do, so it leaves the navigation rather than sitting there empty.
+  const tradeAllocationEnabled = organisation.data?.trade_allocation_enabled !== false;
+  const nav = baseNav.filter(
+    (item) => item.key !== "nav.directory" || tradeAllocationEnabled,
+  );
 
   return (
     <div

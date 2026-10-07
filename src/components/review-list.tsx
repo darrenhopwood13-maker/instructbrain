@@ -86,6 +86,7 @@ export function ReviewList({
   onConfirmMany,
   tradeOptions = [],
   onAssignTrade,
+  tradeEnabled = true,
   onAddTradeToDirectory,
   onEditText,
   onAssignGrade,
@@ -98,6 +99,8 @@ export function ReviewList({
   onConfirm?: (findingId: string, patch: ConfirmPatch) => Promise<void>;
   /** Persists the same patch across many findings in one batch. */
   onConfirmMany?: (findingIds: string[], patch: ConfirmPatch) => Promise<void>;
+  /** Account switch: false hides the whole trade layer for this report. */
+  tradeEnabled?: boolean;
   /** Trades from this project's directory plus the definition's defaults. */
   tradeOptions?: string[];
   /** Persists a human's trade decision and its derived target date. */
@@ -216,7 +219,7 @@ export function ReviewList({
   const showCause = definesField(snapshot, "likely_cause");
   const showReference = definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
-  const showTrade = requiresTradeAssignment(snapshot) && !!onAssignTrade;
+  const showTrade = tradeEnabled && requiresTradeAssignment(snapshot) && !!onAssignTrade;
   const showGrade = requiresConditionGrade(snapshot) && !!onAssignGrade;
   const usesRoomSchedule = reportLayoutOf(snapshot)?.kind === "inventory_room_schedule";
   // A minimal record template carries no repairs, so no remedial box is shown.

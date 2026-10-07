@@ -136,6 +136,13 @@ export type ReportDocument = {
   advisoryFooter?: string | null;
   findings: DocFinding[];
   photos: DocPhoto[];
+  /**
+   * The trade allocation layer for this report. Absent means enabled, so an
+   * older document model reads exactly as it always did.
+   */
+  tradeEnabled?: boolean;
+  /** Which switch is in charge, so a screen can say so plainly. */
+  tradeAllocation?: { organisation: boolean; report: boolean | null };
   synthesis: DocSynthesis | null;
   author: string | null;
 };
@@ -245,7 +252,10 @@ export function issueBlockers(document: ReportDocument): IssueBlockers {
   const notAssessed = document.findings.filter(
     (finding) => resolveStatus(snapshot, finding.statusId).id === NOT_ASSESSED_ID,
   );
-  const needsTrade = requiresTradeAssignment(snapshot);
+  // The account switch comes first: with trade allocation off there is no trade
+  // to attribute, so nothing can be blocked on one. Absent means enabled, which is
+  // what every report written before the switch existed says.
+  const needsTrade = (document.tradeEnabled ?? true) && requiresTradeAssignment(snapshot);
   const tradeMissing = needsTrade
     ? document.findings.filter(
         (finding) =>

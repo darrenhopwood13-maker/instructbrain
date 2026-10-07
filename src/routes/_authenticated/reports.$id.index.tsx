@@ -53,6 +53,7 @@ import { deriveDueDate } from "@/lib/findings/due-date";
 import { stateAfterAssignment } from "@/lib/lifecycle";
 import type { TradeAssignment } from "@/components/review/trade-assignment-card";
 import { TradeOrganiser } from "@/components/review/trade-organiser";
+import { TradeAllocationSwitch } from "@/components/report/trade-allocation-switch";
 import { ConditionGradeOrganiser } from "@/components/review/condition-grade-organiser";
 import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
 import { defaultResultView, safeResultView, type ResultView } from "@/lib/report/grouping";
@@ -98,7 +99,10 @@ function ReportWorkspace() {
   // handed out the way it is worked. A view in the URL always wins over this.
   const resultView = safeResultView(
     view,
-    defaultResultView(query.data?.report.surveyTypeSnapshot ?? null),
+    defaultResultView(
+      query.data?.report.surveyTypeSnapshot ?? null,
+      query.data?.tradeEnabled ?? true,
+    ),
   );
   const findings = useQuery(findingsQuery(id));
   const document = useQuery(reportDocumentQuery(id));
@@ -551,6 +555,7 @@ function ReportWorkspace() {
               onConfirmMany={writeConfirmations}
               onEditText={onEditText}
               tradeOptions={tradeOptions}
+              tradeEnabled={doc?.tradeEnabled ?? true}
               onAssignTrade={onAssignTrade}
               onAssignGrade={gradeFinding}
             />
@@ -561,6 +566,18 @@ function ReportWorkspace() {
       {step === "photos" &&
       findingList.length > 0 &&
       requiresTradeAssignment(report.surveyTypeSnapshot) ? (
+        <TradeAllocationSwitch
+          reportId={report.id}
+          organisationDefault={doc?.tradeAllocation?.organisation ?? true}
+          reportValue={doc?.tradeAllocation?.report ?? null}
+          disabled={locked}
+        />
+      ) : null}
+
+      {step === "photos" &&
+      findingList.length > 0 &&
+      requiresTradeAssignment(report.surveyTypeSnapshot) &&
+      (doc?.tradeEnabled ?? true) ? (
         <TradeOrganiser
           findings={findingList}
           tradeOptions={tradeOptions}

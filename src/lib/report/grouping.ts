@@ -54,11 +54,15 @@ export function safeResultView(value: unknown, fallback: ResultView = "severity"
  * the unallocated bucket is the work still to be done. Every other survey opens
  * on severity. An explicit choice always wins over this.
  */
-export function defaultResultView(snapshot: SurveyTypeSnapshot | null | undefined): ResultView {
+export function defaultResultView(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  /** False when the account has trade allocation switched off. */
+  tradeEnabled = true,
+): ResultView {
   // A condition survey exists to be read as a Schedule of Condition, so it
   // opens on the grade. A survey that assigns trades opens by trade, as before.
   if (requiresConditionGrade(snapshot)) return "grade";
-  return requiresTradeAssignment(snapshot) ? "trade" : "severity";
+  return tradeEnabled && requiresTradeAssignment(snapshot) ? "trade" : "severity";
 }
 
 const UNASSIGNED_TRADE = "Trade not yet confirmed";

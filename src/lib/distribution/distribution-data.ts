@@ -14,6 +14,7 @@ import {
 } from "@/lib/distribution";
 import { earliestTargetDate, severityBreakdown } from "@/lib/email/templates";
 import { distributionGrouping, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { resolveTradeAllocation } from "@/lib/trade-switch";
 
 /**
  * The distribution plan is what a human reads BEFORE anything is sent. It
@@ -84,6 +85,9 @@ export type DistributionPlan = {
   /** True when there is no project directory to route recipients from — the
    * caller must collect a recipient by hand instead of picking one from rows. */
   isQuick: boolean;
+  /** False when the account has the trade layer switched off: one row for the
+   * whole report and no per-trade extracts. */
+  tradeEnabled: boolean;
 };
 
 function toDelivery(row: Record<string, any>): DeliveryState {
@@ -111,7 +115,11 @@ function buildQuickPlan(
   snapshot: SurveyTypeSnapshot | null,
   source: ExtractSource,
 ): DistributionPlan {
-  const grouping = resolveGrouping(distributionGrouping(snapshot));
+  const tradeEnabled = resolveTradeAllocation(
+    (report["organisations"] as Record<string, unknown> | null)?.["trade_allocation_enabled"],
+    report["trade_allocation_enabled"],
+  );
+  const grouping = resolveGrouping(tradeEnabled ? distributionGrouping(snapshot) : "severity");
   const included = findings.filter((finding) => !finding.isConfidential);
   const group = {
     key: "__report__",
@@ -155,6 +163,7 @@ function buildQuickPlan(
     rows,
     withheldCount: findings.filter((finding) => finding.isConfidential).length,
     isQuick: true,
+    tradeEnabled,
   };
 }
 
@@ -165,7 +174,7 @@ export const distributionPlanQuery = (reportId: string) =>
       const reportRows = unwrap(
         await table("reports")
           .select(
-            "id, title, reference, report_date, status, organisation_id, project_id, survey_type_snapshot, projects(name, address, fallback_recipient_name, fallback_recipient_email), organisations(name)",
+            "id, title, reference, report_date, status, organisation_id, project_id, survey_type_snapshot, projects(name, address, fallback_recipient_name, fallback_recipient_email), organisations(name, trade_allocation_enabled), trade_allocation_enabled",
           )
           .eq("id", reportId)
           .limit(1),
@@ -216,6 +225,17 @@ export const distributionPlanQuery = (reportId: string) =>
       };
 
       if (!report["project_id"]) {
+        return buildQuickPlan(reportId, report, findings, distributionRows, snapshot, source);
+      }
+
+      // Trade allocation off: there is no directory to route by, so the plan is the
+      // whole report with the recipient typed by hand — the shape the screen already
+      // knows how to send, rather than a set of rows nobody can be matched to.
+      const tradeEnabled = resolveTradeAllocation(
+        (report["organisations"] as Record<string, unknown> | null)?.["trade_allocation_enabled"],
+        report["trade_allocation_enabled"],
+      );
+      if (!tradeEnabled) {
         return buildQuickPlan(reportId, report, findings, distributionRows, snapshot, source);
       }
 
@@ -292,6 +312,7 @@ export const distributionPlanQuery = (reportId: string) =>
         rows,
         withheldCount: findings.filter((finding) => finding.isConfidential).length,
         isQuick: false,
+        tradeEnabled,
       };
     },
   });

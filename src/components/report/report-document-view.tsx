@@ -110,7 +110,7 @@ export function ReportDocumentView({
 } & Handlers) {
   const sections = documentSections(document.snapshot);
   const readOnly = !editable || !onReportPatch;
-  const opensOn = defaultResultView(document.snapshot);
+  const opensOn = defaultResultView(document.snapshot, document.tradeEnabled ?? true);
   const [localView, setLocalView] = useState<ResultView>(safeResultView(view, opensOn));
   const activeView = safeResultView(view ?? localView, opensOn);
   const setView = (next: ResultView) => {
@@ -1289,7 +1289,7 @@ function FindingRow({
 
           {readOnly ? (
             <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-              {requiresTradeAssignment(snapshot) ? (
+              {requiresTradeAssignment(snapshot) && (document.tradeEnabled ?? true) ? (
                 <span>Trade: {finding.assignedTrade ?? "Not confirmed"}</span>
               ) : null}
               {requiresConditionGrade(snapshot) ? (
@@ -1343,7 +1343,7 @@ function FindingRow({
                 </label>
               ) : null}
 
-              {requiresTradeAssignment(snapshot) ? (
+              {requiresTradeAssignment(snapshot) && (document.tradeEnabled ?? true) ? (
                 <label className="eyebrow block">
                   Responsible trade (your decision)
                   <input

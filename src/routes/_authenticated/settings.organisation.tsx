@@ -20,7 +20,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ErrorState, LoadingState } from "@/components/query-states";
-import { organisationQuery, updateOrganisation } from "@/lib/data";
+import { organisationQuery, setTradeAllocation, updateOrganisation } from "@/lib/data";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { uploadOrganisationLogo } from "@/lib/report/branding";
@@ -70,6 +71,8 @@ function OrganisationSettings() {
   const canEditLogo = role === "owner" || role === "admin";
 
   const organisation = query.data ?? null;
+  // Absent means on, so an account that has never touched the switch keeps the trade layer.
+  const tradeAllocation = organisation?.trade_allocation_enabled !== false;
 
   useEffect(() => {
     if (!organisation) return;
@@ -103,6 +106,19 @@ function OrganisationSettings() {
     },
   });
 
+  const tradeMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!organisationId) throw new Error("You are not a member of an organisation yet.");
+      return setTradeAllocation(organisationId, enabled);
+    },
+    onSuccess: async (_result, enabled) => {
+      await queryClient.invalidateQueries({ queryKey: ["organisation"] });
+      toast.success(enabled ? "Trade allocation on" : "Trade allocation off");
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "The setting could not be saved."),
+  });
+
   const logoMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!organisationId) throw new Error("You are not a member of an organisation yet.");
@@ -128,6 +144,36 @@ function OrganisationSettings() {
       </header>
 
       <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
+
+      {role === "owner" || role === "admin" ? (
+        <section className="mt-6 max-w-xl rounded-lg border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="org-trade-allocation" className="text-sm font-semibold">
+                Trade allocation
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Routes findings to trades: recipient directories, one extract per trade, the trade
+                portal, and a publish gate that waits for every failing item to have a trade.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tradeAllocation
+                  ? "On. Every report that asks for trades gets the trade layer."
+                  : "Off. Reports publish without a trade column or a trade gate. Your directories and any assigned trades are kept, not deleted."}
+              </p>
+            </div>
+            <Switch
+              id="org-trade-allocation"
+              checked={tradeAllocation}
+              disabled={tradeMutation.isPending || !organisationId}
+              onCheckedChange={(checked) => tradeMutation.mutate(checked)}
+            />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            A single report can override this from its own screen.
+          </p>
+        </section>
+      ) : null}
 
 
 

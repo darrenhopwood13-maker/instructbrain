@@ -7,6 +7,7 @@ import { projectCoverPath } from "@/lib/project-cover-path";
  * so the PDF the server produces cannot disagree with the screen.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveTradeAllocation } from "@/lib/trade-switch";
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
 import { coerceReportStatus } from "@/lib/types";
@@ -71,7 +72,7 @@ export async function loadReportDocument(
   const { data: reportRow } = await db
     .from("reports")
     .select(
-      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, brief, handover",
+      "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, brief, handover, trade_allocation_enabled",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -88,7 +89,7 @@ export async function loadReportDocument(
       : Promise.resolve({ data: null }),
     db
       .from("organisations")
-      .select("id, name, brand_colour, logo_path, address")
+      .select("id, name, brand_colour, logo_path, address, trade_allocation_enabled")
       .eq("id", report["organisation_id"])
       .maybeSingle(),
     db
@@ -249,6 +250,22 @@ export async function loadReportDocument(
         }
       : null,
     snapshot: coerceSnapshot(report["survey_type_snapshot"]),
+    // The same two switches the screen reads, resolved the same way, so a PDF can
+    // never disagree with the screen about whether trades are in play.
+    tradeEnabled: resolveTradeAllocation(
+      (organisation as Record<string, unknown> | null)?.["trade_allocation_enabled"],
+      report["trade_allocation_enabled"],
+    ),
+    tradeAllocation: {
+      organisation: resolveTradeAllocation(
+        (organisation as Record<string, unknown> | null)?.["trade_allocation_enabled"],
+        null,
+      ),
+      report:
+        typeof report["trade_allocation_enabled"] === "boolean"
+          ? report["trade_allocation_enabled"]
+          : null,
+    },
     // A custom report may cover several survey types; the labels come from
     // the report's own brief, never from anything hardcoded here.
     surveyTypes: coerceBrief(report["brief"])?.surveyTypes ?? [],

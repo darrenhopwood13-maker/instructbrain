@@ -96,6 +96,8 @@ export type OrganisationRow = {
   logo_path: string | null;
   brand_colour: string | null;
   address: string | null;
+  /** Account switch for the trade layer. Null only on a row written before it existed. */
+  trade_allocation_enabled: boolean | null;
 };
 
 export const organisationQuery = (organisationId: string | null) =>
@@ -105,7 +107,7 @@ export const organisationQuery = (organisationId: string | null) =>
     queryFn: async (): Promise<OrganisationRow | null> => {
       const rows = unwrap(
         await from("organisations")
-          .select("id, name, logo_path, brand_colour, address")
+          .select("id, name, logo_path, brand_colour, address, trade_allocation_enabled")
           .eq("id", organisationId)
           .limit(1),
       ) as OrganisationRow[];
@@ -113,9 +115,28 @@ export const organisationQuery = (organisationId: string | null) =>
     },
   });
 
+/**
+ * The account switch for the trade allocation layer. Its own write so that
+ * flipping it can never overwrite a half-typed name or logo in the same form.
+ */
+export async function setTradeAllocation(
+  organisationId: string,
+  enabled: boolean,
+): Promise<void> {
+  const { error } = await from("organisations")
+    .update({ trade_allocation_enabled: enabled })
+    .eq("id", organisationId);
+  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+}
+
 export async function updateOrganisation(
   organisationId: string,
-  values: { name: string; brand_colour: string | null; address: string | null },
+  values: {
+    name: string;
+    brand_colour: string | null;
+    address: string | null;
+    trade_allocation_enabled?: boolean;
+  },
 ): Promise<void> {
   const { error } = await from("organisations").update(values).eq("id", organisationId);
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);

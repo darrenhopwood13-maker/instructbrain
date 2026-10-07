@@ -1532,7 +1532,10 @@ export async function buildReportPdf(
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
   } else if (options.variant === "full") {
-    const view = safeResultView(options.view, defaultResultView(document.snapshot));
+    const view = safeResultView(
+      options.view,
+      defaultResultView(document.snapshot, document.tradeEnabled ?? true),
+    );
     for (const section of sectioned ? sections : [{ id: "all", label: "", findings }]) {
       if (sectioned) {
         ensure(writer, 70);

@@ -2,6 +2,7 @@ import { projectCoverUrl } from "@/lib/project-cover";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DataError, coerceSnapshot } from "@/lib/data";
+import { resolveTradeAllocation } from "@/lib/trade-switch";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
@@ -89,7 +90,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const reports = unwrap(
         await from("reports")
           .select(
-            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, author_id",
+            "id, organisation_id, project_id, title, subtitle, reference, report_date, status, issued_at, current_version, scope_text, methodology_text, executive_summary, synthesis, synthesis_confirmed, cover_photo_id, logo_path, output_language, survey_type_snapshot, author_id, trade_allocation_enabled",
           )
           .eq("id", reportId)
           .limit(1),
@@ -106,7 +107,7 @@ export const reportDocumentQuery = (reportId: string) =>
           : Promise.resolve({ data: [], error: null }),
 
         from("organisations")
-          .select("id, name, brand_colour, logo_path, address")
+          .select("id, name, brand_colour, logo_path, address, trade_allocation_enabled")
           .eq("id", report.organisation_id)
           .limit(1),
         from("findings")
@@ -257,6 +258,19 @@ export const reportDocumentQuery = (reportId: string) =>
             }
           : null,
         snapshot: coerceSnapshot(report.survey_type_snapshot),
+        // Two switches, resolved in one place. Off means no trade column, no
+        // trade gate and no per-trade extracts for this report.
+        tradeEnabled: resolveTradeAllocation(
+          organisation?.trade_allocation_enabled,
+          report.trade_allocation_enabled,
+        ),
+        tradeAllocation: {
+          organisation: resolveTradeAllocation(organisation?.trade_allocation_enabled, null),
+          report:
+            typeof report.trade_allocation_enabled === "boolean"
+              ? report.trade_allocation_enabled
+              : null,
+        },
         findings: docFindings,
         photos: docPhotos,
         synthesis: synthesis(report.synthesis),
@@ -268,6 +282,20 @@ export const reportDocumentQuery = (reportId: string) =>
       };
     },
   });
+
+/**
+ * The per-report override. `null` clears it, and the report follows the
+ * account setting again.
+ */
+export async function setReportTradeAllocation(
+  reportId: string,
+  enabled: boolean | null,
+): Promise<void> {
+  const { error } = await from("reports")
+    .update({ trade_allocation_enabled: enabled })
+    .eq("id", reportId);
+  if (error) throw new DataError(error.message, error.code, error.hint, error.details);
+}
 
 /* ------------------------------------------------------------------ */
 /* Audit trail                                                          */
