@@ -499,12 +499,19 @@ export async function buildTradeExtractItems(
 }
 
 /**
- * Where the recipient can respond. A live trade link, scoped to their own
- * items, when one exists — otherwise the report itself, which needs an
- * account.
+ * Where the recipient can respond, or null when there is no page they can
+ * open. Only a live trade link opens without an account. The in-app report URL
+ * is never emailed: it would send a subcontractor to a sign-in page they cannot
+ * pass. A whole-report send therefore carries no link at all, and the email
+ * says what is attached instead of promising a list that would ask them to sign
+ * in.
  */
-async function itemListUrlFor(db: Db, reportId: string, trade: string | null): Promise<string> {
-  if (trade === null) return absoluteUrl(`/reports/${reportId}`);
+async function itemListUrlFor(
+  db: Db,
+  reportId: string,
+  trade: string | null,
+): Promise<string | null> {
+  if (trade === null) return null;
   const { data } = await db
     .from("trade_access")
     .select("token, revoked_at, expires_at")
@@ -516,7 +523,7 @@ async function itemListUrlFor(db: Db, reportId: string, trade: string | null): P
   const row = ((data ?? []) as Array<Record<string, any>>)[0];
   const expires = row?.["expires_at"] as string | null | undefined;
   const live = row && (!expires || new Date(expires).getTime() > Date.now());
-  return live ? absoluteUrl(`/trade/${row["token"] as string}`) : absoluteUrl(`/reports/${reportId}`);
+  return live ? absoluteUrl(`/trade/${row["token"] as string}`) : null;
 }
 
 export async function sendTradeExtractEmail(

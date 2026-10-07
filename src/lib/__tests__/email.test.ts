@@ -13,6 +13,7 @@ import {
   severityBreakdown,
   type EmailMessage,
   type ExtractItem,
+  type TradeExtractPayload,
 } from "@/lib/email/templates";
 
 const item = (over: Partial<ExtractItem> = {}): ExtractItem => ({
@@ -23,6 +24,20 @@ const item = (over: Partial<ExtractItem> = {}): ExtractItem => ({
   dueDate: "2026-04-01",
   isConfidential: false,
   ...over,
+});
+
+const tradeExtract = (over: Partial<TradeExtractPayload> = {}): EmailMessage => ({
+  template: "TRADE_EXTRACT",
+  data: {
+    projectName: "Ashby Wharf",
+    reportReference: "AW-014",
+    trade: "Dry lining",
+    items: [item()],
+    itemListUrl: "https://instructbrain.com/trade/abc123",
+    sentByName: "A. Fenwick",
+    attachment: null,
+    ...over,
+  },
 });
 
 const messages: EmailMessage[] = [
@@ -54,7 +69,7 @@ const messages: EmailMessage[] = [
       reportReference: "AW-014",
       trade: "Dry lining",
       items: [item(), item({ ref: "F-002", severityLabel: "Minor", dueDate: "2026-03-10" })],
-      itemListUrl: "https://instructbrain.com/reports/r1",
+      itemListUrl: "https://instructbrain.com/trade/abc123",
       sentByName: "A. Fenwick",
       attachment: null,
     },
@@ -104,13 +119,46 @@ describe("email templates", () => {
         reportReference: "AW-014",
         trade: "Dry lining",
         items: [item(), item({ ref: "F-009", isConfidential: true })],
-        itemListUrl: "https://instructbrain.com/reports/r1",
+        itemListUrl: "https://instructbrain.com/trade/abc123",
         sentByName: "A. Fenwick",
         attachment: null,
       },
     };
     expect(() => renderEmail(message)).toThrow(ConfidentialFindingError);
     expect(() => renderEmail(message)).toThrow(/F-009/);
+  });
+
+  it("links the live item list when the recipient can open it without an account", () => {
+    const rendered = renderEmail(tradeExtract());
+    expect(rendered.html).toContain("Open the live item list");
+    expect(rendered.html).toContain("https://instructbrain.com/trade/abc123");
+    expect(rendered.text).toContain("https://instructbrain.com/trade/abc123");
+    expect(rendered.html).toContain("You can respond on the item list without an account.");
+  });
+
+  it("sends no link, and promises nothing, when there is no page the recipient can open", () => {
+    // A custom report has no trade, so there is no trade-scoped list. The
+    // in-app report URL would ask the recipient to sign in to an account they
+    // do not have, so it is never sent: no link, and no claim of one.
+    const rendered = renderEmail(tradeExtract({ itemListUrl: null }));
+    expect(rendered.html).not.toContain("Open the live item list");
+    expect(rendered.text).not.toContain("Open the live item list");
+    expect(rendered.html).not.toContain("without an account");
+    expect(rendered.html).not.toContain("instructbrain.com/reports/");
+    expect(rendered.text).not.toContain("instructbrain.com/reports/");
+    expect(rendered.html).toContain("This is the record of the items above.");
+  });
+
+  it("still names the attachment when it cannot offer a link", () => {
+    const rendered = renderEmail(
+      tradeExtract({
+        itemListUrl: null,
+        attachment: { filename: "items.pdf", content: "JVBERi0=" },
+      }),
+    );
+    expect(rendered.html).toContain("A PDF of these items is attached.");
+    expect(rendered.html).not.toContain("without an account");
+    expect(rendered.text).toContain("A PDF of these items is attached.");
   });
 });
 

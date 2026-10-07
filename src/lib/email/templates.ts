@@ -78,8 +78,12 @@ export type TradeExtractPayload = {
   reportReference: string | null;
   trade: string;
   items: ExtractItem[];
-  /** Live list the recipient can open and respond on, without an account. */
-  itemListUrl: string;
+  /**
+   * Live list the recipient can open and respond on, without an account.
+   * Null when no such link exists: nothing that demands an account is ever
+   * emailed, so a whole-report send carries no link rather than a dead one.
+   */
+  itemListUrl: string | null;
   sentByName: string;
   attachment?: EmailAttachment | null;
 };
@@ -365,6 +369,18 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   }`;
   const breakdownLine = breakdown.map((entry) => `${entry.label}: ${entry.count}`).join(", ");
 
+  // What the recipient can actually do. A link is only ever included when it
+  // opens without an account. A whole-report send has no such list, so it says
+  // plainly what is attached rather than promising a page that would ask the
+  // recipient to sign in to an account they do not have.
+  const closing = data.itemListUrl
+    ? data.attachment
+      ? "A PDF of these items is attached. You can respond on the item list without an account."
+      : "You can respond on the item list without an account."
+    : data.attachment
+      ? "A PDF of these items is attached."
+      : "This is the record of the items above.";
+
   const html = shell(subject, [
     h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
     p(`${data.sentByName} has issued the items below from a survey of ${data.projectName}.`),
@@ -376,12 +392,8 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
       ["Earliest target date", earliest ?? "Not set"],
     ]),
     itemTable(data.items),
-    button("Open the live item list", data.itemListUrl),
-    small(
-      data.attachment
-        ? "A PDF of these items is attached. You can respond on the item list without an account."
-        : "You can respond on the item list without an account.",
-    ),
+    ...(data.itemListUrl ? [button("Open the live item list", data.itemListUrl)] : []),
+    small(closing),
   ].join(""));
 
   const text = textShell([
@@ -400,11 +412,8 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
         `${itemLabel(item.ref)} — ${item.location || "location not recorded"} — ${item.action || "action not recorded"} — ${item.severityLabel || "Unclassified"} — target ${item.dueDate ?? "not set"}`,
     ),
     "",
-    `Open the live item list: ${data.itemListUrl}`,
-    "",
-    data.attachment
-      ? "A PDF of these items is attached. You can respond on the item list without an account."
-      : "You can respond on the item list without an account.",
+    ...(data.itemListUrl ? [`Open the live item list: ${data.itemListUrl}`, ""] : []),
+    closing,
   ]);
 
   return {
