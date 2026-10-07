@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { absoluteUrl } from "@/lib/site-url";
+import { normaliseDisplayName, validateDisplayName } from "@/lib/display-name";
 
 /**
  * Single source of session state for the UI. Two ways in: email + password,
@@ -164,6 +165,20 @@ export async function createOrganisation(name: string) {
 
 export async function setOwnPassword(password: string) {
   const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+/**
+ * The name shown to the people this account sends to. Stored on the user's own
+ * metadata, which every email path already reads, and which the audit trail can
+ * resolve an actor id back to.
+ */
+export async function setDisplayName(value: string) {
+  const problem = validateDisplayName(value);
+  if (problem) throw new Error(problem);
+  const { error } = await supabase.auth.updateUser({
+    data: { full_name: normaliseDisplayName(value) },
+  });
   if (error) throw error;
 }
 

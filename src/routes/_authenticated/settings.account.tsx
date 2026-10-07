@@ -8,10 +8,12 @@ import {
   MIN_PASSWORD_LENGTH,
   changePassword,
   describeAuthError,
+  setDisplayName,
   signOut,
   useSession,
   validatePassword,
 } from "@/lib/auth";
+import { MAX_DISPLAY_NAME_LENGTH, validateDisplayName } from "@/lib/display-name";
 import { toast } from "sonner";
 import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { usePlanUsage } from "@/lib/plans";
@@ -44,8 +46,34 @@ function AccountSettings() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Null until the user types, so the stored name shows through in the meantime.
+  const [typedName, setTypedName] = useState<string | null>(null);
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const storedName = user?.user_metadata?.["full_name"];
+  const displayName = typedName ?? (typeof storedName === "string" ? storedName : "");
 
   const passwordProblem = next.length > 0 ? validatePassword(next) : null;
+
+  const saveName = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setNameError(null);
+    const problem = validateDisplayName(displayName);
+    if (problem) return setNameError(problem);
+
+    setNameBusy(true);
+    try {
+      await setDisplayName(displayName);
+      toast.success("Name saved", {
+        description: "It will appear on the reports and emails you send.",
+      });
+    } catch (error) {
+      setNameError(describeAuthError(error));
+    } finally {
+      setNameBusy(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -78,6 +106,37 @@ function AccountSettings() {
       </p>
 
       <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
+
+      <section className="rule-top mt-8 max-w-md pt-6">
+        <h2 className="text-base font-semibold">Your name</h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Shown to the people you send reports to. Until you set it, your emails say “Your
+          surveyor” — your email address is never used as a name.
+        </p>
+        <form className="mt-4 space-y-4" onSubmit={saveName} noValidate>
+          <div className="space-y-2">
+            <Label htmlFor="display-name">Name</Label>
+            <Input
+              id="display-name"
+              autoComplete="name"
+              value={displayName}
+              onChange={(e) => setTypedName(e.target.value)}
+              aria-invalid={nameError ? true : undefined}
+              aria-describedby="display-name-hint"
+            />
+            <p
+              id="display-name-hint"
+              className={`text-xs ${nameError ? "font-medium text-fail" : "text-muted-foreground"}`}
+            >
+              {nameError ??
+                `For example, Darren Hopwood. Up to ${MAX_DISPLAY_NAME_LENGTH} characters.`}
+            </p>
+          </div>
+          <Button type="submit" variant="brand" disabled={nameBusy}>
+            {nameBusy ? "Saving…" : "Save name"}
+          </Button>
+        </form>
+      </section>
 
       <form className="mt-8 max-w-md space-y-6" onSubmit={submit} noValidate>
         <div className="space-y-2">
