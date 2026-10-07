@@ -508,6 +508,33 @@ export type Database = {
           },
         ]
       }
+      deleted_report_backup: {
+        Row: {
+          backed_up_at: string
+          id: number
+          reason: string | null
+          report_id: string | null
+          row_data: Json
+          source_table: string
+        }
+        Insert: {
+          backed_up_at?: string
+          id?: number
+          reason?: string | null
+          report_id?: string | null
+          row_data: Json
+          source_table: string
+        }
+        Update: {
+          backed_up_at?: string
+          id?: number
+          reason?: string | null
+          report_id?: string | null
+          row_data?: Json
+          source_table?: string
+        }
+        Relationships: []
+      }
       directory_contacts: {
         Row: {
           created_at: string
@@ -1309,6 +1336,50 @@ export type Database = {
           },
         ]
       }
+      report_reference_codes: {
+        Row: {
+          code: string
+          survey_type_id: string
+        }
+        Insert: {
+          code: string
+          survey_type_id: string
+        }
+        Update: {
+          code?: string
+          survey_type_id?: string
+        }
+        Relationships: []
+      }
+      report_reference_counters: {
+        Row: {
+          last_number: number
+          organisation_id: string
+          period: string
+          type_code: string
+        }
+        Insert: {
+          last_number?: number
+          organisation_id: string
+          period: string
+          type_code: string
+        }
+        Update: {
+          last_number?: number
+          organisation_id?: string
+          period?: string
+          type_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_reference_counters_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_shares: {
         Row: {
           created_at: string
@@ -1724,8 +1795,13 @@ export type Database = {
           sequence: number
         }[]
       }
+      next_report_reference: {
+        Args: { p_on: string; p_organisation_id: string; p_snapshot: Json }
+        Returns: string
+      }
       project_org: { Args: { _project_id: string }; Returns: string }
       report_org: { Args: { _report_id: string }; Returns: string }
+      report_reference_code: { Args: { p_snapshot: Json }; Returns: string }
       safe_uuid: { Args: { _t: string }; Returns: string }
     }
     Enums: {
