@@ -60,7 +60,6 @@ import { photoWorkflowOf } from "@/lib/survey-types";
 import {
   NOT_ASSESSED_ID,
   definesField,
-  definitionLabel,
   regulatoryReferencesOf,
   requiresLifecycle,
   requiresTradeAssignment,
@@ -73,6 +72,7 @@ import {
   tradesOf,
   isManualOnly,
 } from "@/lib/survey-types";
+import { definitionEyebrow } from "@/lib/report/letterhead";
 import { AlertTriangle, Lock } from "lucide-react";
 
 /**
@@ -259,6 +259,7 @@ function InventoryDocument({
   const titlePhotos = inventoryTitlePhotos(document);
   const readOnly = !editable || !onFindingPatch;
   const photoGroups = inventoryRoomPhotoGroups(document);
+  const coverEyebrow = definitionEyebrow(document.report.title, document.snapshot);
 
   return (
     <article className="report-document inventory-document space-y-8">
@@ -277,7 +278,7 @@ function InventoryDocument({
                 {document.organisation?.name ?? "instructBrain"}
               </p>
             </div>
-            <p className="eyebrow">{definitionLabel(document.snapshot)}</p>
+            {coverEyebrow ? <p className="eyebrow">{coverEyebrow}</p> : null}
           </div>
         </div>
 
@@ -755,6 +756,7 @@ function Section({
 function Cover({ document, manualBrand = true }: { document: ReportDocument; manualBrand?: boolean }) {
   // The title page photo is the project's photo; standalone reports have none.
   const coverUrl = document.project?.coverUrl ?? null;
+  const coverEyebrow = definitionEyebrow(document.report.title, document.snapshot);
 
   return (
     <section aria-label="Cover" className="break-after-page">
@@ -781,7 +783,7 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
             {document.organisation?.name ?? "Organisation not recorded"}
           </p>
         </div>
-        <p className="eyebrow">{definitionLabel(document.snapshot)}</p>
+        {coverEyebrow ? <p className="eyebrow">{coverEyebrow}</p> : null}
       </div>
 
       <h1 className="editorial-title mt-8 text-3xl font-semibold leading-tight sm:text-4xl">
