@@ -247,7 +247,7 @@ describe("no automatic sending", () => {
 });
 
 describe("manual photographic PDF email", () => {
-  it("attaches the finalised PDF without a browser review link", () => {
+  it("attaches the published PDF without a browser review link", () => {
     const attachment = { filename: "PHOTO-001.pdf", content: "JVBERi0=", contentType: "application/pdf" };
     const rendered = renderEmail({
       template: "MANUAL_REPORT_PDF",

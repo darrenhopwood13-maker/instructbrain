@@ -166,7 +166,7 @@ export const NOT_ASSESSED_STATUS: StatusDefinition = {
   label: "Not assessed",
   tone: "flag",
   description:
-    "This item could not be assessed automatically and must be resolved by a person before the report can be finalised.",
+    "This item could not be assessed automatically and must be resolved by a person before the report can be published.",
 };
 
 /** A frozen capability flag; no shared workflow identifies a template by id. */

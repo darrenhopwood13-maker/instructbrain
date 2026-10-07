@@ -340,24 +340,24 @@ function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
     : `${data.reportTitle} — ${data.projectName}`;
   const html = shell(subject, [
     h1(data.reportTitle),
-    p(`${data.sentByName} has sent you the finalised photographic report.`),
+    p(`${data.sentByName} has sent you the published photographic report.`),
     definitions([
       ["Project", data.projectName],
       ["Reference", data.reference ?? ""],
       ["Issue date", data.issueDate ?? ""],
     ]),
-    small("The complete finalised report is attached as a PDF."),
+    small("The complete published report is attached as a PDF."),
   ].join(""));
   const text = textShell([
     data.reportTitle,
     "",
-    `${data.sentByName} has sent you the finalised photographic report.`,
+    `${data.sentByName} has sent you the published photographic report.`,
     "",
     `Project: ${data.projectName}`,
     data.reference ? `Reference: ${data.reference}` : "",
     data.issueDate ? `Issue date: ${data.issueDate}` : "",
     "",
-    "The complete finalised report is attached as a PDF.",
+    "The complete published report is attached as a PDF.",
   ]);
   return { subject, html, text, attachments: [data.attachment] };
 }

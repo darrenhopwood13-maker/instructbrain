@@ -62,7 +62,7 @@ export function SendToDashboardControl({
             <DialogTitle>Send this to the dashboard?</DialogTitle>
             <DialogDescription>
               {report.title} goes into the site queue for review. Nothing is emailed to anyone,
-              and nothing is finalised — a person still confirms every finding before the report
+              and nothing is published — a person still confirms every finding before the report
               leaves the office.
             </DialogDescription>
           </DialogHeader>

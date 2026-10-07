@@ -1412,10 +1412,10 @@ export async function buildReportPdf(
     [
       "Status",
       document.report.status === "issued"
-        ? `Finalised as version ${document.report.currentVersion}${
+        ? `Published as version ${document.report.currentVersion}${
             document.report.issuedAt ? ` on ${formatDocumentDate(document.report.issuedAt)}` : ""
           }`
-        : "Draft — not yet finalised",
+        : "Draft — not yet published",
     ],
     ["Items included", String(findings.length)],
   ];

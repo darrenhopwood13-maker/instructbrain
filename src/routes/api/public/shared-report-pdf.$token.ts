@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * PDF-only share link for manual photographic reports. Serves the frozen
- * finalised PDF — never a review page — and only while the link is live and the
+ * published PDF — never a review page — and only while the link is live and the
  * report is issued.
  */
 export const Route = createFileRoute("/api/public/shared-report-pdf/$token")({

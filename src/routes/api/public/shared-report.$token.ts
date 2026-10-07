@@ -95,7 +95,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
         if (rawReport.survey_type_snapshot?.manualOnly === true) {
           if (rawReport.status !== "issued") {
             return Response.json(
-              { reason: "unknown", error: "This report is not currently finalised." },
+              { reason: "unknown", error: "This report is not currently published." },
               { status: 404 },
             );
           }

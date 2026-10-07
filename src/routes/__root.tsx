@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Photos in. Client-ready reports out. instructBrain drafts, reviews and finalises UK construction site reports.",
+          "Photos in. Client-ready reports out. instructBrain drafts, reviews and publishes UK construction site reports.",
       },
       { property: "og:title", content: "instructBrain — construction site reporting" },
       {

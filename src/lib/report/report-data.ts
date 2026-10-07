@@ -378,7 +378,7 @@ export const reportVersionsQuery = (reportId: string) =>
   });
 
 /**
- * Finalising freezes a copy of the assembled document as the next version and
+ * Publishing freezes a copy of the assembled document as the next version and
  * stamps the report. A re-issue writes version n+1 and never touches n.
  */
 export async function issueReport(document: ReportDocument): Promise<number> {

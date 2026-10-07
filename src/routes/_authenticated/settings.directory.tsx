@@ -48,7 +48,7 @@ function DirectorySettings() {
         </h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Each project keeps its own list of trades, companies and contacts. Open a project to add
-          or edit them. Per-trade extracts are prepared for these contacts when a report is finalised,
+          or edit them. Per-trade extracts are prepared for these contacts when a report is published,
           and nothing is ever sent without a person approving it.
         </p>
       </header>

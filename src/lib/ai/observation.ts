@@ -498,7 +498,7 @@ export function notAssessedDraft(
     severity: null,
     severity_rationale: null,
     hazard_category: null,
-    finding_text: `Not assessed automatically: ${reason} A person must assess this photograph before the report can be finalised.`,
+    finding_text: `Not assessed automatically: ${reason} A person must assess this photograph before the report can be published.`,
     snag_title: null,
     remedial_text: null,
     rectification_alt: null,

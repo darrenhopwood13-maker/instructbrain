@@ -37,12 +37,12 @@ export const Route = createFileRoute("/_authenticated/settings/organisation")({
       {
         name: "description",
         content:
-          "Set your practice name, report logo and brand colour so every finalised report carries your identity.",
+          "Set your practice name, report logo and brand colour so every published report carries your identity.",
       },
       { property: "og:title", content: "Organisation settings — instructBrain" },
       {
         property: "og:description",
-        content: "Set your practice name, report logo and brand colour for finalised reports.",
+        content: "Set your practice name, report logo and brand colour for published reports.",
       },
     ],
   }),
@@ -123,7 +123,7 @@ function OrganisationSettings() {
         <p className="eyebrow">Settings</p>
         <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Organisation</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          These details appear on the cover and footer of every report you finalise.
+          These details appear on the cover and footer of every report you publish.
         </p>
       </header>
 
@@ -212,7 +212,7 @@ function OrganisationSettings() {
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   {canEditLogo
-                    ? "PNG, JPEG, WebP or SVG, at least 512px wide. Appears on every finalised report unless a report has its own logo."
+                    ? "PNG, JPEG, WebP or SVG, at least 512px wide. Appears on every published report unless a report has its own logo."
                     : "Only owners and admins can change the organisation logo."}
                 </p>
               </div>

@@ -808,8 +808,8 @@ function Cover({ document, manualBrand = true }: { document: ReportDocument; man
           label="Status"
           value={
             document.report.status === "issued"
-              ? `Finalised ${formatDocumentDate(document.report.issuedAt)} · version ${document.report.currentVersion}`
-              : "Draft — not yet finalised"
+              ? `Published ${formatDocumentDate(document.report.issuedAt)} · version ${document.report.currentVersion}`
+              : "Draft — not yet published"
           }
         />
       </dl>
@@ -1153,7 +1153,7 @@ function FindingRow({
           {notAssessed ? (
             <p className="mt-2 flex items-start gap-1.5 rounded-md bg-flag-soft px-2.5 py-2 text-xs text-flag">
               <AlertTriangle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-              Not assessed — a person must resolve this before the report can be finalised.
+              Not assessed — a person must resolve this before the report can be published.
               {finding.abstainReason ? ` Reason given: ${finding.abstainReason}` : ""}
             </p>
           ) : null}

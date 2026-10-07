@@ -28,17 +28,17 @@ function Terms() {
       <h1 className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">Terms</h1>
       <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-muted-foreground">
         <p>
-          A report is one survey, from upload to finalised PDF. Plan allowances are counted in
+          A report is one survey, from upload to published PDF. Plan allowances are counted in
           reports; photographs beyond the allowance are charged as overage.
         </p>
         <p>
           instructBrain drafts findings for review. It does not certify, sign off or take
-          professional responsibility for any assessment. The competent person finalising the document
-          remains responsible for its content, and every finding must be reviewed before finalisation.
+          professional responsibility for any assessment. The competent person publishing the document
+          remains responsible for its content, and every finding must be reviewed before publication.
         </p>
         <p>
           Where the evidence does not support a judgement, a finding is marked not assessed and
-          must be resolved by a person before the report can be finalised. Trade attribution is a
+          must be resolved by a person before the report can be published. Trade attribution is a
           suggestion and is never sent to anyone without human confirmation.
         </p>
         <p>

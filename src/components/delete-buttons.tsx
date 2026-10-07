@@ -75,7 +75,7 @@ export function DeleteReportButton({
           <AlertDialogTitle>Delete “{title}”?</AlertDialogTitle>
           <AlertDialogDescription>
             This permanently deletes the report, every finding, every photograph and any
-            finalised versions and share links. This cannot be undone.
+            published versions and share links. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

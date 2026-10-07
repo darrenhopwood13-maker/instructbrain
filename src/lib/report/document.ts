@@ -14,7 +14,7 @@ import { resolveLocation } from "@/lib/report/location";
  *
  * One shape, built once, rendered by the on-screen report, the print route,
  * the read-only share link and the frozen version snapshot. There is no second
- * assembly path, so a finalised PDF and a shared link can never disagree.
+ * assembly path, so a published PDF and a shared link can never disagree.
  *
  * Nothing in here is discipline-specific: every label comes from the report's
  * survey type snapshot.

@@ -17,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/projects/")({
       {
         name: "description",
         content:
-          "Site photographs in, client-ready construction reports out. Manage every project, survey and finalised report in one place.",
+          "Site photographs in, client-ready construction reports out. Manage every project, survey and published report in one place.",
       },
       { property: "og:title", content: "Projects — instructBrain" },
       {
         property: "og:description",
         content:
-          "Site photographs in, client-ready construction reports out. Manage every project, survey and finalised report in one place.",
+          "Site photographs in, client-ready construction reports out. Manage every project, survey and published report in one place.",
       },
     ],
   }),
@@ -78,7 +78,7 @@ function ProjectsIndex() {
           icon={FolderOpen}
           eyebrow="Nothing here yet"
           title="No projects on your account"
-          description="Create your first project to start uploading site photographs and finalising reports."
+          description="Create your first project to start uploading site photographs and publishing reports."
           action={
             <Button variant="brand" onClick={() => setCreating(true)}>
               <Plus aria-hidden="true" />

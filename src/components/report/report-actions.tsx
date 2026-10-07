@@ -86,12 +86,12 @@ export function ReportActions({
       await queryClient.invalidateQueries({ queryKey: ["report-document", document.report.id] });
       await queryClient.invalidateQueries({ queryKey: ["report", document.report.id] });
       await queryClient.invalidateQueries({ queryKey: ["report-versions", document.report.id] });
-      toast.success(`Finalised as version ${version}`, {
-        description: "Earlier versions are kept exactly as they were finalised.",
+      toast.success(`Published as version ${version}`, {
+        description: "Earlier versions are kept exactly as they were published.",
       });
     },
     onError: (error) =>
-      toast.error("The report could not be finalised", {
+      toast.error("The report could not be published", {
         description: error instanceof Error ? error.message : "Unknown error.",
       }),
   });
@@ -102,7 +102,7 @@ export function ReportActions({
       await queryClient.invalidateQueries({ queryKey: ["report-document", document.report.id] });
       await queryClient.invalidateQueries({ queryKey: ["report", document.report.id] });
       toast.success("Reopened for editing", {
-        description: "The finalised version is unchanged. Finalising again creates the next version.",
+        description: "The published version is unchanged. Publishing again creates the next version.",
       });
     },
   });
@@ -112,7 +112,7 @@ export function ReportActions({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["report-document", document.report.id] });
       toast.success("Report summary drafted", {
-        description: "Read and edit it before finalising the report.",
+        description: "Read and edit it before publishing the report.",
       });
     },
     onError: (error) =>
@@ -251,7 +251,7 @@ export function ReportActions({
             onClick={() => setIssueOpen(true)}
           >
             <Send aria-hidden="true" className="size-4" />
-            Finalise report
+            Publish report
           </Button>
         )}
         <DropdownMenu>
@@ -289,7 +289,7 @@ export function ReportActions({
                   onSelect={() => link.mutate()}
                 >
                   <Link2 aria-hidden="true" className="size-4" />
-                  {issued ? "Create PDF link" : "Finalise before creating a link"}
+                  {issued ? "Create PDF link" : "Publish before creating a link"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="min-h-11"
@@ -297,7 +297,7 @@ export function ReportActions({
                   onSelect={() => setEmailOpen(true)}
                 >
                   <Send aria-hidden="true" className="size-4" />
-                  {issued ? "Email PDF" : "Finalise before emailing"}
+                  {issued ? "Email PDF" : "Publish before emailing"}
                 </DropdownMenuItem>
               </>
             ) : (
@@ -343,9 +343,9 @@ export function ReportActions({
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Email finalised PDF</DialogTitle>
+            <DialogTitle>Email published PDF</DialogTitle>
             <DialogDescription>
-              The recipient receives the finalised report as a PDF attachment. Nothing is sent until you press Send PDF.
+              The recipient receives the published report as a PDF attachment. Nothing is sent until you press Send PDF.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -451,10 +451,10 @@ function IssueDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Finalise as version {nextVersion}</DialogTitle>
+          <DialogTitle>Publish as version {nextVersion}</DialogTitle>
           <DialogDescription>
-            Finalising freezes a copy of this document. Version {nextVersion} never changes once
-            created, and earlier versions are kept exactly as they were finalised.
+            Publishing freezes a copy of this document. Version {nextVersion} never changes once
+            created, and earlier versions are kept exactly as they were published.
           </DialogDescription>
         </DialogHeader>
 
@@ -462,7 +462,7 @@ function IssueDialog({
           <div className="space-y-2 rounded-lg border border-flag/40 bg-flag-soft p-3 text-sm">
             <p className="flex items-center gap-2 font-semibold text-flag">
               <AlertTriangle aria-hidden="true" className="size-4" />
-              This report cannot be finalised yet
+              This report cannot be published yet
             </p>
             <ul className="space-y-2">
               {blockers.notAssessed.length > 0 ? (
@@ -507,7 +507,7 @@ function IssueDialog({
           </Button>
           <Button variant="brand" disabled={blockers.blocked || pending} onClick={onIssue}>
             {pending ? <Loader2 aria-hidden="true" className="mr-1.5 size-4 animate-spin" /> : null}
-            Finalise version {nextVersion}
+            Publish version {nextVersion}
           </Button>
         </DialogFooter>
       </DialogContent>
