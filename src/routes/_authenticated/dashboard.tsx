@@ -83,11 +83,17 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   // A section that holds something worth reading opens itself. Hiding "Recent
-  // reports (8)" and "Overdue items (3)" behind a Show toggle made the field-app
-  // QR block the biggest thing on the home screen. Empty sections stay shut.
-  const [open, setOpen] = useState((count ?? 0) > 0);
+  // reports" and "Overdue items" behind a Show toggle made the field-app QR block
+  // the biggest thing on the home screen, and empty sections stay shut.
+  //
+  // The default cannot be read once, at mount: a count that arrives with its query
+  // is undefined on the first render, so `useState(count > 0)` leaves a populated
+  // section shut for good. Until someone touches the toggle the section follows
+  // its own count; the moment they do, their choice is what holds.
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const open = userOpen ?? (count ?? 0) > 0;
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="mt-6">
+    <Collapsible open={open} onOpenChange={setUserOpen} className="mt-6">
       <div className={action ? "grid gap-2 sm:flex sm:items-center sm:gap-3" : "flex items-center gap-3"}>
         <CollapsibleTrigger
           className={`flex min-h-11 min-w-0 w-full flex-1 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 ${
