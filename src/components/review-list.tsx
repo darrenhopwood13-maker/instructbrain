@@ -46,7 +46,7 @@ import { itemLabel } from "@/lib/item-label";
 import { isMinimalBriefTemplate } from "@/lib/report/brief";
 import { listPhotos, signedThumbnailUrls } from "@/lib/photos/photo-service";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { bulkTradeEligible } from "@/lib/findings/bulk-trade";
+import { acceptPlan, type AttentionItem } from "@/lib/review/bulk-accept";
 import { BULK_TRADE_CONFIRM_THRESHOLD } from "@/lib/ai/config";
 
 /**
@@ -130,7 +130,6 @@ export function ReviewList({
   const [overrides, setOverrides] = useState<Record<string, Partial<Finding>>>({});
   const [active, setActive] = useState(0);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [unresolvedOnly, setUnresolvedOnly] = useState(false);
   const [tradesOnly, setTradesOnly] = useState(false);
@@ -449,75 +448,111 @@ export function ReviewList({
     }
   }
 
-  const tradeEligible = showTrade ? bulkTradeEligible(items) : [];
-  const confirmTrades = async () => {
-    if (!onAssignTrade) return;
-    setBulkBusy(true);
-    let done = 0;
-    for (const item of tradeEligible) {
-      try {
-        await onAssignTrade(item.id, {
-          trade: item.aiSuggestedTrade ?? null,
-          dueDate: null,
-          dueDateOverridden: false,
-        });
-        done += 1;
-      } catch {
-        // Carry on; the count below says what was saved.
-      }
-    }
-    setBulkBusy(false);
-    setBulkOpen(false);
-    if (done === tradeEligible.length) toast.success(`${done} trade${done === 1 ? "" : "s"} confirmed`);
-    else
-      toast.error("Some trades could not be saved", {
-        description: `${done} of ${tradeEligible.length} confirmed. Try again for the rest.`,
-      });
-  };
-
-  const confirmAll = () => {
-    if (notAssessedCount > 0) {
-      toast.error("Resolve not assessed findings first", {
-        description: `${notAssessedCount} finding${notAssessedCount === 1 ? "" : "s"} still need a human decision.`,
-        action: {
-          label: "Go to first unresolved",
-          onClick: () => goToFinding(Math.max(firstNotAssessed, 0)),
+  /**
+   * What one press will accept, and what it will leave to a person. Built from the
+   * same rows the list shows, so the numbers on the button cannot drift from it.
+   */
+  const acceptPlanResult = useMemo(
+    () =>
+      acceptPlan(
+        items.map((item, index) => ({
+          id: item.id,
+          ref: item.ref,
+          statusId: resolved[index]?.id ?? item.status,
+          confirmed: item.confirmed,
+          assignedTrade: item.assignedTrade ?? null,
+          aiSuggestedTrade: item.aiSuggestedTrade ?? null,
+          aiTradeConfidence: item.aiTradeConfidence ?? null,
+          conditionGrade: item.conditionGrade ?? null,
+          aiSuggestedGrade: item.aiSuggestedGrade ?? null,
+          aiGradeConfidence: item.aiGradeConfidence ?? null,
+        })),
+        {
+          notAssessedId: NOT_ASSESSED_ID,
+          tradeRequired: showTrade,
+          gradeRequired: showGrade,
         },
-      });
-      goToFinding(Math.max(firstNotAssessed, 0));
+      ),
+    [items, resolved, showTrade, showGrade],
+  );
+
+  const planTradeNote = showTrade
+    ? " Suggestions it was not sure about are listed rather than accepted."
+    : "";
+
+  /**
+   * The single press. It settles wording, status, trade and grade for every item
+   * the AI was confident about, in one go, and then reports the real count — the
+   * same number this card shows before the press and the same number the publish
+   * gate reads afterwards. Items that need a person are listed, never swept in.
+   */
+  const acceptEverything = async () => {
+    const plan = acceptPlanResult;
+    if (plan.accept.length === 0) {
+      if (plan.attention.length > 0) {
+        toast.info("Nothing here can be accepted in one press", {
+          description: `${plan.attention.length} item${plan.attention.length === 1 ? "" : "s"} still need your decision — they are listed below.`,
+        });
+      }
       return;
     }
-    const pending = items.filter(
-      (item, i) => !item.confirmed && resolved[i]?.id !== NOT_ASSESSED_ID,
-    );
-    if (pending.length === 0) return;
 
+    const ids = plan.accept.map((item) => item.id);
     const confirmedAt = new Date().toISOString();
     const snapshotOverrides = overrides;
+    setBulkBusy(true);
+
+    let trades = 0;
+    let grades = 0;
+    for (const item of plan.accept) {
+      try {
+        if (item.trade && onAssignTrade) {
+          await onAssignTrade(item.id, {
+            trade: item.trade,
+            dueDate: null,
+            dueDateOverridden: false,
+          });
+          trades += 1;
+        }
+        if (item.grade && onAssignGrade) {
+          await onAssignGrade(item.id, item.grade);
+          grades += 1;
+        }
+      } catch {
+        // A single failure must not stop the rest; the toast says what landed.
+      }
+    }
+
     setOverrides((prev) => {
       const next = { ...prev };
-      for (const item of pending) next[item.id] = { ...(next[item.id] ?? {}), confirmed: true };
+      for (const id of ids) next[id] = { ...(next[id] ?? {}), confirmed: true };
       return next;
     });
 
-    const ids = pending.map((item) => item.id);
-    const write = onConfirmMany
-      ? onConfirmMany(ids, { confirmed_at: confirmedAt })
-      : onConfirm
-        ? Promise.all(ids.map((id) => onConfirm(id, { confirmed_at: confirmedAt }))).then(() => {})
-        : Promise.resolve();
-
-    void write.then(
-      () => toast.success("All findings confirmed"),
-      (error: unknown) => {
-        setOverrides(snapshotOverrides);
-        toast.error("Those confirmations could not be saved", {
-          description:
-            error instanceof Error ? error.message : "Nothing was written to the report.",
-        });
-      },
-    );
+    try {
+      if (onConfirmMany) await onConfirmMany(ids, { confirmed_at: confirmedAt });
+      else if (onConfirm) await Promise.all(ids.map((id) => onConfirm(id, { confirmed_at: confirmedAt })));
+      const extras = [
+        trades > 0 ? `${trades} trade${trades === 1 ? "" : "s"}` : null,
+        grades > 0 ? `${grades} grade${grades === 1 ? "" : "s"}` : null,
+      ].filter(Boolean);
+      toast.success(`${ids.length} accepted`, {
+        description:
+          (extras.length > 0 ? `${extras.join(" and ")} settled in the same press. ` : "") +
+          (plan.attention.length > 0
+            ? `${plan.attention.length} still need you.`
+            : "Everything is accepted and the report is ready to publish."),
+      });
+    } catch (error) {
+      setOverrides(snapshotOverrides);
+      toast.error("Those acceptances could not be saved", {
+        description: error instanceof Error ? error.message : "Nothing was written to the report.",
+      });
+    } finally {
+      setBulkBusy(false);
+    }
   };
+
 
   return (
     <div>
@@ -557,29 +592,75 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-surface-raised p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <p className="min-w-0 text-sm font-semibold">
-          {confirmed} of {items.length} accepted
-        </p>
-        <Button variant="brand" className="min-h-12 w-full sm:min-h-11 sm:w-auto sm:shrink-0" disabled={unconfirmed === 0} onClick={confirmAll}>
-          Accept all
-        </Button>
-      </div>
-
-      {tradeEligible.length > 0 ? (
-        <div className="mt-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 w-full sm:w-auto"
-            aria-haspopup="dialog"
-            onClick={() => setBulkOpen(true)}
-          >
-            Confirm all trades {Math.round(BULK_TRADE_CONFIRM_THRESHOLD * 100)}% or over (
-            {tradeEligible.length})
-          </Button>
+      <div className="min-w-0 rounded-xl border border-border bg-surface-raised p-4">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <p className="text-sm font-semibold">
+            {items.length} finding{items.length === 1 ? "" : "s"} drafted
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {confirmed} accepted
+            {acceptPlanResult.attention.length > 0 ? (
+              <>
+                {" · "}
+                <span className="font-semibold text-foreground">
+                  {acceptPlanResult.attention.length} need you
+                </span>
+              </>
+            ) : (
+              " · nothing needs you"
+            )}
+          </p>
         </div>
-      ) : null}
+
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button
+            variant="brand"
+            className="min-h-12 w-full sm:min-h-11 sm:w-auto sm:shrink-0"
+            disabled={acceptPlanResult.accept.length === 0 || bulkBusy}
+            onClick={() => void acceptEverything()}
+          >
+            {bulkBusy ? "Accepting…" : `Accept all ${acceptPlanResult.accept.length}`}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Settles the wording, the status{showTrade ? ", the trade" : ""}
+            {showGrade ? " and the grade" : ""} for everything the AI was confident about.
+            {planTradeNote}
+          </p>
+        </div>
+
+        {acceptPlanResult.attention.length > 0 ? (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Needs you · {acceptPlanResult.attention.length}
+            </p>
+            <ul className="mt-2 space-y-1">
+              {acceptPlanResult.attention.slice(0, 12).map((entry: AttentionItem) => {
+                const index = items.findIndex((item) => item.id === entry.id);
+                return (
+                  <li key={entry.id}>
+                    <button
+                      type="button"
+                      className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-sunken"
+                      onClick={() => {
+                        setUnresolvedOnly(false);
+                        goToFinding(Math.max(index, 0));
+                      }}
+                    >
+                      <span className="font-semibold">{entry.ref}</span>{" "}
+                      <span className="text-muted-foreground">{entry.detail}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {acceptPlanResult.attention.length > 12 ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                and {acceptPlanResult.attention.length - 12} more.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {missingTrade > 0 ? (
         <div className="mt-3">
@@ -599,33 +680,6 @@ export function ReviewList({
         </div>
       ) : null}
 
-      <Dialog open={bulkOpen} onOpenChange={(open) => !bulkBusy && setBulkOpen(open)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm {tradeEligible.length} suggested trades</DialogTitle>
-            <DialogDescription>
-              Each of these will be recorded as confirmed by you. You can change any of them
-              afterwards.
-            </DialogDescription>
-          </DialogHeader>
-          <ul className="max-h-none space-y-1 text-sm">
-            {tradeEligible.map((item) => (
-              <li key={item.id}>
-                <span className="font-semibold">{item.ref}</span> {item.title} —{" "}
-                {item.aiSuggestedTrade} ({Math.round((item.aiTradeConfidence ?? 0) * 100)}%)
-              </li>
-            ))}
-          </ul>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" className="min-h-11" disabled={bulkBusy} onClick={() => setBulkOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="brand" className="min-h-11" disabled={bulkBusy} onClick={() => void confirmTrades()}>
-              {bulkBusy ? "Confirming…" : "Confirm"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
 
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
