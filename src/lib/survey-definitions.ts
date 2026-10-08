@@ -564,7 +564,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
 
 export const electricalInstallationDefinition: SurveyDefinition = {
   id: "electrical_installation",
-  version: 1,
+  version: 2,
   houseVoice: HOUSE_VOICE,
   label: "Electrical installation condition",
   category: "electrical",
@@ -599,6 +599,19 @@ export const electricalInstallationDefinition: SurveyDefinition = {
       label: "Further investigation",
       guidance: "Cannot be judged from the photograph. Test and inspect before a call is made.",
     },
+  ],
+  // The citation surface for this type. The model may choose an id from this list and
+  // nothing else; the list is what makes "never invent a regulation number" a mechanism
+  // rather than a hope. Every entry was verified at source on 8 Oct 2026 - see
+  // docs/regulatory-citations.md for the source URL behind each one.
+  regulatoryReferences: [
+    { id: "bs_7671", label: "BS 7671 - IET Wiring Regulations (18th Edition)" },
+    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
+    { id: "esqcr_2002", label: "Electricity Safety, Quality and Continuity Regulations 2002" },
+    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
+    { id: "ad_p", label: "Approved Document P - electrical safety" },
+    { id: "hsg85", label: "HSE HSG85 - electricity at work, safe working practices" },
+    { id: "hsr25", label: "HSE HSR25 - electrical safety on construction sites" },
   ],
   captureFields: [
     {
@@ -647,6 +660,8 @@ Nothing in a photograph proves continuity, insulation resistance or polarity. Wh
       "Where the responsible trade follows plainly from the item photographed, suggest it and give the reason. Otherwise return null.",
     abstainGuidance:
       "If the photograph is too dark, distant or obstructed to identify the item or judge how it is installed, return not_assessed.",
+    regulatoryGuidance:
+      "Cite a listed instrument only where the visible condition plausibly engages it - an exposed conductor, a missing barrier, an unsealed enclosure, unsupported cable. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. Where the point turns on a test result a photograph cannot show, cite nothing and return the further investigation severity instead.",
   },
   defaultRemedial:
     "Isolate, rectify the installation defect and re-test the affected circuit; issue certification for the remedial work.",
@@ -660,7 +675,7 @@ Nothing in a photograph proves continuity, insulation resistance or polarity. Wh
 
 export const mechanicalServicesDefinition: SurveyDefinition = {
   id: "mechanical_services",
-  version: 1,
+  version: 2,
   houseVoice: HOUSE_VOICE,
   label: "Mechanical & HVAC installation",
   category: "mechanical",
@@ -696,6 +711,32 @@ export const mechanicalServicesDefinition: SurveyDefinition = {
       guidance: "Identification, bracketing or tidiness. Complete in the normal course of work.",
       targetHours: 336,
     },
+  ],
+  // The citation surface for this type: health and safety, the Building Regulations, and
+  // the MEP standards a commissioning-stage observation can engage. Same discipline as the
+  // electrical set - every entry verified at source on 8 Oct 2026, and the model may choose
+  // an id from this list and nothing else.
+  regulatoryReferences: [
+    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
+    { id: "gsiur_1998", label: "Gas Safety (Installation and Use) Regulations 1998" },
+    { id: "ad_f", label: "Approved Document F - ventilation" },
+    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
+    { id: "ad_j", label: "Approved Document J - combustion appliances and fuel storage" },
+    { id: "ad_g", label: "Approved Document G - sanitation, hot water and water efficiency" },
+    { id: "ad_h", label: "Approved Document H - drainage and waste disposal" },
+    { id: "pssr_2000", label: "Pressure Systems Safety Regulations 2000" },
+    { id: "f_gas_2015", label: "Fluorinated Greenhouse Gases Regulations 2015" },
+    { id: "f_gas_eu", label: "Regulation (EU) 517/2014 - fluorinated gases (retained)" },
+    { id: "epb_2012", label: "EPB Regulations 2012 - air-conditioning inspections" },
+    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
+    { id: "l8_acop", label: "HSE ACOP L8 - Legionnaires' disease control" },
+    { id: "hsg274", label: "HSE HSG274 - legionella technical guidance" },
+    { id: "water_fittings_1999", label: "Water Supply (Water Fittings) Regulations 1999" },
+    { id: "bs_7593", label: "BS 7593 - water treatment in heating and cooling systems" },
+    { id: "bs_en_14336", label: "BS EN 14336 - heating systems installation and commissioning" },
+    { id: "bs_en_12599", label: "BS EN 12599 - ventilation acceptance procedures" },
+    { id: "bs_en_378_1", label: "BS EN 378-1 - refrigerating systems and heat pumps" },
+    { id: "besa_tr19", label: "BESA TR19 - internal cleanliness of ventilation systems" },
   ],
   captureFields: [
     {
@@ -745,6 +786,8 @@ Do not claim a pressure, a flow rate or a set point. None of that is in a photog
       "Where the responsible package follows plainly from the service photographed, suggest it and give the reason. Otherwise return null.",
     abstainGuidance:
       "If the photograph is too dark, distant or obstructed to identify the service or judge the installation, return not_assessed.",
+    regulatoryGuidance:
+      "Cite a listed instrument only where the visible condition plausibly engages it - a gas appliance or flue, a pressure system, a refrigerant circuit, a ventilation or water system. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. A system that is merely incomplete is not a compliance finding - cite nothing and return the incomplete severity instead.",
   },
   defaultRemedial:
     "Rectify the installation to the specified detail, reinstate insulation and identification, and re-test the affected section before commissioning.",

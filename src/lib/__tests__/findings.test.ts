@@ -188,6 +188,17 @@ describe("no discipline's vocabulary leaks into another", () => {
     "internal",
     "external",
     "unknown",
+    // Instruments more than one discipline cites. A regulation is not one trade's
+    // vocabulary: the Building Regulations and their Approved Documents apply to
+    // snagging, to electrical work and to mechanical services alike, and the same
+    // instrument must carry the same id wherever it appears so a finding that
+    // references it stays unambiguous. Added 8 Oct 2026 when the electrical and
+    // mechanical templates gained their citation sets and collided with the
+    // Approved Documents snagging already carried.
+    "bldg_regs_2010",
+    "building regulations 2010 (si 2010/2214)",
+    "ad_f",
+    "ad_l",
   ]);
 
   const tokens = (definition: SurveyTypeSnapshot) =>
