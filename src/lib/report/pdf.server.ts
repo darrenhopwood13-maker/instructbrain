@@ -1338,57 +1338,74 @@ async function drawFindingBody(
 }
 
 /**
- * Every photograph that carries more than one item, drawn ONCE with all its
- * pins, before the schedule. The item entries below then point at a pin number
- * rather than printing the same picture again.
+ * One photograph that carries more than one item, drawn ONCE with all its pins,
+ * immediately above the first entry that refers to it.
+ *
+ * Placed, not collected. It used to be drawn up front in a single block with
+ * every other plate, which on the 58-item report put TEN PAGES of photographs
+ * before the first finding: reviewing it meant flipping between a picture at the
+ * front and the item it belongs to at the back. A picture belongs beside the
+ * entries that use it, so it is drawn at the moment the first of them is about
+ * to be.
+ *
+ * Returns whether anything was drawn, so the caller only prints the explaining
+ * paragraph once, and only when there is a picture to explain.
  */
-async function drawPhotoPlates(
+async function drawPhotoPlate(
   writer: Writer,
   document: ReportDocument,
-  plates: PhotoPlate[],
+  plate: PhotoPlate,
+  showIntro: boolean,
   fetcher: PhotoFetcher | null,
-): Promise<void> {
-  if (!fetcher || plates.length === 0) return;
+): Promise<boolean> {
+  if (!fetcher) return false;
 
-  const photoById = new Map<string, DocPhoto>();
-  for (const finding of document.findings) {
-    for (const attached of finding.photos) photoById.set(attached.photo.id, attached.photo);
+  const photo = document.findings
+    .flatMap((finding) => finding.photos)
+    .map((attached) => attached.photo)
+    .find((candidate) => candidate.id === plate.photoId);
+  if (!photo) return false;
+
+  const image = await embedPhoto(writer, fetcher, photo);
+  // Skipped entirely when the bytes will not come back, so a broken bucket cannot
+  // print a heading and an intro paragraph promising pictures that follow.
+  if (!image) return false;
+
+  const marks = plate.marks
+    .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
+    .map((mark) => ({ region: mark.region, number: mark.number }));
+
+  const draw = () => drawPhotoPlateBody(writer, photo, plate.items, image, marks, showIntro);
+  // A plate is kept whole for the same reason an entry is.
+  const needed = await measureHeight(writer, draw);
+  if (shouldBreakBeforeEntry(needed, roomOnPage(writer), roomOnFreshPage(writer))) newPage(writer);
+  draw();
+  return true;
+}
+
+function drawPhotoPlateBody(
+  writer: Writer,
+  photo: DocPhoto,
+  items: number,
+  image: PDFImage,
+  marks: Array<{ region: DocRegion; number: number | null }>,
+  showIntro: boolean,
+): void {
+  if (showIntro) {
+    drawRule(writer, 14, 8);
+    eyebrow(writer, "Photographs carrying several items");
+    drawText(
+      writer,
+      "Each of these is printed once, with a numbered pin for every item found on it, and sits directly above the entries that refer to it. An item's entry shows a crop of the area it refers to, marked with the same number.",
+      { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
+    );
   }
-
-  // Fetch first, draw second. A photograph whose bytes will not come back must
-  // not leave an empty heading and an intro paragraph promising pictures that
-  // follow — which is what an all-at-once heading would do on a report whose
-  // storage is broken.
-  const drawable: Array<{ photo: DocPhoto; image: PDFImage; items: number; marks: Array<{ region: DocRegion; number: number | null }> }> = [];
-  for (const plate of plates) {
-    const photo = photoById.get(plate.photoId);
-    if (!photo) continue;
-    const image = await embedPhoto(writer, fetcher, photo);
-    if (!image) continue;
-    drawable.push({
-      photo,
-      image,
-      items: plate.items,
-      marks: plate.marks
-        .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
-        .map((mark) => ({ region: mark.region, number: mark.number })),
-    });
-  }
-  if (drawable.length === 0) return;
-
-  drawRule(writer, 14, 8);
-  eyebrow(writer, "Photographs carrying several items");
+  drawImage(writer, image, writer.contentWidth, 300, photo.layers, marks);
   drawText(
     writer,
-    "Each of these is printed once, with a numbered pin for every item found on it. An item's entry in the schedule shows a crop of the area it refers to, marked with the same number.",
-    { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
+    `Photograph ${photo.sequence} - ${items} items on this photograph, ${markCaption(marks)}`,
+    { size: 8, colour: MUTED, gapAfter: 8 },
   );
-
-  for (const { photo, image, items, marks } of drawable) {
-    const caption = `Photograph ${photo.sequence} - ${items} items on this photograph, ${markCaption(marks)}`;
-    drawImage(writer, image, writer.contentWidth, 300, photo.layers, marks);
-    drawText(writer, caption, { size: 8, colour: MUTED, gapAfter: 8 });
-  }
 }
 
 async function drawManualPhotoPages(
@@ -1960,9 +1977,23 @@ export async function buildReportPdf(
     eyebrow(writer, options.variant === "item" ? "Item" : "Results");
   }
 
-  // The photographs that carry more than one item, printed once with every pin,
-  // before the entries that point at them.
-  await drawPhotoPlates(writer, document, plates, fetcher);
+  // The photographs that carry more than one item are drawn the moment the first
+  // entry referring to them is about to be drawn — immediately above it, rather
+  // than in a block at the front of the report. `plated` is still what tells an
+  // entry to print a crop instead of another copy of the whole frame.
+  const plateById = new Map(plates.map((plate) => [plate.photoId, plate]));
+  const platesDrawn = new Set<string>();
+  let plateIntroShown = false;
+  const drawPlatesFor = async (finding: DocFinding): Promise<void> => {
+    for (const attached of finding.photos) {
+      const plate = plateById.get(attached.photo.id);
+      if (!plate || platesDrawn.has(plate.photoId)) continue;
+      platesDrawn.add(plate.photoId);
+      if (await drawPhotoPlate(writer, document, plate, !plateIntroShown, fetcher)) {
+        plateIntroShown = true;
+      }
+    }
+  };
 
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
@@ -1987,6 +2018,7 @@ export async function buildReportPdf(
           align: "center",
         });
         for (const finding of group.findings) {
+          await drawPlatesFor(finding);
           await drawFinding(writer, document, finding, fetcher, pins, plated);
         }
         writer.cursor.y -= 6;
@@ -1994,6 +2026,7 @@ export async function buildReportPdf(
     }
   } else {
     for (const finding of findings) {
+      await drawPlatesFor(finding);
       await drawFinding(writer, document, finding, fetcher, pins, plated);
     }
   }
