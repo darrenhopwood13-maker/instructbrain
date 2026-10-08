@@ -3,7 +3,7 @@ import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
-import { assignPins, pinItemsOf, platedPhotoIds, photoPlates, pinFor, type Pin, type PhotoPlate } from "@/lib/report/photo-pins";
+import { assignPins, photoHasImage, pinItemsOf, platedPhotoIds, photoPlates, pinFor, type Pin, type PhotoPlate } from "@/lib/report/photo-pins";
 import { InlineField } from "@/components/report/inline-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -958,9 +958,22 @@ function Results({
   // do not change when the reader re-orders the schedule. The photographs that
   // carry more than one item are shown ONCE each, above the list, instead of
   // once per item — this is the whole point of the pins.
+  //
+  // A pin points at a place on a picture. Where the stored image cannot be read
+  // there is no place to point at, so that photograph carries no numbers while
+  // still being shown once — never a "Pin 2 of 6" the reader cannot find.
+  const photoById = new Map<string, DocPhoto>();
+  for (const finding of document.findings) {
+    for (const attachment of finding.photos) photoById.set(attachment.photo.id, attachment.photo);
+  }
   const pinItems = pinItemsOf(document.findings);
-  const pins = assignPins(pinItems);
-  const plates = photoPlates(pinItems);
+  const pins = assignPins(
+    pinItems.filter((item) => {
+      const photo = photoById.get(item.photoId);
+      return !!photo && photoHasImage(photo);
+    }),
+  );
+  const plates = photoPlates(pinItems, pins);
   const plated = platedPhotoIds(plates);
 
   return (
@@ -1082,26 +1095,45 @@ function PhotoPlates({
         estimate of the area, so a pin is drawn only where one was actually recorded.
       </p>
       <div className="mt-3 space-y-4">
-        {shown.map(({ plate, photo }) => (
-          <div key={photo.id} id={plateAnchorId(photo.id)} className="scroll-mt-24">
-            <PhotoFigure
-              attachment={{ photo, role: "plate", region: null }}
-              marks={plate.marks
-                .filter((mark) => mark.region !== null)
-                .map((mark) => ({
-                  region: mark.region!,
-                  number: mark.number,
-                  total: mark.total,
-                  findingId: mark.findingId,
-                }))}
-              zoomable
-              caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
-              {...(onPhotoRegion
-                ? { onRegionMove: (findingId, next) => onPhotoRegion(findingId, photo.id, next) }
-                : {})}
-            />
-          </div>
-        ))}
+        {shown.map(({ plate, photo }) =>
+          photoHasImage(photo) ? (
+            <div key={photo.id} id={plateAnchorId(photo.id)} className="scroll-mt-24">
+              <PhotoFigure
+                attachment={{ photo, role: "plate", region: null }}
+                marks={plate.marks
+                  .filter((mark) => mark.region !== null)
+                  .map((mark) => ({
+                    region: mark.region!,
+                    number: mark.number,
+                    total: mark.total,
+                    findingId: mark.findingId,
+                  }))}
+                zoomable
+                caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
+                {...(onPhotoRegion
+                  ? { onRegionMove: (findingId, next) => onPhotoRegion(findingId, photo.id, next) }
+                  : {})}
+              />
+            </div>
+          ) : (
+            // The picture is not there. Say so, and name the items anyway, so the
+            // reader still knows these items belong to the same photograph
+            // instead of meeting a broken frame with no explanation.
+            <div
+              key={photo.id}
+              id={plateAnchorId(photo.id)}
+              className="scroll-mt-24 rounded-lg border border-dashed border-border bg-surface-raised p-3"
+            >
+              <p className="text-xs font-semibold text-foreground">
+                Photograph {photo.sequence} · {plate.items} items on this photograph
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                The stored image could not be read, so there is no pin to show. The items are listed
+                in the schedule: {plate.marks.map((mark) => mark.ref).join(", ")}.
+              </p>
+            </div>
+          ),
+        )}
       </div>
     </div>
   );
@@ -1127,11 +1159,17 @@ function PinReference({
   pin: Pin | null;
   marked: boolean;
 }) {
-  const label = pin
-    ? `Pin ${pin.number} of ${pin.total}`
-    : marked
-      ? "Marked above"
-      : "Shown above";
+  // A photograph whose image cannot be read has no pins by construction, so the
+  // row must not point at one. Saying "could not be read" is worse news than
+  // "Pin 2 of 6" and better than a promise the reader cannot keep.
+  const readable = photoHasImage(attachment.photo);
+  const label = !readable
+    ? "Photograph could not be read"
+    : pin
+      ? `Pin ${pin.number} of ${pin.total}`
+      : marked
+        ? "Marked above"
+        : "Shown above";
   return (
     <a
       href={`#${plateAnchorId(attachment.photo.id)}`}
@@ -1139,12 +1177,14 @@ function PinReference({
     >
       <span className="flex items-center gap-2">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-background bg-brand-accent text-[11px] font-bold leading-none text-brand-accent-ink">
-          {pin ? pin.number : "·"}
+          {readable && pin ? pin.number : "·"}
         </span>
         <span className="font-semibold text-foreground">{label}</span>
       </span>
       <span className="mt-1 block text-muted-foreground">
-        Photograph {attachment.photo.sequence} · shown above with its pins
+        {readable
+          ? `Photograph ${attachment.photo.sequence} · shown above with its pins`
+          : `Photograph ${attachment.photo.sequence} · the stored image could not be read`}
       </span>
     </a>
   );

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import type { DocFinding, DocPhoto, DocRegion, ReportDocument } from "@/lib/report/document";
@@ -183,5 +183,67 @@ describe("a photograph carrying several items, on screen", () => {
 
     expect(screen.getAllByRole("img")).toHaveLength(2);
     expect(screen.queryByRole("heading", { name: "Photographs carrying several items" })).toBeNull();
+  });
+});
+
+/**
+ * The defect the LIVE WALK found on 8 October 2026, and the reason this rule
+ * exists: a report whose stored images cannot be signed comes back with no URL,
+ * and the document was still telling the reader "Pin 2 of 6" and "shown above
+ * with its pins" about a photograph that was never going to arrive. A promise
+ * the reader cannot keep is worse than bad news.
+ */
+function deadPhoto(id: string, sequence: number): DocPhoto {
+  return { ...photo(id, sequence), url: null, thumbUrl: null };
+}
+
+describe("a photograph whose image cannot be read", () => {
+  afterEach(cleanup);
+
+  it("never promises a pin, and says the image could not be read", () => {
+    render(
+      <ReportDocumentView
+        document={doc([
+          finding({ id: "a", ref: "F-001", photos: [{ photo: deadPhoto("p1", 4), role: "primary", region: REGION }] }),
+          finding({ id: "b", ref: "F-002", photos: [{ photo: deadPhoto("p1", 4), role: "primary", region: REGION }] }),
+        ])}
+        editable
+        onReportPatch={vi.fn()}
+      />,
+    );
+
+    // No picture, so no pin — not even a number in the rows.
+    expect(screen.queryByRole("button", { name: /Pin \d/ })).toBeNull();
+    expect(screen.queryByText(/^Pin \d+ of \d+$/)).toBeNull();
+    expect(screen.queryByText("shown above with its pins")).toBeNull();
+    // And it says so, twice: once per item referring to that photograph.
+    expect(screen.getAllByText("Photograph could not be read")).toHaveLength(2);
+    // The grouping is not lost: the panel still names the items on it.
+    expect(screen.getByText(/The items are listed in the schedule: F-001, F-002\./)).toBeTruthy();
+    // The heading is still there, so the reader knows why the items point above.
+    expect(screen.getByRole("heading", { name: "Photographs carrying several items" })).toBeTruthy();
+    // No drag is offered: there is nothing on screen to drag.
+    expect(screen.queryAllByRole("button", { name: "Move the marked area to the right place" })).toHaveLength(0);
+  });
+
+  it("keeps numbering the photographs that DO load", () => {
+    render(
+      <ReportDocumentView
+        document={doc([
+          finding({ id: "a", ref: "F-001", photos: [on("p1", 4, REGION)] }),
+          finding({ id: "b", ref: "F-002", photos: [on("p1", 4, REGION)] }),
+          finding({ id: "c", ref: "F-003", photos: [{ photo: deadPhoto("p2", 5), role: "primary", region: REGION }] }),
+          finding({ id: "d", ref: "F-004", photos: [{ photo: deadPhoto("p2", 5), role: "primary", region: REGION }] }),
+        ])}
+        editable={false}
+      />,
+    );
+
+    // The readable pair keeps its pins...
+    expect(screen.getByText("Pin 1 of 2")).toBeTruthy();
+    expect(screen.getByText("Pin 2 of 2")).toBeTruthy();
+    // ...and the unreadable pair does not borrow a number from anyone.
+    expect(screen.getAllByText("Photograph could not be read")).toHaveLength(2);
+    expect(screen.queryByText("Pin 1 of 4")).toBeNull();
   });
 });

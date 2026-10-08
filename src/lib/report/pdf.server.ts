@@ -29,7 +29,7 @@ import {
 import { BRAND_CREDIT } from "@/lib/brand";
 import { REPORT_BRAND } from "@/lib/report/brand";
 import type { DocFinding, DocPhoto, DocRegion, ReportDocument } from "@/lib/report/document";
-import { assignPins, photoPlates, platedPhotoIds, pinFor, type PhotoPlate, type Pin } from "@/lib/report/photo-pins";
+import { assignPins, photoHasImage, photoPlates, platedPhotoIds, pinFor, type PhotoPlate, type Pin } from "@/lib/report/photo-pins";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
 import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
@@ -1240,6 +1240,27 @@ async function drawPhotoPlates(
     for (const attached of finding.photos) photoById.set(attached.photo.id, attached.photo);
   }
 
+  // Fetch first, draw second. A photograph whose bytes will not come back must
+  // not leave an empty heading and an intro paragraph promising pictures that
+  // follow — which is what an all-at-once heading would do on a report whose
+  // storage is broken.
+  const drawable: Array<{ photo: DocPhoto; image: PDFImage; items: number; marks: Array<{ region: DocRegion; number: number | null }> }> = [];
+  for (const plate of plates) {
+    const photo = photoById.get(plate.photoId);
+    if (!photo) continue;
+    const image = await embedPhoto(writer, fetcher, photo);
+    if (!image) continue;
+    drawable.push({
+      photo,
+      image,
+      items: plate.items,
+      marks: plate.marks
+        .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
+        .map((mark) => ({ region: mark.region, number: mark.number })),
+    });
+  }
+  if (drawable.length === 0) return;
+
   drawRule(writer, 14, 8);
   eyebrow(writer, "Photographs carrying several items");
   drawText(
@@ -1248,15 +1269,8 @@ async function drawPhotoPlates(
     { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
   );
 
-  for (const plate of plates) {
-    const photo = photoById.get(plate.photoId);
-    if (!photo) continue;
-    const image = await embedPhoto(writer, fetcher, photo);
-    if (!image) continue;
-    const marks = plate.marks
-      .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
-      .map((mark) => ({ region: mark.region, number: mark.number }));
-    const caption = `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(marks)}`;
+  for (const { photo, image, items, marks } of drawable) {
+    const caption = `Photograph ${photo.sequence} - ${items} items on this photograph, ${markCaption(marks)}`;
     drawImage(writer, image, writer.contentWidth, 300, photo.layers, marks);
     drawText(writer, caption, { size: 8, colour: MUTED, gapAfter: 8 });
   }
@@ -1645,6 +1659,14 @@ export async function buildReportPdf(
   // Pins are numbered from the items this document actually prints, so a trade
   // extract's "Pin 2 of 3" refers to what the subbie can see. For the full
   // report this is every item, which is what the screen numbers too.
+  //
+  // A pin points at a place on a picture, so a photograph whose bytes cannot be
+  // fetched carries no numbers here either — the screen and the PDF make the
+  // same promise, which is the point of reading one assembled document.
+  const photoById = new Map<string, DocPhoto>();
+  for (const finding of document.findings) {
+    for (const attached of finding.photos) photoById.set(attached.photo.id, attached.photo);
+  }
   const pinItems = findings.flatMap((finding) =>
     finding.photos.map((attached) => ({
       findingId: finding.id,
@@ -1653,8 +1675,14 @@ export async function buildReportPdf(
       region: attached.region,
     })),
   );
-  const pins = assignPins(pinItems);
-  const plated = platedPhotoIds(photoPlates(pinItems));
+  const pins = assignPins(
+    pinItems.filter((item) => {
+      const photo = photoById.get(item.photoId);
+      return !!photo && photoHasImage(photo);
+    }),
+  );
+  const plates = photoPlates(pinItems, pins);
+  const plated = platedPhotoIds(plates);
   const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
   // A condition survey is presented as a Schedule of Condition, with its
   // mandatory scope-and-limitations block printed on the artifact.
@@ -1817,7 +1845,7 @@ export async function buildReportPdf(
 
   // The photographs that carry more than one item, printed once with every pin,
   // before the entries that point at them.
-  await drawPhotoPlates(writer, document, photoPlates(pinItems), fetcher);
+  await drawPhotoPlates(writer, document, plates, fetcher);
 
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });

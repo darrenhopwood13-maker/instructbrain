@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assignPins, photoPlates, platedPhotoIds, pinFor, type PinItem } from "@/lib/report/photo-pins";
+import {
+  assignPins,
+  photoHasImage,
+  photoPlates,
+  platedPhotoIds,
+  pinFor,
+  type PinItem,
+} from "@/lib/report/photo-pins";
 import type { DocRegion } from "@/lib/report/document";
 
 const region: DocRegion = { x: 0.1, y: 0.1, w: 0.2, h: 0.2 };
@@ -10,6 +17,15 @@ const item = (ref: string, photoId: string, patch: DocRegion | null = region): P
   photoId,
   region: patch,
 });
+
+/**
+ * Plates take the pins as an input rather than deriving them, because a
+ * photograph whose image cannot be read must still be shown once while carrying
+ * no numbers. These helpers mirror that split.
+ */
+const platesOf = (items: PinItem[]) => photoPlates(items, assignPins(items));
+/** The same items, with every photograph's image unreadable. */
+const unreadable = (items: PinItem[]) => photoPlates(items, assignPins([]));
 
 describe("pins on a photograph", () => {
   it("numbers the findings that share a photograph, in document order", () => {
@@ -75,9 +91,24 @@ describe("pins on a photograph", () => {
   });
 });
 
+describe("whether a photograph can be shown at all", () => {
+  it("is readable when either a full or a thumbnail URL is present", () => {
+    expect(photoHasImage({ url: "https://x.test/a.jpg", thumbUrl: null })).toBe(true);
+    expect(photoHasImage({ url: null, thumbUrl: "https://x.test/a-t.jpg" })).toBe(true);
+  });
+
+  it("is NOT readable with no source, and the empty string is not a source", () => {
+    // The live defect this rule exists for: a report whose stored objects cannot
+    // be signed comes back with no URL at all, and the document then promised
+    // pins on a picture that was never going to arrive.
+    expect(photoHasImage({ url: null, thumbUrl: null })).toBe(false);
+    expect(photoHasImage({ url: "", thumbUrl: "" })).toBe(false);
+  });
+});
+
 describe("photographs carrying several items", () => {
   it("returns a plate once for a photograph shared by two items", () => {
-    const plates = photoPlates([item("F-001", "p1"), item("F-002", "p1")]);
+    const plates = platesOf([item("F-001", "p1"), item("F-002", "p1")]);
     expect(plates).toHaveLength(1);
     expect(plates[0]?.photoId).toBe("p1");
     expect(plates[0]?.items).toBe(2);
@@ -85,17 +116,32 @@ describe("photographs carrying several items", () => {
   });
 
   it("leaves a photograph carrying a single item out of the plates", () => {
-    const plates = photoPlates([item("F-001", "p1"), item("F-002", "p2")]);
+    const plates = platesOf([item("F-001", "p1"), item("F-002", "p2")]);
     expect(plates).toHaveLength(0);
   });
 
   it("plates a shared photograph even when the model marked only one item", () => {
     // Membership is "more than one finding", not "more than one region": the
     // repeating picture is the problem, and it repeats regardless of regions.
-    const plates = photoPlates([item("F-001", "p1", null), item("F-002", "p1", null)]);
+    const plates = platesOf([item("F-001", "p1", null), item("F-002", "p1", null)]);
     expect(plates).toHaveLength(1);
     expect(plates[0]?.marks.every((mark) => mark.number === null)).toBe(true);
     expect(plates[0]?.marks.every((mark) => mark.region === null)).toBe(true);
+  });
+
+  it("still shows a shared photograph once when its image cannot be read, with no numbers", () => {
+    // The picture is missing; the REPETITION is not the reason to hide it, so it
+    // is still grouped, but it must promise no pins.
+    const plates = unreadable([
+      item("F-001", "p1"),
+      item("F-002", "p1"),
+      item("F-003", "p1"),
+    ]);
+    expect(plates).toHaveLength(1);
+    expect(plates[0]?.items).toBe(3);
+    expect(plates[0]?.marks.every((mark) => mark.number === null)).toBe(true);
+    // The references survive, so the schedule grouping is not lost.
+    expect(plates[0]?.marks.map((mark) => mark.ref)).toEqual(["F-001", "F-002", "F-003"]);
   });
 
   it("numbers the plate marks with the same numbers the item rows read", () => {
@@ -107,7 +153,7 @@ describe("photographs carrying several items", () => {
       item("F-005", "p2"),
     ];
     const pins = assignPins(items);
-    const plates = photoPlates(items);
+    const plates = photoPlates(items, pins);
     const plateNumbers = new Map(
       plates.flatMap((plate) => plate.marks.map((mark) => [mark.findingId, mark.number] as const)),
     );
@@ -119,7 +165,7 @@ describe("photographs carrying several items", () => {
   });
 
   it("reports which photographs are on a plate", () => {
-    const plates = photoPlates([item("F-001", "p1"), item("F-002", "p1"), item("F-003", "p2")]);
+    const plates = platesOf([item("F-001", "p1"), item("F-002", "p1"), item("F-003", "p2")]);
     const ids = platedPhotoIds(plates);
     expect(ids.has("p1")).toBe(true);
     expect(ids.has("p2")).toBe(false);

@@ -132,13 +132,23 @@ export type PhotoPlate = {
   marks: PhotoPlateMark[];
 };
 
+/** Whether a stored photograph can actually be read. No source, no picture. */
+export function photoHasImage(photo: { url: string | null; thumbUrl: string | null }): boolean {
+  return Boolean(photo.url || photo.thumbUrl);
+}
+
 /**
  * The photographs that must be shown once with all their pins. Derived from the
  * same `assignPins` result the item rows read, so a plate and the row that
  * points at it can never carry different numbers.
+ *
+ * `pins` is passed in rather than recomputed here because a photograph whose
+ * image cannot be read still has to be shown ONCE — the repeating-picture
+ * problem exists whether or not the bytes arrive — while carrying no pin
+ * numbers, because there is no place to point at. Membership and numbering are
+ * therefore two different questions, answered by two different inputs.
  */
-export function photoPlates(items: PinItem[]): PhotoPlate[] {
-  const pins = assignPins(items);
+export function photoPlates(items: PinItem[], pins: Map<string, Pin>): PhotoPlate[] {
   const byPhoto = new Map<string, PhotoPlateMark[]>();
   for (const item of items) {
     const pin = pinFor(pins, item.photoId, item.findingId);
