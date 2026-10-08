@@ -124,11 +124,14 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
 
 /** Photo bytes budget, so a photo-heavy report cannot exhaust worker memory. */
 /**
- * How tall the photograph on a plate page is drawn. Big, because the page is
- * otherwise its own, and sized so that a photograph with six items still leaves
- * room for all six of them underneath on the same sheet.
+ * Bounds for the photograph on a plate page. The height itself is whatever is
+ * left once the words around it are measured — a fixed cap left roughly a third
+ * of every plate page blank at the foot, which is the same waste this layout
+ * exists to remove. The bounds stop a two-item photograph becoming a poster and a
+ * small one disappearing.
  */
-const PLATE_PHOTO_HEIGHT = 340;
+const MIN_PLATE_PHOTO_HEIGHT = 200;
+const MAX_PLATE_PHOTO_HEIGHT = 480;
 const PHOTO_BUDGET_BYTES = 40 * 1024 * 1024;
 const SINGLE_PHOTO_LIMIT_BYTES = 2.5 * 1024 * 1024;
 
@@ -1415,11 +1418,11 @@ async function drawPhotoPlate(
   // The photograph owns the page, so the page starts fresh — unless this one is
   // already untouched, which would only put a blank sheet in front of it.
   startFreshPage(writer);
-  drawPhotoPlateBody(writer, document, photo, plate, image, marks, showIntro);
+  await drawPhotoPlateBody(writer, document, photo, plate, image, marks, showIntro);
   return true;
 }
 
-function drawPhotoPlateBody(
+async function drawPhotoPlateBody(
   writer: Writer,
   document: ReportDocument,
   photo: DocPhoto,
@@ -1427,20 +1430,49 @@ function drawPhotoPlateBody(
   image: PDFImage,
   marks: Array<{ region: DocRegion; number: number | null }>,
   showIntro: boolean,
-): void {
-  if (showIntro) {
-    drawRule(writer, 14, 8);
-    eyebrow(writer, "Photographs carrying several items");
-    drawText(
-      writer,
-      "Each of these takes a page of its own: a numbered pin on the photograph for every item found on it, and those items listed underneath in pin order. An item's entry in the schedule points back at its pin.",
-      { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
-    );
-  }
-  drawImage(writer, image, writer.contentWidth, PLATE_PHOTO_HEIGHT, photo.layers, marks);
+): Promise<void> {
+  // Measure the words first — both the heading above the photograph and the index
+  // below it — so the photograph can take exactly the room that is left instead
+  // of a guessed height that leaves a blank band at the foot of the sheet.
+  const room = roomOnPage(writer);
+  const leadHeight = await measureHeight(writer, () => drawPlateLead(writer, showIntro));
+  const tailHeight = await measureHeight(writer, () => drawPlateTail(writer, document, photo, plate));
+  const photoHeight = Math.max(
+    MIN_PLATE_PHOTO_HEIGHT,
+    Math.min(room - leadHeight - tailHeight - 12, MAX_PLATE_PHOTO_HEIGHT),
+  );
+
+  drawPlateLead(writer, showIntro);
+  drawImage(writer, image, writer.contentWidth, photoHeight, photo.layers, marks);
+  drawPlateTail(writer, document, photo, plate);
+}
+
+/** Everything on a plate page above the photograph. */
+function drawPlateLead(writer: Writer, showIntro: boolean): void {
+  if (!showIntro) return;
+  drawRule(writer, 14, 8);
+  eyebrow(writer, "Photographs carrying several items");
   drawText(
     writer,
-    `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(marks)}`,
+    "Each of these takes a page of its own: a numbered pin on the photograph for every item found on it, and those items listed underneath in pin order. An item's entry in the schedule points back at its pin.",
+    { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
+  );
+}
+
+/** Everything on a plate page below the photograph: its caption and the index. */
+function drawPlateTail(
+  writer: Writer,
+  document: ReportDocument,
+  photo: DocPhoto,
+  plate: PhotoPlate,
+): void {
+  drawText(
+    writer,
+    `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(
+      plate.marks
+        .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
+        .map((mark) => ({ region: mark.region, number: mark.number })),
+    )}`,
     { size: 8, colour: MUTED, gapAfter: 8 },
   );
   drawPlateFindings(writer, document, plate);

@@ -11,37 +11,45 @@ import { vi } from "vitest";
 import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
 import { siteWalkDefinition, snapshotOf } from "@/lib/survey-definitions";
 
+/**
+ * Defaults first, overrides last. Written the other way round — reading each
+ * field out of `overrides` individually — a field nobody remembered to read is
+ * silently dropped, which is how the layout sample below managed to set a title
+ * and get `null` back without a single test complaining.
+ */
+const FINDING_DEFAULTS = {
+  id: "f1",
+  ref: "F-001",
+  sequence: 1,
+  statusId: "observation",
+  severityId: null,
+  categoryId: null,
+  findingText: "A described defect on the north elevation.",
+  snagTitle: null,
+  remedialText: "Remedial work required.",
+  rectificationAlt: null,
+  tradesmanHack: null,
+  hsNotes: null,
+  captureFields: {},
+  assignedTrade: null,
+  suggestedTrade: null,
+  tradeReasoning: null,
+  tradeConfidence: null,
+  conditionGrade: null,
+  suggestedGrade: null,
+  gradeConfidence: null,
+  dueDate: null,
+  lifecycleState: "open",
+  isConfidential: false,
+  confirmedAt: null,
+  likelyCause: null,
+  regulatoryReference: null,
+  abstainReason: null,
+  photos: [],
+};
+
 export function finding(overrides: Partial<DocFinding> = {}): DocFinding {
-  return {
-    id: overrides.id ?? "f1",
-    ref: overrides.ref ?? "F-001",
-    sequence: overrides.sequence ?? 1,
-    statusId: "observation",
-    severityId: null,
-    categoryId: null,
-    findingText: overrides.findingText ?? "A described defect on the north elevation.",
-    snagTitle: null,
-    remedialText: "Remedial work required.",
-    rectificationAlt: null,
-    tradesmanHack: null,
-    hsNotes: null,
-    captureFields: {},
-    assignedTrade: null,
-    suggestedTrade: null,
-    tradeReasoning: null,
-    tradeConfidence: null,
-    conditionGrade: null,
-    suggestedGrade: null,
-    gradeConfidence: null,
-    dueDate: null,
-    lifecycleState: "open",
-    isConfidential: false,
-    confirmedAt: null,
-    likelyCause: null,
-    regulatoryReference: null,
-    abstainReason: null,
-    photos: overrides.photos ?? [],
-  };
+  return { ...FINDING_DEFAULTS, ...overrides } as DocFinding;
 }
 
 export function reportDocument(findings: DocFinding[]): ReportDocument {
