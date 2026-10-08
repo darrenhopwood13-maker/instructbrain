@@ -52,7 +52,10 @@ export function finding(overrides: Partial<DocFinding> = {}): DocFinding {
   return { ...FINDING_DEFAULTS, ...overrides } as DocFinding;
 }
 
-export function reportDocument(findings: DocFinding[]): ReportDocument {
+export function reportDocument(
+  findings: DocFinding[],
+  snapshot = snapshotOf(siteWalkDefinition),
+): ReportDocument {
   return {
     report: {
       id: "r1",
@@ -72,7 +75,7 @@ export function reportDocument(findings: DocFinding[]): ReportDocument {
     },
     project: null,
     organisation: null,
-    snapshot: snapshotOf(siteWalkDefinition),
+    snapshot,
     findings,
     photos: [],
     synthesis: null,

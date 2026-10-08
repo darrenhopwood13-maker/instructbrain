@@ -64,7 +64,15 @@ import {
   meterReadingText,
   meterSlots,
 } from "@/lib/report/handover";
-import { isManualOnly, NOT_ASSESSED_ID, photoWorkflowOf, requiresConditionGrade, resolveSeverity, resolveStatus } from "@/lib/survey-types";
+import {
+  isManualOnly,
+  NOT_ASSESSED_ID,
+  photoWorkflowOf,
+  requiresConditionGrade,
+  resolveRegulatoryReference,
+  resolveSeverity,
+  resolveStatus,
+} from "@/lib/survey-types";
 import {
   SCHEDULE_OF_CONDITION_HEADING,
   SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT,
@@ -1303,7 +1311,14 @@ async function drawFindingBody(
     drawText(writer, `Likely cause: ${finding.likelyCause}`, { size: 9, colour: MUTED });
   }
   if (finding.regulatoryReference) {
-    drawText(writer, `Reference: ${finding.regulatoryReference}`, { size: 9, colour: MUTED });
+    // The document names the instrument, never the internal id. The screen has
+    // always resolved this; the PDF drew the raw id, so a client read "bs_7671"
+    // where the regulation's own title belongs. Same wording as the screen.
+    const reference = resolveRegulatoryReference(document.snapshot, finding.regulatoryReference);
+    drawText(writer, `Reference: ${reference?.label ?? finding.regulatoryReference}`, {
+      size: 9,
+      colour: MUTED,
+    });
   }
 
   const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);
