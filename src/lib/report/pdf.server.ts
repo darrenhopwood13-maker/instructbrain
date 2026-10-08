@@ -138,6 +138,20 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
  * exists to remove. The bounds stop a two-item photograph becoming a poster and a
  * small one disappearing.
  */
+/**
+ * The crop printed beside an item, and the gap left under it.
+ *
+ * 🔴 The reservation and the cursor advance MUST use the same two numbers. They
+ * once did not: the reservation asked for `frameHeight + 16` while drawing the
+ * crop only consumed `frameHeight + 8`. In the eight points between the two
+ * figures the entry measured as fitting, and the crop was then pushed to the
+ * next page on its own — leaving a photograph orphaned above the following
+ * item's heading. That is what put item 11's cracked-tile photograph directly
+ * above "Item 19" on the issued SNG-2026-10-006.
+ */
+const CROP_FRAME_HEIGHT = 132;
+const CROP_FRAME_GAP = 8;
+
 const MIN_PLATE_PHOTO_HEIGHT = 200;
 // Dal, 8 Oct 2026: "fill more of page". A portrait photograph was capped at 480pt and
 // so printed at about 360pt of the 499pt available; the room on the page was there and
@@ -1255,11 +1269,31 @@ async function drawFindingBody(
     align: "center",
   });
 
+  // The item's headline. Every finding already carries a one-line title, and it
+  // is the only part of a twenty-page entry a reader skimming the schedule will
+  // actually read. It is printed as the item's own heading, above the chips,
+  // rather than as one more line of body text below them.
+  if (finding.snagTitle) {
+    drawText(writer, finding.snagTitle, {
+      size: 13,
+      bold: true,
+      colour: INK,
+      align: "center",
+      gapAfter: 4,
+    });
+  }
+
+  // Where this item sits on its photograph, in words, so the pin can be traced
+  // without hunting back for the plate it was printed on.
+  const pinned = finding.photos.find((attached) => pinFor(pins, attached.photo.id, finding.id));
+  const pin = pinned ? pinFor(pins, pinned.photo.id, finding.id) : null;
+
   const chips = [
     `Status: ${status.label}`,
     severity ? `Severity: ${severity.label}` : null,
     finding.assignedTrade ? `Trade: ${finding.assignedTrade}` : null,
     finding.dueDate ? `Target: ${formatDocumentDate(finding.dueDate)}` : null,
+    pin && pinned ? `Photograph ${pinned.photo.sequence}, pin ${pin.number}` : null,
   ].filter((entry): entry is string => !!entry);
   drawText(writer, chips.join("   ·   "), {
     size: 9,
@@ -1289,7 +1323,6 @@ async function drawFindingBody(
     });
   }
 
-  if (finding.snagTitle) drawText(writer, finding.snagTitle, { size: 11, bold: true, gapAfter: 2 });
   if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
   if (finding.remedialText) {
     drawText(writer, "Required action", { size: 8, bold: true, colour: MUTED });
@@ -1372,8 +1405,10 @@ async function drawFindingBody(
         continue;
       }
       const frameWidth = writer.contentWidth * 0.4;
-      const frameHeight = 132;
-      ensure(writer, frameHeight + 16);
+      const frameHeight = CROP_FRAME_HEIGHT;
+      // Reserve exactly what the crop will consume, so an entry that measures as
+      // fitting is never broken here afterwards.
+      ensure(writer, frameHeight + CROP_FRAME_GAP);
       const top = writer.cursor.y;
       drawImageCrop(
         writer.cursor.page,
@@ -1404,9 +1439,47 @@ async function drawFindingBody(
         color: MUTED,
         maxWidth: writer.contentWidth - frameWidth - 10,
       });
-      writer.cursor.y = top - frameHeight - 8;
+      writer.cursor.y = top - frameHeight - CROP_FRAME_GAP;
     }
   }
+}
+
+/**
+ * A section heading a reader can find by flicking through.
+ *
+ * The group label used to be twelve-point accent text with nothing around it,
+ * which on a twenty-two page schedule read as one more line of the document
+ * rather than as the start of a section. It is now a navy band carrying the
+ * count of items it holds, so the shape of the report is visible from the edge
+ * of the page — and it is drawn in the report's own navy, never an organisation
+ * override, exactly as the cover band is.
+ */
+function drawGroupHeading(writer: Writer, label: string, count: number): void {
+  const height = 20;
+  const gapAfter = 8;
+  ensure(writer, height + gapAfter + 4);
+  if (writer.dry) {
+    writer.cursor.y -= height + gapAfter;
+    return;
+  }
+  const top = writer.cursor.y - 4;
+  const page = writer.cursor.page;
+  page.drawRectangle({
+    x: writer.margin,
+    y: top - height,
+    width: writer.contentWidth,
+    height,
+    color: BRAND_NAVY,
+  });
+  page.drawRectangle({ x: writer.margin, y: top - height, width: 4, height, color: ACCENT });
+  page.drawText(sanitise(`${label} — ${count} ${count === 1 ? "item" : "items"}`), {
+    x: writer.margin + 12,
+    y: top - height + 6,
+    size: 10,
+    font: writer.bold,
+    color: PAPER_WHITE,
+  });
+  writer.cursor.y = top - height - gapAfter;
 }
 
 /**
@@ -1897,6 +1970,108 @@ async function buildInventoryReportPdf(
   return { bytes, filename: pdfFilename(document, options) };
 }
 
+/**
+ * The schedule of items: every item, once, in the order the report prints them.
+ *
+ * The report had no contents page at all. `sectionsFor` produces one only when
+ * a report spans more than one survey type, so the ordinary single-survey
+ * schedule — which is the case that matters — had no index, and finding "item
+ * 5" meant reading twenty-two pages. This is that page: the one thing the
+ * reader needs in order to use the rest of the document.
+ *
+ * It carries the report's own identity at the top, in the same navy the cover
+ * band and the section headings use.
+ */
+function drawScheduleOfItems(
+  writer: Writer,
+  document: ReportDocument,
+  findings: DocFinding[],
+  pins: Map<string, Pin>,
+  view: ResultView,
+): void {
+  if (findings.length < 2) return;
+  startFreshPage(writer);
+  if (writer.dry) return;
+
+  const page = writer.cursor.page;
+  const size = 7.6;
+  const row = (offset: number) => writer.margin + offset;
+  // The item's photograph and the pin it carries, in words, so the table can
+  // be read on its own without the plates.
+  const markOf = (finding: DocFinding): string => {
+    const pinned = finding.photos.find((attached) => pinFor(pins, attached.photo.id, finding.id));
+    if (!pinned) {
+      const single = finding.photos[0];
+      return single ? `Ph ${single.photo.sequence}` : "-";
+    }
+    const pin = pinFor(pins, pinned.photo.id, finding.id);
+    return pin ? `Ph ${pinned.photo.sequence} / pin ${pin.number}` : `Ph ${pinned.photo.sequence}`;
+  };
+
+  let y = writer.cursor.y;
+  page.drawRectangle({ x: writer.margin, y: y - 22, width: writer.contentWidth, height: 22, color: BRAND_NAVY });
+  page.drawRectangle({ x: writer.margin, y: y - 22, width: 4, height: 22, color: ACCENT });
+  page.drawText(sanitise(`Schedule of items — ${findings.length}`), {
+    x: row(12), y: y - 15, size: 10, font: writer.bold, color: PAPER_WHITE,
+  });
+  y -= 34;
+
+  const columns: Array<[string, number]> = [
+    ["No.", 0],
+    ["Item", 16],
+    ["What it is", 50],
+    ["Trade", 292],
+    ["Severity", 380],
+    ["Photograph", 436],
+  ];
+  const heading = () => {
+    for (const [label, offset] of columns) {
+      page.drawText(sanitise(label), { x: row(offset), y: y - 8, size: 7, font: writer.bold, color: MUTED });
+    }
+    y -= 15;
+  };
+  heading();
+
+  const groups = groupResults({ ...document, findings }, view);
+  let index = 0;
+  for (const group of groups) {
+    if (y < writer.margin + 60) {
+      newPage(writer);
+      y = writer.cursor.y;
+      heading();
+    }
+    page.drawRectangle({ x: writer.margin, y: y - 12, width: writer.contentWidth, height: 15, color: rgb(0.93, 0.95, 0.97) });
+    page.drawText(sanitise(group.label.toUpperCase()), {
+      x: row(0), y: y - 8, size: 7, font: writer.bold, color: BRAND_NAVY,
+    });
+    y -= 15;
+    for (const finding of group.findings) {
+      index += 1;
+      const titleLines = wrap(finding.snagTitle ?? finding.findingText ?? "", writer.regular, size, 236);
+      const height = Math.max(13, titleLines.length * 9.6 + 3);
+      if (y < writer.margin + 60) {
+        newPage(writer);
+        y = writer.cursor.y;
+        heading();
+      }
+      page.drawText(sanitise(String(index)), { x: row(0), y: y - 9, size, font: writer.bold, color: MUTED });
+      page.drawText(sanitise(itemLabel(finding.ref)), { x: row(16), y: y - 9, size, font: writer.bold, color: INK });
+      titleLines.slice(0, 2).forEach((line, lineIndex) => {
+        page.drawText(sanitise(line), { x: row(50), y: y - 9 - lineIndex * 9.6, size, font: writer.regular, color: INK });
+      });
+      page.drawText(sanitise(finding.assignedTrade ?? "-"), { x: row(292), y: y - 9, size, font: writer.regular, color: INK });
+      page.drawText(sanitise(resolveSeverity(document.snapshot, finding.severityId)?.label ?? "-"), {
+        x: row(380), y: y - 9, size, font: writer.regular, color: INK,
+      });
+      page.drawText(sanitise(markOf(finding)), { x: row(436), y: y - 9, size, font: writer.regular, color: MUTED });
+      y -= height;
+    }
+    y -= 2;
+  }
+
+  writer.cursor.y = y;
+}
+
 export async function buildReportPdf(
   document: ReportDocument,
   options: BuildPdfOptions,
@@ -2094,6 +2269,21 @@ export async function buildReportPdf(
     }
   }
 
+  /* The schedule of items: the document's own index, and the one thing that
+     makes a twenty-page list usable. Printed before the entries it indexes. */
+  if (options.variant === "full" && findings.length > 1) {
+    drawScheduleOfItems(
+      writer,
+      document,
+      findings,
+      pins,
+      safeResultView(options.view, defaultResultView(document.snapshot, document.tradeEnabled ?? true)),
+    );
+    // The entries begin on a page of their own: the schedule is a page to be
+    // read, and the first section heading should not sit under the table.
+    startFreshPage(writer);
+  }
+
   /* Results — presented as a Schedule of Condition where the survey grades. */
   if (scheduleCondition) {
     drawRule(writer, 14, 10);
@@ -2145,16 +2335,16 @@ export async function buildReportPdf(
         ensure(writer, 70);
         drawText(writer, section.label, { size: 14, bold: true, gapAfter: 4, align: "center" });
       }
+      // The order is the survey definition's own severity scale order, and it is
+      // NOT re-sorted here. The scales run in both directions — snagging is
+      // declared cosmetic-first, while site walk, electrical, mechanical,
+      // fit-out and damp are all declared most-serious-first — so "worst first"
+      // is a property of each definition, not something this renderer can infer.
+      // Reversing them uniformly was measured to reorder five of the seven the
+      // wrong way. See the schedule above for finding an item regardless.
       const groups = groupResults({ ...document, findings: section.findings }, view);
       for (const group of groups) {
-        ensure(writer, 60);
-        drawText(writer, group.label, {
-          size: 12,
-          bold: true,
-          colour: ACCENT,
-          gapAfter: 2,
-          align: "center",
-        });
+        drawGroupHeading(writer, group.label, group.findings.length);
         for (const finding of group.findings) {
           await drawPlatesFor(finding);
           await drawFinding(writer, document, finding, fetcher, pins, plated, platesPrinted);
