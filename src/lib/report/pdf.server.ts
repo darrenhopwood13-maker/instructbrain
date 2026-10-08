@@ -131,7 +131,12 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
  * small one disappearing.
  */
 const MIN_PLATE_PHOTO_HEIGHT = 200;
-const MAX_PLATE_PHOTO_HEIGHT = 480;
+// Dal, 8 Oct 2026: "fill more of page". A portrait photograph was capped at 480pt and
+// so printed at about 360pt of the 499pt available; the room on the page was there and
+// unused. The cap now sits close to the page height, so the room calculation decides and
+// a tall photograph fills its sheet. A landscape photograph is unchanged: it is bounded
+// by the width it already uses, not by this number.
+const MAX_PLATE_PHOTO_HEIGHT = 640;
 const PHOTO_BUDGET_BYTES = 40 * 1024 * 1024;
 const SINGLE_PHOTO_LIMIT_BYTES = 2.5 * 1024 * 1024;
 
