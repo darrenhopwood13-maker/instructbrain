@@ -3,7 +3,17 @@ import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
-import { assignPins, photoHasImage, pinItemsOf, platedPhotoIds, photoPlates, pinFor, type Pin, type PhotoPlate } from "@/lib/report/photo-pins";
+import {
+  assignPins,
+  photoHasImage,
+  pinItemsOf,
+  planPlatePlacements,
+  platedPhotoIds,
+  photoPlates,
+  pinFor,
+  type Pin,
+  type PhotoPlate,
+} from "@/lib/report/photo-pins";
 import { InlineField } from "@/components/report/inline-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -976,6 +986,13 @@ function Results({
   const plates = photoPlates(pinItems, pins);
   const plated = platedPhotoIds(plates);
 
+  // Which plate sits above which item. The same function the PDF uses, so the
+  // screen and the printed document put a photograph in the same place.
+  const orderedFindings = groups.flatMap((group) => group.findings);
+  const platePlan = planPlatePlacements(orderedFindings, plates);
+  const plannedPlates = orderedFindings.flatMap((finding) => platePlan.get(finding.id) ?? []);
+  const firstPlannedPlateId = plannedPlates[0]?.photoId;
+
   return (
     <section aria-labelledby="section-results">
       <div className="grid justify-items-center gap-3 text-center">
@@ -1018,8 +1035,6 @@ function Results({
 
       {condition ? <ConditionsAndLimitations /> : null}
 
-      <PhotoPlates document={document} plates={plates} {...(onPhotoRegion ? { onPhotoRegion } : {})} />
-
       {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
           No items have been recorded on this report yet.
@@ -1034,6 +1049,19 @@ function Results({
             <ul className="mt-3 space-y-4">
               {group.findings.map((finding) => (
                 <li key={finding.id}>
+                  {(platePlan.get(finding.id) ?? []).map((plate) => {
+                    const photo = photoById.get(plate.photoId);
+                    if (!photo) return null;
+                    return (
+                      <PhotoPlate
+                        key={plate.photoId}
+                        photo={photo}
+                        plate={plate}
+                        intro={plate.photoId === firstPlannedPlateId}
+                        {...(onPhotoRegion ? { onPhotoRegion } : {})}
+                      />
+                    );
+                  })}
                   <FindingRow
                     document={document}
                     finding={finding}
@@ -1055,84 +1083,83 @@ function Results({
 }
 
 /**
- * The photographs that carry more than one item, each shown ONCE with every pin
- * on it. The item rows underneath point at a pin number instead of printing the
- * same picture again, so a photograph never appears twice in the schedule and a
- * six-item photograph stops being six copies of one frame.
+ * One photograph carrying several items, shown ONCE with every pin on it, directly
+ * above the FIRST item that refers to it. Later items on the same photograph point
+ * up at the pins rather than printing the picture again.
  *
- * A photograph with a single item is NOT here: it stays exactly as it always
- * looked, full width beside its item. The new treatment appears only where the
+ * Placed, not collected. These used to sit in a single block above the whole
+ * schedule, which on a 58-item report put ten pages of pictures ahead of the first
+ * finding — reviewing it meant holding a photograph in your head while reading an
+ * item nine pages later. Dal, on a received report: "the photos with the boxes in
+ * them are all at the top of the report and then all the findings at the bottom,
+ * it's practically impossible to review anything."
+ *
+ * A photograph with a single item is NOT here: it stays beside its own item, full
+ * width, exactly as it always looked. The new treatment appears only where the
  * problem is.
+ *
+ * A photograph whose image cannot be read is still shown, as a plain panel naming
+ * the items, because on screen there is room to explain. The PDF skips it instead
+ * and says so on the item.
  */
-function PhotoPlates({
-  document,
-  plates,
+function PhotoPlate({
+  photo,
+  plate,
+  intro,
   onPhotoRegion,
 }: {
-  document: ReportDocument;
-  plates: PhotoPlate[];
+  photo: DocPhoto;
+  plate: PhotoPlate;
+  intro: boolean;
   onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
 }) {
-  if (plates.length === 0) return null;
-
-  const photoById = new Map<string, DocPhoto>();
-  for (const finding of document.findings) {
-    for (const attachment of finding.photos) photoById.set(attachment.photo.id, attachment.photo);
-  }
-
-  const shown = plates
-    .map((plate) => ({ plate, photo: photoById.get(plate.photoId) }))
-    .filter((entry): entry is { plate: PhotoPlate; photo: DocPhoto } => !!entry.photo);
-
-  if (shown.length === 0) return null;
-
+  const readable = photoHasImage(photo);
   return (
-    <div className="mt-5 rounded-xl border border-border bg-surface-sunken p-4">
-      <h3 className="eyebrow border-b border-border pb-1.5">Photographs carrying several items</h3>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Each of these appears once, with a numbered pin per item, instead of being repeated beside
-        every item. A pin marks the area the item refers to. The marked area is the reader's own
-        estimate of the area, so a pin is drawn only where one was actually recorded.
-      </p>
-      <div className="mt-3 space-y-4">
-        {shown.map(({ plate, photo }) =>
-          photoHasImage(photo) ? (
-            <div key={photo.id} id={plateAnchorId(photo.id)} className="scroll-mt-24">
-              <PhotoFigure
-                attachment={{ photo, role: "plate", region: null }}
-                marks={plate.marks
-                  .filter((mark) => mark.region !== null)
-                  .map((mark) => ({
-                    region: mark.region!,
-                    number: mark.number,
-                    total: mark.total,
-                    findingId: mark.findingId,
-                  }))}
-                zoomable
-                caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
-                {...(onPhotoRegion
-                  ? { onRegionMove: (findingId, next) => onPhotoRegion(findingId, photo.id, next) }
-                  : {})}
-              />
-            </div>
-          ) : (
-            // The picture is not there. Say so, and name the items anyway, so the
-            // reader still knows these items belong to the same photograph
-            // instead of meeting a broken frame with no explanation.
-            <div
-              key={photo.id}
-              id={plateAnchorId(photo.id)}
-              className="scroll-mt-24 rounded-lg border border-dashed border-border bg-surface-raised p-3"
-            >
-              <p className="text-xs font-semibold text-foreground">
-                Photograph {photo.sequence} · {plate.items} items on this photograph
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                The stored image could not be read, so there is no pin to show. The items are listed
-                in the schedule: {plate.marks.map((mark) => mark.ref).join(", ")}.
-              </p>
-            </div>
-          ),
+    <div className="mb-4 rounded-xl border border-border bg-surface-sunken p-3">
+      {intro ? (
+        <>
+          <h3 className="eyebrow border-b border-border pb-1.5">
+            Photographs carrying several items
+          </h3>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Each of these appears once, with a numbered pin per item, and sits directly above the
+            items that refer to it. A pin marks the area the item refers to. The marked area is the
+            reader&apos;s own estimate of the area, so a pin is drawn only where one was actually
+            recorded.
+          </p>
+        </>
+      ) : null}
+      <div id={plateAnchorId(photo.id)} className={intro ? "mt-3 scroll-mt-24" : "scroll-mt-24"}>
+        {readable ? (
+          <PhotoFigure
+            attachment={{ photo, role: "plate", region: null }}
+            marks={plate.marks
+              .filter((mark) => mark.region !== null)
+              .map((mark) => ({
+                region: mark.region!,
+                number: mark.number,
+                total: mark.total,
+                findingId: mark.findingId,
+              }))}
+            zoomable
+            caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
+            {...(onPhotoRegion
+              ? { onRegionMove: (findingId, next) => onPhotoRegion(findingId, photo.id, next) }
+              : {})}
+          />
+        ) : (
+          // The picture is not there. Say so, and name the items anyway, so the
+          // reader still knows these items belong to the same photograph instead
+          // of meeting a broken frame with no explanation.
+          <div className="rounded-lg border border-dashed border-border bg-surface-raised p-3">
+            <p className="text-xs font-semibold text-foreground">
+              Photograph {photo.sequence} · {plate.items} items on this photograph
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The stored image could not be read, so there is no pin to show. The items are listed
+              in the schedule: {plate.marks.map((mark) => mark.ref).join(", ")}.
+            </p>
+          </div>
         )}
       </div>
     </div>

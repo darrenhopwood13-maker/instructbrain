@@ -3,11 +3,12 @@ import {
   assignPins,
   photoHasImage,
   photoPlates,
+  planPlatePlacements,
   platedPhotoIds,
   pinFor,
   type PinItem,
 } from "@/lib/report/photo-pins";
-import type { DocRegion } from "@/lib/report/document";
+import type { DocFinding, DocRegion } from "@/lib/report/document";
 
 const region: DocRegion = { x: 0.1, y: 0.1, w: 0.2, h: 0.2 };
 
@@ -169,5 +170,60 @@ describe("photographs carrying several items", () => {
     const ids = platedPhotoIds(plates);
     expect(ids.has("p1")).toBe(true);
     expect(ids.has("p2")).toBe(false);
+  });
+});
+
+describe("where a shared photograph is placed", () => {
+  /** Only `id` and the photos' ids are read, so a minimal shape will do. */
+  const docFinding = (id: string, photoIds: string[]): DocFinding =>
+    ({
+      id,
+      photos: photoIds.map((photoId) => ({ photo: { id: photoId }, role: "primary", region: null })),
+    }) as unknown as DocFinding;
+
+  const sharedPlate = () =>
+    platesOf([
+      item("F-003", "shared"),
+      item("F-004", "shared"),
+      item("F-009", "solo"),
+    ]);
+
+  it("places it above the FIRST item that refers to it, and nowhere else", () => {
+    const findings = [
+      docFinding("a", ["solo1"]),
+      docFinding("b", ["solo2"]),
+      docFinding("c", ["shared"]),
+      docFinding("d", ["shared"]),
+    ];
+    const plan = planPlatePlacements(findings, sharedPlate());
+
+    expect(plan.get("c")?.map((plate) => plate.photoId)).toEqual(["shared"]);
+    // The second item on the same photograph carries nothing: it points up at the
+    // pins instead, which is the whole reason the picture is printed once.
+    expect(plan.has("d")).toBe(false);
+    expect(plan.has("a")).toBe(false);
+    expect(plan.has("b")).toBe(false);
+  });
+
+  it("gives an item both plates when it refers to two of them", () => {
+    const plates = platesOf([
+      item("F-001", "p1"),
+      item("F-002", "p1"),
+      item("F-003", "p2"),
+      item("F-004", "p2"),
+    ]);
+    const plan = planPlatePlacements([docFinding("a", ["p1", "p2"])], plates);
+    expect(plan.get("a")?.map((plate) => plate.photoId)).toEqual(["p1", "p2"]);
+  });
+
+  it("plans nothing when no photograph carries more than one item", () => {
+    const plates = platesOf([item("F-001", "p1"), item("F-002", "p2")]);
+    const plan = planPlatePlacements([docFinding("a", ["p1"]), docFinding("b", ["p2"])], plates);
+    expect(plan.size).toBe(0);
+  });
+
+  it("ignores a finding whose photograph is not on a plate", () => {
+    const plan = planPlatePlacements([docFinding("a", ["solo"])], sharedPlate());
+    expect(plan.size).toBe(0);
   });
 });

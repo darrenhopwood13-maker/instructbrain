@@ -247,3 +247,64 @@ describe("a photograph whose image cannot be read", () => {
     expect(screen.queryByText("Pin 1 of 4")).toBeNull();
   });
 });
+
+/**
+ * The placement half of the same problem, on screen. The plate used to be a block
+ * above the whole schedule, so a reader met pictures first and the items they
+ * belong to a long way below. Where it sits is the assertion here, not merely
+ * that it exists.
+ */
+describe("where a shared photograph is shown on screen", () => {
+  afterEach(cleanup);
+
+  function sharedAfterTwoSolo() {
+    return render(
+      <ReportDocumentView
+        document={doc([
+          finding({ id: "a", ref: "F-001", photos: [on("solo1", 1, REGION)] }),
+          finding({ id: "b", ref: "F-002", photos: [on("solo2", 2, REGION)] }),
+          finding({ id: "c", ref: "F-003", photos: [on("shared", 3, REGION)] }),
+          finding({ id: "d", ref: "F-004", photos: [on("shared", 3, REGION)] }),
+        ])}
+        editable={false}
+      />,
+    );
+  }
+
+  it("sits inside the first item that refers to it", () => {
+    const { container } = sharedAfterTwoSolo();
+
+    const items = Array.from(container.querySelectorAll("li"));
+    const withPlate = items.findIndex((li) => li.querySelector("#photo-plate-shared"));
+
+    // The third item carries it: items one and two do not refer to it at all.
+    expect(withPlate).toBe(2);
+    expect(items[0]?.querySelector("#photo-plate-shared")).toBeNull();
+    expect(items[1]?.querySelector("#photo-plate-shared")).toBeNull();
+    // And it sits among the items rather than in a block above them.
+    expect(container.querySelector("#photo-plate-shared")?.closest("ul")).toBeTruthy();
+    expect(container.querySelector("#photo-plate-shared")?.closest("li")).toBe(items[2]);
+    // The item it sits under links up to it.
+    expect(items[2]?.querySelector("a[href='#photo-plate-shared']")).toBeTruthy();
+  });
+
+  it("explains itself once, however many plates there are", () => {
+    render(
+      <ReportDocumentView
+        document={doc([
+          finding({ id: "a", ref: "F-001", photos: [on("shared", 3, REGION)] }),
+          finding({ id: "b", ref: "F-002", photos: [on("shared", 3, REGION)] }),
+          finding({ id: "c", ref: "F-003", photos: [on("other", 7, REGION)] }),
+          finding({ id: "d", ref: "F-004", photos: [on("other", 7, REGION)] }),
+        ])}
+        editable={false}
+      />,
+    );
+
+    expect(
+      screen.getAllByRole("heading", { name: "Photographs carrying several items" }),
+    ).toHaveLength(1);
+    // Two shared photographs, so two pictures on the page and one explanation.
+    expect(screen.getAllByRole("img")).toHaveLength(2);
+  });
+});

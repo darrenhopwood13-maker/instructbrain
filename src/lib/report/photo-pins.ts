@@ -1,4 +1,4 @@
-import type { DocRegion } from "@/lib/report/document";
+import type { DocFinding, DocRegion } from "@/lib/report/document";
 
 /**
  * Numbered pins on a photograph.
@@ -148,6 +148,39 @@ export function photoHasImage(photo: { url: string | null; thumbUrl: string | nu
  * numbers, because there is no place to point at. Membership and numbering are
  * therefore two different questions, answered by two different inputs.
  */
+/**
+ * Which plates are shown immediately above which item.
+ *
+ * A photograph carrying several items belongs beside the entries that use it. It
+ * used to be collected into one block above the whole schedule, which on the
+ * 58-item report put ten pages of pictures ahead of the first finding: reviewing
+ * it meant holding a photograph in your head while reading an item nine pages
+ * later. The first item that refers to a plate carries it; later items on the
+ * same photograph point up at the pins above them.
+ *
+ * Pure, and separate from either renderer, so the screen and the PDF can be held
+ * to the same placement rule and it can be asserted without rendering anything.
+ */
+export function planPlatePlacements(
+  findings: DocFinding[],
+  plates: PhotoPlate[],
+): Map<string, PhotoPlate[]> {
+  const plateByPhotoId = new Map(plates.map((plate) => [plate.photoId, plate]));
+  const placed = new Set<string>();
+  const plan = new Map<string, PhotoPlate[]>();
+  for (const finding of findings) {
+    for (const attachment of finding.photos) {
+      const plate = plateByPhotoId.get(attachment.photo.id);
+      if (!plate || placed.has(plate.photoId)) continue;
+      placed.add(plate.photoId);
+      const here = plan.get(finding.id) ?? [];
+      here.push(plate);
+      plan.set(finding.id, here);
+    }
+  }
+  return plan;
+}
+
 export function photoPlates(items: PinItem[], pins: Map<string, Pin>): PhotoPlate[] {
   const byPhoto = new Map<string, PhotoPlateMark[]>();
   for (const item of items) {

@@ -1163,6 +1163,7 @@ async function drawFinding(
   fetcher: PhotoFetcher | null,
   pins: Map<string, Pin>,
   plated: Set<string>,
+  platesPrinted: Set<string>,
 ): Promise<void> {
   // An entry sliced across a page boundary is the thing that makes a generated
   // document look careless: a sentence stopping at the foot of one page and
@@ -1173,10 +1174,10 @@ async function drawFinding(
   // An entry longer than a page on its own still flows across pages, because the
   // only alternative is losing text.
   const needed = await measureHeight(writer, () =>
-    drawFindingBody(writer, document, finding, fetcher, pins, plated),
+    drawFindingBody(writer, document, finding, fetcher, pins, plated, platesPrinted),
   );
   if (shouldBreakBeforeEntry(needed, roomOnPage(writer), roomOnFreshPage(writer))) newPage(writer);
-  await drawFindingBody(writer, document, finding, fetcher, pins, plated);
+  await drawFindingBody(writer, document, finding, fetcher, pins, plated, platesPrinted);
 }
 
 async function drawFindingBody(
@@ -1186,6 +1187,7 @@ async function drawFindingBody(
   fetcher: PhotoFetcher | null,
   pins: Map<string, Pin>,
   plated: Set<string>,
+  platesPrinted: Set<string>,
 ): Promise<void> {
   const status = resolveStatus(document.snapshot, finding.statusId);
   const severity = resolveSeverity(document.snapshot, finding.severityId);
@@ -1292,9 +1294,14 @@ async function drawFindingBody(
       // full-width copy of the same frame — this is what takes the pages out.
       const pin = pinFor(pins, attached.photo.id, finding.id);
       if (!attached.region) {
+        // "Printed above" is only true if it is. A photograph whose bytes would
+        // not come back leaves no plate to point at, and saying otherwise is the
+        // same empty promise this work exists to remove.
         drawText(
           writer,
-          `Photograph ${attached.photo.sequence} is printed above with its pins. No area was recorded for this item.`,
+          platesPrinted.has(attached.photo.id)
+            ? `Photograph ${attached.photo.sequence} is printed above with its pins. No area was recorded for this item.`
+            : `Photograph ${attached.photo.sequence} could not be read, so it is not printed and there is no pin for this item.`,
           { size: 8, colour: MUTED, gapAfter: 6 },
         );
         continue;
@@ -1982,14 +1989,19 @@ export async function buildReportPdf(
   // than in a block at the front of the report. `plated` is still what tells an
   // entry to print a crop instead of another copy of the whole frame.
   const plateById = new Map(plates.map((plate) => [plate.photoId, plate]));
-  const platesDrawn = new Set<string>();
+  // Attempted, so a plate that cannot be fetched is not retried for every item on
+  // it; and printed, because that is the only thing an item is allowed to promise
+  // when it says "printed above with its pins".
+  const plateAttempted = new Set<string>();
+  const platesPrinted = new Set<string>();
   let plateIntroShown = false;
   const drawPlatesFor = async (finding: DocFinding): Promise<void> => {
     for (const attached of finding.photos) {
       const plate = plateById.get(attached.photo.id);
-      if (!plate || platesDrawn.has(plate.photoId)) continue;
-      platesDrawn.add(plate.photoId);
+      if (!plate || plateAttempted.has(plate.photoId)) continue;
+      plateAttempted.add(plate.photoId);
       if (await drawPhotoPlate(writer, document, plate, !plateIntroShown, fetcher)) {
+        platesPrinted.add(plate.photoId);
         plateIntroShown = true;
       }
     }
@@ -2019,7 +2031,7 @@ export async function buildReportPdf(
         });
         for (const finding of group.findings) {
           await drawPlatesFor(finding);
-          await drawFinding(writer, document, finding, fetcher, pins, plated);
+          await drawFinding(writer, document, finding, fetcher, pins, plated, platesPrinted);
         }
         writer.cursor.y -= 6;
       }
@@ -2027,7 +2039,7 @@ export async function buildReportPdf(
   } else {
     for (const finding of findings) {
       await drawPlatesFor(finding);
-      await drawFinding(writer, document, finding, fetcher, pins, plated);
+      await drawFinding(writer, document, finding, fetcher, pins, plated, platesPrinted);
     }
   }
 
