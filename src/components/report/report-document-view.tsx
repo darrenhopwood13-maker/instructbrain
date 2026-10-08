@@ -3,7 +3,7 @@ import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
-import { assignPins, pinFor } from "@/lib/report/photo-pins";
+import { assignPins, pinItemsOf, platedPhotoIds, photoPlates, pinFor, type Pin, type PhotoPlate } from "@/lib/report/photo-pins";
 import { InlineField } from "@/components/report/inline-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -13,6 +13,8 @@ import {
   formatDocumentDate,
   sectionLabel,
   type DocFinding,
+  type DocFindingPhoto,
+  type DocPhoto,
   type ReportDocument,
 } from "@/lib/report/document";
 import { readableCaptureFields } from "@/lib/report/sections";
@@ -945,6 +947,14 @@ function Results({
   const groups = groupResults(document, view);
   const condition = requiresConditionGrade(document.snapshot);
   const views = resultViewsFor(document.snapshot);
+  // Pins are computed once, from the whole document, so a photograph's numbers
+  // do not change when the reader re-orders the schedule. The photographs that
+  // carry more than one item are shown ONCE each, above the list, instead of
+  // once per item — this is the whole point of the pins.
+  const pinItems = pinItemsOf(document.findings);
+  const pins = assignPins(pinItems);
+  const plates = photoPlates(pinItems);
+  const plated = platedPhotoIds(plates);
 
   return (
     <section aria-labelledby="section-results">
@@ -988,6 +998,8 @@ function Results({
 
       {condition ? <ConditionsAndLimitations /> : null}
 
+      <PhotoPlates document={document} plates={plates} />
+
       {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
           No items have been recorded on this report yet.
@@ -1006,6 +1018,8 @@ function Results({
                     document={document}
                     finding={finding}
                     readOnly={readOnly}
+                    pins={pins}
+                    plated={plated}
                     {...(onFindingPatch ? { onFindingPatch } : {})}
                   />
                 </li>
@@ -1017,6 +1031,104 @@ function Results({
 
       {condition ? <ConditionGradeCount document={document} /> : null}
     </section>
+  );
+}
+
+/**
+ * The photographs that carry more than one item, each shown ONCE with every pin
+ * on it. The item rows underneath point at a pin number instead of printing the
+ * same picture again, so a photograph never appears twice in the schedule and a
+ * six-item photograph stops being six copies of one frame.
+ *
+ * A photograph with a single item is NOT here: it stays exactly as it always
+ * looked, full width beside its item. The new treatment appears only where the
+ * problem is.
+ */
+function PhotoPlates({ document, plates }: { document: ReportDocument; plates: PhotoPlate[] }) {
+  if (plates.length === 0) return null;
+
+  const photoById = new Map<string, DocPhoto>();
+  for (const finding of document.findings) {
+    for (const attachment of finding.photos) photoById.set(attachment.photo.id, attachment.photo);
+  }
+
+  const shown = plates
+    .map((plate) => ({ plate, photo: photoById.get(plate.photoId) }))
+    .filter((entry): entry is { plate: PhotoPlate; photo: DocPhoto } => !!entry.photo);
+
+  if (shown.length === 0) return null;
+
+  return (
+    <div className="mt-5 rounded-xl border border-border bg-surface-sunken p-4">
+      <h3 className="eyebrow border-b border-border pb-1.5">Photographs carrying several items</h3>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Each of these appears once, with a numbered pin per item, instead of being repeated beside
+        every item. A pin marks the area the item refers to. The marked area is the reader's own
+        estimate of the area, so a pin is drawn only where one was actually recorded.
+      </p>
+      <div className="mt-3 space-y-4">
+        {shown.map(({ plate, photo }) => (
+          <div key={photo.id} id={plateAnchorId(photo.id)} className="scroll-mt-24">
+            <PhotoFigure
+              attachment={{ photo, role: "plate", region: null }}
+              marks={plate.marks
+                .filter((mark) => mark.region !== null)
+                .map((mark) => ({
+                  region: mark.region!,
+                  number: mark.number,
+                  total: mark.total,
+                  findingId: mark.findingId,
+                }))}
+              zoomable
+              caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The anchor an item row links to so a reader can jump to the photograph. */
+function plateAnchorId(photoId: string): string {
+  return `photo-plate-${photoId}`;
+}
+
+/**
+ * What an item row shows in place of the photograph when the photograph is
+ * printed once above the list. It carries the pin number so the reader can find
+ * it, and says plainly when the item has no pin because the model recorded no
+ * area for it.
+ */
+function PinReference({
+  attachment,
+  pin,
+  marked,
+}: {
+  attachment: DocFindingPhoto;
+  pin: Pin | null;
+  marked: boolean;
+}) {
+  const label = pin
+    ? `Pin ${pin.number} of ${pin.total}`
+    : marked
+      ? "Marked above"
+      : "Shown above";
+  return (
+    <a
+      href={`#${plateAnchorId(attachment.photo.id)}`}
+      className="block rounded-lg border border-border bg-surface-sunken p-3 text-xs no-underline"
+    >
+      <span className="flex items-center gap-2">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-background bg-brand-accent text-[11px] font-bold leading-none text-brand-accent-ink">
+          {pin ? pin.number : "·"}
+        </span>
+        <span className="font-semibold text-foreground">{label}</span>
+      </span>
+      <span className="mt-1 block text-muted-foreground">
+        Photograph {attachment.photo.sequence} · shown above with its pins
+      </span>
+    </a>
   );
 }
 
@@ -1073,25 +1185,24 @@ function FindingRow({
   document,
   finding,
   readOnly,
+  pins,
+  plated,
   onFindingPatch,
-}: { document: ReportDocument; finding: DocFinding; readOnly: boolean } & Handlers) {
+}: {
+  document: ReportDocument;
+  finding: DocFinding;
+  readOnly: boolean;
+  /** Every pin in the document, so a row and its photograph cannot disagree. */
+  pins: Map<string, Pin>;
+  /** The photographs printed once above the list, which a row must not repeat. */
+  plated: Set<string>;
+} & Handlers) {
   const snapshot = document.snapshot;
   const status = resolveStatus(snapshot, finding.statusId);
   const severity = finding.severityId ? resolveSeverity(snapshot, finding.severityId) : null;
   const category = finding.categoryId ? resolveCategory(snapshot, finding.categoryId) : null;
   const notAssessed = status.id === NOT_ASSESSED_ID;
   const primary = finding.photos[0];
-  // One pin per item, numbered within its own photograph, computed from the whole
-  // document so the numbers are stable however the findings are grouped on screen.
-  const pins = assignPins(
-    document.findings.flatMap((item) =>
-      item.photos.map((attachment) => ({
-        findingId: item.id,
-        ref: item.ref,
-        photoId: attachment.photo.id,
-      })),
-    ),
-  );
   const references = regulatoryReferencesOf(snapshot);
   const condition = requiresConditionGrade(snapshot);
   const grade = conditionGradeOf(finding.conditionGrade);
@@ -1121,14 +1232,23 @@ function FindingRow({
       <div className="grid gap-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
         <div className="space-y-2">
           {finding.photos.length > 0 ? (
-            finding.photos.map((attachment) => (
-              <PhotoFigure
-                key={`${attachment.photo.id}-${attachment.role}`}
-                attachment={attachment}
-                pin={pinFor(pins, attachment.photo.id, finding.id)}
-                caption={`Photograph ${attachment.photo.sequence}`}
-              />
-            ))
+            finding.photos.map((attachment) =>
+              plated.has(attachment.photo.id) ? (
+                <PinReference
+                  key={`${attachment.photo.id}-${attachment.role}`}
+                  attachment={attachment}
+                  pin={pinFor(pins, attachment.photo.id, finding.id)}
+                  marked={attachment.region !== null}
+                />
+              ) : (
+                <PhotoFigure
+                  key={`${attachment.photo.id}-${attachment.role}`}
+                  attachment={attachment}
+                  pin={pinFor(pins, attachment.photo.id, finding.id)}
+                  caption={`Photograph ${attachment.photo.sequence}`}
+                />
+              ),
+            )
           ) : (
             <p className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
               No photograph attached to this finding.
