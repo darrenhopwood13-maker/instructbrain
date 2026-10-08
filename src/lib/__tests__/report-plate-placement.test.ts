@@ -13,19 +13,26 @@ import {
 } from "@/lib/__tests__/support/pdf-fixtures";
 
 /**
- * Readability phase B: a photograph carrying several items is drawn immediately
- * above the FIRST entry that refers to it.
+ * Where a photograph carrying several items is printed.
  *
- * It used to be drawn up front in one block with every other plate. Measured on
- * the live 58-item report: photographs filled pages 1 to 10 and the first finding
- * appeared on page 10, so reviewing it meant flipping between a picture at the
- * front and the item it belongs to nine pages later. Dal: "practically
- * impossible to review anything… anyone receiving a report like this would throw
- * it away."
+ * The rule has been through two rounds, and this file records both so the next
+ * person does not re-litigate them.
  *
- * The property asserted is placement, which is the whole point: the photograph's
- * caption lands on the same page as the first item that points at it, and not on
- * the first page of the document.
+ *  - Originally every plate sat in ONE BLOCK at the front of the report. Measured
+ *    on the live 58-item document: photographs filled pages 1 to 10 and the first
+ *    finding appeared on page 10. Dal: "practically impossible to review
+ *    anything… anyone receiving a report like this would throw it away."
+ *  - Then each plate moved to sit immediately above the first entry referring to
+ *    it. Better — but that still left the photograph using 45% of the page width
+ *    with a blank column beside it.
+ *  - ⭐ Now (Dal, 8 Oct 2026): "with multiple findings in one photo we have photo
+ *    per page with the multiple findings listed by pin number below." The
+ *    photograph owns a page, fills the width, and the items on it are listed
+ *    underneath in pin order.
+ *
+ * So the assertion is no longer "same page as its first item" — the items
+ * deliberately follow it. What is asserted is that the page belongs to the
+ * photograph: the index is on it, and no full entry is.
  */
 
 const REGION: DocRegion = { x: 0.4, y: 0.4, w: 0.2, h: 0.2 };
@@ -52,44 +59,59 @@ function plateReport(): ReportDocument {
 }
 
 const CAPTION = `Photograph ${SHARED_SEQUENCE} - 2 items on this photograph`;
+const INDEX_HEADING = "Findings on this photograph";
+
+async function build() {
+  serveImages();
+  const built = await buildReportPdf(plateReport(), { variant: "full", includePhotos: true });
+  return decodePageTexts(built.bytes);
+}
+
+function platePageOf(pages: string[]): number {
+  const at = pages.findIndex((text) => text.includes(CAPTION));
+  expect(at).toBeGreaterThanOrEqual(0);
+  return at;
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("where a shared photograph is printed", () => {
-  it("sits on the same page as the first entry that refers to it", async () => {
-    serveImages();
-    const built = await buildReportPdf(plateReport(), { variant: "full", includePhotos: true });
-    const pages = await decodePageTexts(built.bytes);
+describe("the page a shared photograph is given", () => {
+  it("belongs to the photograph: the index is on it, no full entry is", async () => {
+    const pages = await build();
+    const page = pages[platePageOf(pages)] ?? "";
 
-    const firstReference = marker("START", SHARED_FROM);
-    const pageOf = pagesOf([CAPTION, firstReference], pages);
+    // The items on it are listed underneath, by pin, in pin order.
+    expect(page).toContain(INDEX_HEADING);
+    expect(page).toContain("Pin 1 - ");
+    expect(page).toContain("Pin 2 - ");
+    expect(page.indexOf("Pin 1 - ")).toBeLessThan(page.indexOf("Pin 2 - "));
 
-    // Both were found, so a miss cannot be mistaken for correct placement.
-    expect(pageOf.has(CAPTION)).toBe(true);
-    expect(pageOf.has(firstReference)).toBe(true);
-
-    expect(pageOf.get(CAPTION)).toBe(pageOf.get(firstReference));
+    // And it is the photograph's page, not an entry's: every entry in the
+    // schedule prints a Status chip, and this page has none.
+    expect(page).not.toContain("Status:");
   });
 
-  it("is not printed at the front of the report", async () => {
-    serveImages();
-    const built = await buildReportPdf(plateReport(), { variant: "full", includePhotos: true });
-    const pages = await decodePageTexts(built.bytes);
-    const pageOf = pagesOf([CAPTION], pages);
-
-    // Six long items run to more than one page, so a photograph placed with its
-    // items cannot be on page 1. Under the old all-at-once block it was.
+  it("is not the first page of the report", async () => {
+    const pages = await build();
     expect(pages.length).toBeGreaterThan(1);
-    expect(pageOf.get(CAPTION)).toBeGreaterThan(0);
+    expect(platePageOf(pages)).toBeGreaterThan(0);
+  });
+
+  it("is followed by the entries it belongs to", async () => {
+    const pages = await build();
+    const pageOf = pagesOf([marker("END", SHARED_FROM), marker("END", SHARED_FROM + 1)], pages);
+
+    // Both were found, so a miss cannot be mistaken for correct placement.
+    expect(pageOf.size).toBe(2);
+    // The photograph comes first; the full entries for it come after.
+    expect(pageOf.get(marker("END", SHARED_FROM))).toBeGreaterThan(platePageOf(pages));
+    expect(pageOf.get(marker("END", SHARED_FROM + 1))).toBeGreaterThan(platePageOf(pages));
   });
 
   it("is still printed exactly once", async () => {
-    serveImages();
-    const built = await buildReportPdf(plateReport(), { variant: "full", includePhotos: true });
-    const pages = await decodePageTexts(built.bytes);
-
+    const pages = await build();
     const times = pages.reduce((total, text) => total + text.split(CAPTION).length - 1, 0);
     expect(times).toBe(1);
   });

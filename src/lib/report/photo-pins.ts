@@ -149,6 +149,21 @@ export function photoHasImage(photo: { url: string | null; thumbUrl: string | nu
  * therefore two different questions, answered by two different inputs.
  */
 /**
+ * A one-line handle for an item on a plate: its title, or the opening of its
+ * description. Not the whole entry — the schedule already carries the full
+ * record, and repeating it beside the picture would double the document for no
+ * extra information. This names the thing; the schedule describes it.
+ */
+export function plateHeadline(finding: DocFinding): string {
+  const title = (finding.snagTitle ?? "").trim();
+  if (title) return title;
+  const text = (finding.findingText ?? "").replace(/\s+/g, " ").trim();
+  const stop = text.indexOf(". ");
+  const head = stop > 0 ? text.slice(0, stop + 1) : text;
+  return head.length > 120 ? `${head.slice(0, 117)}...` : head;
+}
+
+/**
  * Which plates are shown immediately above which item.
  *
  * A photograph carrying several items belongs beside the entries that use it. It

@@ -29,7 +29,16 @@ import {
 import { BRAND_CREDIT } from "@/lib/brand";
 import { REPORT_BRAND } from "@/lib/report/brand";
 import type { DocFinding, DocPhoto, DocRegion, ReportDocument } from "@/lib/report/document";
-import { assignPins, photoHasImage, photoPlates, platedPhotoIds, pinFor, type PhotoPlate, type Pin } from "@/lib/report/photo-pins";
+import {
+  assignPins,
+  photoHasImage,
+  photoPlates,
+  plateHeadline,
+  platedPhotoIds,
+  pinFor,
+  type PhotoPlate,
+  type Pin,
+} from "@/lib/report/photo-pins";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
 import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
@@ -114,6 +123,12 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
 };
 
 /** Photo bytes budget, so a photo-heavy report cannot exhaust worker memory. */
+/**
+ * How tall the photograph on a plate page is drawn. Big, because the page is
+ * otherwise its own, and sized so that a photograph with six items still leaves
+ * room for all six of them underneath on the same sheet.
+ */
+const PLATE_PHOTO_HEIGHT = 340;
 const PHOTO_BUDGET_BYTES = 40 * 1024 * 1024;
 const SINGLE_PHOTO_LIMIT_BYTES = 2.5 * 1024 * 1024;
 
@@ -143,6 +158,12 @@ function newPage(writer: Writer): void {
     y: writer.pageSize.height - writer.margin,
     pageNumber: writer.cursor.pageNumber + 1,
   };
+}
+
+/** Start a fresh page, unless this one has not been written on at all. */
+function startFreshPage(writer: Writer): void {
+  if (writer.dry) return;
+  if (writer.cursor.y < writer.pageSize.height - writer.margin - 0.5) newPage(writer);
 }
 
 function ensure(writer: Writer, needed: number): void {
@@ -1300,7 +1321,7 @@ async function drawFindingBody(
         drawText(
           writer,
           platesPrinted.has(attached.photo.id)
-            ? `Photograph ${attached.photo.sequence} is printed above with its pins. No area was recorded for this item.`
+            ? `Photograph ${attached.photo.sequence} is printed on its own page with its pins. No area was recorded for this item.`
             : `Photograph ${attached.photo.sequence} could not be read, so it is not printed and there is no pin for this item.`,
           { size: 8, colour: MUTED, gapAfter: 6 },
         );
@@ -1355,6 +1376,15 @@ async function drawFindingBody(
  * entries that use it, so it is drawn at the moment the first of them is about
  * to be.
  *
+ * ⭐ A photograph carrying several items takes a PAGE OF ITS OWN, with the items
+ * listed underneath by pin. Dal asked for this on 8 October 2026 and it is better
+ * than either alternative considered before it: the photograph fills the width it
+ * was wasting (it used 45% of it), and the page becomes self-contained, so the
+ * picture and the entries that belong to it are read together with no flipping.
+ * Packing two photographs side by side would have halved the sheets but dragged
+ * the pictures back into a block above their items, which was the original
+ * complaint.
+ *
  * Returns whether anything was drawn, so the caller only prints the explaining
  * paragraph once, and only when there is a picture to explain.
  */
@@ -1382,18 +1412,18 @@ async function drawPhotoPlate(
     .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
     .map((mark) => ({ region: mark.region, number: mark.number }));
 
-  const draw = () => drawPhotoPlateBody(writer, photo, plate.items, image, marks, showIntro);
-  // A plate is kept whole for the same reason an entry is.
-  const needed = await measureHeight(writer, draw);
-  if (shouldBreakBeforeEntry(needed, roomOnPage(writer), roomOnFreshPage(writer))) newPage(writer);
-  draw();
+  // The photograph owns the page, so the page starts fresh — unless this one is
+  // already untouched, which would only put a blank sheet in front of it.
+  startFreshPage(writer);
+  drawPhotoPlateBody(writer, document, photo, plate, image, marks, showIntro);
   return true;
 }
 
 function drawPhotoPlateBody(
   writer: Writer,
+  document: ReportDocument,
   photo: DocPhoto,
-  items: number,
+  plate: PhotoPlate,
   image: PDFImage,
   marks: Array<{ region: DocRegion; number: number | null }>,
   showIntro: boolean,
@@ -1403,16 +1433,39 @@ function drawPhotoPlateBody(
     eyebrow(writer, "Photographs carrying several items");
     drawText(
       writer,
-      "Each of these is printed once, with a numbered pin for every item found on it, and sits directly above the entries that refer to it. An item's entry shows a crop of the area it refers to, marked with the same number.",
+      "Each of these takes a page of its own: a numbered pin on the photograph for every item found on it, and those items listed underneath in pin order. An item's entry in the schedule points back at its pin.",
       { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
     );
   }
-  drawImage(writer, image, writer.contentWidth, 300, photo.layers, marks);
+  drawImage(writer, image, writer.contentWidth, PLATE_PHOTO_HEIGHT, photo.layers, marks);
   drawText(
     writer,
-    `Photograph ${photo.sequence} - ${items} items on this photograph, ${markCaption(marks)}`,
+    `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(marks)}`,
     { size: 8, colour: MUTED, gapAfter: 8 },
   );
+  drawPlateFindings(writer, document, plate);
+}
+
+/** The items on a plate, in pin order, listed under the photograph. */
+function drawPlateFindings(writer: Writer, document: ReportDocument, plate: PhotoPlate): void {
+  const listed = plate.marks
+    .filter((mark) => mark.number !== null)
+    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+  if (listed.length === 0) return;
+  drawText(writer, "Findings on this photograph", {
+    size: 8,
+    bold: true,
+    colour: MUTED,
+    gapAfter: 2,
+  });
+  for (const mark of listed) {
+    const finding = document.findings.find((candidate) => candidate.id === mark.findingId);
+    const headline = finding ? plateHeadline(finding) : "";
+    drawText(writer, `Pin ${mark.number} - ${itemLabel(mark.ref)}${headline ? ` - ${headline}` : ""}`, {
+      size: 9,
+      gapAfter: 2,
+    });
+  }
 }
 
 async function drawManualPhotoPages(

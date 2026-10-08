@@ -8,6 +8,7 @@ import {
   photoHasImage,
   pinItemsOf,
   planPlatePlacements,
+  plateHeadline,
   platedPhotoIds,
   photoPlates,
   pinFor,
@@ -1055,6 +1056,7 @@ function Results({
                     return (
                       <PhotoPlate
                         key={plate.photoId}
+                        document={document}
                         photo={photo}
                         plate={plate}
                         intro={plate.photoId === firstPlannedPlateId}
@@ -1103,17 +1105,24 @@ function Results({
  * and says so on the item.
  */
 function PhotoPlate({
+  document,
   photo,
   plate,
   intro,
   onPhotoRegion,
 }: {
+  document: ReportDocument;
   photo: DocPhoto;
   plate: PhotoPlate;
   intro: boolean;
   onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
 }) {
   const readable = photoHasImage(photo);
+  // Copied before sorting: `plate.marks` is a prop, and the same array is read by
+  // the layout plan, so it must not be reordered in place.
+  const listed = [...plate.marks]
+    .filter((mark) => mark.number !== null)
+    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
   return (
     <div className="mb-4 rounded-xl border border-border bg-surface-sunken p-3">
       {intro ? (
@@ -1123,9 +1132,9 @@ function PhotoPlate({
           </h3>
           <p className="mt-2 text-xs text-muted-foreground">
             Each of these appears once, with a numbered pin per item, and sits directly above the
-            items that refer to it. A pin marks the area the item refers to. The marked area is the
-            reader&apos;s own estimate of the area, so a pin is drawn only where one was actually
-            recorded.
+            items that refer to it, and the items themselves are listed underneath in pin order. A
+            pin marks the area the item refers to. The marked area is the reader&apos;s own estimate
+            of the area, so a pin is drawn only where one was actually recorded.
           </p>
         </>
       ) : null}
@@ -1162,6 +1171,21 @@ function PhotoPlate({
           </div>
         )}
       </div>
+      {listed.length > 0 ? (
+        <ul className="mt-2 space-y-1 border-t border-border pt-2">
+          <li className="eyebrow text-muted-foreground">Findings on this photograph</li>
+          {listed.map((mark) => {
+            const finding = document.findings.find((candidate) => candidate.id === mark.findingId);
+            const headline = finding ? plateHeadline(finding) : "";
+            return (
+              <li key={mark.findingId} className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">Pin {mark.number}</span>
+                {` · ${mark.ref}${headline ? ` · ${headline}` : ""}`}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
