@@ -9,10 +9,27 @@
  * no headless browser available here. Photographs are fetched from storage and
  * embedded as they are — nothing in this file touches the analysis path.
  */
-import { LineCapStyle, PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import {
+  LineCapStyle,
+  PDFDocument,
+  StandardFonts,
+  clip,
+  drawObject,
+  endPath,
+  popGraphicsState,
+  pushGraphicsState,
+  rectangle,
+  rgb,
+  scale,
+  translate,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
+} from "pdf-lib";
 import { BRAND_CREDIT } from "@/lib/brand";
 import { REPORT_BRAND } from "@/lib/report/brand";
-import type { DocFinding, DocPhoto, ReportDocument } from "@/lib/report/document";
+import type { DocFinding, DocPhoto, DocRegion, ReportDocument } from "@/lib/report/document";
+import { assignPins, photoPlates, platedPhotoIds, pinFor, type PhotoPlate, type Pin } from "@/lib/report/photo-pins";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
 import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
@@ -345,7 +362,161 @@ function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, 
   }
 }
 
-function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight: number, layers: MarkupLayer[] = []): void {
+/**
+ * The area an item refers to, drawn on the photograph, with its pin number
+ * where the photograph carries more than one marked item.
+ *
+ * On paper the pin's job is to be findable: the schedule says "Pin 2 of 6" and
+ * the reader looks for the 2. A pin is drawn only where a region was actually
+ * recorded, so the page never points confidently at a place nobody chose.
+ * Colour: the accent, so a print says "the AI's own estimate", not "a person
+ * drew this".
+ */
+function drawRegionMarks(
+  page: PDFPage,
+  marks: Array<{ region: DocRegion; number: number | null }>,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  font: PDFFont,
+): void {
+  for (const mark of marks) {
+    const left = x + mark.region.x * width;
+    const top = y + (1 - mark.region.y) * height;
+    const boxWidth = mark.region.w * width;
+    const boxHeight = mark.region.h * height;
+    page.drawRectangle({
+      x: left,
+      y: top - boxHeight,
+      width: boxWidth,
+      height: boxHeight,
+      borderWidth: Math.max(1, height * 0.008),
+      borderColor: ACCENT,
+    });
+    if (mark.number === null) continue;
+    const label = String(mark.number);
+    const size = Math.max(7, height * 0.045);
+    const radius = size * 0.75;
+    const cx = left + boxWidth / 2;
+    const cy = top - boxHeight / 2;
+    page.drawCircle({ x: cx, y: cy, size: radius, color: ACCENT, borderColor: rgb(1, 1, 1), borderWidth: Math.max(0.5, radius * 0.12) });
+    page.drawText(label, {
+      x: cx - font.widthOfTextAtSize(label, size) / 2,
+      y: cy - size * 0.36,
+      size,
+      font,
+      color: INK,
+    });
+  }
+}
+
+/** How many marks a photograph carries, for the caption. */
+function markCaption(marks: Array<{ number: number | null }>): string {
+  const numbered = marks.filter((mark) => mark.number !== null).length;
+  if (numbered === 0) return "the marked area indicates the item";
+  return numbered === 1 ? "one pin on this photograph" : `${numbered} pins on this photograph`;
+}
+
+/**
+ * Where a patch lands inside the crop frame. Kept as its own function because
+ * the arithmetic carries the two things that are easy to get wrong — the sign
+ * of the vertical shift (region coordinates run from the top, the PDF's origin
+ * is the bottom left) and the use of ONE uniform scale, so a patch is never
+ * stretched to fill the frame.
+ */
+export function cropPlacement(
+  image: { width: number; height: number },
+  region: DocRegion,
+  frameWidth: number,
+  frameHeight: number,
+): {
+  drawX: number;
+  drawY: number;
+  drawWidth: number;
+  drawHeight: number;
+  originX: number;
+  originTop: number;
+  patchWidth: number;
+  patchHeight: number;
+} {
+  const patchWidth = Math.max(region.w, 0.02) * image.width;
+  const patchHeight = Math.max(region.h, 0.02) * image.height;
+  const factor = Math.min(frameWidth / patchWidth, frameHeight / patchHeight);
+  const drawWidth = image.width * factor;
+  const drawHeight = image.height * factor;
+  const originX = (frameWidth - patchWidth * factor) / 2;
+  const originTop = (frameHeight - patchHeight * factor) / 2;
+  return {
+    drawX: originX - region.x * drawWidth,
+    drawY: frameHeight - originTop - patchHeight * factor - (1 - region.y - region.h) * drawHeight,
+    drawWidth,
+    drawHeight,
+    originX,
+    originTop,
+    patchWidth,
+    patchHeight,
+  };
+}
+
+/**
+ * A tight crop of one patch of a photograph, drawn into a frame on the page.
+ *
+ * What this buys, measured on a 1200x900 photograph through a 10-item report:
+ * one page saved at six items on a photograph, one at eight, one at ten — and
+ * nothing at all at two, three or four, where the plate plus the crops costs the
+ * same paper as printing the frame again. So this is NOT the "page per
+ * multi-item photograph" the plan hoped for; the page saving arrives only once a
+ * photograph carries a lot of items. The reader benefit is the bigger one: the
+ * schedule entry shows the patch, not a wide site photo where the defect is 3%
+ * of the frame.
+ *
+ * pdf-lib has no clipping option on drawImage, so this emits the operators
+ * itself — clip to the frame, then draw the whole image translated and scaled so
+ * the patch lands inside it. The image is never distorted: one uniform scale,
+ * and the patch is centred inside the frame.
+ */
+function drawImageCrop(
+  page: PDFPage,
+  image: PDFImage,
+  region: DocRegion,
+  x: number,
+  top: number,
+  frameWidth: number,
+  frameHeight: number,
+): void {
+  const place = cropPlacement(image, region, frameWidth, frameHeight);
+  const frameBottom = top - frameHeight;
+  const key = page.node.newXObject("Image", image.ref);
+  page.pushOperators(
+    pushGraphicsState(),
+    translate(x, frameBottom),
+    rectangle(0, 0, frameWidth, frameHeight),
+    clip(),
+    endPath(),
+    translate(place.drawX, place.drawY),
+    scale(place.drawWidth, place.drawHeight),
+    drawObject(key),
+    popGraphicsState(),
+  );
+  page.drawRectangle({
+    x,
+    y: frameBottom,
+    width: frameWidth,
+    height: frameHeight,
+    borderWidth: 0.75,
+    borderColor: MUTED,
+  });
+}
+
+function drawImage(
+  writer: Writer,
+  image: PDFImage,
+  maxWidth: number,
+  maxHeight: number,
+  layers: MarkupLayer[] = [],
+  marks: Array<{ region: DocRegion; number: number | null }> = [],
+): void {
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
   const width = image.width * scale;
   const height = image.height * scale;
@@ -357,6 +528,15 @@ function drawImage(writer: Writer, image: PDFImage, maxWidth: number, maxHeight:
     height,
   });
   drawMarkup(writer.cursor.page, layers, writer.margin, writer.cursor.y - height, width, height, writer.bold);
+  drawRegionMarks(
+    writer.cursor.page,
+    marks,
+    writer.margin,
+    writer.cursor.y - height,
+    width,
+    height,
+    writer.bold,
+  );
   writer.cursor.y -= height + 8;
 }
 
@@ -898,6 +1078,8 @@ async function drawFinding(
   document: ReportDocument,
   finding: DocFinding,
   fetcher: PhotoFetcher | null,
+  pins: Map<string, Pin>,
+  plated: Set<string>,
 ): Promise<void> {
   const status = resolveStatus(document.snapshot, finding.statusId);
   const severity = resolveSeverity(document.snapshot, finding.severityId);
@@ -984,8 +1166,99 @@ async function drawFinding(
   if (fetcher) {
     for (const attached of finding.photos.slice(0, 3)) {
       const image = await embedPhoto(writer, fetcher, attached.photo);
-      if (image) drawImage(writer, image, writer.contentWidth * 0.62, 260, attached.photo.layers);
+      if (!image) continue;
+      const shared = plated.has(attached.photo.id);
+      if (!shared) {
+        // A photograph carrying one item: full width beside that item, with the
+        // area it refers to drawn on it. No pin — there is nothing to tell apart.
+        drawImage(
+          writer,
+          image,
+          writer.contentWidth * 0.62,
+          260,
+          attached.photo.layers,
+          attached.region ? [{ region: attached.region, number: null }] : [],
+        );
+        continue;
+      }
+      // The photograph is printed once, above the schedule, carrying every pin.
+      // Here the item prints a tight crop of its own patch instead of another
+      // full-width copy of the same frame — this is what takes the pages out.
+      const pin = pinFor(pins, attached.photo.id, finding.id);
+      if (!attached.region) {
+        drawText(
+          writer,
+          `Photograph ${attached.photo.sequence} is printed above with its pins. No area was recorded for this item.`,
+          { size: 8, colour: MUTED, gapAfter: 6 },
+        );
+        continue;
+      }
+      const frameWidth = writer.contentWidth * 0.4;
+      const frameHeight = 132;
+      ensure(writer, frameHeight + 16);
+      const top = writer.cursor.y;
+      drawImageCrop(writer.cursor.page, image, attached.region, writer.margin, top, frameWidth, frameHeight);
+      const caption = pin
+        ? `Pin ${pin.number} of ${pin.total} - photograph ${attached.photo.sequence}`
+        : `Photograph ${attached.photo.sequence} - the marked area`;
+      writer.cursor.page.drawText(sanitise(caption), {
+        x: writer.margin + frameWidth + 10,
+        y: top - 14,
+        size: 9,
+        font: writer.bold,
+        color: ACCENT,
+        maxWidth: writer.contentWidth - frameWidth - 10,
+      });
+      writer.cursor.page.drawText(sanitise("A crop of the area this item refers to."), {
+        x: writer.margin + frameWidth + 10,
+        y: top - 26,
+        size: 8,
+        font: writer.regular,
+        color: MUTED,
+        maxWidth: writer.contentWidth - frameWidth - 10,
+      });
+      writer.cursor.y = top - frameHeight - 8;
     }
+  }
+}
+
+/**
+ * Every photograph that carries more than one item, drawn ONCE with all its
+ * pins, before the schedule. The item entries below then point at a pin number
+ * rather than printing the same picture again.
+ */
+async function drawPhotoPlates(
+  writer: Writer,
+  document: ReportDocument,
+  plates: PhotoPlate[],
+  fetcher: PhotoFetcher | null,
+): Promise<void> {
+  if (!fetcher || plates.length === 0) return;
+
+  const photoById = new Map<string, DocPhoto>();
+  for (const finding of document.findings) {
+    for (const attached of finding.photos) photoById.set(attached.photo.id, attached.photo);
+  }
+
+  drawRule(writer, 14, 8);
+  eyebrow(writer, "Photographs carrying several items");
+  drawText(
+    writer,
+    "Each of these is printed once, with a numbered pin for every item found on it. An item's entry in the schedule shows a crop of the area it refers to, marked with the same number.",
+    { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
+  );
+
+  for (const plate of plates) {
+    const photo = photoById.get(plate.photoId);
+    if (!photo) continue;
+    const image = await embedPhoto(writer, fetcher, photo);
+    if (!image) continue;
+    const marks = plate.marks
+      .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
+      .map((mark) => ({ region: mark.region, number: mark.number }));
+    const caption = `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(marks)}`;
+    drawImage(writer, image, writer.contentWidth, 300, photo.layers, marks);
+    drawText(writer, caption, { size: 8, colour: MUTED, gapAfter: 8 });
   }
 }
 
@@ -1369,6 +1642,19 @@ export async function buildReportPdf(
   };
 
   const findings = selectFindings(document, options);
+  // Pins are numbered from the items this document actually prints, so a trade
+  // extract's "Pin 2 of 3" refers to what the subbie can see. For the full
+  // report this is every item, which is what the screen numbers too.
+  const pinItems = findings.flatMap((finding) =>
+    finding.photos.map((attached) => ({
+      findingId: finding.id,
+      ref: finding.ref,
+      photoId: attached.photo.id,
+      region: attached.region,
+    })),
+  );
+  const pins = assignPins(pinItems);
+  const plated = platedPhotoIds(photoPlates(pinItems));
   const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
   // A condition survey is presented as a Schedule of Condition, with its
   // mandatory scope-and-limitations block printed on the artifact.
@@ -1529,6 +1815,10 @@ export async function buildReportPdf(
     eyebrow(writer, options.variant === "item" ? "Item" : "Results");
   }
 
+  // The photographs that carry more than one item, printed once with every pin,
+  // before the entries that point at them.
+  await drawPhotoPlates(writer, document, photoPlates(pinItems), fetcher);
+
   if (findings.length === 0) {
     drawText(writer, "There are no items in this selection.", { size: 10, colour: MUTED });
   } else if (options.variant === "full") {
@@ -1552,14 +1842,14 @@ export async function buildReportPdf(
           align: "center",
         });
         for (const finding of group.findings) {
-          await drawFinding(writer, document, finding, fetcher);
+          await drawFinding(writer, document, finding, fetcher, pins, plated);
         }
         writer.cursor.y -= 6;
       }
     }
   } else {
     for (const finding of findings) {
-      await drawFinding(writer, document, finding, fetcher);
+      await drawFinding(writer, document, finding, fetcher, pins, plated);
     }
   }
 
