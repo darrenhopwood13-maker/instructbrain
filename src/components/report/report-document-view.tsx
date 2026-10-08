@@ -15,6 +15,7 @@ import {
   type DocFinding,
   type DocFindingPhoto,
   type DocPhoto,
+  type DocRegion,
   type ReportDocument,
 } from "@/lib/report/document";
 import { readableCaptureFields } from "@/lib/report/sections";
@@ -94,6 +95,8 @@ type Handlers = {
     patch: FindingPatch,
     before: Record<string, unknown>,
   ) => Promise<void>;
+  /** A person's correction of the area an item points at, on one photograph. */
+  onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
 };
 
 export function ReportDocumentView({
@@ -104,6 +107,7 @@ export function ReportDocumentView({
   onViewChange,
   onReportPatch,
   onFindingPatch,
+  onPhotoRegion,
 }: {
   document: ReportDocument;
   editable?: boolean;
@@ -161,6 +165,7 @@ export function ReportDocumentView({
                 view={activeView}
                 onViewChange={setView}
                 {...(onFindingPatch ? { onFindingPatch } : {})}
+                {...(readOnly || !onPhotoRegion ? {} : { onPhotoRegion })}
               />
             </Fragment>
           );
@@ -936,6 +941,7 @@ function Results({
   print,
   view,
   onViewChange,
+  onPhotoRegion,
   onFindingPatch,
 }: {
   document: ReportDocument;
@@ -943,6 +949,7 @@ function Results({
   print: boolean;
   view: ResultView;
   onViewChange: (next: ResultView) => void;
+  onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
 } & Handlers) {
   const groups = groupResults(document, view);
   const condition = requiresConditionGrade(document.snapshot);
@@ -998,7 +1005,7 @@ function Results({
 
       {condition ? <ConditionsAndLimitations /> : null}
 
-      <PhotoPlates document={document} plates={plates} />
+      <PhotoPlates document={document} plates={plates} {...(onPhotoRegion ? { onPhotoRegion } : {})} />
 
       {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
@@ -1044,7 +1051,15 @@ function Results({
  * looked, full width beside its item. The new treatment appears only where the
  * problem is.
  */
-function PhotoPlates({ document, plates }: { document: ReportDocument; plates: PhotoPlate[] }) {
+function PhotoPlates({
+  document,
+  plates,
+  onPhotoRegion,
+}: {
+  document: ReportDocument;
+  plates: PhotoPlate[];
+  onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
+}) {
   if (plates.length === 0) return null;
 
   const photoById = new Map<string, DocPhoto>();
@@ -1081,6 +1096,9 @@ function PhotoPlates({ document, plates }: { document: ReportDocument; plates: P
                 }))}
               zoomable
               caption={`Photograph ${photo.sequence} · ${plate.items} items on this photograph`}
+              {...(onPhotoRegion
+                ? { onRegionMove: (findingId, next) => onPhotoRegion(findingId, photo.id, next) }
+                : {})}
             />
           </div>
         ))}

@@ -32,6 +32,7 @@ import {
   reportDocumentQuery,
   reportVersionsQuery,
   updateFinding,
+  updateFindingPhotoRegion,
   updateReportFields,
   type FindingPatch,
   type ReportPatch,
@@ -127,6 +128,21 @@ function ReportWorkspace() {
     before: Record<string, unknown>,
   ) => {
     await updateFinding(id, finding.id, patch, before);
+    await refresh();
+  };
+
+  /**
+   * A person moving a pin to the right place. The correction lands on the
+   * finding↔photo link, which wins over the model's own region at read time, so
+   * the AI's original estimate is kept and the person's decision is what a
+   * reader sees.
+   */
+  const onPhotoRegion = async (
+    findingId: string,
+    photoId: string,
+    region: { x: number; y: number; w: number; h: number },
+  ) => {
+    await updateFindingPhotoRegion(id, findingId, photoId, region);
     await refresh();
   };
 
@@ -730,6 +746,7 @@ function ReportWorkspace() {
                   }
                   onReportPatch={onReportPatch}
                   onFindingPatch={onFindingPatch}
+                  onPhotoRegion={onPhotoRegion}
                 />
               </div>
 

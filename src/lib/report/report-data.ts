@@ -392,6 +392,43 @@ export async function updateFinding(
   await writeAudit({ reportId, findingId, action: "finding.update", before, after: patch });
 }
 
+/**
+ * A person's correction of the area an item points at on a photograph.
+ *
+ * It is written to the finding↔photo LINK, which wins over the model's own
+ * region when the document is read — that is why the AI's original estimate is
+ * never overwritten: the correction sits beside it and the read order decides.
+ * The update is scoped to the one link, so it can never touch another item's
+ * area even if two items share the photograph.
+ */
+export async function updateFindingPhotoRegion(
+  reportId: string,
+  findingId: string,
+  photoId: string,
+  region: { x: number; y: number; w: number; h: number },
+): Promise<void> {
+  const { data, error } = await from("finding_photos")
+    .update({ region })
+    .eq("finding_id", findingId)
+    .eq("photo_id", photoId)
+    .select("photo_id");
+  if (error) {
+    throw new DataError(error.message, error.code, error.hint, error.details);
+  }
+  // No rows matched means the photograph is not linked to this item. Say so
+  // rather than reporting a save that never happened.
+  if (!data || data.length === 0) {
+    throw new DataError("That photograph is not linked to this item, so nothing was saved.", null, null, null);
+  }
+  await writeAudit({
+    reportId,
+    findingId,
+    action: "finding.photo_region",
+    before: {},
+    after: { photoId, region },
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Issue and version                                                    */
 /* ------------------------------------------------------------------ */

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { DocFindingPhoto, DocRegion } from "@/lib/report/document";
 import type { Pin } from "@/lib/report/photo-pins";
 import { PhotoMarkupOverlay } from "@/components/photos/photo-markup-overlay";
@@ -12,6 +12,8 @@ export type PhotoMark = {
   findingId?: string;
 };
 
+const clamp01 = (value: number, limit: number) => Math.max(0, Math.min(limit, value));
+
 /**
  * A photograph with the region the finding refers to drawn on it. Without the
  * box a busy site photo tells the reader nothing about which part is meant.
@@ -24,6 +26,13 @@ export type PhotoMark = {
  *
  * Tapping a pin (`zoomable`) shows that patch at full width, because the patch
  * is the thing the reader came for and on a phone the whole frame is not.
+ *
+ * Dragging a box (`onRegionMove`) corrects it. The region is the model's
+ * estimate and will sometimes be in the wrong place, so a person has to be able
+ * to move it; the correction is written to the finding↔photo link, which wins
+ * over the model's own region at read time, so the original estimate is never
+ * destroyed. Dragging needs a pointer, so it is not offered to a keyboard user —
+ * the pin number and the caption carry the same information without it.
  */
 export function PhotoFigure({
   attachment,
@@ -33,6 +42,7 @@ export function PhotoFigure({
   pin = null,
   marks,
   zoomable = false,
+  onRegionMove,
 }: {
   attachment: DocFindingPhoto;
   caption?: string;
@@ -44,6 +54,8 @@ export function PhotoFigure({
   marks?: PhotoMark[] | null;
   /** Let a reader tap a pin to see that patch full width. */
   zoomable?: boolean;
+  /** Let a person drag a box to the right place. Omit to make the box fixed. */
+  onRegionMove?: (findingId: string, region: DocRegion) => void;
 }) {
   const { photo, region } = attachment;
   const src = useFullResolution ? (photo.url ?? photo.thumbUrl) : (photo.thumbUrl ?? photo.url);
@@ -52,6 +64,75 @@ export function PhotoFigure({
 
   const [zoomed, setZoomed] = useState<PhotoMark | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+
+  // A drag keeps its own preview, so the box follows the finger without waiting
+  // for a round trip to the database.
+  const [moved, setMoved] = useState<PhotoMark[] | null>(null);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    index: number;
+    rect: DOMRect;
+    startX: number;
+    startY: number;
+    base: DocRegion;
+    findingId?: string;
+  } | null>(null);
+
+  const shown = moved ?? drawn;
+
+  const beginDrag = (index: number) => (event: React.PointerEvent<HTMLSpanElement>) => {
+    const mark = shown[index];
+    if (!onRegionMove || !mark?.findingId) return;
+    const rect = frameRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) return;
+    event.preventDefault();
+    // Pointer capture is what keeps the box following the finger when it leaves
+    // the frame. Guarded because older Safari and jsdom do not implement it.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragRef.current = {
+      index,
+      rect,
+      startX: event.clientX,
+      startY: event.clientY,
+      base: mark.region,
+      ...(mark.findingId ? { findingId: mark.findingId } : {}),
+    };
+    setMoved(drawn);
+    setDragging(index);
+  };
+
+  const move = (event: React.PointerEvent<HTMLSpanElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = (event.clientX - drag.startX) / drag.rect.width;
+    const dy = (event.clientY - drag.startY) / drag.rect.height;
+    setMoved((current) =>
+      (current ?? drawn).map((mark, index) =>
+        index === drag.index
+          ? {
+              ...mark,
+              region: {
+                x: clamp01(drag.base.x + dx, 1 - drag.base.w),
+                y: clamp01(drag.base.y + dy, 1 - drag.base.h),
+                w: drag.base.w,
+                h: drag.base.h,
+              },
+            }
+          : mark,
+      ),
+    );
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLSpanElement>) => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    setDragging(null);
+    if (!drag) return;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    const final = (moved ?? drawn)[drag.index]?.region;
+    if (final && drag.findingId) onRegionMove?.(drag.findingId, final);
+  };
 
   // Scale about the container centre and slide the patch to the middle, so the
   // patch lands in the viewport without needing the photo's pixel dimensions to
@@ -69,6 +150,7 @@ export function PhotoFigure({
   return (
     <figure className={className}>
       <div
+        ref={frameRef}
         className="relative overflow-hidden rounded-lg border border-border bg-surface-sunken"
         {...(zoomed && natural ? { style: { aspectRatio: `${natural.w} / ${natural.h}` } } : {})}
       >
@@ -92,17 +174,30 @@ export function PhotoFigure({
             Photograph unavailable — the stored image could not be read.
           </p>
         )}
-        {src && drawn.length > 0 ? (
-          <div className="pointer-events-none absolute inset-0" {...(zoomStyle ? { style: zoomStyle } : {})}>
-            {drawn.map((mark, index) => {
+        {src && shown.length > 0 ? (
+          <div className="absolute inset-0" {...(zoomStyle ? { style: zoomStyle } : {})}>
+            {shown.map((mark, index) => {
               const centreX = (mark.region.x + mark.region.w / 2) * 100;
               const centreY = (mark.region.y + mark.region.h / 2) * 100;
               const number = mark.number ?? null;
+              const draggable = !!onRegionMove && !!mark.findingId;
               return (
                 <span key={`${mark.findingId ?? "mark"}-${index}`}>
                   <span
-                    aria-hidden="true"
-                    className="absolute rounded-sm border-2 border-brand-accent shadow-[0_0_0_9999px_rgba(15,23,42,0.18)]"
+                    aria-hidden={draggable ? undefined : true}
+                    role={draggable ? "button" : undefined}
+                    aria-label={draggable ? "Move the marked area to the right place" : undefined}
+                    onPointerDown={draggable ? beginDrag(index) : undefined}
+                    onPointerMove={draggable ? move : undefined}
+                    onPointerUp={draggable ? endDrag : undefined}
+                    onPointerCancel={draggable ? endDrag : undefined}
+                    className={
+                      "absolute rounded-sm border-2 border-brand-accent " +
+                      (dragging === index
+                        ? "cursor-grabbing touch-none shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"
+                        : "shadow-[0_0_0_9999px_rgba(15,23,42,0.18)] " +
+                          (draggable ? "cursor-grab touch-none" : "pointer-events-none"))
+                    }
                     style={{
                       left: `${mark.region.x * 100}%`,
                       top: `${mark.region.y * 100}%`,
@@ -149,8 +244,11 @@ export function PhotoFigure({
       {caption ? (
         <figcaption className="mt-1.5 text-xs text-muted-foreground">
           {caption}
-          {pin && region && drawn.length === 1 ? ` · Pin ${pin.number} of ${pin.total} on this photograph` : ""}
-          {region && drawn.length === 1 ? " · the marked area indicates the finding" : ""}
+          {pin && region && shown.length === 1 ? ` · Pin ${pin.number} of ${pin.total} on this photograph` : ""}
+          {region && shown.length === 1 ? " · the marked area indicates the finding" : ""}
+          {onRegionMove && shown.some((mark) => mark.findingId)
+            ? " · drag a marked area to the right place and it is saved"
+            : ""}
         </figcaption>
       ) : null}
     </figure>
