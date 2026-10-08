@@ -1004,6 +1004,7 @@ export type Database = {
           photo_cap_per_report: number | null
           plan: string
           report_allowance: number | null
+          trade_allocation_enabled: boolean
         }
         Insert: {
           address?: string | null
@@ -1016,6 +1017,7 @@ export type Database = {
           photo_cap_per_report?: number | null
           plan?: string
           report_allowance?: number | null
+          trade_allocation_enabled?: boolean
         }
         Update: {
           address?: string | null
@@ -1028,6 +1030,7 @@ export type Database = {
           photo_cap_per_report?: number | null
           plan?: string
           report_allowance?: number | null
+          trade_allocation_enabled?: boolean
         }
         Relationships: [
           {
@@ -1570,6 +1573,7 @@ export type Database = {
           synthesis: Json | null
           synthesis_confirmed: boolean
           title: string
+          trade_allocation_enabled: boolean | null
           updated_at: string
         }
         Insert: {
@@ -1600,6 +1604,7 @@ export type Database = {
           synthesis?: Json | null
           synthesis_confirmed?: boolean
           title: string
+          trade_allocation_enabled?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -1630,6 +1635,7 @@ export type Database = {
           synthesis?: Json | null
           synthesis_confirmed?: boolean
           title?: string
+          trade_allocation_enabled?: boolean | null
           updated_at?: string
         }
         Relationships: [
