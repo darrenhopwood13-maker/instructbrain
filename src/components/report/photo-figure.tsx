@@ -1,20 +1,29 @@
 import type { DocFindingPhoto } from "@/lib/report/document";
+import type { Pin } from "@/lib/report/photo-pins";
 import { PhotoMarkupOverlay } from "@/components/photos/photo-markup-overlay";
 
 /**
  * A photograph with the region the finding refers to drawn on it. Without the
  * box a busy site photo tells the reader nothing about which part is meant.
+ *
+ * When one photograph carries several findings it also carries a numbered pin
+ * per item, so the schedule can say "Pin 2" and the reader can find it. The
+ * number is only drawn where there is a region to point at: a pin floating over
+ * an unmarked photograph would be a confident guess.
  */
 export function PhotoFigure({
   attachment,
   caption,
   className,
   useFullResolution = false,
+  pin = null,
 }: {
   attachment: DocFindingPhoto;
   caption?: string;
   className?: string;
   useFullResolution?: boolean;
+  /** Set only when this photograph carries more than one finding. */
+  pin?: Pin | null;
 }) {
   const { photo, region } = attachment;
   const src = useFullResolution ? (photo.url ?? photo.thumbUrl) : (photo.thumbUrl ?? photo.url);
@@ -49,11 +58,24 @@ export function PhotoFigure({
             }}
           />
         ) : null}
+        {src && region && pin ? (
+          <span
+            aria-hidden="true"
+            className="absolute z-10 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-background bg-brand-accent text-[11px] font-bold leading-none text-brand-accent-ink shadow-raised"
+            style={{
+              left: `${(region.x + region.w / 2) * 100}%`,
+              top: `${(region.y + region.h / 2) * 100}%`,
+            }}
+          >
+            {pin.number}
+          </span>
+        ) : null}
         {src && photo.layers?.length ? <PhotoMarkupOverlay layers={photo.layers} /> : null}
       </div>
       {caption ? (
         <figcaption className="mt-1.5 text-xs text-muted-foreground">
           {caption}
+          {pin && region ? ` · Pin ${pin.number} of ${pin.total} on this photograph` : ""}
           {region ? " · the marked area indicates the finding" : ""}
         </figcaption>
       ) : null}

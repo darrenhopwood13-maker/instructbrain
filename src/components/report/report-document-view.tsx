@@ -3,6 +3,7 @@ import { BRAND_CREDIT } from "@/lib/brand";
 import { Fragment, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { PhotoFigure } from "@/components/report/photo-figure";
+import { assignPins, pinFor } from "@/lib/report/photo-pins";
 import { InlineField } from "@/components/report/inline-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -1080,6 +1081,17 @@ function FindingRow({
   const category = finding.categoryId ? resolveCategory(snapshot, finding.categoryId) : null;
   const notAssessed = status.id === NOT_ASSESSED_ID;
   const primary = finding.photos[0];
+  // One pin per item, numbered within its own photograph, computed from the whole
+  // document so the numbers are stable however the findings are grouped on screen.
+  const pins = assignPins(
+    document.findings.flatMap((item) =>
+      item.photos.map((attachment) => ({
+        findingId: item.id,
+        ref: item.ref,
+        photoId: attachment.photo.id,
+      })),
+    ),
+  );
   const references = regulatoryReferencesOf(snapshot);
   const condition = requiresConditionGrade(snapshot);
   const grade = conditionGradeOf(finding.conditionGrade);
@@ -1113,6 +1125,7 @@ function FindingRow({
               <PhotoFigure
                 key={`${attachment.photo.id}-${attachment.role}`}
                 attachment={attachment}
+                pin={pinFor(pins, attachment.photo.id, finding.id)}
                 caption={`Photograph ${attachment.photo.sequence}`}
               />
             ))

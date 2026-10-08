@@ -112,7 +112,7 @@ export const reportDocumentQuery = (reportId: string) =>
           .limit(1),
         from("findings")
           .select(
-            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason",
+            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason, ai_region",
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
@@ -175,9 +175,14 @@ export const reportDocumentQuery = (reportId: string) =>
           .filter((link) => link.finding_id === row.id)
           .map((link) => {
             const photo = photoById.get(link.photo_id);
-            return photo
-              ? { photo, role: link.role ?? "primary", region: region(link.region) }
-              : null;
+            if (!photo) return null;
+            // The link's own region wins — a person may have moved the box. The
+            // AI's region is the fallback, and it is where the data actually sits.
+            return {
+              photo,
+              role: link.role ?? "primary",
+              region: region(link.region) ?? region(row.ai_region),
+            };
           })
           .filter((entry): entry is DocFindingPhoto => entry !== null)
           .sort((a, b) => (a.role === "primary" ? -1 : b.role === "primary" ? 1 : 0));

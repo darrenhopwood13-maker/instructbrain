@@ -623,6 +623,9 @@ export async function analysePhotoForReport(
       finding_id: inserted.id,
       photo_id: photo.id,
       role: "primary",
+      // The patch of the photograph the model actually read. Without this the
+      // region lives only on the finding and nothing that draws the picture sees it.
+      region: (draft as { ai_region?: unknown }).ai_region ?? null,
     });
     if (linkError) result.error = "the photograph could not be linked to its item.";
   }
