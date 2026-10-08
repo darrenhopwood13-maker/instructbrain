@@ -128,6 +128,12 @@ type Writer = {
   pageSize: { width: number; height: number };
   margin: number;
   contentWidth: number;
+  /**
+   * Measuring pass. While this is true nothing reaches the page and no page is
+   * added, only the cursor moves, so an entry's real height can be known before
+   * any of it is committed. See `measureHeight` and `drawFinding`.
+   */
+  dry: boolean;
 };
 
 function newPage(writer: Writer): void {
@@ -140,7 +146,59 @@ function newPage(writer: Writer): void {
 }
 
 function ensure(writer: Writer, needed: number): void {
+  // A measuring pass has to be able to run past the foot of the page: the whole
+  // point of it is to learn how tall the entry is, not to fit it anywhere yet.
+  if (writer.dry) return;
   if (writer.cursor.y - needed < writer.margin + 30) newPage(writer);
+}
+
+/** Space left on this page before `ensure` would break it. */
+function roomOnPage(writer: Writer): number {
+  return writer.cursor.y - (writer.margin + 30);
+}
+
+/** The same figure for a page that has just been started. */
+function roomOnFreshPage(writer: Writer): number {
+  return writer.pageSize.height - writer.margin - (writer.margin + 30);
+}
+
+/**
+ * Whether an entry that needs `needed` points should start on a fresh page
+ * rather than on this one.
+ *
+ * True only when a fresh page actually helps. An entry that fits where it is
+ * stays where it is, and an entry longer than a whole page flows rather than
+ * moving and then flowing anyway — which would only waste the rest of this page
+ * and the whole of the next.
+ */
+export function shouldBreakBeforeEntry(needed: number, room: number, freshRoom: number): boolean {
+  return needed > room && needed <= freshRoom;
+}
+
+/**
+ * How tall a block really is, without drawing any of it.
+ *
+ * It runs the drawing code in a dry pass rather than a parallel estimate, so the
+ * measurement cannot drift away from the thing being measured. Afterwards the
+ * cursor is wound back: a measuring pass leaves no ink, no page and no moved
+ * cursor behind it.
+ */
+async function measureHeight(writer: Writer, run: () => Promise<void> | void): Promise<number> {
+  const startY = writer.cursor.y;
+  const startPage = writer.cursor.page;
+  const startPageNumber = writer.cursor.pageNumber;
+  let endY = startY;
+  writer.dry = true;
+  try {
+    await run();
+    endY = writer.cursor.y;
+  } finally {
+    writer.dry = false;
+    writer.cursor.y = startY;
+    writer.cursor.page = startPage;
+    writer.cursor.pageNumber = startPageNumber;
+  }
+  return startY - endY;
 }
 
 function sanitise(value: string): string {
@@ -192,6 +250,10 @@ function drawText(writer: Writer, text: string, options: TextOptions = {}): void
   const lineHeight = size + (options.lineGap ?? 3);
   const lines = wrap(text, font, size, width);
   const alignment = options.align ?? "left";
+  if (writer.dry) {
+    writer.cursor.y -= lines.length * lineHeight + (options.gapAfter ?? 0);
+    return;
+  }
   lines.forEach((line, index) => {
     ensure(writer, lineHeight);
     const lineWidth = font.widthOfTextAtSize(line, size);
@@ -226,6 +288,10 @@ function drawText(writer: Writer, text: string, options: TextOptions = {}): void
 }
 
 function drawRule(writer: Writer, gapBefore = 6, gapAfter = 8): void {
+  if (writer.dry) {
+    writer.cursor.y -= gapBefore + gapAfter;
+    return;
+  }
   ensure(writer, gapBefore + gapAfter + 2);
   writer.cursor.y -= gapBefore;
   writer.cursor.page.drawLine({
@@ -245,6 +311,16 @@ function eyebrow(writer: Writer, text: string): void {
     gapAfter: 2,
     align: "center",
   });
+}
+
+/** One line placed by hand at a y offset, so a measuring pass can skip it. */
+function drawSnippet(
+  writer: Writer,
+  text: string,
+  options: Parameters<PDFPage["drawText"]>[1],
+): void {
+  if (writer.dry) return;
+  writer.cursor.page.drawText(sanitise(text), options);
 }
 
 /* ------------------------------------------------------------------ */
@@ -484,7 +560,10 @@ function drawImageCrop(
   top: number,
   frameWidth: number,
   frameHeight: number,
+  dry = false,
 ): void {
+  // Draws only, and the caller owns the cursor, so a measuring pass skips it.
+  if (dry) return;
   const place = cropPlacement(image, region, frameWidth, frameHeight);
   const frameBottom = top - frameHeight;
   const key = page.node.newXObject("Image", image.ref);
@@ -520,6 +599,10 @@ function drawImage(
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
   const width = image.width * scale;
   const height = image.height * scale;
+  if (writer.dry) {
+    writer.cursor.y -= height + 8;
+    return;
+  }
   ensure(writer, height + 8);
   writer.cursor.page.drawImage(image, {
     x: writer.margin,
@@ -1081,6 +1164,29 @@ async function drawFinding(
   pins: Map<string, Pin>,
   plated: Set<string>,
 ): Promise<void> {
+  // An entry sliced across a page boundary is the thing that makes a generated
+  // document look careless: a sentence stopping at the foot of one page and
+  // resuming at the top of the next reads as a machine, not a surveyor. So the
+  // entry is measured first, and if it would fit on a page of its own but not in
+  // what is left of this one, the page breaks BEFORE it rather than through it.
+  //
+  // An entry longer than a page on its own still flows across pages, because the
+  // only alternative is losing text.
+  const needed = await measureHeight(writer, () =>
+    drawFindingBody(writer, document, finding, fetcher, pins, plated),
+  );
+  if (shouldBreakBeforeEntry(needed, roomOnPage(writer), roomOnFreshPage(writer))) newPage(writer);
+  await drawFindingBody(writer, document, finding, fetcher, pins, plated);
+}
+
+async function drawFindingBody(
+  writer: Writer,
+  document: ReportDocument,
+  finding: DocFinding,
+  fetcher: PhotoFetcher | null,
+  pins: Map<string, Pin>,
+  plated: Set<string>,
+): Promise<void> {
   const status = resolveStatus(document.snapshot, finding.statusId);
   const severity = resolveSeverity(document.snapshot, finding.severityId);
   const notAssessed = status.id === NOT_ASSESSED_ID;
@@ -1197,11 +1303,20 @@ async function drawFinding(
       const frameHeight = 132;
       ensure(writer, frameHeight + 16);
       const top = writer.cursor.y;
-      drawImageCrop(writer.cursor.page, image, attached.region, writer.margin, top, frameWidth, frameHeight);
+      drawImageCrop(
+        writer.cursor.page,
+        image,
+        attached.region,
+        writer.margin,
+        top,
+        frameWidth,
+        frameHeight,
+        writer.dry,
+      );
       const caption = pin
         ? `Pin ${pin.number} of ${pin.total} - photograph ${attached.photo.sequence}`
         : `Photograph ${attached.photo.sequence} - the marked area`;
-      writer.cursor.page.drawText(sanitise(caption), {
+      drawSnippet(writer, caption, {
         x: writer.margin + frameWidth + 10,
         y: top - 14,
         size: 9,
@@ -1209,7 +1324,7 @@ async function drawFinding(
         color: ACCENT,
         maxWidth: writer.contentWidth - frameWidth - 10,
       });
-      writer.cursor.page.drawText(sanitise("A crop of the area this item refers to."), {
+      drawSnippet(writer, "A crop of the area this item refers to.", {
         x: writer.margin + frameWidth + 10,
         y: top - 26,
         size: 8,
@@ -1427,6 +1542,7 @@ async function buildInventoryReportPdf(
     pageSize: LANDSCAPE_LETTER,
     margin,
     contentWidth: LANDSCAPE_LETTER.width - margin * 2,
+    dry: false,
   };
   const fetcher: PhotoFetcher | null =
     options.includePhotos === false ? null : { spent: 0, cache: new Map() };
@@ -1653,6 +1769,7 @@ export async function buildReportPdf(
     pageSize: A4,
     margin: MARGIN,
     contentWidth: CONTENT_WIDTH,
+    dry: false,
   };
 
   const findings = selectFindings(document, options);
