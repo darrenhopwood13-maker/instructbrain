@@ -116,3 +116,46 @@ describe("the page a shared photograph is given", () => {
     expect(times).toBe(1);
   });
 });
+
+/**
+ * The phase E rule, one level up: a photograph whose items carry no recorded area
+ * has no pins, so nothing printed about it may claim one.
+ *
+ * Found in the real published document on 8 Oct 2026 — a photograph carrying two
+ * unmarked items, captioned "the marked area indicates the item", with both rows
+ * saying it was "printed on its own page with its pins".
+ */
+function unmarkedReport(): ReportDocument {
+  return reportDocument(
+    Array.from({ length: 10 }, (_, index) => {
+      const n = index + 1;
+      return finding({
+        id: `f${n}`,
+        ref: `F-${String(n).padStart(3, "0")}`,
+        findingText: body(n, 20),
+        photos:
+          n >= 9 ? [{ photo: photo("p-unmarked", 5), role: "primary", region: null }] : [],
+      });
+    }),
+  );
+}
+
+describe("a shared photograph where no item has a recorded area", () => {
+  it("is printed, but never claims a marked area or a pin", async () => {
+    serveImages();
+    const built = await buildReportPdf(unmarkedReport(), {
+      variant: "full",
+      includePhotos: true,
+    });
+    const pages = await decodePageTexts(built.bytes);
+    const text = pages.join("\n");
+
+    // The photograph is still shown: the reader needs to see what the items are about.
+    expect(text).toContain("Photograph 5 - 2 items on this photograph");
+    // But nothing printed about it may point at a pin, because there is not one.
+    expect(text).toContain("no marked area was recorded");
+    expect(text).not.toContain("the marked area indicates the item");
+    expect(text).not.toContain("with its pins");
+    expect(text).not.toMatch(/Pin \d+ - /);
+  });
+});

@@ -514,8 +514,23 @@ function drawRegionMarks(
 /** How many marks a photograph carries, for the caption. */
 function markCaption(marks: Array<{ number: number | null }>): string {
   const numbered = marks.filter((mark) => mark.number !== null).length;
-  if (numbered === 0) return "the marked area indicates the item";
+  // A photograph whose items all lack a recorded area has no marked area on it.
+  // The old wording here described one anyway ("the marked area indicates the
+  // item") over a photograph with no marks — the same empty promise as printing
+  // a pin number for a picture that will not load. Found in a real issued
+  // document on 8 Oct 2026, on a photograph carrying two unmarked items.
+  if (numbered === 0) return "no marked area was recorded";
   return numbered === 1 ? "one pin on this photograph" : `${numbered} pins on this photograph`;
+}
+
+/**
+ * How many pins a photograph actually carries — zero where none of its items has
+ * a recorded area. Used to keep any sentence about a photograph's pins true.
+ */
+function pinsOnPhoto<T extends { photoId: string }>(pins: Map<string, T>, photoId: string): number {
+  let total = 0;
+  for (const pin of pins.values()) if (pin.photoId === photoId) total += 1;
+  return total;
 }
 
 /**
@@ -1318,14 +1333,20 @@ async function drawFindingBody(
       // full-width copy of the same frame — this is what takes the pages out.
       const pin = pinFor(pins, attached.photo.id, finding.id);
       if (!attached.region) {
-        // "Printed above" is only true if it is. A photograph whose bytes would
-        // not come back leaves no plate to point at, and saying otherwise is the
-        // same empty promise this work exists to remove.
+        // "Printed on its own page with its pins" is only true if the photograph
+        // has pins. A photograph whose bytes would not come back leaves no plate
+        // to point at, and a photograph on which nobody recorded an area has no
+        // pin to point at either — both are the same empty promise this work
+        // exists to remove.
+        const printed = platesPrinted.has(attached.photo.id);
+        const others = pinsOnPhoto(pins, attached.photo.id);
         drawText(
           writer,
-          platesPrinted.has(attached.photo.id)
-            ? `Photograph ${attached.photo.sequence} is printed on its own page with its pins. No area was recorded for this item.`
-            : `Photograph ${attached.photo.sequence} could not be read, so it is not printed and there is no pin for this item.`,
+          !printed
+            ? `Photograph ${attached.photo.sequence} could not be read, so it is not printed and there is no pin for this item.`
+            : others > 0
+              ? `Photograph ${attached.photo.sequence} is printed on its own page with its pins. No area was recorded for this item.`
+              : `Photograph ${attached.photo.sequence} is printed on its own page. No marked area was recorded on this photograph.`,
           { size: 8, colour: MUTED, gapAfter: 6 },
         );
         continue;

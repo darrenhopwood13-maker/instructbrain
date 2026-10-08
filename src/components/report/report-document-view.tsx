@@ -1201,14 +1201,24 @@ function plateAnchorId(photoId: string): string {
  * it, and says plainly when the item has no pin because the model recorded no
  * area for it.
  */
+/** How many pins a photograph actually carries — zero when none of its items has an area. */
+function pinsOnPhoto<T extends { photoId: string }>(pins: Map<string, T>, photoId: string): number {
+  let total = 0;
+  for (const pin of pins.values()) if (pin.photoId === photoId) total += 1;
+  return total;
+}
+
 function PinReference({
   attachment,
   pin,
   marked,
+  pinsShown,
 }: {
   attachment: DocFindingPhoto;
   pin: Pin | null;
   marked: boolean;
+  /** How many pins the photograph itself carries, so the row never promises one it lacks. */
+  pinsShown: number;
 }) {
   // A photograph whose image cannot be read has no pins by construction, so the
   // row must not point at one. Saying "could not be read" is worse news than
@@ -1233,9 +1243,11 @@ function PinReference({
         <span className="font-semibold text-foreground">{label}</span>
       </span>
       <span className="mt-1 block text-muted-foreground">
-        {readable
-          ? `Photograph ${attachment.photo.sequence} · shown above with its pins`
-          : `Photograph ${attachment.photo.sequence} · the stored image could not be read`}
+        {!readable
+          ? `Photograph ${attachment.photo.sequence} · the stored image could not be read`
+          : pinsShown > 0
+            ? `Photograph ${attachment.photo.sequence} · shown above with its pins`
+            : `Photograph ${attachment.photo.sequence} · shown above`}
       </span>
     </a>
   );
@@ -1348,6 +1360,7 @@ function FindingRow({
                   attachment={attachment}
                   pin={pinFor(pins, attachment.photo.id, finding.id)}
                   marked={attachment.region !== null}
+                  pinsShown={pinsOnPhoto(pins, attachment.photo.id)}
                 />
               ) : (
                 <PhotoFigure

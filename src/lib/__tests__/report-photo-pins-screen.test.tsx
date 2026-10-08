@@ -170,6 +170,24 @@ describe("a photograph carrying several items, on screen", () => {
     expect(screen.queryByText(/Pin 3/)).toBeNull();
   });
 
+  it("never claims pins on a photograph where no item has a recorded area", () => {
+    render(
+      <ReportDocumentView
+        document={doc([
+          finding({ id: "a", ref: "F-001", photos: [on("p1", 4, null)] }),
+          finding({ id: "b", ref: "F-002", photos: [on("p1", 4, null)] }),
+        ])}
+        editable={false}
+      />,
+    );
+
+    // Both rows still point at the photograph, which is printed — but neither may
+    // say "with its pins", because the photograph carries none.
+    expect(screen.getAllByText("Photograph 4 · shown above")).toHaveLength(2);
+    expect(screen.queryByText("Photograph 4 · shown above with its pins")).toBeNull();
+    expect(screen.queryByText(/^Pin \d+ of \d+$/)).toBeNull();
+  });
+
   it("still shows two separate photographs once each when neither is shared", () => {
     render(
       <ReportDocumentView
