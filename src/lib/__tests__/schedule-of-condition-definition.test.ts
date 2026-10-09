@@ -33,7 +33,7 @@ describe("the Schedule of Condition definition", () => {
   });
 
   it("tells the assessment not to name a trade", () => {
-    const guidance = scheduleOfConditionDefinition.aiGuidance.tradeGuidance ?? "";
+    const guidance = scheduleOfConditionDefinition.aiGuidance?.["tradeGuidance"] ?? "";
     expect(guidance.toLowerCase()).toContain("do not suggest a trade");
   });
 
