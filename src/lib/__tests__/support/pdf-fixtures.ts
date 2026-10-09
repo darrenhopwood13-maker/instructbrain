@@ -215,5 +215,5 @@ export function png(width: number, height: number): Uint8Array {
 export const PHOTO_BYTES = png(1200, 900);
 
 export function serveImages() {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(new Blob([PHOTO_BYTES]), { status: 200 })));
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(PHOTO_BYTES.buffer as ArrayBuffer, { status: 200 })));
 }

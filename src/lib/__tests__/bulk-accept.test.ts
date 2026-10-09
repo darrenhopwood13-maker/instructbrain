@@ -85,7 +85,7 @@ describe("grades, when the brief asks for them", () => {
   const grades = { ...base, gradeRequired: true };
 
   it("accepts a confident suggested grade in the same press", () => {
-    expect(acceptPlan([candidate()], grades).accept[0].grade).toBe("C3");
+    expect(acceptPlan([candidate()], grades).accept[0]?.grade).toBe("C3");
   });
 
   it("leaves an unsure grade to a person", () => {
