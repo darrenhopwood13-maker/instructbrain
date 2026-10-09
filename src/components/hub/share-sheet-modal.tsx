@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
-import { Copy, Mail, MessageCircle, MessageSquare, Send, Share2 } from "lucide-react";
+import { ChevronDown, Copy, Mail, MessageCircle, MessageSquare, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ProductQr } from "@/components/hub/product-qr";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -16,12 +24,14 @@ import type { HubProduct } from "@/lib/hub/products";
 /**
  * What one tap on a product gives you: the QR code, and the ways to send it.
  *
- * In person, the other person points a camera at the code and the product opens
- * on their phone - no typing, no asking them to spell their number. At a
- * distance, the platform buttons below open a compose window with the pitch
- * already written.
+ * The QR is the whole point of the panel - in person, the other person points a
+ * camera at it and the product opens on their phone, with no typing and no
+ * asking for a number. So the panel is built around it and kept SHORT: the five
+ * platform options live in a dropdown rather than stacked down the screen, which
+ * is what previously pushed the last of them off the bottom and made a panel
+ * that had to be scrolled. A menu is also the honest shape for "the other ways".
  *
- * Nothing here sends anything: every platform action is a link that opens
+ * Nothing here sends anything: every platform option is a link that opens
  * somebody else's compose screen, and the person still presses send themselves.
  */
 export function ShareSheetModal({
@@ -53,6 +63,12 @@ export function ShareSheetModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
+      {/*
+        max-h plus overflow is a safety net for a very short screen (landscape, a
+        small tablet split view): the content is sized to fit a phone without
+        scrolling, and this only ever scrolls when it genuinely cannot fit, so it
+        can never strand an option below an unreachable edge.
+      */}
       <SheetContent
         side="bottom"
         className="hub max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t"
@@ -65,23 +81,22 @@ export function ShareSheetModal({
             <span className="hub-wordmark-name">{product.name}</span>
           </SheetTitle>
           <SheetDescription>
-            Let them scan it with a camera, or send the message to someone further away. Nothing is
-            sent until you press send in your own app.
+            Let them scan it, or send the link. Nothing sends until you press send.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 flex flex-col items-center gap-3">
+        <div className="mt-3 flex flex-col items-center gap-2">
           <ProductQr url={product.share.url} label={product.label} />
           <p className="hub-accent-text text-center text-xs font-semibold uppercase tracking-[0.18em]">
             Point a camera at this
           </p>
         </div>
 
-        <div className="mt-5 grid gap-2">
+        <div className="mt-4 grid gap-2">
           {canNative ? (
             <button
               type="button"
-              className="hub-tile min-h-12 flex-row items-center gap-3 px-4 py-3 text-sm font-semibold"
+              className="hub-tile min-h-12 flex-row items-center justify-center gap-3 px-4 py-3 text-sm font-semibold"
               data-testid="hub-native-share"
               onClick={async () => {
                 const outcome = await shareNatively(product.share);
@@ -94,41 +109,60 @@ export function ShareSheetModal({
             </button>
           ) : null}
 
-          {actions.map(({ key, label, href, Icon }) => (
-            <a
-              key={key}
-              href={href}
-              className="hub-tile min-h-12 flex-row items-center gap-3 px-4 py-3 text-sm font-semibold"
-              data-testid={`hub-fallback-${key}`}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="hub-tile min-h-12 flex-row items-center justify-center gap-2 px-4 py-3 text-sm font-semibold"
+                data-testid="hub-send-menu"
+              >
+                <Send className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
+                <span>{canNative ? "Other ways to send" : "Send the link"}</span>
+                <ChevronDown className="size-4 shrink-0 opacity-70" aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            {/*
+              Carries its own product scope: Radix portals the menu to the body,
+              so it is not a descendant of the sheet and would otherwise fall back
+              to the wrong accent.
+            */}
+            <DropdownMenuContent
+              align="center"
+              side="top"
+              sideOffset={8}
+              className="hub w-[min(20rem,calc(100vw-2rem))]"
+              data-product={product.id}
+              data-testid="hub-send-menu-content"
             >
-              <Icon className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
-              <span>{label}</span>
-            </a>
-          ))}
-
-          <button
-            type="button"
-            className="hub-tile min-h-12 flex-row items-center gap-3 px-4 py-3 text-sm font-semibold"
-            data-testid="hub-fallback-copy"
-            onClick={async () => {
-              const copied = await copyLink(product.share.url);
-              if (copied) {
-                toast.success("Link copied");
-              } else {
-                // Never claim a copy that did not happen. The link is shown so
-                // the person can still get it by hand.
-                toast.error("Could not copy the link - the address is shown below.");
-              }
-            }}
-          >
-            <Copy className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
-            <span>Copy link</span>
-          </button>
+              <DropdownMenuLabel>Send it on</DropdownMenuLabel>
+              {actions.map(({ key, label, href, Icon }) => (
+                <DropdownMenuItem key={key} asChild className="min-h-11">
+                  <a href={href} data-testid={`hub-fallback-${key}`}>
+                    <Icon className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                  </a>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="min-h-11"
+                data-testid="hub-fallback-copy"
+                onSelect={async () => {
+                  const copied = await copyLink(product.share.url);
+                  if (copied) {
+                    toast.success("Link copied");
+                  } else {
+                    // Never claim a copy that did not happen.
+                    toast.error("Could not copy the link.");
+                  }
+                }}
+              >
+                <Copy className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
+                <span>Copy link</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-
-        <p className="hub-accent-text mt-4 break-all text-xs" data-testid="hub-share-url">
-          {product.share.url}
-        </p>
       </SheetContent>
     </Sheet>
   );

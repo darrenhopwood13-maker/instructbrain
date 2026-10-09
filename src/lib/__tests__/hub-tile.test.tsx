@@ -58,6 +58,23 @@ beforeEach(() => {
       dispatchEvent: () => false,
     }),
   });
+  // jsdom implements neither pointer capture nor ResizeObserver, and Radix's
+  // menu needs both to open. Without these the menu silently never renders.
+  Object.assign(window.HTMLElement.prototype, {
+    hasPointerCapture: () => false,
+    setPointerCapture: () => undefined,
+    releasePointerCapture: () => undefined,
+    scrollIntoView: () => undefined,
+  });
+  Object.defineProperty(window, "ResizeObserver", {
+    writable: true,
+    configurable: true,
+    value: class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  });
 });
 
 // Without this the previous test's tree is still in the document, and every
@@ -150,19 +167,36 @@ describe("the QR code", () => {
 });
 
 describe("the send panel", () => {
-  const openPanel = async (product: HubProduct) => {
+  const openPanel = async (product: HubProduct = brain) => {
     render(<ShareSheetModal product={product} open onOpenChange={() => undefined} />);
     return screen.findByTestId("hub-send-panel");
   };
 
+  /** Open the platform menu, the way a thumb would. */
+  const openMenu = async () => {
+    const trigger = screen.getByTestId("hub-send-menu");
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+    return screen.findByTestId("hub-send-menu-content");
+  };
+
   it("shows the QR code as the first thing, for an in-person handover", async () => {
-    await openPanel(brain);
+    await openPanel();
     await waitFor(() => expect(screen.getByTestId("hub-qr")).toBeTruthy());
     expect(qrToString.mock.calls[0]?.[0]).toBe(brain.share.url);
   });
 
-  it("offers all five send actions, pointed at the right places", async () => {
-    await openPanel(brain);
+  it("keeps the five platform options behind a menu, not stacked down the panel", async () => {
+    // This is the fix for the panel that had to be scrolled: nothing but the QR
+    // and two controls may sit in the layout.
+    await openPanel();
+    expect(screen.queryByTestId("hub-fallback-whatsapp")).toBeNull();
+    expect(screen.queryByTestId("hub-fallback-copy")).toBeNull();
+    expect(screen.getByTestId("hub-send-menu")).toBeTruthy();
+  });
+
+  it("opens that menu onto all five, pointed at the right places", async () => {
+    await openPanel();
+    await openMenu();
     expect(screen.getByTestId("hub-fallback-whatsapp").getAttribute("href")).toContain(
       "https://wa.me/?text=",
     );
@@ -181,30 +215,37 @@ describe("the send panel", () => {
     }
   });
 
+  it("keeps the product's own accent on the menu, which is portalled out of the sheet", async () => {
+    // Radix renders the menu on the body, so without its own product scope every
+    // accent in it falls back to the first product's.
+    await openPanel(dabs);
+    const content = await openMenu();
+    expect(content.getAttribute("data-product")).toBe("dabs");
+  });
+
   it("offers the device's own share sheet only where one exists", async () => {
-    await openPanel(brain);
-    // jsdom has no navigator.share, so that action must not be there to fail.
+    await openPanel();
+    // jsdom has no navigator.share, so that action must not be there to fail,
+    // and the menu says what it is instead of pretending to be a second choice.
     expect(screen.queryByTestId("hub-native-share")).toBeNull();
+    expect(screen.getByTestId("hub-send-menu").textContent).toContain("Send the link");
   });
 
   it("offers the device's share sheet where one exists", async () => {
     const share = vi.fn(async () => undefined);
     setShare(share);
-    await openPanel(brain);
+    await openPanel();
     const button = await screen.findByTestId("hub-native-share");
+    expect(screen.getByTestId("hub-send-menu").textContent).toContain("Other ways to send");
     fireEvent.click(button);
     await waitFor(() => expect(share).toHaveBeenCalled());
-  });
-
-  it("shows the link so it can still be taken by hand", async () => {
-    await openPanel(brain);
-    expect(screen.getByTestId("hub-share-url").textContent).toBe(brain.share.url);
   });
 
   it("confirms a copy that worked", async () => {
     const writeText = vi.fn(async () => undefined);
     setClipboard(writeText);
-    await openPanel(brain);
+    await openPanel();
+    await openMenu();
     fireEvent.click(screen.getByTestId("hub-fallback-copy"));
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Link copied"));
     expect(writeText).toHaveBeenCalledWith(brain.share.url);
@@ -215,7 +256,8 @@ describe("the send panel", () => {
     setClipboard(async () => {
       throw new Error("denied");
     });
-    await openPanel(brain);
+    await openPanel();
+    await openMenu();
     fireEvent.click(screen.getByTestId("hub-fallback-copy"));
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastSuccess).not.toHaveBeenCalled();
@@ -223,6 +265,6 @@ describe("the send panel", () => {
 
   it("renders nothing at all until a product is chosen", () => {
     render(<ShareSheetModal product={null} open={false} onOpenChange={() => undefined} />);
-    expect(screen.queryByTestId("hub-fallback-copy")).toBeNull();
+    expect(screen.queryByTestId("hub-send-menu")).toBeNull();
   });
 });
