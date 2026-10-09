@@ -13,6 +13,8 @@
  * module carries a colour literal.
  */
 
+import brainPromoAsset from "@/assets/instructbrain-promo.asset.json";
+
 export const HUB_PRODUCT_IDS = ["brain", "site", "enterprise", "dabs"] as const;
 
 export type HubProductId = (typeof HUB_PRODUCT_IDS)[number];
@@ -38,11 +40,30 @@ export type HubProduct = {
   /** Three bullets in the recipient showcase. */
   bullets: readonly string[];
   /**
-   * What the tile's play control opens. `reel` plays the real 30-second promo;
-   * the others have no film yet, so they open the showcase instead. Never fake
-   * a video for a product that has not got one.
+   * What the tile's play control opens. `reel` plays the product's own promo
+   * film (see `film`); anything else has no film, so the control opens the
+   * showcase instead. Never fake a video for a product that has not got one.
    */
   demo: "reel" | "showcase";
+  /**
+   * The product's own promo film, and only where a film genuinely exists.
+   *
+   * `demo: "reel"` is a promise that this is set: the play control opens the
+   * film rather than the showcase. A product with no film leaves this off and
+   * opens the showcase instead - never a placeholder player over a film that
+   * does not exist.
+   *
+   * `url` is not always this project's own asset store. Each film belongs to
+   * the product it is about, and instructSite's is served from instructsite.ai,
+   * which is where that product's own promo page plays it from.
+   */
+  film?: {
+    url: string;
+    /** Runtime in whole seconds, stated on screen so it is never guessed. */
+    seconds: number;
+    /** The origin that serves it, named when the film cannot be loaded. */
+    source: string;
+  };
   share: {
     /** The message a recipient receives. Verbatim. */
     message: string;
@@ -74,6 +95,13 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
       "A client-ready PDF the same afternoon, issued with a real reference and a frozen version.",
     ],
     demo: "reel",
+    film: {
+      // This project's own asset store. Lovable rewrites this file when the
+      // film is replaced, so the asset id is never typed out by hand here.
+      url: brainPromoAsset.url,
+      seconds: 30,
+      source: "instructbrain.com",
+    },
     share: {
       message:
         "Take a look at instructBrain — turns site photos into client-ready construction reports in minutes. Condition surveys, snagging and compliance. Try your first 3 reports free: https://instructbrain.com/hub?product=brain",
@@ -99,7 +127,20 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
       "Daily diaries, inspections and sign-offs captured on site, not reconstructed in the office.",
       "One live view across every active site, so nothing is chased twice.",
     ],
-    demo: "showcase",
+    demo: "reel",
+    film: {
+      // Absolute and cross-origin, and checked as such: the film is served by
+      // instructsite.ai's own asset store, which is the origin that product's
+      // promo page plays it from. It answers range requests, so the player can
+      // seek, and it does not block a foreign referer.
+      //
+      // IF THE FILM STOPS LOADING: check the asset id against
+      // `src/assets/instructsite-promo.mp4.asset.json` in the site-mind-forge
+      // repo and update the id here. A re-upload there gets a new id.
+      url: "https://instructsite.ai/__l5e/assets-v1/02e16568-f992-4b9a-8531-597b9496dd2a/instructsite-promo.mp4",
+      seconds: 33,
+      source: "instructsite.ai",
+    },
     share: {
       message:
         "Check out instructSite — real-time construction site management, subcontractor coordination, and daily operational command: https://instructsite.ai",

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 
-import promoAsset from "@/assets/instructbrain-promo.asset.json";
+import { PromoFilm } from "@/components/hub/promo-film";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -22,8 +22,6 @@ import type { HubProduct } from "@/lib/hub/products";
  * address, and even that sends nothing: there is no mail behind it yet, so the
  * copy does not promise one.
  */
-
-const PROMO_URL = promoAsset.url;
 
 /** The table the notify-me address lands in. Created by a migration. */
 const EARLY_ACCESS_TABLE = "hub_early_access";
@@ -132,22 +130,7 @@ export function ProductShowcaseSheet({
           <SheetDescription className="text-sm text-foreground/90">{product.tagline}</SheetDescription>
         </SheetHeader>
 
-        {product.demo === "reel" ? (
-          <div className="mt-5 w-full max-w-[380px]">
-            <video
-              src={PROMO_URL}
-              controls
-              playsInline
-              preload="metadata"
-              className="aspect-[9/16] w-full rounded-2xl border bg-surface-sunken"
-              aria-label={`${product.label} 30-second promo film`}
-              data-testid="hub-showcase-reel"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              Thirty seconds, with sound. This is the same film as the product's own promo page.
-            </p>
-          </div>
-        ) : null}
+        <PromoFilm product={product} />
 
         <ul className="mt-5 grid gap-3">
           {product.bullets.map((bullet) => (
@@ -216,14 +199,7 @@ export function PromoReelModal({
             <span className="sr-only">{product.label} promo film</span>
           </DialogTitle>
         </DialogHeader>
-        <video
-          src={PROMO_URL}
-          controls
-          autoPlay
-          playsInline
-          className="aspect-[9/16] w-full rounded-2xl border bg-surface-sunken"
-          aria-label={`${product.label} 30-second promo film`}
-        />
+        <PromoFilm product={product} autoPlay />
       </DialogContent>
     </Dialog>
   );

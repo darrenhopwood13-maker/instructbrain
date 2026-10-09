@@ -65,12 +65,53 @@ describe("the instructBrain offer", () => {
     expect(brain.cta?.label).toContain("3 Free Reports");
   });
 
-  it("is the only product with a promo film, and it points at the real one", () => {
+  it("plays the real 30-second promo, not a placeholder", () => {
     expect(brain.demo).toBe("reel");
-    for (const other of HUB_PRODUCTS.filter((product) => product.id !== "brain")) {
-      // No film exists for these three, so the play control must not pretend.
-      expect(other.demo).toBe("showcase");
+    expect(brain.film?.url).toContain("instructbrain-promo-30s.mp4");
+    expect(brain.film?.seconds).toBe(30);
+  });
+});
+
+describe("the promo films", () => {
+  const brain = HUB_PRODUCTS.find((product) => product.id === "brain")!;
+  const site = HUB_PRODUCTS.find((product) => product.id === "site")!;
+
+  it("gives a film to every product whose play control opens one", () => {
+    for (const product of HUB_PRODUCTS) {
+      if (product.demo === "reel") {
+        // `demo: "reel"` is a promise to the person tapping play.
+        expect(product.film, `${product.id} claims a film with none behind it`).toBeDefined();
+      }
     }
+  });
+
+  it("leaves the play control honest for a product with no film", () => {
+    for (const product of HUB_PRODUCTS) {
+      if (product.demo === "showcase") expect(product.film).toBeUndefined();
+    }
+  });
+
+  it("states a real runtime and a real origin for each film", () => {
+    for (const product of HUB_PRODUCTS) {
+      if (!product.film) continue;
+      expect(product.film.seconds).toBeGreaterThanOrEqual(5);
+      expect(product.film.seconds).toBeLessThanOrEqual(180);
+      expect(product.film.url.length).toBeGreaterThan(20);
+      expect(product.film.source.length).toBeGreaterThan(3);
+    }
+  });
+
+  it("serves instructSite's film from instructSite, where its promo page plays it", () => {
+    expect(site.demo).toBe("reel");
+    expect(site.film?.url).toBe(
+      "https://instructsite.ai/__l5e/assets-v1/02e16568-f992-4b9a-8531-597b9496dd2a/instructsite-promo.mp4",
+    );
+    expect(site.film?.source).toBe("instructsite.ai");
+    expect(site.film?.seconds).toBe(33);
+  });
+
+  it("keeps instructBrain's film on this project's own asset store", () => {
+    expect(brain.film?.url.startsWith("/")).toBe(true);
   });
 });
 

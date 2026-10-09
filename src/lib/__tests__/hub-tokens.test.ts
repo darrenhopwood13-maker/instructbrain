@@ -187,6 +187,7 @@ describe("the hub components exist as the brief names them", () => {
       "family-tile.tsx",
       "product-qr.tsx",
       "product-showcase-sheet.tsx",
+      "promo-film.tsx",
       "share-sheet-modal.tsx",
     ]);
   });

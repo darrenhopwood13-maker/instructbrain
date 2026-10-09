@@ -122,9 +122,20 @@ describe("a launcher tile", () => {
     expect(onDemo).toHaveBeenCalledWith(brain);
   });
 
+  it("offers the film on instructSite now that the product has one", () => {
+    const { onDemo } = renderTile(site);
+    fireEvent.click(screen.getByRole("button", { name: "Play the instructSite promo film" }));
+    expect(onDemo).toHaveBeenCalledWith(site);
+  });
+
   it("offers the overview, not a film, on a product that has none", () => {
-    renderTile(site);
-    expect(screen.getByRole("button", { name: "Open the instructSite overview" })).toBeTruthy();
+    // instructSite used to be the example here. It has a film now, so the
+    // product without one is Enterprise.
+    const enterprise = HUB_PRODUCTS.find((product) => product.id === "enterprise")!;
+    renderTile(enterprise);
+    expect(
+      screen.getByRole("button", { name: "Open the instructSite Enterprise overview" }),
+    ).toBeTruthy();
     expect(screen.queryByRole("button", { name: /promo film/ })).toBeNull();
   });
 
