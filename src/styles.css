@@ -1610,6 +1610,16 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
   white-space: nowrap;
 }
 
+/* On a tile the chip is pinned to the tile's own bottom-left corner, on the
+   tile's padding line, so it never competes with the wordmark for width and the
+   four wordmarks stay on one centre line regardless of status. `hub-tile` is
+   already `position: relative`. */
+@utility hub-chip-tile {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.5rem;
+}
+
 /* Product-coloured text on the navy, always the pale companion so the contrast
    floor holds. Components never name a colour of their own. */
 @utility hub-accent-text {

@@ -133,6 +133,15 @@ describe("a launcher tile", () => {
     expect(screen.getByTestId("hub-early-access").textContent).toMatch(/early access/i);
   });
 
+  it("keeps the early-access chip out of the wordmark row, so it cannot clip the product name", () => {
+    renderTile(dabs);
+    const chip = screen.getByTestId("hub-early-access");
+    // Inside the share button the chip competed with "instructDABS" for the
+    // row's width, which is exactly how the product name got clipped off. It is
+    // a status marker on the tile, never a control in the row.
+    expect(chip.closest("button")).toBeNull();
+  });
+
   it("does not mark a live product as early access", () => {
     renderTile(site);
     expect(screen.queryByTestId("hub-early-access")).toBeNull();

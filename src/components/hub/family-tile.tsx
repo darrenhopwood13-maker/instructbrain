@@ -42,12 +42,6 @@ export function FamilyTile({
         <Share2 className="hub-accent-text ml-auto size-4 shrink-0 opacity-70" aria-hidden="true" />
       </button>
 
-      {product.status === "early-access" ? (
-        <span className="hub-chip" data-testid="hub-early-access">
-          Early access
-        </span>
-      ) : null}
-
       <button
         type="button"
         onClick={() => onDemo(product)}
@@ -56,6 +50,16 @@ export function FamilyTile({
       >
         <Play className="size-4" aria-hidden="true" />
       </button>
+
+      {/* The status chip belongs to the TILE, not to the wordmark row. In the
+          row it competed with "instructDABS" for the same width and clipped the
+          product name clean off; pinned to the tile's own bottom-left corner it
+          has room and the wordmark keeps the full row. */}
+      {product.status === "early-access" ? (
+        <span className="hub-chip hub-chip-tile" data-testid="hub-early-access">
+          Early access
+        </span>
+      ) : null}
     </div>
   );
 }
