@@ -4,7 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
 import { AttachToProjectDialog } from "@/components/attach-to-project-dialog";
 import { toast } from "sonner";
-import { ReportStepper, defaultStep, readyToIssue, type ReportStep } from "@/components/report/report-stepper";
+import {
+  ReportStepper,
+  readyToIssue,
+  resolveStep,
+  type ReportStep,
+} from "@/components/report/report-stepper";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -305,6 +310,10 @@ function ReportWorkspace() {
 
   const findingsAll = findings.data ?? [];
   const docEarly = document.data ?? null;
+  // A published report is its published document: there is nothing left to step
+  // between, so the two working screens and their buttons come off the page
+  // rather than sitting there greyed out.
+  const lockedEarly = docEarly?.report.status === "issued";
   const stepState = {
     hasFindings: findingsAll.length > 0,
     unresolved: docEarly
@@ -321,10 +330,13 @@ function ReportWorkspace() {
   });
   // While a run is going, the step never re-derives itself: the first results
   // arriving must not move the screen away and cut the run short.
-  const rawStep: ReportStep =
-    tab ?? (analysisStatus.running ? "photos" : loadedEnough ? defaultStep(stepState) : "photos");
-  // Two steps: photos and findings share one screen, then the PDF.
-  const step: ReportStep = rawStep === "output" ? "output" : "photos";
+  const step: ReportStep = resolveStep({
+    tab,
+    locked: lockedEarly,
+    running: analysisStatus.running,
+    loaded: loadedEnough,
+    state: stepState,
+  });
   const ready = readyToIssue(stepState);
 
   const goTo = useCallback(
@@ -415,13 +427,13 @@ function ReportWorkspace() {
   const recordedReference = report.reference ?? "";
 
   // What is still outstanding, in plain words, so nothing is discovered only
-  // when the report will not issue.
+  // when the report will not issue. A published report shows its status label
+  // instead of this note.
   const findingList = findings.data ?? [];
   const toConfirm = findingList.filter((finding) => !finding.confirmed).length;
   const blockers = doc ? issueBlockers(doc) : null;
-  const stepNote = locked
-    ? "Published. Reopen it to make changes."
-    : findingList.length === 0
+  const stepNote =
+    findingList.length === 0
       ? "Add photographs, then draft the findings."
       : blockers?.blocked
         ? `Not ready to publish yet: ${[
@@ -497,10 +509,16 @@ function ReportWorkspace() {
       </header>
 
       <div className="mt-8">
-        <ReportStepper current={step} onSelect={goTo} reviewCount={toConfirm} />
-        <p role="status" className="mt-3 text-sm text-muted-foreground">
-          {stepNote}
-        </p>
+        {locked ? (
+          <ReportStatusPill status={report.status} label="Published" />
+        ) : (
+          <>
+            <ReportStepper current={step} onSelect={goTo} reviewCount={toConfirm} />
+            <p role="status" className="mt-3 text-sm text-muted-foreground">
+              {stepNote}
+            </p>
+          </>
+        )}
       </div>
 
       {step === "photos" ? (
@@ -678,12 +696,6 @@ function ReportWorkspace() {
                   }
                 />
               </div>
-              {locked ? (
-                <p className="mb-5 rounded-lg border border-brand-blue/30 bg-brand-blue-soft px-4 py-3 text-sm text-brand-blue-ink">
-                  This report has been published as version {doc.report.currentVersion} and is locked.
-                  Reopen it to make changes; the published version is kept exactly as it was published.
-                </p>
-              ) : null}
 
               <section className="mb-8 grid gap-4 rounded-xl border border-border bg-surface-raised p-4 shadow-raised sm:grid-cols-2">
                 <InlineField

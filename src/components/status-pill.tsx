@@ -52,7 +52,18 @@ const reportStyles: Record<ReportStatus, string> = {
   issued: "bg-brand-blue-soft text-brand-blue-ink border-brand-blue/25",
 };
 
-export function ReportStatusPill({ status }: { status: ReportStatus }) {
+/**
+ * `label` overrides the record word for one screen. The report page calls an
+ * issued report "Published" — that is the word on the button that got it there
+ * — while the record itself still reads "Issued".
+ */
+export function ReportStatusPill({
+  status,
+  label,
+}: {
+  status: ReportStatus;
+  label?: string;
+}) {
   return (
     <span
       className={cn(
@@ -60,7 +71,7 @@ export function ReportStatusPill({ status }: { status: ReportStatus }) {
         reportStyles[status],
       )}
     >
-      {reportStatusLabels[status]}
+      {label ?? reportStatusLabels[status]}
     </span>
   );
 }

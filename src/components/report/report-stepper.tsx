@@ -21,6 +21,40 @@ export function readyToIssue(state: StepState): boolean {
   return !state.issued && state.hasFindings && state.unresolved === 0;
 }
 
+/**
+ * Which step a report opens on, from the address bar plus how far the report has
+ * got.
+ *
+ * A published report is its published document — there is nothing left to step
+ * between — so it opens on `output` whatever the address bar says. That also
+ * closes the hole where a stale `?tab=photos` link opened a working screen for a
+ * report that can no longer be worked on.
+ *
+ * A run in progress holds the screen on `photos` for the same reason it always
+ * did: the first results arriving must not move the screen away and cut the run
+ * short.
+ */
+export function resolveStep({
+  tab,
+  locked,
+  running,
+  loaded,
+  state,
+}: {
+  /** The address bar's tab, which is absent as often as it is set. */
+  tab?: ReportStep | undefined;
+  locked: boolean;
+  running: boolean;
+  loaded: boolean;
+  state: StepState;
+}): ReportStep {
+  if (locked) return "output";
+  if (tab) return tab === "output" ? "output" : "photos";
+  if (running) return "photos";
+  if (!loaded) return "photos";
+  return defaultStep(state) === "output" ? "output" : "photos";
+}
+
 const STEPS: { id: ReportStep; label: string }[] = [
   { id: "photos", label: "Photos & findings" },
   { id: "output", label: "Get PDF" },
