@@ -98,10 +98,18 @@ describe("the field app manifest", () => {
     expect(icons.some((icon) => icon.purpose === "maskable")).toBe(true);
   });
 
-  it("is linked from the root document", () => {
+  it("is declared by the field route, and not by the root", () => {
+    // One manifest per installable surface. The root used to declare this one
+    // for every page, which meant a home-screen icon made from any page opened
+    // the field cockpit rather than the page you were on. A document with two
+    // manifest links uses the FIRST, so a shared declaration is actively
+    // harmful: the route that owns the app has to be the one that declares it.
+    const field = readFileSync("src/routes/_authenticated/field.tsx", "utf8");
+    expect(field).toContain("/manifest.webmanifest");
+
     const root = readFileSync("src/routes/__root.tsx", "utf8");
-    expect(root).toContain("/manifest.webmanifest");
     expect(root).toContain("apple-touch-icon");
+    expect(root).not.toMatch(/rel:\s*"manifest"/);
   });
 });
 

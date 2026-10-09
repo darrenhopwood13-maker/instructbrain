@@ -123,6 +123,34 @@ describe("nothing in the launcher sends anything", () => {
   });
 });
 
+describe("the launcher's own manifest", () => {
+  const manifest = () =>
+    JSON.parse(readFileSync("public/manifest-hub.webmanifest", "utf8")) as Record<string, unknown>;
+
+  it("opens the launcher, not the field app", () => {
+    // The defect this exists to prevent: the shared app manifest starts at
+    // /field, so adding the launcher to a home screen produced an "Instruct"
+    // icon that opened the field camera app.
+    expect(manifest()["start_url"]).toBe("/hub");
+  });
+
+  it("installs as an app, under the family's name", () => {
+    expect(manifest()["display"]).toBe("standalone");
+    expect(manifest()["short_name"]).toBe("Instruct");
+    expect(manifest()["name"]).toContain("Instruct");
+  });
+
+  it("carries a maskable icon, or Android crops the wordmark", () => {
+    const icons = manifest()["icons"] as Array<{ purpose?: string }>;
+    expect(icons.some((icon) => icon.purpose === "maskable")).toBe(true);
+  });
+
+  it("is declared by the launcher route", () => {
+    const route = readFileSync("src/routes/hub.tsx", "utf8");
+    expect(route).toContain("/manifest-hub.webmanifest");
+  });
+});
+
 describe("the hub components exist as the brief names them", () => {
   it("has a component per file, registered in the hub directory", () => {
     const files = readdirSync("src/components/hub").sort();

@@ -58,7 +58,14 @@ export const Route = createFileRoute("/hub")({
         { name: "apple-mobile-web-app-title", content: "Instruct" },
         { name: "theme-color", content: HUB_THEME_COLOUR },
       ],
-      links: [{ rel: "canonical", href: absoluteUrl("/hub") }],
+      links: [
+        { rel: "canonical", href: absoluteUrl("/hub") },
+        // The launcher's OWN manifest. The app-level one starts at /field, so
+        // without this the home-screen icon for this page would open the field
+        // camera app instead of the launcher, and be labelled "instructBrain"
+        // rather than "Instruct".
+        { rel: "manifest", href: "/manifest-hub.webmanifest" },
+      ],
     };
   },
   validateSearch: (search: Record<string, unknown>): { product?: HubProductId } => {

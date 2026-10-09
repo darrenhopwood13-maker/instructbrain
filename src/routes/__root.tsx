@@ -112,7 +112,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/icons/instructbrain-512.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      // No manifest here on purpose. Each installable surface declares its own
+      // (/field and /hub): a single app-level manifest pointed every page's
+      // home-screen icon at start_url "/field", and because a document with two
+      // manifest links uses the FIRST, declaring one per route only works if
+      // this one is not in the way.
     ],
   }),
 

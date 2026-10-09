@@ -47,6 +47,14 @@ export const Route = createFileRoute("/_authenticated/field")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [
+      // The field app owns its own manifest. It used to be declared in the root,
+      // which meant EVERY page advertised start_url "/field" - so a home-screen
+      // icon made from any other page opened the field cockpit. A document with
+      // two manifest links uses the first, so this cannot be fixed by adding a
+      // second one further down: the root had to stop declaring one.
+      { rel: "manifest", href: "/manifest.webmanifest" },
+    ],
   }),
   component: FieldCockpit,
 });
