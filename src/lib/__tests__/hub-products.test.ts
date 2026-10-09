@@ -32,7 +32,8 @@ describe("the four products", () => {
     expect(findHubProduct("brain")?.share.url).toBe("https://instructbrain.com/hub?product=brain");
     expect(findHubProduct("site")?.share.url).toBe("https://instructsite.ai");
     expect(findHubProduct("enterprise")?.share.url).toBe("https://instructsite.com");
-    expect(findHubProduct("dabs")?.share.url).toBe("https://instructdabs.com");
+    // instructdabs.com does not resolve, so nothing may send a stranger there.
+    expect(findHubProduct("dabs")?.share.url).toBe("https://instructbrain.com/hub?product=dabs");
   });
 });
 
@@ -93,7 +94,7 @@ describe("the share copy is final copy", () => {
       "Have a look at instructSite Enterprise — corporate site governance, multi-project compliance registers, and contractor oversight: https://instructsite.com",
     );
     expect(HUB_PRODUCTS.find((product) => product.id === "dabs")!.share.message).toBe(
-      "Keep an eye out for instructDABS — daily activity briefings and site workforce coordination (launching soon): https://instructdabs.com",
+      "Keep an eye out for instructDABS — daily activity briefings and site workforce coordination (launching soon): https://instructbrain.com/hub?product=dabs",
     );
   });
 });

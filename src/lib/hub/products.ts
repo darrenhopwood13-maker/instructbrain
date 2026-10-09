@@ -143,9 +143,18 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     ],
     demo: "showcase",
     share: {
+      // TEMPORARY TARGET. instructDABS has no site and instructdabs.com does not
+      // resolve, so a shared link or a scanned QR would lead a stranger to a dead
+      // address - which is exactly the "it looks ready but isn't" promise the
+      // early-access status exists to avoid. Until the domain is live, send people
+      // to the product's own early-access page on the hub instead.
+      //
+      // WHEN instructdabs.com RESOLVES: put the domain back here, in `message`,
+      // and set `status` to "live" - the showcase's "Open instructdabs.com" button
+      // and the tile's early-access badge both key off `status`.
       message:
-        "Keep an eye out for instructDABS — daily activity briefings and site workforce coordination (launching soon): https://instructdabs.com",
-      url: "https://instructdabs.com",
+        "Keep an eye out for instructDABS — daily activity briefings and site workforce coordination (launching soon): https://instructbrain.com/hub?product=dabs",
+      url: "https://instructbrain.com/hub?product=dabs",
       subject: "instructDABS - daily activity briefings (launching soon)",
     },
   },

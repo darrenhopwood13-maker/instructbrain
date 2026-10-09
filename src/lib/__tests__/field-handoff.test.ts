@@ -99,17 +99,19 @@ describe("the field app manifest", () => {
   });
 
   it("is declared by the field route, and not by the root", () => {
-    // One manifest per installable surface. The root used to declare this one
-    // for every page, which meant a home-screen icon made from any page opened
-    // the field cockpit rather than the page you were on. A document with two
-    // manifest links uses the FIRST, so a shared declaration is actively
-    // harmful: the route that owns the app has to be the one that declares it.
+    // One manifest and one home-screen icon per installable surface. The root
+    // used to declare both for every page, which meant a home-screen icon made
+    // from any page opened the field cockpit rather than the page you were on.
+    // A document with two manifest (or apple-touch-icon) links uses the FIRST,
+    // so a shared declaration is actively harmful: the route that owns the app
+    // has to be the one that declares them.
     const field = readFileSync("src/routes/_authenticated/field.tsx", "utf8");
     expect(field).toContain("/manifest.webmanifest");
+    expect(field).toContain("apple-touch-icon");
 
     const root = readFileSync("src/routes/__root.tsx", "utf8");
-    expect(root).toContain("apple-touch-icon");
     expect(root).not.toMatch(/rel:\s*"manifest"/);
+    expect(root).not.toMatch(/rel:\s*"apple-touch-icon"/);
   });
 });
 

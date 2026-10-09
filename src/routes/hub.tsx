@@ -65,6 +65,11 @@ export const Route = createFileRoute("/hub")({
         // camera app instead of the launcher, and be labelled "instructBrain"
         // rather than "Instruct".
         { rel: "manifest", href: "/manifest-hub.webmanifest" },
+        // iOS ignores the manifest's icons when an apple-touch-icon is present,
+        // and - like the manifest - it uses the FIRST one in the document. The
+        // root used to declare the brain icon for every page, so this had to be
+        // taken off the root for the launcher to get its own.
+        { rel: "apple-touch-icon", href: "/icons/instruct-family-180.png" },
       ],
     };
   },

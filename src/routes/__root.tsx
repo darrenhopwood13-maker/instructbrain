@@ -111,12 +111,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Audiowide&family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap",
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/icons/instructbrain-512.png" },
-      // No manifest here on purpose. Each installable surface declares its own
-      // (/field and /hub): a single app-level manifest pointed every page's
-      // home-screen icon at start_url "/field", and because a document with two
-      // manifest links uses the FIRST, declaring one per route only works if
-      // this one is not in the way.
+      // Neither a manifest nor an apple-touch-icon here on purpose. Each
+      // installable surface declares its own (/field and /hub): a shared one
+      // pointed every page's home-screen icon at start_url "/field", and because
+      // a document with two of either link uses the FIRST, declaring them per
+      // route only works if this one is not in the way.
     ],
   }),
 

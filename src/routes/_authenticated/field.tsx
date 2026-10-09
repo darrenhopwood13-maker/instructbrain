@@ -48,12 +48,14 @@ export const Route = createFileRoute("/_authenticated/field")({
       { name: "twitter:card", content: "summary" },
     ],
     links: [
-      // The field app owns its own manifest. It used to be declared in the root,
-      // which meant EVERY page advertised start_url "/field" - so a home-screen
-      // icon made from any other page opened the field cockpit. A document with
-      // two manifest links uses the first, so this cannot be fixed by adding a
-      // second one further down: the root had to stop declaring one.
+      // The field app owns its own manifest AND its own home-screen icon. They
+      // used to be declared in the root, which meant EVERY page advertised
+      // start_url "/field" and the brain icon - so a home-screen icon made from
+      // any other page opened the field cockpit. A document with two manifest
+      // (or apple-touch-icon) links uses the first, so this could not be fixed
+      // by adding a second one further down: the root had to stop declaring one.
       { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/instructbrain-512.png" },
     ],
   }),
   component: FieldCockpit,

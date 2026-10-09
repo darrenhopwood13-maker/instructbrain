@@ -145,6 +145,35 @@ describe("the launcher's own manifest", () => {
     expect(icons.some((icon) => icon.purpose === "maskable")).toBe(true);
   });
 
+  it("uses the family's own icon, not the instructBrain one", () => {
+    const icons = manifest()["icons"] as Array<{ src: string }>;
+    expect(icons.length).toBeGreaterThan(0);
+    for (const icon of icons) {
+      expect(icon.src).toContain("/icons/instruct-family-");
+    }
+  });
+
+  it("points at icon files that exist and are the size they claim", () => {
+    // A wrong-sized icon is the classic silent failure: the file serves, the
+    // manifest looks right, and the launcher renders a blurred or cropped mark.
+    // PNG width and height are the two big-endian 32-bit values in the IHDR.
+    for (const [file, size] of [
+      ["instruct-family-192.png", 192],
+      ["instruct-family-512.png", 512],
+      ["instruct-family-180.png", 180],
+    ] as const) {
+      const buf = readFileSync(`public/icons/${file}`);
+      expect(buf.subarray(1, 4).toString("ascii")).toBe("PNG");
+      expect(buf.readUInt32BE(16)).toBe(size);
+      expect(buf.readUInt32BE(20)).toBe(size);
+    }
+  });
+
+  it("is the icon the launcher route declares to iOS", () => {
+    const route = readFileSync("src/routes/hub.tsx", "utf8");
+    expect(route).toContain("/icons/instruct-family-180.png");
+  });
+
   it("is declared by the launcher route", () => {
     const route = readFileSync("src/routes/hub.tsx", "utf8");
     expect(route).toContain("/manifest-hub.webmanifest");

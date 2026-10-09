@@ -11,13 +11,19 @@
   "theme_color": "#24417B",
   "icons": [
     {
-      "src": "/icons/instructbrain-512.png",
+      "src": "/icons/instruct-family-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/instruct-family-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/instructbrain-512.png",
+      "src": "/icons/instruct-family-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
