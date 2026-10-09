@@ -34,7 +34,7 @@ function doc(): ReportDocument {
         id: `f${index + 1}`,
         ref: `F-0${index + 1}`,
         sequence: index + 1,
-        severityId: ["performance", "workmanship", "cosmetic"][index],
+        severityId: ["performance", "workmanship", "cosmetic"][index] ?? null,
         assignedTrade: "Tiler",
         snagTitle: title,
         findingText: `A described defect number ${index + 1} on the north elevation.`,

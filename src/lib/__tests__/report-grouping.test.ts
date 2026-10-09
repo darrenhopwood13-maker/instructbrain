@@ -102,7 +102,7 @@ describe("grouping a snag report by trade", () => {
       "Groundworks",
       "Roofing",
     ]);
-    expect(groups[0].findings.map((item) => item.ref)).toEqual(["2"]);
+    expect(groups[0]?.findings.map((item) => item.ref)).toEqual(["2"]);
   });
 
   it("keeps every snag exactly once, whatever view is chosen", () => {
@@ -124,7 +124,7 @@ describe("grouping a snag report by trade", () => {
   it("names an unallocated snag as unconfirmed rather than leaving it out", () => {
     const groups = groupResults(doc([finding({ id: "a", ref: "1" })]), "trade");
     expect(groups).toHaveLength(1);
-    expect(groups[0].label).toBe("Trade not yet confirmed");
+    expect(groups[0]?.label).toBe("Trade not yet confirmed");
   });
 
   it("puts a snag with a blank trade in the unallocated bucket", () => {
@@ -170,7 +170,7 @@ describe("grouping a condition survey by grade", () => {
       "C — Fair",
       "A — Good",
     ]);
-    expect(groups[0].findings.map((item) => item.ref)).toEqual(["3"]);
+    expect(groups[0]?.findings.map((item) => item.ref)).toEqual(["3"]);
   });
 
   it("keeps every element exactly once, including one with an off-legend value", () => {
@@ -182,7 +182,7 @@ describe("grouping a condition survey by grade", () => {
     const groups = groupResults(doc(findings, condition), "grade");
     expect(groups.reduce((count, group) => count + group.findings.length, 0)).toBe(3);
     // The off-legend value is treated as ungraded, never silently placed in a tier.
-    expect(groups[0].findings.map((item) => item.ref)).toEqual(["2", "3"]);
+    expect(groups[0]?.findings.map((item) => item.ref)).toEqual(["2", "3"]);
   });
 
   it("does not regress the trade view when a survey grades AND assigns trades", () => {

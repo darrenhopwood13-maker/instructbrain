@@ -96,17 +96,17 @@ function ReportWorkspace() {
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
   const query = useQuery(reportQuery(id));
+  const document = useQuery(reportDocumentQuery(id));
   // A survey that assigns trades opens on the by-trade reading, so the report is
   // handed out the way it is worked. A view in the URL always wins over this.
   const resultView = safeResultView(
     view,
     defaultResultView(
       query.data?.report.surveyTypeSnapshot ?? null,
-      query.data?.tradeEnabled ?? true,
+      document.data?.tradeEnabled ?? true,
     ),
   );
   const findings = useQuery(findingsQuery(id));
-  const document = useQuery(reportDocumentQuery(id));
   const versions = useQuery(reportVersionsQuery(id));
   const translation = useReportTranslation(id, document.data ?? null);
   const projectId = query.data?.project?.id ?? null;

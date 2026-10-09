@@ -38,8 +38,8 @@ describe("what one press may accept", () => {
   it("sends an unassessed item to a person, in plain words", () => {
     const plan = acceptPlan([candidate({ statusId: NOT_ASSESSED })], base);
     expect(plan.accept).toEqual([]);
-    expect(plan.attention[0].reason).toBe("not_assessed");
-    expect(plan.attention[0].detail).toMatch(/needs a status from you/);
+    expect(plan.attention[0]?.reason).toBe("not_assessed");
+    expect(plan.attention[0]?.detail).toMatch(/needs a status from you/);
     expect(plan.blocked).toBe(true);
   });
 });
@@ -49,25 +49,25 @@ describe("trades, when the brief asks for them", () => {
 
   it("accepts the AI suggestion in the same press when it is confident", () => {
     const plan = acceptPlan([candidate()], trades);
-    expect(plan.accept[0].trade).toBe("Groundworker");
+    expect(plan.accept[0]?.trade).toBe("Groundworker");
     expect(plan.attention).toEqual([]);
   });
 
   it("leaves a low-confidence suggestion to a person and names it", () => {
     const plan = acceptPlan([candidate({ aiTradeConfidence: 0.5 })], trades);
     expect(plan.accept).toEqual([]);
-    expect(plan.attention[0].reason).toBe("unsure_trade");
-    expect(plan.attention[0].detail).toContain("Groundworker");
+    expect(plan.attention[0]?.reason).toBe("unsure_trade");
+    expect(plan.attention[0]?.detail).toContain("Groundworker");
   });
 
   it("leaves a missing suggestion to a person", () => {
     const plan = acceptPlan([candidate({ aiSuggestedTrade: null })], trades);
-    expect(plan.attention[0].reason).toBe("no_trade_suggested");
+    expect(plan.attention[0]?.reason).toBe("no_trade_suggested");
   });
 
   it("does not ask for a trade that a person has already chosen", () => {
     const plan = acceptPlan([candidate({ assignedTrade: "Bricklayer" })], trades);
-    expect(plan.accept[0].trade).toBeNull();
+    expect(plan.accept[0]?.trade).toBeNull();
     expect(plan.attention).toEqual([]);
   });
 
@@ -85,17 +85,17 @@ describe("grades, when the brief asks for them", () => {
   const grades = { ...base, gradeRequired: true };
 
   it("accepts a confident suggested grade in the same press", () => {
-    expect(acceptPlan([candidate()], grades).accept[0].grade).toBe("C3");
+    expect(acceptPlan([candidate()], grades).accept[0]?.grade).toBe("C3");
   });
 
   it("leaves an unsure grade to a person", () => {
     const plan = acceptPlan([candidate({ aiGradeConfidence: 0.2 })], grades);
-    expect(plan.attention[0].reason).toBe("unsure_grade");
+    expect(plan.attention[0]?.reason).toBe("unsure_grade");
   });
 
   it("leaves a missing grade to a person", () => {
     const plan = acceptPlan([candidate({ aiSuggestedGrade: null })], grades);
-    expect(plan.attention[0].reason).toBe("no_grade_suggested");
+    expect(plan.attention[0]?.reason).toBe("no_grade_suggested");
   });
 });
 
@@ -103,8 +103,8 @@ describe("the count on the button is the count that decides publishing", () => {
   it("settles trade and grade in one item, in one press", () => {
     const plan = acceptPlan([candidate()], { ...base, tradeRequired: true, gradeRequired: true });
     expect(plan.accept).toHaveLength(1);
-    expect(plan.accept[0].trade).toBe("Groundworker");
-    expect(plan.accept[0].grade).toBe("C3");
+    expect(plan.accept[0]?.trade).toBe("Groundworker");
+    expect(plan.accept[0]?.grade).toBe("C3");
     expect(plan.blocked).toBe(false);
   });
 
