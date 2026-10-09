@@ -1372,3 +1372,254 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
     padding-block: 0.75rem;
   }
 }
+
+/* ==========================================================================
+ * The Instruct family launcher - the /hub route.
+ *
+ * One accent PAIR per product, selected by `data-product` inside a `.hub`
+ * scope. The pair is two colours on purpose:
+ *
+ *   --hub-accent       fills, rules and glowing edges only
+ *   --hub-accent-pale  every piece of text on the navy
+ *
+ * The accents themselves cannot carry text on this navy - measured against
+ * #24417B, electric purple is 2.51:1 and safety orange 3.73:1, both under the
+ * 4.5:1 WCAG 2.1 AA floor - so body text reads the pale companion (5.18:1 to
+ * 9.15:1). That is why both colours exist rather than one.
+ *
+ * The four accents are the colours each product itself serves, so a launcher
+ * tile cannot drift away from the product it is selling. Verified against the
+ * live stylesheets on 9 Oct 2026: instructbrain.com Laser Green, instructsite.ai
+ * safety orange, instructsite.com electric purple. instructDABS is not live - its
+ * domain does not resolve - so its pair is the approved brand value, unverified.
+ *
+ * A product that changes its colour changes it HERE. Nothing outside this file
+ * names a colour.
+ * ========================================================================== */
+.hub {
+  /* `--product-accent`, not `--brand-accent`: naming the brand slot here would
+     make the rule below circular (`--brand-accent: var(--hub-accent)`) for an
+     element that carries both `.hub` and `data-product`. */
+  --hub-accent: var(--product-accent);
+  --hub-accent-pale: var(--brand-accent-light);
+  --hub-navy: var(--brand-blue);
+}
+
+/* Both combinators matter. The launcher's tiles are DESCENDANTS of `.hub`, but
+   Radix portals the showcase and renders `data-product` on the same element as
+   `.hub` - so a descendant-only selector silently missed every showcase panel
+   and left them in instructBrain green. Measured, in a browser, both ways. */
+.hub[data-product="brain"],
+.hub [data-product="brain"] {
+  --hub-accent: #57ff00; /* instructBrain Laser Green - matches live */
+  --hub-accent-pale: #d8ffbf;
+}
+
+.hub[data-product="site"],
+.hub [data-product="site"] {
+  --hub-accent: #ff770f; /* instructSite safety orange - matches live */
+  --hub-accent-pale: #ffa852;
+}
+
+.hub[data-product="enterprise"],
+.hub [data-product="enterprise"] {
+  --hub-accent: #a855f7; /* instructSite Enterprise purple - matches live */
+  --hub-accent-pale: #e9d5ff;
+}
+
+.hub[data-product="dabs"],
+.hub [data-product="dabs"] {
+  --hub-accent: #ffe600; /* instructDABS site yellow - brand value, not yet live */
+  --hub-accent-pale: #fff8b8;
+}
+
+/* One accent slot per product, as the family rule requires.
+ *
+ * Re-pointing the app's own `--brand-accent` family means a control the product
+ * already owns - a Button, a link, an eyebrow - adopts the accent of the panel
+ * it is standing in. Without this, every showcase carried instructBrain's green
+ * buttons, because those components read `--brand-accent` and know nothing about
+ * the launcher. One rule, so a fifth product needs no extra CSS. */
+.hub[data-product],
+.hub [data-product] {
+  --brand-accent: var(--hub-accent);
+  --brand-accent-light: var(--hub-accent-pale);
+  --brand-accent-soft: color-mix(in oklab, var(--hub-accent) 16%, transparent);
+  --brand-accent-ink: var(--hub-accent-pale);
+  --brand-accent-deep: color-mix(in oklab, var(--hub-accent) 72%, black);
+}
+
+/* The launcher shell: exactly one screen tall on a phone and never scrolls
+   there, because a launcher that scrolls is a page. It becomes a centred
+   column on a larger screen, where scrolling is neither a risk nor a problem. */
+@utility hub-viewport {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: var(--hub-navy);
+  background-image: var(--blueprint-grid);
+  background-size: 48px 48px;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  @media (min-width: 768px) {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    justify-content: center;
+  }
+}
+
+/* One product tile. A quarter of the phone screen, with the whole row tappable
+   so the 48px minimum target is irrelevant by a large margin. */
+@utility hub-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  border-radius: 1.25rem;
+  border: 1.5px solid color-mix(in oklab, var(--hub-accent) 45%, transparent);
+  background-image: linear-gradient(
+    180deg,
+    oklch(1 0 0 / 9%) 0%,
+    oklch(1 0 0 / 3%) 100%
+  );
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 18%);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--hub-accent);
+    background-color: color-mix(in oklab, var(--hub-accent) 12%, transparent);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 22%),
+      0 0 22px -6px var(--hub-accent);
+  }
+
+  &:active:not(:disabled) {
+    background-color: color-mix(in oklab, var(--hub-accent) 20%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--hub-accent-pale);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* The glossy wordmark. "instruct" stays white and the product name owns the
+   accent, which is the family rule; the gloss is a vertical gradient plus a
+   specular band across the upper third, an inner edge in the product colour
+   and an outer glow. */
+@utility hub-wordmark {
+  font-family: var(--font-wordmark);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+/* On a tile the wordmark shares a row with a 48px control and must still fit
+   "instructEnterprise" inside 360px, so it is deliberately small. The showcase
+   has the width to shout.
+   
+   Sized in vw, not rem: the binding constraint is the narrowest screen, and at
+   360px anything above ~4vw pushes the widest wordmark past the row and drags
+   the whole tile wider than the phone. Measured, not guessed - see
+   `src/lib/__tests__/hub-tokens.test.ts` for the containment reasoning. */
+@utility hub-wordmark-tile {
+  font-size: clamp(0.9375rem, 4.7vw, 1.6rem);
+}
+
+@utility hub-wordmark-lg {
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
+}
+
+@utility hub-wordmark-instruct {
+  color: oklch(1 0 0);
+  text-shadow:
+    0 1px 0 oklch(1 0 0 / 55%),
+    0 -1px 1px oklch(0 0 0 / 45%);
+}
+
+@utility hub-wordmark-name {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--hub-accent-pale) 100%, white) 0%,
+    var(--hub-accent) 42%,
+    color-mix(in oklab, var(--hub-accent) 72%, black) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--hub-accent) 45%, transparent));
+}
+
+/* Small status chip, e.g. "Early access". Text only ever in the pale tone. */
+@utility hub-chip {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--hub-accent) 55%, transparent);
+  background-color: color-mix(in oklab, var(--hub-accent) 12%, transparent);
+  color: var(--hub-accent-pale);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Product-coloured text on the navy, always the pale companion so the contrast
+   floor holds. Components never name a colour of their own. */
+@utility hub-accent-text {
+  color: var(--hub-accent-pale);
+}
+
+/* The small round play control on each tile: a discreet in-person demo, not a
+   shouting button. 48px square so it is a legal touch target on its own. */
+@utility hub-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in oklab, var(--hub-accent) 55%, transparent);
+  color: var(--hub-accent-pale);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--hub-accent);
+    background-color: color-mix(in oklab, var(--hub-accent) 16%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--hub-accent-pale);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
