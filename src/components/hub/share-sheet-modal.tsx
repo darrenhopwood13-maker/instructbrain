@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Copy, Mail, MessageCircle, MessageSquare, Send, Share2 } from "lucide-react";
+import { ChevronDown, Copy, Mail, MessageCircle, MessageSquare, Send, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { ProductQr } from "@/components/hub/product-qr";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -71,15 +72,38 @@ export function ShareSheetModal({
       */}
       <SheetContent
         side="bottom"
-        className="hub max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t"
+        className="hub max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t [&>[data-sheet-close]]:hidden"
         data-product={product.id}
         data-testid="hub-send-panel"
       >
+        {/*
+          The sheet's built-in close button is hidden above and replaced by one in
+          this header row. Measured, the built-in one sat 15px above the wordmark's
+          centre and 8px outside the content's right margin, because it is pinned
+          16px from the sheet edge while the content padding is 24px - and its hit
+          area was only 16x16. In the row, alignment is structural: flex centres it
+          on the wordmark, the margin is the content's own, and it is a real
+          thumb-sized target.
+        */}
         <SheetHeader className="text-left">
-          <SheetTitle className="hub-wordmark hub-wordmark-tile">
-            <span className="hub-wordmark-instruct">instruct</span>
-            <span className="hub-wordmark-name">{product.name}</span>
-          </SheetTitle>
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="hub-wordmark hub-wordmark-tile min-w-0">
+              <span className="hub-wordmark-instruct">instruct</span>
+              <span className="hub-wordmark-name">{product.name}</span>
+            </SheetTitle>
+            <SheetClose asChild>
+              <button
+                type="button"
+                // -mr-4 pulls the glyph, not the button, onto the content margin:
+                // 48px button holding a 16px icon has 16px of its own padding.
+                className="hub-close -mr-4 flex size-12 shrink-0 items-center justify-center rounded-full"
+                aria-label="Close"
+                data-testid="hub-close"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </SheetClose>
+          </div>
           <SheetDescription>
             Let them scan it, or send the link. Nothing sends until you press send.
           </SheetDescription>

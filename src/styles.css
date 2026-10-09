@@ -1474,6 +1474,30 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 
 /* One product tile. A quarter of the phone screen, with the whole row tappable
    so the 48px minimum target is irrelevant by a large margin. */
+/* The send panel's own close control.
+ *
+ * It exists because the sheet's built-in one is pinned 16px from the sheet edge
+ * while this panel's content padding is 24px, so it sat 8px outside the
+ * wordmark's right margin and 15px above its centre - and its hit area was only
+ * 16x16 on a control people press with a thumb. All three measured in a browser
+ * rather than eyeballed. In the header row the alignment is structural. */
+@utility hub-close {
+  color: oklch(1 0 0 / 70%);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    color: oklch(1 0 0);
+    background-color: oklch(1 0 0 / 10%);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--hub-accent-pale);
+    outline-offset: 3px;
+  }
+}
+
 @utility hub-tile {
   position: relative;
   display: flex;

@@ -267,4 +267,17 @@ describe("the send panel", () => {
     render(<ShareSheetModal product={null} open={false} onOpenChange={() => undefined} />);
     expect(screen.queryByTestId("hub-send-menu")).toBeNull();
   });
+
+  it("closes with its own control, on the header's line and thumb-sized", async () => {
+    // The sheet's built-in close sat 15px above the wordmark's centre and 8px
+    // outside the content margin, with a 16x16 hit area. This one is aligned by
+    // the header row and is a real target.
+    await openPanel();
+    const close = screen.getByTestId("hub-close");
+    expect(close.getAttribute("aria-label")).toBe("Close");
+    expect(close.className).toContain("size-12");
+
+    const panel = screen.getByTestId("hub-send-panel");
+    expect(panel.className).toContain("[&>[data-sheet-close]]:hidden");
+  });
 });
