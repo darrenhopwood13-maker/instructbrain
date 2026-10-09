@@ -49,10 +49,12 @@ function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Account — ${user.email ?? "signed in"}`}
-        className="console-control inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm font-medium text-foreground transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+        className="console-control inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-2 text-sm font-medium text-foreground transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:px-3"
       >
         <UserCog aria-hidden="true" className="size-4 shrink-0" />
-        <span className="hidden sm:inline">{t("nav.account")}</span>
+        {/* The word only appears once the row can afford it: between 640 and
+            1023 the primary nav is in the same row. */}
+        <span className="hidden lg:inline">{t("nav.account")}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
@@ -164,10 +166,17 @@ export function AppShell({
       </a>
 
       <header className="app-shell-header sticky top-0 z-30 border-b border-border bg-surface-raised/95 backdrop-blur">
-        <div className="shell-container flex items-center gap-4 py-5">
+        {/* Tighter gaps below md: at 320px the row is only just wide enough for
+            the wordmark plus two 44px-tall controls, and at 640px the primary
+            nav joins the row and 16px gaps push the wordmark into an ellipsis. */}
+        <div className="shell-container flex items-center gap-2 py-5 md:gap-4">
           <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
-              <span className="wordmark block truncate text-lg leading-tight sm:text-xl">
+              {/* 16px on a phone, not 18px: the wordmark is the flexible element,
+                  and at 320px Audiowide needs 143px where the row can give 135.
+                  It stays 16px until md because between 640 and 1023 the primary
+                  nav shares the row with it and 20px does not fit. */}
+              <span className="wordmark block truncate text-base leading-tight md:text-xl">
                 <span className="wordmark-instruct text-foreground">instruct</span>
                 <span className={surface === "light" ? "work-wordmark-brain" : "text-brand-accent"}>
                   Brain
@@ -182,7 +191,7 @@ export function AppShell({
                 key={item.to}
                 to={item.to}
                 activeOptions={{ exact: item.exact }}
-                className="rounded-md border border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-brand-accent/55 hover:bg-surface-sunken hover:text-foreground data-[status=active]:border-brand-accent data-[status=active]:bg-brand-accent/10 data-[status=active]:text-foreground"
+                className="rounded-md border border-transparent px-2 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:border-brand-accent/55 hover:bg-surface-sunken hover:text-foreground data-[status=active]:border-brand-accent data-[status=active]:bg-brand-accent/10 data-[status=active]:text-foreground lg:px-3"
               >
                 {t(item.key)}
               </Link>

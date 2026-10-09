@@ -24,6 +24,10 @@ import { Button } from "@/components/ui/button";
  *
  * `compact` is the top-bar form — a small accent-coloured control showing the
  * current language code, with the full list behind it.
+ *
+ * The compact pill never wraps and never squeezes: on a 320px phone the row is
+ * ~12px short and, because this pill could shrink, "EN" broke onto two lines.
+ * The brand wordmark is the only thing in the bar allowed to give.
  */
 export function LanguageToggle({
   className,
@@ -41,7 +45,7 @@ export function LanguageToggle({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Language — currently ${current?.native ?? "English"}`}
-            className="console-control flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold uppercase tracking-wide text-brand-accent-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+            className="console-control flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2 whitespace-nowrap text-xs font-bold uppercase tracking-wide text-brand-accent-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70 sm:px-3"
           >
             <Globe aria-hidden="true" className="size-4 shrink-0" />
             {current?.label ?? "EN"}
