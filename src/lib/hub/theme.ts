@@ -11,3 +11,16 @@
  * the launcher is a theme token.
  */
 export const HUB_THEME_COLOUR = "#24417B";
+
+/**
+ * The QR code's two colours.
+ *
+ * Here rather than in the component because a QR code is not styled: it needs
+ * near-black modules on white with real quiet zone or a phone camera will not
+ * read it in poor light. That makes it a scannability constraint, not a brand
+ * one - and it is the only other colour literal in the launcher, so it lives in
+ * this one file where it can be seen and changed deliberately.
+ */
+export const HUB_QR_DARK = "#101828";
+export const HUB_QR_LIGHT = "#FFFFFF";
+

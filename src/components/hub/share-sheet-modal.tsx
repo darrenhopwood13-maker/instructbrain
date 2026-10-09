@@ -1,6 +1,8 @@
-import { Copy, Mail, MessageCircle, MessageSquare, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Mail, MessageCircle, MessageSquare, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ProductQr } from "@/components/hub/product-qr";
 import {
   Sheet,
   SheetContent,
@@ -8,16 +10,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { copyLink, shareLinksFor } from "@/lib/hub/share";
+import { canShareNatively, copyLink, shareLinksFor, shareNatively } from "@/lib/hub/share";
 import type { HubProduct } from "@/lib/hub/products";
 
 /**
- * The fallback drawer for devices with no share sheet - desktop, and some
- * in-app webviews.
+ * What one tap on a product gives you: the QR code, and the ways to send it.
  *
- * Every action is an `<a>` that opens a compose window, except Copy Link which
- * writes to the clipboard and says so only when it actually worked. Nothing
- * here sends a message: the person still has to press send in their own app.
+ * In person, the other person points a camera at the code and the product opens
+ * on their phone - no typing, no asking them to spell their number. At a
+ * distance, the platform buttons below open a compose window with the pitch
+ * already written.
+ *
+ * Nothing here sends anything: every platform action is a link that opens
+ * somebody else's compose screen, and the person still presses send themselves.
  */
 export function ShareSheetModal({
   product,
@@ -28,6 +33,13 @@ export function ShareSheetModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  // Client-only: the server cannot know whether this device has a share sheet,
+  // and rendering the button during SSR would then vanish on hydration.
+  const [canNative, setCanNative] = useState(false);
+  useEffect(() => {
+    setCanNative(canShareNatively());
+  }, []);
+
   if (!product) return null;
 
   const links = shareLinksFor(product.share);
@@ -43,8 +55,9 @@ export function ShareSheetModal({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="hub max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t"
+        className="hub max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t"
         data-product={product.id}
+        data-testid="hub-send-panel"
       >
         <SheetHeader className="text-left">
           <SheetTitle className="hub-wordmark hub-wordmark-tile">
@@ -52,12 +65,35 @@ export function ShareSheetModal({
             <span className="hub-wordmark-name">{product.name}</span>
           </SheetTitle>
           <SheetDescription>
-            Your phone could not open a share sheet, so pick where to send it. The message is written
-            and waiting - you still press send yourself.
+            Let them scan it with a camera, or send the message to someone further away. Nothing is
+            sent until you press send in your own app.
           </SheetDescription>
         </SheetHeader>
 
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <ProductQr url={product.share.url} label={product.label} />
+          <p className="hub-accent-text text-center text-xs font-semibold uppercase tracking-[0.18em]">
+            Point a camera at this
+          </p>
+        </div>
+
         <div className="mt-5 grid gap-2">
+          {canNative ? (
+            <button
+              type="button"
+              className="hub-tile min-h-12 flex-row items-center gap-3 px-4 py-3 text-sm font-semibold"
+              data-testid="hub-native-share"
+              onClick={async () => {
+                const outcome = await shareNatively(product.share);
+                // A cancelled share says nothing and sends nothing.
+                if (outcome === "shared") onOpenChange(false);
+              }}
+            >
+              <Share2 className="hub-accent-text size-4 shrink-0" aria-hidden="true" />
+              <span>Share...</span>
+            </button>
+          ) : null}
+
           {actions.map(({ key, label, href, Icon }) => (
             <a
               key={key}

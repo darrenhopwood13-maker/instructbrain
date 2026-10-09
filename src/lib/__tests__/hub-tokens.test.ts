@@ -128,6 +128,7 @@ describe("the hub components exist as the brief names them", () => {
     const files = readdirSync("src/components/hub").sort();
     expect(files).toEqual([
       "family-tile.tsx",
+      "product-qr.tsx",
       "product-showcase-sheet.tsx",
       "share-sheet-modal.tsx",
     ]);

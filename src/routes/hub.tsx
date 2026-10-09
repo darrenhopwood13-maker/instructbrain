@@ -12,7 +12,6 @@ import {
   type HubProduct,
   type HubProductId,
 } from "@/lib/hub/products";
-import { shareNatively } from "@/lib/hub/share";
 import { useInstallPrompt } from "@/lib/pwa/install";
 import { absoluteUrl } from "@/lib/site-url";
 import { HUB_THEME_COLOUR } from "@/lib/hub/theme";
@@ -76,8 +75,8 @@ function InstructFamilyHub() {
   const { product: productParam } = Route.useSearch();
   const openProduct = findHubProduct(productParam) ?? null;
 
-  /** The fallback drawer, for a device with no share sheet. */
-  const [fallbackProduct, setFallbackProduct] = useState<HubProduct | null>(null);
+  /** The send panel: that product's QR code, and the ways to send the link. */
+  const [sendProduct, setSendProduct] = useState<HubProduct | null>(null);
   /** The in-person demo. */
   const [reelProduct, setReelProduct] = useState<HubProduct | null>(null);
   const [installDismissed, setInstallDismissed] = useState(false);
@@ -90,14 +89,16 @@ function InstructFamilyHub() {
   }
 
   /**
-   * Tap a tile to share it.
+   * Tap a tile to send it.
    *
-   * A cancelled share shows nothing and says nothing - the person backed out,
-   * and a confirmation would tell them something untrue about what happened.
+   * Opens the send panel rather than jumping straight to the system share sheet:
+   * the panel is where the QR code lives, and in person that is the faster
+   * handover by far - the other person just points their camera at it. The
+   * native sheet is the first action inside the panel, for sending at a
+   * distance.
    */
-  async function handleShare(product: HubProduct) {
-    const outcome = await shareNatively(product.share);
-    if (outcome === "unavailable") setFallbackProduct(product);
+  function handleShare(product: HubProduct) {
+    setSendProduct(product);
   }
 
   function handleDemo(product: HubProduct) {
@@ -167,9 +168,7 @@ function InstructFamilyHub() {
             <FamilyTile
               key={product.id}
               product={product}
-              onShare={(next) => {
-                void handleShare(next);
-              }}
+              onShare={handleShare}
               onDemo={handleDemo}
             />
           ))}
@@ -187,10 +186,10 @@ function InstructFamilyHub() {
       />
 
       <ShareSheetModal
-        product={fallbackProduct}
-        open={fallbackProduct !== null}
+        product={sendProduct}
+        open={sendProduct !== null}
         onOpenChange={(open) => {
-          if (!open) setFallbackProduct(null);
+          if (!open) setSendProduct(null);
         }}
       />
 

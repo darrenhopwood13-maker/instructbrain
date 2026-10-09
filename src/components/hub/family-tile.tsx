@@ -33,7 +33,7 @@ export function FamilyTile({
         type="button"
         onClick={() => onShare(product)}
         className="flex min-h-12 min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-lg text-left"
-        aria-label={`Share ${product.label} - opens your device's share sheet with a message ready to send`}
+        aria-label={`Send ${product.label} - show a QR code to scan, or share the link`}
       >
         <span className="hub-wordmark hub-wordmark-tile" aria-hidden="true">
           <span className="hub-wordmark-instruct">instruct</span>
