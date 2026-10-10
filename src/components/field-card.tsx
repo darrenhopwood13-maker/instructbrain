@@ -27,6 +27,9 @@ export function FieldCard({
   className,
   emphasis = "default",
   expandable = true,
+  actionLabel,
+  open: openProp,
+  onOpenChange,
 }: {
   label: string;
   badge?: ReactNode;
@@ -41,8 +44,19 @@ export function FieldCard({
   emphasis?: "default" | "flag";
   /** Whether the inline preview also offers a full-screen reading dialog. */
   expandable?: boolean;
+  /** What the one control says. Defaults to "Open <label>". */
+  actionLabel?: string;
+  /** Controlled open state. Leave undefined to let the card open itself. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [selfOpen, setSelfOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : selfOpen;
+  const setOpen = (next: boolean) => {
+    if (!controlled) setSelfOpen(next);
+    onOpenChange?.(next);
+  };
   const titleId = useId();
 
   return (
@@ -85,7 +99,7 @@ export function FieldCard({
             onClick={() => setOpen(true)}
           >
             <Maximize2 aria-hidden="true" className="mr-1.5 size-4" />
-            Open {label.toLowerCase()}
+            {actionLabel ?? `Open ${label.toLowerCase()}`}
           </Button>
 
           <Dialog open={open} onOpenChange={setOpen}>

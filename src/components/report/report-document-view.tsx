@@ -744,6 +744,7 @@ function Section({
         <div className="mt-3">
           <InlineField
             label={sectionLabel(section)}
+            hideLabel
             value={map.value}
             readOnly={readOnly}
             multiline

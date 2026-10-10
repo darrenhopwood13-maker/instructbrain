@@ -408,41 +408,40 @@ function ComplianceRegister() {
             {weeksOpen ? (
               <ul className="mt-2 space-y-3">
                 {[...model.weeks].reverse().map((week) => (
-                  <li key={week.run.id} className="rounded-lg border border-border bg-card p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">{fullDate(week.run.checkDate)}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                  <li key={week.run.id}>
+                    {/* One link per row. The whole row opens the week, so the
+                        status does not need a rival button beside it, and the
+                        pack for the register is downloaded once, above. */}
+                    <Link
+                      to="/projects/$id/compliance/$runId"
+                      params={{ id, runId: week.run.id }}
+                      className="flex min-h-11 flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary"
+                    >
+                      <span className="min-w-0">
+                        <span className="block font-semibold">
+                          {fullDate(week.run.checkDate)}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
                           {week.checked} point(s) checked · {week.nonCompliant} non-compliant ·{" "}
                           {week.photosMissing} photograph(s) missing ·{" "}
                           {week.run.performedByName || "not yet signed"}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
+                        </span>
+                      </span>
+                      <span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         {week.locked ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1.5">
                             <Lock aria-hidden="true" className="size-3.5" />
                             Completed
                           </span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">In progress</span>
+                          <span>In progress</span>
                         )}
-                        <PackDownloadButton
-                          projectId={id}
-                          checkType={type}
-                          runId={week.run.id}
-                          label="Download pack"
-                        />
-                        <Button asChild variant="outline">
-                          <Link
-                            to="/projects/$id/compliance/$runId"
-                            params={{ id, runId: week.run.id }}
-                          >
-                            {week.locked ? "View" : "Continue"}
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                        <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                          {week.locked ? "View" : "Continue"}
+                          <ChevronRight aria-hidden="true" className="size-4" />
+                        </span>
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>

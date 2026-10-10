@@ -782,6 +782,61 @@ export function ReviewList({
             );
           }
           const heading = cardHeading(item);
+          const editing = editingId === item.id;
+          /**
+           * The wording editor, built once. It is the pop-out for the ordinary
+           * card — so a finding has ONE description control that reads and edits
+           * — and it stays inline on a room-schedule report, which has no pop-out.
+           */
+          const descriptionEditor = (
+            <div className="space-y-3 rounded-xl border border-border bg-surface-sunken p-3">
+              {itemField ? (
+                <div>
+                  <label htmlFor={`item-${item.id}`} className="eyebrow block text-muted-foreground">
+                    {itemField.label}
+                  </label>
+                  <input
+                    id={`item-${item.id}`}
+                    value={draftItem}
+                    maxLength={60}
+                    placeholder="e.g. Radiator valve"
+                    onChange={(event) => setDraftItem(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-md border border-input bg-surface-raised px-3 text-base"
+                  />
+                </div>
+              ) : null}
+              <div>
+                <label htmlFor={`desc-${item.id}`} className="eyebrow block text-muted-foreground">
+                  Description
+                </label>
+                <textarea
+                  id={`desc-${item.id}`}
+                  value={draftText}
+                  rows={5}
+                  onChange={(event) => setDraftText(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-input bg-surface-raised p-3 text-base leading-relaxed"
+                />
+              </div>
+              <div className="grid gap-2 sm:flex sm:flex-wrap">
+                <Button
+                  variant="brand"
+                  className="min-h-11"
+                  disabled={savingEdit}
+                  onClick={() => void saveEdit(item, index, notAssessedCount > 1)}
+                >
+                  {notAssessedCount > 1 ? "Save and next" : "Save"}
+                </Button>
+                <Button
+                  variant="quiet"
+                  className="min-h-11"
+                  disabled={savingEdit}
+                  onClick={() => setEditingId(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          );
           return (
             <li
               key={item.id}
@@ -836,10 +891,28 @@ export function ReviewList({
               })()}
 
               <div className="mt-3 space-y-3">
+                {/* One description control. The card clamps the preview to two
+                    lines, and the SAME control opens the whole text and the
+                    editor — rather than offering "open" and "edit" as two
+                    buttons that do one person's job between them. */}
                 <FieldCard
                   label="Description"
-                  popOutDescription="What the assessment observed in the photograph."
+                  popOutDescription={
+                    onEditText
+                      ? "Read the whole description, change the wording, and save it here."
+                      : "What the assessment observed in the photograph."
+                  }
+                  previewLines={2}
                   expandable={!usesRoomSchedule}
+                  {...(onEditText ? { actionLabel: "Open and edit description" } : {})}
+                  {...(onEditText
+                    ? {
+                        open: editing,
+                        onOpenChange: (next: boolean) =>
+                          next ? startEdit(item) : setEditingId(null),
+                        popOut: descriptionEditor,
+                      }
+                    : {})}
                 >
                   <p className="whitespace-pre-wrap">
                     {item.description || item.note || (
@@ -848,62 +921,20 @@ export function ReviewList({
                   </p>
                 </FieldCard>
 
-                {onEditText && editingId === item.id ? (
-                  <div className="space-y-3 rounded-xl border border-border bg-surface-sunken p-3">
-                    {itemField ? (
-                      <div>
-                        <label htmlFor={`item-${item.id}`} className="eyebrow block text-muted-foreground">
-                          {itemField.label}
-                        </label>
-                        <input
-                          id={`item-${item.id}`}
-                          value={draftItem}
-                          maxLength={60}
-                          placeholder="e.g. Radiator valve"
-                          onChange={(event) => setDraftItem(event.target.value)}
-                          className="mt-2 h-11 w-full rounded-md border border-input bg-surface-raised px-3 text-base"
-                        />
-                      </div>
-                    ) : null}
-                    <div>
-                      <label htmlFor={`desc-${item.id}`} className="eyebrow block text-muted-foreground">
-                        Description
-                      </label>
-                      <textarea
-                        id={`desc-${item.id}`}
-                        value={draftText}
-                        rows={5}
-                        onChange={(event) => setDraftText(event.target.value)}
-                        className="mt-2 w-full rounded-md border border-input bg-surface-raised p-3 text-base leading-relaxed"
-                      />
-                    </div>
-                    <div className="grid gap-2 sm:flex sm:flex-wrap">
-                      <Button
-                        variant="brand"
-                        className="min-h-11"
-                        disabled={savingEdit}
-                        onClick={() => void saveEdit(item, index, notAssessedCount > 1)}
-                      >
-                        {notAssessedCount > 1 ? "Save and next" : "Save"}
-                      </Button>
-                      <Button
-                        variant="quiet"
-                        className="min-h-11"
-                        disabled={savingEdit}
-                        onClick={() => setEditingId(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : onEditText ? (
-                  <Button
-                    variant="quiet"
-                    className="min-h-11 w-full sm:w-auto"
-                    onClick={() => startEdit(item)}
-                  >
-                    {itemField ? "Edit item name and description" : "Edit description"}
-                  </Button>
+                {/* A room-schedule report has no pop-out, so its one edit control
+                    has nowhere else to live. */}
+                {usesRoomSchedule && onEditText ? (
+                  editing ? (
+                    descriptionEditor
+                  ) : (
+                    <Button
+                      variant="quiet"
+                      className="min-h-11 w-full sm:w-auto"
+                      onClick={() => startEdit(item)}
+                    >
+                      {itemField ? "Edit item name and description" : "Edit description"}
+                    </Button>
+                  )
                 ) : null}
 
                 {showCause ? (
@@ -1042,6 +1073,7 @@ export function ReviewList({
                   <FieldCard
                     label="Remedial action"
                     popOutDescription="The recommended action recorded against this finding."
+                    previewLines={2}
                   >
                     <p className="whitespace-pre-wrap">
                       {item.remedial || (

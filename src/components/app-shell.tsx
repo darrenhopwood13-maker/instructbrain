@@ -7,6 +7,7 @@ import { organisationQuery } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
+import { useIsWideViewport } from "@/hooks/use-mobile";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { HelpSheet, OPEN_HELP_EVENT } from "@/components/help-sheet";
 import { toast } from "sonner";
@@ -147,6 +148,9 @@ export function AppShell({
   const { t } = useI18n();
   const { organisationId } = useOrganisations();
   const organisation = useQuery(organisationQuery(organisationId));
+  // One set of destinations, rendered once. Header links from `sm` upwards,
+  // the fixed bar below it — never both, so the nav is not in the document twice.
+  const wide = useIsWideViewport();
   // The trade layer is optional: with it switched off the recipient directory has
   // nothing to do, so it leaves the navigation rather than sitting there empty.
   const tradeAllocationEnabled = organisation.data?.trade_allocation_enabled !== false;
@@ -185,18 +189,20 @@ export function AppShell({
             </span>
           </Link>
 
-          <nav aria-label="Primary" className="app-shell-primary-nav ml-auto hidden items-center gap-1 sm:flex">
-            {nav.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                activeOptions={{ exact: item.exact }}
-                className="rounded-md border border-transparent px-2 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:border-brand-accent/55 hover:bg-surface-sunken hover:text-foreground data-[status=active]:border-brand-accent data-[status=active]:bg-brand-accent/10 data-[status=active]:text-foreground lg:px-3"
-              >
-                {t(item.key)}
-              </Link>
-            ))}
-          </nav>
+          {wide ? (
+            <nav aria-label="Primary" className="app-shell-primary-nav ml-auto hidden items-center gap-1 sm:flex">
+              {nav.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  activeOptions={{ exact: item.exact }}
+                  className="rounded-md border border-transparent px-2 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:border-brand-accent/55 hover:bg-surface-sunken hover:text-foreground data-[status=active]:border-brand-accent data-[status=active]:bg-brand-accent/10 data-[status=active]:text-foreground lg:px-3"
+                >
+                  {t(item.key)}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
           <LanguageToggle compact />
           <AccountMenu />
         </div>
@@ -209,7 +215,7 @@ export function AppShell({
         {children}
       </main>
 
-      {chrome === "field" ? null : (
+      {!wide && chrome !== "field" ? (
       <nav
         aria-label="Primary mobile"
         className="app-shell-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
@@ -232,7 +238,7 @@ export function AppShell({
           ))}
         </ul>
       </nav>
-      )}
+      ) : null}
 
       <HelpSheet />
     </div>

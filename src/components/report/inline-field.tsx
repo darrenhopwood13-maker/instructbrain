@@ -12,6 +12,7 @@ export function InlineField({
   multiline = false,
   placeholder,
   readOnly = false,
+  hideLabel = false,
   className,
   rows = 4,
   type = "text",
@@ -22,6 +23,11 @@ export function InlineField({
   multiline?: boolean;
   placeholder?: string;
   readOnly?: boolean;
+  /**
+   * Suppress the visible micro-label. The control keeps its accessible name, so
+   * a section that already carries its own heading does not print the name twice.
+   */
+  hideLabel?: boolean;
   className?: string;
   rows?: number;
   type?: "text" | "date";
@@ -63,7 +69,7 @@ export function InlineField({
   if (readOnly) {
     return (
       <div className={className}>
-        <p className="eyebrow">{label}</p>
+        {hideLabel ? null : <p className="eyebrow">{label}</p>}
         <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
           {value || <span className="text-muted-foreground">Not recorded</span>}
         </p>
@@ -76,8 +82,8 @@ export function InlineField({
 
   return (
     <div className={className}>
-      <label className="eyebrow block">
-        {label}
+      <label className="block">
+        <span className={cn("block", hideLabel ? "sr-only" : "eyebrow")}>{label}</span>
         {multiline ? (
           <textarea
             className={cn(shared, "resize-y")}
