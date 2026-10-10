@@ -373,13 +373,11 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      {capturing && activeSnapshot ? (
-        <p className="mt-4 text-sm">
-          <span className="font-semibold">Report template:</span>{" "}
-          {definitionLabel(activeSnapshot)} — locked for this report.
-          {project ? ` In ${project.name}.` : ""}
-        </p>
-      ) : (
+      {/* The template is chosen, not narrated. Once the report exists, the
+          "Report template: … locked for this report" line was a whole row of a
+          phone screen saying something the person already knows. The picker
+          below is only for a report that has not started. */}
+      {capturing && activeSnapshot ? null : (
         <section aria-labelledby="type-heading" className="mt-1">
           <h1
             id="type-heading"
@@ -436,13 +434,6 @@ function CustomReport() {
           </div>
         </section>
       )}
-
-      <p className="mt-4 text-sm text-muted-foreground">
-        {capturing
-          ? "Photographs upload as you take them."
-          : "Your last set-up is ready — take a photo to start."}
-      </p>
-
 
       {minimal && !capturing ? (
         <section aria-labelledby="focus-heading" className="mt-6">

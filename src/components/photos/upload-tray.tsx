@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, Clock, ImageOff, RefreshCw, X } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -12,27 +11,13 @@ export type UploadItem = {
   error?: string;
 };
 
-const stateLabels: Record<UploadItem["state"], string> = {
-  queued: "Waiting",
-  running: "Uploading",
-  done: "Uploaded",
-  error: "Failed",
-  cancelled: "Cancelled",
-  skipped: "Already uploaded",
-};
-
-function StateIcon({ state }: { state: UploadItem["state"] }) {
-  if (state === "done" || state === "skipped")
-    return <Check aria-hidden="true" className="size-4 text-pass" />;
-  if (state === "error") return <X aria-hidden="true" className="size-4 text-fail" />;
-  if (state === "cancelled")
-    return <ImageOff aria-hidden="true" className="size-4 text-muted-foreground" />;
-  return <Clock aria-hidden="true" className="size-4 text-muted-foreground" />;
-}
-
 /**
- * Per-file and overall upload state. A failure is always visible and always
- * has a retry — a silent failed upload is how a photograph goes missing.
+ * Upload progress, kept to a thin bar and a count — 3/25, 4/25, 5/25.
+ *
+ * A photograph that fails to reach storage is not in the report, so a failure
+ * is the one thing that still gets words and a retry. Everything else about a
+ * healthy upload is noise on a phone held one-handed on site, so it is not
+ * shown: no heading, no per-file list, no details to open.
  */
 export function UploadTray({
   items,
@@ -47,101 +32,52 @@ export function UploadTray({
   onRetryAll: () => void;
   onDismiss: () => void;
 }) {
-  const [showDetails, setShowDetails] = useState(false);
   if (items.length === 0) return null;
+
   const failed = items.filter((item) => item.state === "error");
-  const finished = items.filter((item) => item.state === "done" || item.state === "skipped");
-  const active = items.length - finished.length - failed.length;
-  const detailItems = showDetails
-    ? items
-    : failed;
+  const stored = items.filter(
+    (item) => item.state === "done" || item.state === "skipped",
+  ).length;
+  const settled = items.length - stored - failed.length === 0;
+  const percent = Math.round(overall * 100);
 
   return (
-    <section
-      aria-label="Upload progress"
-      className="rounded-xl border border-border bg-surface-raised p-4 shadow-raised"
-    >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h3 className="editorial-title text-base font-semibold">
-            {active > 0
-              ? `Uploading ${finished.length} of ${items.length}`
-              : `${finished.length} photograph${finished.length === 1 ? "" : "s"} uploaded`}
-          </h3>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {finished.length} of {items.length} stored
-            {failed.length > 0 ? ` · ${failed.length} failed` : ""}
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {failed.length > 0 ? (
-            <Button variant="brand" size="sm" onClick={onRetryAll}>
-              <RefreshCw aria-hidden="true" />
-              Retry {failed.length}
-            </Button>
-          ) : null}
-          {active === 0 && failed.length === 0 ? (
-            <Button variant="quiet" size="sm" onClick={onDismiss}>
-              Clear
-            </Button>
-          ) : null}
-        </div>
+    <section aria-label="Upload progress" className="space-y-2">
+      <div className="flex items-center gap-3">
+        <Progress
+          value={percent}
+          className="h-1.5 flex-1 [&>div]:bg-brand-accent"
+          aria-label={`Overall upload progress: ${percent} percent`}
+        />
+        <span
+          aria-live="polite"
+          className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground"
+        >
+          {stored}/{items.length}
+        </span>
+        {settled ? (
+          <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-2" onClick={onDismiss}>
+            Clear
+          </Button>
+        ) : null}
       </div>
 
-      <Progress
-        value={Math.round(overall * 100)}
-        className="mt-3"
-        aria-label={`Overall upload progress: ${Math.round(overall * 100)} percent`}
-      />
-
       {failed.length > 0 ? (
-        <p className="mt-3 flex items-start gap-2 rounded-md border border-fail bg-fail-soft p-2.5 text-sm text-fail">
-          <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fail">
+          <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
           <span>
-            {failed.length} photograph{failed.length === 1 ? "" : "s"} did not reach storage. They
-            are not in the report until they are retried successfully.
+            {failed.length} of {items.length} did not reach storage. They are not in the report
+            until they go again.
           </span>
+          <Button
+            variant="brand"
+            size="sm"
+            onClick={() => (failed.length === 1 ? onRetry(failed[0]!.id) : onRetryAll())}
+          >
+            {failed.length === 1 ? "Retry it" : `Retry ${failed.length}`}
+          </Button>
         </p>
       ) : null}
-
-      {items.length > failed.length ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="mt-2 min-h-11 px-2"
-          aria-expanded={showDetails}
-          onClick={() => setShowDetails((current) => !current)}
-        >
-          {showDetails ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-          {showDetails ? "Hide details" : "View details"}
-        </Button>
-      ) : null}
-
-      {detailItems.length > 0 ? <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-md border border-border">
-        {detailItems.map((item) => (
-          <li key={item.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-2.5">
-            <StateIcon state={item.state} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{item.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {stateLabels[item.state]} · {item.sizeLabel}
-                {item.state === "running" ? ` · ${Math.round(item.progress * 100)}%` : ""}
-                {item.error ? ` · ${item.error}` : ""}
-              </p>
-            </div>
-            {item.state === "error" ? (
-              <Button variant="quiet" size="sm" onClick={() => onRetry(item.id)}>
-                Retry
-              </Button>
-            ) : (
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {Math.round(item.progress * 100)}%
-              </span>
-            )}
-          </li>
-        ))}
-      </ul> : null}
     </section>
   );
 }
