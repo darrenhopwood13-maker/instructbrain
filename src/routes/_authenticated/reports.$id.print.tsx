@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { downloadReportPdf } from "@/lib/report/pdf.functions";
-import { pdfBytesFromBase64 } from "@/lib/report/save-pdf";
+import { pdfBlob, pdfBytesFromBase64 } from "@/lib/report/save-pdf";
 import { safeResultView } from "@/lib/report/grouping";
 
 /**
@@ -53,7 +53,7 @@ function OpenReportPdf() {
         const result = await build({ data: { reportId: id, view } });
         if (cancelled) return;
         const bytes = pdfBytesFromBase64(result.content);
-        const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        const url = URL.createObjectURL(pdfBlob(bytes));
         // Handed to the browser's own PDF viewer, which prints, saves and numbers the
         // pages correctly. The blob URL is deliberately not revoked: revoking it as
         // this screen unmounts can pull the file out from under the viewer.

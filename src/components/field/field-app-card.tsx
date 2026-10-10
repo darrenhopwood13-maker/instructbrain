@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+
 import { absoluteUrl } from "@/lib/site-url";
 
 /**
@@ -17,14 +17,23 @@ export function FieldAppCard() {
 
   useEffect(() => {
     let live = true;
-    void QRCode.toString(url, {
-      type: "svg",
-      margin: 0,
-      width: 160,
-      color: { dark: "#101828", light: "#00000000" },
-    }).then((markup) => {
-      if (live) setSvg(markup);
-    });
+    void (async () => {
+      try {
+        // Loaded on demand for the same reason as the hub's QR: `qrcode`'s Node
+        // entry is its server-side canvas build, so importing it at the top of
+        // the file breaks the server render of whatever route carries this card.
+        const { default: QRCode } = await import("qrcode");
+        const markup = await QRCode.toString(url, {
+          type: "svg",
+          margin: 0,
+          width: 160,
+          color: { dark: "#101828", light: "#00000000" },
+        });
+        if (live) setSvg(markup);
+      } catch {
+        // The card simply shows no code rather than taking the screen down.
+      }
+    })();
     return () => {
       live = false;
     };

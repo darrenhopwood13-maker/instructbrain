@@ -24,7 +24,12 @@ export function pdfBytesFromBase64(content: string): Uint8Array {
   return bytes;
 }
 
-function pdfBlob(bytes: Uint8Array): Blob {
+/**
+ * PDF bytes as a Blob. Exported so every caller builds one the same way - the
+ * cast is needed because a Uint8Array may be backed by a SharedArrayBuffer,
+ * which BlobPart does not accept.
+ */
+export function pdfBlob(bytes: Uint8Array): Blob {
   return new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
 }
 

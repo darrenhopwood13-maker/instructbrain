@@ -56,8 +56,15 @@ function PromoPage() {
         </p>
 
         <div className="mt-8 w-full max-w-[420px]">
+          {/*
+            The poster is not decoration. Without it, `preload="metadata"` plus a
+            dark opening frame means this page renders as an empty navy rectangle
+            until someone presses play - it reads as a broken page. The still is
+            taken 1.5s into the film, past the fade-up.
+          */}
           <video
             src={PROMO_URL}
+            poster="/promo-poster.jpg"
             controls
             playsInline
             preload="metadata"

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 
 import { HUB_QR_DARK, HUB_QR_LIGHT } from "@/lib/hub/theme";
 
@@ -20,15 +19,31 @@ export function ProductQr({ url, label, size = 200 }: { url: string; label: stri
 
   useEffect(() => {
     let live = true;
-    void QRCode.toString(url, {
-      type: "svg",
-      margin: 0,
-      width: size,
-      errorCorrectionLevel: "M",
-      color: { dark: HUB_QR_DARK, light: HUB_QR_LIGHT },
-    }).then((markup) => {
-      if (live) setSvg(markup);
-    });
+    void (async () => {
+      try {
+        // Imported here, NOT at the top of the file.
+        //
+        // `qrcode`'s Node entry is `lib/index.js` -> `require('./server')`, which
+        // is the server-side canvas path; only the bundler's `browser` field swaps
+        // in a DOM build. A static import therefore evaluated that Node path during
+        // the SERVER render, which threw and took the whole route down with it:
+        // React error #419 on every load, and not one tile in the server's HTML.
+        // It is only ever needed after a tap, so load it then and keep the server
+        // render clean.
+        const { default: QRCode } = await import("qrcode");
+        const markup = await QRCode.toString(url, {
+          type: "svg",
+          margin: 0,
+          width: size,
+          errorCorrectionLevel: "M",
+          color: { dark: HUB_QR_DARK, light: HUB_QR_LIGHT },
+        });
+        if (live) setSvg(markup);
+      } catch {
+        // No code, no crash: the tile keeps its white box and the panel still
+        // offers every other way to send the link.
+      }
+    })();
     return () => {
       live = false;
     };
