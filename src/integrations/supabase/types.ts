@@ -960,6 +960,27 @@ export type Database = {
           },
         ]
       }
+      hub_early_access: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          product: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          product?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          product?: string
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
           created_at: string
