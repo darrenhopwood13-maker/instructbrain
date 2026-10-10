@@ -77,11 +77,35 @@ regulation number in front of a client costs more than a missing one.
 | `bs_en_378_1` | BS EN 378-1 - refrigerating systems and heat pumps | BS EN 378-1:2016+A1:2020 Refrigerating systems and heat pumps - Safety and environmental requirements. Part 1: Basic requirements, definitions, classification and selection criteria | UK | https://knowledge.bsigroup.com/products/refrigerating-systems-and-heat-pumps-safety-and-environmental-requirements-basic-requirements-definitions-classification-and-selection-criteria-1 |
 | `besa_tr19` | BESA TR19 - internal cleanliness of ventilation systems | BESA TR19 Air - Specification for internal cleanliness and hygiene management of ventilation systems (March 2026 edition) | UK | https://publications.thebesa.com/collections/publications |
 
+## Added 10 October 2026 - the statutory certificate register
+
+The **statutory certificate register** template carries twelve instruments. Nine were already in
+the table above and are reused unchanged, so that an instrument keeps one id and one label wherever
+it is cited: `hswa_1974`, `eawr_1989`, `bs_7671`, `gsiur_1998`, `pssr_2000`, `f_gas_2015`,
+`l8_acop`, `hsg274`, `epb_2012`.
+
+Three were added for this template and verified at source on **10 October 2026** by fetching the
+page and confirming the instrument title appears on it:
+
+| id | Label used in the register | Full citation | Jurisdiction | Source |
+|---|---|---|---|---|
+| `rr_fso_2005` | Regulatory Reform (Fire Safety) Order 2005 | The Regulatory Reform (Fire Safety) Order 2005 (SI 2005/1541) | England and Wales | https://www.legislation.gov.uk/uksi/2005/1541/contents |
+| `loler_1998` | Lifting Operations and Lifting Equipment Regulations 1998 | The Lifting Operations and Lifting Equipment Regulations 1998 (SI 1998/2307) | Great Britain | https://www.legislation.gov.uk/uksi/1998/2307/contents |
+| `car_2012` | Control of Asbestos Regulations 2012 | The Control of Asbestos Regulations 2012 (SI 2012/632) | Great Britain | https://www.legislation.gov.uk/uksi/2012/632/contents |
+
+**What is deliberately absent.** The register records that a certificate exists and when it runs
+out. It does **not** carry inspection intervals, and no interval is stored or inferred anywhere in
+the product: `loler_1998` is cited as the instrument, not as "6-12 months", because the period
+depends on the equipment and on who is being lifted and is a competent person's call. The same
+applies to the two-year legionella review and the five-year EICR period. Intervals belong on the
+certificate itself, and the register reads the date off that.
+
 ## Limits, stated on the record
 
 - This is a **working set, not the whole of the law.** It covers the instruments a visible-condition
   survey plausibly engages. Anything outside it gets named in words, without a number.
-- **Editions and amendments move.** Entries were verified on **8 October 2026**. Where an edition
+- **Editions and amendments move.** Entries were verified on **8 October 2026**, and the certificate
+  register's three additions on **10 October 2026**. Where an edition
   matters - BS 7671 in particular - confirm the current amendment before relying on it.
 - **Jurisdiction is England and Wales or Great Britain**, as noted per instrument. Devolved variants
   are deliberately absent.

@@ -199,6 +199,29 @@ describe("no discipline's vocabulary leaks into another", () => {
     "building regulations 2010 (si 2010/2214)",
     "ad_f",
     "ad_l",
+    // Added 10 Oct 2026, when the statutory certificate register gained its
+    // citation set. A register names the same instruments the electrical and
+    // mechanical templates already carry, which is the point rather than a
+    // collision: an instrument keeps one id and one label wherever it is cited,
+    // so a certificate that references it stays unambiguous across report types.
+    "hswa_1974",
+    "health and safety at work etc. act 1974",
+    "eawr_1989",
+    "electricity at work regulations 1989",
+    "bs_7671",
+    "bs 7671 - iet wiring regulations (18th edition)",
+    "gsiur_1998",
+    "gas safety (installation and use) regulations 1998",
+    "pssr_2000",
+    "pressure systems safety regulations 2000",
+    "f_gas_2015",
+    "fluorinated greenhouse gases regulations 2015",
+    "l8_acop",
+    "hse acop l8 - legionnaires' disease control",
+    "hsg274",
+    "hse hsg274 - legionella technical guidance",
+    "epb_2012",
+    "epb regulations 2012 - air-conditioning inspections",
   ]);
 
   const tokens = (definition: SurveyTypeSnapshot) =>

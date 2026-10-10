@@ -1128,6 +1128,141 @@ Grade the element's condition against the four-tier legend. The grade is a sugge
   supportsDistribution: false,
 };
 
+/**
+ * Statutory certificate register.
+ *
+ * Every certificate in a building carries a date and a date it runs out. This
+ * definition records those two dates against the asset they cover and nothing
+ * else: the register's whole job is to be honest about what is in date.
+ *
+ * Two engine rules matter more here than anywhere else:
+ *
+ *  - A certificate with no usable date resolves to `not_assessed`. It never
+ *    resolves to "valid". Assuming something is in date because nobody wrote the
+ *    date down is how a lapse reaches an audit unnoticed.
+ *  - The register cites instruments from the fixed list below, never clauses.
+ *
+ * Status is never stored as an opinion. `deriveCertificateExpiry` derives it from
+ * the two dates, so the screen, the grid and the issued register agree.
+ */
+export const certificateRegisterDefinition: SurveyDefinition = {
+  id: "certificate_register",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Statutory certificate register",
+  category: "record",
+  findingsPerPhoto: "single",
+  statuses: [
+    { id: "valid", label: "In date - next test booked by the review date", tone: "pass" },
+    { id: "expiring", label: "Expiring - book the next test now", tone: "warn" },
+    { id: "expired", label: "Expired - overdue, treat as a live risk", tone: "fail" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  // No severity scale. The date it runs out is the driver here, not a judgement
+  // about how bad a defect is, and inventing severities would invite one.
+  severityScale: [],
+  captureFields: [
+    {
+      id: "record_type",
+      label: "Certificate or record",
+      type: "select",
+      required: true,
+      options: [
+        "Electrical installation condition report",
+        "Fixed wire installation inspection",
+        "Emergency lighting test",
+        "Fire alarm and detection service",
+        "Fire extinguisher service",
+        "Fire risk assessment",
+        "Legionella risk assessment",
+        "Water temperature monitoring record",
+        "Asbestos survey or management plan",
+        "Lifting equipment thorough examination",
+        "Pressure systems written scheme",
+        "Gas safety record",
+        "F-gas leak check",
+        "Air conditioning energy inspection",
+        "Portable appliance testing record",
+      ],
+      hint: "What the document certifies, not what it says.",
+    },
+    { id: "asset_service", label: "Asset or service covered", type: "text", required: true },
+    { id: "certificate_ref", label: "Certificate number", type: "text" },
+    { id: "issued_by", label: "Issued by", type: "text" },
+    {
+      id: "issue_date",
+      label: "Date issued",
+      type: "text",
+      hint: "yyyy-mm-dd, copied from the certificate",
+    },
+    {
+      id: "expiry_date",
+      label: "Date it runs out",
+      type: "text",
+      hint: "yyyy-mm-dd. Leave empty if the certificate does not state one.",
+    },
+    {
+      id: "review_interval_months",
+      label: "Review interval, months",
+      type: "number",
+      hint: "Only where the instrument sets a period. Never used to guess an expiry date.",
+    },
+    { id: "notes", label: "Notes", type: "textarea" },
+  ],
+  // Transcription only. The dates may be READ off a legible certificate and may
+  // never be worked out from a review interval, from a previous certificate, or
+  // from what is usual for that kind of test.
+  aiCaptureFields: [
+    {
+      id: "certificate_ref",
+      label: "Certificate number",
+      guidance: "Transcribe exactly as printed. Return null when it cannot be read.",
+    },
+    {
+      id: "issue_date",
+      label: "Date issued",
+      guidance:
+        "yyyy-mm-dd, transcribed from the document only. Return null when the date is not clearly legible.",
+    },
+    {
+      id: "expiry_date",
+      label: "Date it runs out",
+      guidance:
+        "yyyy-mm-dd, transcribed from the document only, and only where the document states a date. A review interval is not an expiry date. Return null otherwise.",
+    },
+  ],
+  // Every entry verified at source; see docs/regulatory-citations.md. Instruments
+  // only - the model may never reach for a clause, table or paragraph.
+  regulatoryReferences: [
+    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
+    { id: "rr_fso_2005", label: "Regulatory Reform (Fire Safety) Order 2005" },
+    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
+    { id: "bs_7671", label: "BS 7671 - IET Wiring Regulations (18th Edition)" },
+    { id: "gsiur_1998", label: "Gas Safety (Installation and Use) Regulations 1998" },
+    { id: "loler_1998", label: "Lifting Operations and Lifting Equipment Regulations 1998" },
+    { id: "pssr_2000", label: "Pressure Systems Safety Regulations 2000" },
+    { id: "car_2012", label: "Control of Asbestos Regulations 2012" },
+    { id: "f_gas_2015", label: "Fluorinated Greenhouse Gases Regulations 2015" },
+    { id: "l8_acop", label: "HSE ACOP L8 - Legionnaires' disease control" },
+    { id: "hsg274", label: "HSE HSG274 - legionella technical guidance" },
+    { id: "epb_2012", label: "EPB Regulations 2012 - air-conditioning inspections" },
+  ],
+  aiGuidance: {
+    peopleGuidance:
+      "Describe the document and the asset only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
+    tradeGuidance:
+      "Do not suggest a trade. This register records who issued a certificate, not who repairs anything; return null.",
+    abstainGuidance:
+      "If the document cannot be read, or the date it runs out is not stated or not legible, return not_assessed. Never infer, estimate or calculate a date.",
+  },
+  defaultRemedial:
+    "Obtain the outstanding certificate, or re-test and file the new one against this asset.",
+  outputSections: ["cover", "scope", "methodology", "summary", "schedule", "appendix"],
+  requiresTradeAssignment: false,
+  requiresLifecycle: false,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
@@ -1139,6 +1274,7 @@ export const systemDefinitions: SurveyDefinition[] = [
   mechanicalServicesDefinition,
   fitOutQualityDefinition,
   dampMoistureDefinition,
+  certificateRegisterDefinition,
   manualPhotoReportDefinition,
   photoConditionRecordDefinition,
 ];
