@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCheck, Sparkles, UserRoundCheck } from "lucide-react";
+import { Sparkles, UserRoundCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Finding } from "@/lib/types";
 import {
@@ -142,23 +142,6 @@ export function ConditionGradeOrganiser({
               : suggestedIds.length > 0
                 ? `Use all ${suggestedIds.length} suggestions`
                 : "No suggestions to use"}
-          </Button>
-          <Button
-            type="button"
-            variant="quiet"
-            className="min-h-11"
-            disabled={disabled || busy || summary.ungraded === 0}
-            onClick={() => {
-              const ungraded = ordered.filter((item) => item.conditionGrade === null);
-              setNotice(
-                ungraded.length > 0
-                  ? `${plural(ungraded.length, "element", "elements")} still to confirm: ${ungraded.map((item) => item.ref).join(", ")}.`
-                  : null,
-              );
-            }}
-          >
-            <CheckCheck aria-hidden="true" className="size-4" />
-            {summary.ungraded > 0 ? `${summary.ungraded} to confirm` : "All graded"}
           </Button>
         </div>
       </div>
