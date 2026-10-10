@@ -26,7 +26,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { projectQuery } from "@/lib/data";
+import { tradeOptions } from "@/lib/trades/known-trades";
 import { useOrganisations } from "@/lib/use-organisations";
 import {
   addDirectoryContact,
@@ -143,6 +151,7 @@ function ProjectDirectory() {
 
       <section className="mt-8 flex flex-wrap items-center gap-2">
         <AddEntryDialog
+          existingTrades={entries.map((entry) => entry.trade)}
           onSubmit={(values) =>
             guard(
               () => createDirectoryEntry({ projectId: id, ...values }),
@@ -513,13 +522,24 @@ function EntryCard({
 
 function AddEntryDialog({
   onSubmit,
+  existingTrades = [],
 }: {
   onSubmit: (values: { trade: string; company: string; notes: string | null }) => Promise<void>;
+  /** Trades already on this project, offered first so one job stays consistent. */
+  existingTrades?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [trade, setTrade] = useState("");
   const [company, setCompany] = useState("");
   const [notes, setNotes] = useState("");
+  const [custom, setCustom] = useState(false);
+
+  // One list, drawn from the templates themselves, so the trade named here is
+  // the same string an assessment suggests for the same work — which is what
+  // distribution matches on when it looks a recipient up by trade.
+  const options = useMemo(() => tradeOptions(existingTrades), [existingTrades]);
+  const OTHER = "__other__";
+  const usingCustom = custom || (trade !== "" && !options.includes(trade));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -541,12 +561,46 @@ function AddEntryDialog({
             <label htmlFor="new-trade" className="eyebrow block text-muted-foreground">
               Trade
             </label>
-            <input
-              id="new-trade"
-              value={trade}
-              onChange={(event) => setTrade(event.target.value)}
-              className="mt-1 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
-            />
+            <Select
+              value={usingCustom ? OTHER : trade}
+              onValueChange={(value) => {
+                if (value === OTHER) {
+                  setCustom(true);
+                  setTrade("");
+                } else {
+                  setCustom(false);
+                  setTrade(value);
+                }
+              }}
+            >
+              <SelectTrigger id="new-trade" className="mt-1 w-full">
+                <SelectValue placeholder="Choose a trade" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+                <SelectItem value={OTHER}>Another trade, not on the list</SelectItem>
+              </SelectContent>
+            </Select>
+            {usingCustom ? (
+              <>
+                <input
+                  id="new-trade-custom"
+                  aria-label="Trade name"
+                  value={trade}
+                  onChange={(event) => setTrade(event.target.value)}
+                  placeholder="Type the trade name"
+                  className="mt-2 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  A trade that is not on the list will not match an assessment&rsquo;s suggestion,
+                  so its items would fall to the fallback recipient.
+                </p>
+              </>
+            ) : null}
           </div>
           <div>
             <label htmlFor="new-company" className="eyebrow block text-muted-foreground">
@@ -584,6 +638,7 @@ function AddEntryDialog({
                 setTrade("");
                 setCompany("");
                 setNotes("");
+                setCustom(false);
                 setOpen(false);
               });
             }}
