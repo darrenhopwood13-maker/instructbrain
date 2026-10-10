@@ -1,31 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ErrorState, LoadingState } from "@/components/query-states";
-import { ReportDocumentView } from "@/components/report/report-document-view";
-import { Button } from "@/components/ui/button";
-import { reportDocumentQuery } from "@/lib/report/report-data";
-import { useReportTranslation } from "@/lib/i18n/use-report-translation";
-import { formatDocumentDate } from "@/lib/report/document";
+import { downloadReportPdf } from "@/lib/report/pdf.functions";
+import { pdfBytesFromBase64 } from "@/lib/report/save-pdf";
 import { safeResultView } from "@/lib/report/grouping";
-import { isInventoryLayout } from "@/lib/report/inventory-layout";
-import { reportPrintPageClass } from "@/lib/report/print-layout";
 
 /**
- * The print surface. The browser's own print engine paginates and writes the
- * PDF, so a 150-photograph report is never rasterised in JavaScript.
+ * The report as a file, at the address the Print button has always used.
  *
- * Every continuation page carries the running header: title, reference, issue
- * date and page number.
+ * This route used to render the document and ask the browser to print it, which made a
+ * different and worse document from the same report: photographs below the fold missing
+ * from five of seven plate pages, "Page 0 of 0" where the page number should be, and
+ * every marked item on a photograph boxed onto the one picture.
+ *
+ * The app already builds the right file — one picture per item, real page numbers — and
+ * it is the same file the emails carry. So this hands that over instead. One button,
+ * one document, nothing for anyone to choose between.
  */
 export const Route = createFileRoute("/_authenticated/reports/$id/print")({
   validateSearch: (search: Record<string, unknown>) => ({
-    auto: search["auto"] === "1" || search["auto"] === true ? true : undefined,
     view: safeResultView(search["view"]),
   }),
   head: () => {
-    const title = "Report document — instructBrain";
-    const description = "Print-ready view of the assembled survey report.";
+    const title = "Report PDF — instructBrain";
+    const description = "The report as the PDF it is sent as.";
     return {
       meta: [
         { title },
@@ -38,97 +37,38 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
       ],
     };
   },
-  component: PrintReport,
+  component: OpenReportPdf,
 });
 
-/**
- * Print only once every photograph has actually arrived.
- *
- * Report pictures load lazily, and the browser snapshots the page the moment it is
- * asked to: on a 31-page Schedule of Condition the plate pages printed their caption
- * and their pin list with no photograph above them, and the later the plate the worse
- * it was. Each image is switched to eager and awaited here. A picture that will not
- * decode never holds the print up.
- */
-async function printWhenReady(): Promise<void> {
-  const images = Array.from(window.document.querySelectorAll<HTMLImageElement>("img"));
-  await Promise.all(
-    images.map(async (image) => {
-      image.loading = "eager";
-      if (image.complete && image.naturalWidth > 0) return;
-      try {
-        await image.decode();
-      } catch {
-        // A picture that will not decode must not block the print.
-      }
-    }),
-  );
-  window.print();
-}
-
-function PrintReport() {
+function OpenReportPdf() {
   const { id } = Route.useParams();
-  const { auto, view } = Route.useSearch();
-  const query = useQuery(reportDocumentQuery(id));
-  const document = query.data ?? null;
-  const translation = useReportTranslation(id, document);
-
+  const { view } = Route.useSearch();
+  const build = useServerFn(downloadReportPdf);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    if (auto && document && !translation.loading) {
-      const timer = setTimeout(() => void printWhenReady(), 300);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [auto, document, translation.loading]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await build({ data: { reportId: id, view } });
+        if (cancelled) return;
+        const bytes = pdfBytesFromBase64(result.content);
+        const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        // Handed to the browser's own PDF viewer, which prints, saves and numbers the
+        // pages correctly. The blob URL is deliberately not revoked: revoking it as
+        // this screen unmounts can pull the file out from under the viewer.
+        window.location.replace(url);
+      } catch (caught) {
+        if (!cancelled) setError(caught);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, view, build]);
 
-  if (query.isPending) return <LoadingState label="Assembling the document…" />;
-  if (query.isError) {
-    return <ErrorState title="This report could not be assembled" error={query.error} />;
+  if (error) {
+    return <ErrorState title="That PDF could not be built" error={error} />;
   }
-  if (!document) {
-    return <ErrorState title="Report not found" error="No report with that address." />;
-  }
-
-  const runningLine = [
-    document.report.title,
-    document.report.reference ?? "No reference",
-    document.report.status === "issued"
-      ? `Published ${formatDocumentDate(document.report.issuedAt)}`
-      : `Draft — ${formatDocumentDate(document.report.reportDate)}`,
-  ].join(" · ");
-
-  const outputDocument = translation.document ?? document;
-  const inventory = isInventoryLayout(outputDocument);
-
-  return (
-    <div className={`paper print-surface min-h-dvh ${reportPrintPageClass(outputDocument)}`}>
-      <div className="print-running-header" aria-hidden="true">
-        <span>
-          <span className="font-semibold">instructBrain</span>
-          {" · "}
-          {runningLine}
-        </span>
-      </div>
-
-
-      <div className="no-print mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 pt-6">
-        <p className="text-sm text-muted-foreground">
-          Use your browser&rsquo;s print dialog to save this as a PDF. Turn on
-          &ldquo;Headers and footers&rdquo; to number the pages.
-        </p>
-        <Button
-          type="button"
-          onClick={() => void printWhenReady()}
-        >
-          Print or save as PDF
-        </Button>
-      </div>
-
-      <main className={inventory ? "inventory-print-main mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-4xl px-6 py-8"}>
-        <ReportDocumentView document={outputDocument} print view={view} />
-      </main>
-    </div>
-
-  );
+  return <LoadingState label="Building the PDF…" />;
 }

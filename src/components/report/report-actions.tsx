@@ -275,10 +275,10 @@ export function ReportActions({
               <Link
                 to="/reports/$id/print"
                 params={{ id: document.report.id }}
-                search={{ auto: undefined, view: resultView }}
+                search={{ view: resultView }}
               >
                 <Eye aria-hidden="true" className="size-4" />
-                Preview report
+                Open the report PDF
               </Link>
             </DropdownMenuItem>
             {isManualOnly(document.snapshot) ? (
