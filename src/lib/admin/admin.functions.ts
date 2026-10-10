@@ -54,3 +54,14 @@ export const adminDeleteDirectoryEntry = createServerFn({ method: "POST" })
     await deleteDirectoryEntry(context.supabase as never, data.id);
     return { ok: true };
   });
+
+export const adminDeleteRegister = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ({
+    id: requiredString((input as Record<string, unknown> | null)?.["id"], "register"),
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { deleteRegister } = await import("@/lib/admin/admin.server");
+    await deleteRegister(context.supabase as never, data.id);
+    return { ok: true };
+  });

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import {
   adminDeleteDirectoryEntry,
+  adminDeleteRegister,
   adminEverything,
   adminOrganisations,
   adminSetPlan,
@@ -223,6 +224,19 @@ function AdminConsole() {
         what="this company and its contacts from the project directory"
         onDelete={async (id) => {
           await adminDeleteDirectoryEntry({ data: { id } });
+          await refreshAll();
+        }}
+      />
+      {/* Compliance registers, across every organisation. A completed
+          register is archived on the way out rather than deleted straight
+          away — signed-off evidence does not vanish without a record. */}
+      <AdminList
+        title="Compliance registers"
+        query={everything}
+        pick={(d) => d.registers}
+        what="the register and every entry in it. A completed register is archived first, then purged"
+        onDelete={async (id) => {
+          await adminDeleteRegister({ data: { id } });
           await refreshAll();
         }}
       />

@@ -127,10 +127,11 @@ export async function listEverything(supabase: SupabaseClient): Promise<{
   projects: AdminItem[];
   reports: AdminItem[];
   directory: AdminItem[];
+  registers: AdminItem[];
 }> {
   await assertPlatformAdmin(supabase);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [projects, reports, directory] = await Promise.all([
+  const [projects, reports, directory, registers] = await Promise.all([
     supabaseAdmin
       .from("projects")
       .select("id, name, reference, organisations(name)")
@@ -143,6 +144,12 @@ export async function listEverything(supabase: SupabaseClient): Promise<{
       .from("project_directory")
       .select("id, trade, company_name, projects(name, organisations(name))")
       .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("compliance_runs")
+      .select(
+        "id, check_type, check_date, report_number, locked_at, archived_at, projects(name, organisations(name))",
+      )
+      .order("check_date", { ascending: false }),
   ]);
   return {
     projects: ((projects.data ?? []) as any[]).map((r) => ({
@@ -163,7 +170,46 @@ export async function listEverything(supabase: SupabaseClient): Promise<{
       detail: `${r.trade} · ${r.projects?.name ?? ""}`,
       organisationName: r.projects?.organisations?.name ?? "",
     })),
+    // Compliance registers were the one thing missing from this sweep. The
+    // register tables sat outside the platform administrator policy, so the
+    // founder could only ever see registers inside organisations they
+    // happened to be a member of. Fixed in the founder_reach migration.
+    registers: ((registers.data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      name: r.report_number ?? `${r.check_type} · ${r.check_date}`,
+      detail: `${r.check_type} · ${r.check_date} · ${
+        r.archived_at ? "archived" : r.locked_at ? "locked" : "open"
+      }`,
+      organisationName: [r.projects?.name, r.projects?.organisations?.name]
+        .filter(Boolean)
+        .join(" · "),
+    })),
   };
+}
+
+/**
+ * Permanently delete a compliance register — platform administrator only.
+ *
+ * A completed (locked) register refuses deletion by design: the database
+ * guard exists so signed-off H&S evidence cannot silently vanish. The only
+ * permitted route is the one-way archive first, which is what this does, in
+ * the same order the organisation and report deletion paths already use.
+ * Entries cascade with the register; an action raised from it survives with
+ * its link nulled (raised_run_id is ON DELETE SET NULL).
+ */
+export async function deleteRegister(supabase: SupabaseClient, id: string): Promise<void> {
+  await assertPlatformAdmin(supabase);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  await supabaseAdmin
+    .from("compliance_runs")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id)
+    .not("locked_at", "is", null)
+    .is("archived_at", null);
+
+  const { error } = await supabaseAdmin.from("compliance_runs").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function deleteDirectoryEntry(supabase: SupabaseClient, id: string): Promise<void> {
