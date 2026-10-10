@@ -68,46 +68,65 @@ export function ReportStepper({
   current,
   onSelect,
   reviewCount,
+  interactive = true,
 }: {
   current: ReportStep;
-  onSelect: (step: ReportStep) => void;
+  onSelect?: (step: ReportStep) => void;
   reviewCount?: number;
+  /**
+   * False where there is nothing to navigate to yet — the start screen, before
+   * a report exists. The steps still render, so a person can see there are two
+   * of them and which one they are on, but they are not buttons. A control
+   * that looks pressable and does nothing is worse than no control.
+   */
+  interactive?: boolean;
 }) {
   // Review now lives on the same screen as photos.
   const currentIndex = current === "output" ? 1 : 0;
+  const shell = "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border-b-2 px-2 text-sm font-medium transition-colors";
   return (
     <nav aria-label="Report progress">
       <ol className="grid grid-cols-2 gap-2">
         {STEPS.map((step, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
+          const className = cn(
+            shell,
+            active ? "border-accent text-foreground" : "border-border text-foreground",
+          );
+          const inner = (
+            <>
+              {done ? (
+                <Check aria-hidden="true" className="size-4 shrink-0" />
+              ) : (
+                <span aria-hidden="true">{index + 1}</span>
+              )}
+              <span className="truncate">{step.label}</span>
+              {step.id === "photos" && reviewCount ? (
+                <span className="rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
+                  {reviewCount}
+                  <span className="sr-only"> to confirm</span>
+                </span>
+              ) : null}
+              {done ? <span className="sr-only"> (done)</span> : null}
+            </>
+          );
           return (
             <li key={step.id} className="min-w-0">
-              <button
-                type="button"
-                onClick={() => onSelect(step.id)}
-                aria-current={active ? "step" : undefined}
-                className={cn(
-                  "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border-b-2 px-2 text-sm font-medium transition-colors",
-                  active
-                    ? "border-accent text-foreground"
-                    : "border-border text-foreground",
-                )}
-              >
-                {done ? (
-                  <Check aria-hidden="true" className="size-4 shrink-0" />
-                ) : (
-                  <span aria-hidden="true">{index + 1}</span>
-                )}
-                <span className="truncate">{step.label}</span>
-                {step.id === "photos" && reviewCount ? (
-                  <span className="rounded-full bg-surface-sunken px-1.5 text-xs font-semibold">
-                    {reviewCount}
-                    <span className="sr-only"> to confirm</span>
-                  </span>
-                ) : null}
-                {done ? <span className="sr-only"> (done)</span> : null}
-              </button>
+              {interactive && onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(step.id)}
+                  aria-current={active ? "step" : undefined}
+                  className={className}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <span aria-current={active ? "step" : undefined} className={className}>
+                  {inner}
+                </span>
+              )}
             </li>
           );
         })}

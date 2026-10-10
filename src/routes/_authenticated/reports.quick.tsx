@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { PhotosPanel } from "@/components/photos/photos-panel";
+import { ReportStepper } from "@/components/report/report-stepper";
 import { EMPTY_PHOTO_STATUS, nextPhotoAction, type PhotoStatus } from "@/lib/report/next-action";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
@@ -373,10 +374,14 @@ function CustomReport() {
 
   return (
     <AppShell surface="light">
-      {/* The template is chosen, not narrated. Once the report exists, the
-          "Report template: … locked for this report" line was a whole row of a
-          phone screen saying something the person already knows. The picker
-          below is only for a report that has not started. */}
+      {/* Where you are, before anything else on the screen, in the same two
+          steps the report page uses — so "step one" finally means step one.
+          Presentational here: there is nothing to navigate to until the report
+          exists, and a control that does nothing is worse than no control. */}
+      <div className="mt-4">
+        <ReportStepper current="photos" interactive={false} />
+      </div>
+
       {capturing && activeSnapshot ? null : (
         <section aria-labelledby="type-heading" className="mt-1">
           <h1
@@ -496,6 +501,12 @@ function CustomReport() {
               });
             }}
           />
+          {/* The report has no "create" button: it is created by the first
+              photograph, so an abandoned visit costs nothing. That is a good
+              rule, but it was invisible — say it. */}
+          <p className="mb-3 text-sm text-muted-foreground">
+            Taking a photograph starts the report. Nothing is created until you do.
+          </p>
            <PhotoCaptureActions
              onCamera={openCamera}
              onGallery={() => pickerRef.current?.click()}
