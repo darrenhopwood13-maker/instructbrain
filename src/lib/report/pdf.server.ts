@@ -276,6 +276,14 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
       } else {
         line = candidate;
       }
+      // A token with no space in it cannot be broken on one, so it is cut at the
+      // column edge rather than allowed to run across the next column.
+      while (font.widthOfTextAtSize(line, size) > width) {
+        let cut = line.length;
+        while (cut > 1 && font.widthOfTextAtSize(line.slice(0, cut), size) > width) cut -= 1;
+        lines.push(line.slice(0, cut));
+        line = line.slice(cut);
+      }
     }
     lines.push(line);
   }
@@ -1993,7 +2001,6 @@ function drawScheduleOfItems(
   startFreshPage(writer);
   if (writer.dry) return;
 
-  const page = writer.cursor.page;
   const size = 7.6;
   const row = (offset: number) => writer.margin + offset;
   // The item's photograph and the pin it carries, in words, so the table can
@@ -2009,6 +2016,11 @@ function drawScheduleOfItems(
   };
 
   let y = writer.cursor.y;
+  // Deliberately not a const: `newPage` swaps the cursor's page, and a cached
+  // handle keeps drawing on the page the table started on, so every row after
+  // the first break prints over the rows already there and re-prints the
+  // heading on top of itself.
+  let page = writer.cursor.page;
   page.drawRectangle({ x: writer.margin, y: y - 22, width: writer.contentWidth, height: 22, color: BRAND_NAVY });
   page.drawRectangle({ x: writer.margin, y: y - 22, width: 4, height: 22, color: ACCENT });
   page.drawText(sanitise(`Schedule of items — ${findings.length}`), {
@@ -2037,6 +2049,7 @@ function drawScheduleOfItems(
   for (const group of groups) {
     if (y < writer.margin + 60) {
       newPage(writer);
+      page = writer.cursor.page;
       y = writer.cursor.y;
       heading();
     }
@@ -2051,12 +2064,15 @@ function drawScheduleOfItems(
       const height = Math.max(13, titleLines.length * 9.6 + 3);
       if (y < writer.margin + 60) {
         newPage(writer);
+        page = writer.cursor.page;
         y = writer.cursor.y;
         heading();
       }
       page.drawText(sanitise(String(index)), { x: row(0), y: y - 9, size, font: writer.bold, color: MUTED });
       page.drawText(sanitise(itemLabel(finding.ref)), { x: row(16), y: y - 9, size, font: writer.bold, color: INK });
-      titleLines.slice(0, 2).forEach((line, lineIndex) => {
+      // Every wrapped line is printed and the row is as tall as they are. Printing
+      // two of five silently dropped the rest of a long description.
+      titleLines.forEach((line, lineIndex) => {
         page.drawText(sanitise(line), { x: row(50), y: y - 9 - lineIndex * 9.6, size, font: writer.regular, color: INK });
       });
       page.drawText(sanitise(finding.assignedTrade ?? "-"), { x: row(292), y: y - 9, size, font: writer.regular, color: INK });
