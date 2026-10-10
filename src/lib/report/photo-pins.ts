@@ -160,7 +160,14 @@ export function plateHeadline(finding: DocFinding): string {
   const text = (finding.findingText ?? "").replace(/\s+/g, " ").trim();
   const stop = text.indexOf(". ");
   const head = stop > 0 ? text.slice(0, stop + 1) : text;
-  return head.length > 120 ? `${head.slice(0, 117)}...` : head;
+  if (head.length <= 120) return head;
+  // Cut at a word, never inside one. A hard 117-character slice printed "abuttin"
+  // and "predominantly blue and red figurative panels w..." down a plate's pin list
+  // on a client's report.
+  const cut = head.slice(0, 117);
+  const lastSpace = cut.lastIndexOf(" ");
+  const body = lastSpace > 60 ? cut.slice(0, lastSpace) : cut;
+  return `${body.trimEnd()}...`;
 }
 
 /**

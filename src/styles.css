@@ -1003,9 +1003,14 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
     color: #475569;
   }
 
-  .print-page-number::after {
-    content: "Page " counter(page) " of " counter(pages);
-  }
+  /*
+   * A page number used to be printed here from `counter(page)` / `counter(pages)`.
+   * Those counters do not resolve when a report is printed from a phone browser, so
+   * every page of a 31-page Schedule of Condition read "Page 0 of 0" on a client's
+   * desk. Saying nothing is better than saying something false: the print screen
+   * already tells the reader to switch the browser's own headers and footers on,
+   * and that numbering is the browser's to get right.
+   */
 
   .report-document {
     font-size: 10pt;

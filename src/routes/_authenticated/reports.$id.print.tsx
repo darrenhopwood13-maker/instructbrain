@@ -41,6 +41,31 @@ export const Route = createFileRoute("/_authenticated/reports/$id/print")({
   component: PrintReport,
 });
 
+/**
+ * Print only once every photograph has actually arrived.
+ *
+ * Report pictures load lazily, and the browser snapshots the page the moment it is
+ * asked to: on a 31-page Schedule of Condition the plate pages printed their caption
+ * and their pin list with no photograph above them, and the later the plate the worse
+ * it was. Each image is switched to eager and awaited here. A picture that will not
+ * decode never holds the print up.
+ */
+async function printWhenReady(): Promise<void> {
+  const images = Array.from(window.document.querySelectorAll<HTMLImageElement>("img"));
+  await Promise.all(
+    images.map(async (image) => {
+      image.loading = "eager";
+      if (image.complete && image.naturalWidth > 0) return;
+      try {
+        await image.decode();
+      } catch {
+        // A picture that will not decode must not block the print.
+      }
+    }),
+  );
+  window.print();
+}
+
 function PrintReport() {
   const { id } = Route.useParams();
   const { auto, view } = Route.useSearch();
@@ -51,7 +76,7 @@ function PrintReport() {
 
   useEffect(() => {
     if (auto && document && !translation.loading) {
-      const timer = setTimeout(() => window.print(), 800);
+      const timer = setTimeout(() => void printWhenReady(), 300);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -84,7 +109,6 @@ function PrintReport() {
           {" · "}
           {runningLine}
         </span>
-        <span className="print-page-number" />
       </div>
 
 
@@ -95,7 +119,7 @@ function PrintReport() {
         </p>
         <Button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => void printWhenReady()}
         >
           Print or save as PDF
         </Button>
