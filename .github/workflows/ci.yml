@@ -7,7 +7,8 @@ name: CI
 # silently stopped checking anything for months. Nothing went red - there was no
 # red to go to. This workflow is the thing that goes red.
 #
-# It catches: a broken linter, a failing test, a failing build, and a lint error.
+# It catches: a type error, a broken linter, a failing test, a failing build, and
+# a lint error.
 # It does NOT catch the existing lint warning backlog (~240 warnings, mostly
 # `no-explicit-any`). That is deliberate - see the note at the bottom.
 
@@ -19,7 +20,7 @@ on:
 
 jobs:
   verify:
-    name: Lint, test and build
+    name: Types, lint, test and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -36,6 +37,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
 
       - name: Lint
         run: bun run lint
@@ -67,6 +71,9 @@ jobs:
 #
 #   * Prettier. The tree is not format-clean (~2700 diffs). Run `bun run format`
 #     as its own deliberate commit first, then add a `--check` step here.
-#   * Type checking. There is no `typecheck` script. Add one before wiring it in,
-#     otherwise this step would fail for reasons unrelated to the change.
+#   * Type checking is now enforced - the `typecheck` script plus the step above.
+#     It was added on 10 October 2026 because a type error reached main without
+#     this workflow noticing: `new Blob([bytes])` in the print route, where a
+#     Uint8Array may be backed by a SharedArrayBuffer. Lint, test and build all
+#     passed that commit. The step exists so the class of mistake has a red light.
 # ---------------------------------------------------------------------------
