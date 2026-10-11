@@ -82,11 +82,13 @@ describe("the page a shared photograph is given", () => {
     const pages = await build();
     const page = pages[platePageOf(pages)] ?? "";
 
-    // The items on it are listed underneath, by pin, in pin order.
+    // The items on it are listed underneath, in the report's own order. No pin
+    // number: the plate carries no marks, so quoting one points at nothing.
     expect(page).toContain(INDEX_HEADING);
-    expect(page).toContain("Pin 1 - ");
-    expect(page).toContain("Pin 2 - ");
-    expect(page.indexOf("Pin 1 - ")).toBeLessThan(page.indexOf("Pin 2 - "));
+    expect(page).toContain("Item 7 - ");
+    expect(page).toContain("Item 8 - ");
+    expect(page.indexOf("Item 7 - ")).toBeLessThan(page.indexOf("Item 8 - "));
+    expect(page).not.toMatch(/Pin \d+/);
 
     // And it is the photograph's page, not an entry's: every entry in the
     // schedule prints a Status chip, and this page has none.
@@ -153,7 +155,7 @@ describe("a shared photograph where no item has a recorded area", () => {
     // The photograph is still shown: the reader needs to see what the items are about.
     expect(text).toContain("Photograph 5 - 2 items on this photograph");
     // But nothing printed about it may point at a pin, because there is not one.
-    expect(text).toContain("no marked area was recorded");
+    expect(text).toContain("printed as it was taken and unmarked");
     expect(text).not.toContain("the marked area indicates the item");
     expect(text).not.toContain("with its pins");
     expect(text).not.toMatch(/Pin \d+ - /);

@@ -42,7 +42,7 @@ import {
  */
 
 const ITEMS = 24;
-const CROP_CAPTION = "A crop of the area this item refers to.";
+const HIGHLIGHT_CAPTION = "The same photograph, with everything but this item's area faded back.";
 
 function wordsFor(n: number): number {
   return 120 + ((n * 37) % 170);
@@ -94,7 +94,7 @@ describe("an item that carries a photograph", () => {
     pages.forEach((text, index) => {
       let beganHere = 0;
       for (let n = 1; n <= ITEMS; n++) if (text.includes(marker("START", n))) beganHere += 1;
-      const cropsHere = count(text, CROP_CAPTION);
+      const cropsHere = count(text, HIGHLIGHT_CAPTION);
       if (cropsHere !== beganHere) {
         orphans.push(`page ${index + 1}: ${beganHere} item(s) began, ${cropsHere} photograph(s) drawn`);
       }
@@ -108,6 +108,6 @@ describe("an item that carries a photograph", () => {
     serveImages();
     const built = await buildReportPdf(photoReport(ITEMS), { variant: "full" });
     const pages = await decodePageTexts(built.bytes);
-    expect(pages.reduce((sum, text) => sum + count(text, CROP_CAPTION), 0)).toBe(ITEMS);
+    expect(pages.reduce((sum, text) => sum + count(text, HIGHLIGHT_CAPTION), 0)).toBe(ITEMS);
   });
 });

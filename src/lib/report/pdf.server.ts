@@ -35,7 +35,6 @@ import {
   photoPlates,
   plateHeadline,
   platedPhotoIds,
-  pinFor,
   type PhotoPlate,
   type Pin,
 } from "@/lib/report/photo-pins";
@@ -151,6 +150,19 @@ const TONE_COLOURS: Record<string, ReturnType<typeof rgb>> = {
  */
 const CROP_FRAME_HEIGHT = 132;
 const CROP_FRAME_GAP = 8;
+/**
+ * The frame beside an item showing the whole photograph with everything but
+ * that item's area faded back.
+ *
+ * The height is a packing constraint, not a taste choice. The crop this
+ * replaced was 132, and at that height six items sharing one photograph still
+ * fit in fewer pages than six separate photographs. At 150 the same case took
+ * 7 pages against 6 — one item per page — and report-photo-pins-pdf fails on
+ * it. Do not raise this without re-running that test.
+ */
+const HIGHLIGHT_FRAME_HEIGHT = 132;
+/** Wide enough to sit a portrait photograph in without a band of empty frame. */
+const HIGHLIGHT_FRAME_WIDTH_RATIO = 0.36;
 
 const MIN_PLATE_PHOTO_HEIGHT = 200;
 // Dal, 8 Oct 2026: "fill more of page". A portrait photograph was capped at 480pt and
@@ -507,56 +519,70 @@ function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, 
  * Colour: the accent, so a print says "the AI's own estimate", not "a person
  * drew this".
  */
-function drawRegionMarks(
+function drawFadedHighlight(
   page: PDFPage,
-  marks: Array<{ region: DocRegion; number: number | null }>,
+  image: PDFImage,
+  region: DocRegion,
   x: number,
-  y: number,
-  width: number,
-  height: number,
-  font: PDFFont,
+  top: number,
+  frameWidth: number,
+  frameHeight: number,
+  dry = false,
 ): void {
-  for (const mark of marks) {
-    const left = x + mark.region.x * width;
-    const top = y + (1 - mark.region.y) * height;
-    const boxWidth = mark.region.w * width;
-    const boxHeight = mark.region.h * height;
-    page.drawRectangle({
-      x: left,
-      y: top - boxHeight,
-      width: boxWidth,
-      height: boxHeight,
-      borderWidth: Math.max(1, height * 0.008),
-      borderColor: ACCENT,
-    });
-    if (mark.number === null) continue;
-    const label = String(mark.number);
-    const size = Math.max(7, height * 0.045);
-    const radius = size * 0.75;
-    const cx = left + boxWidth / 2;
-    const cy = top - boxHeight / 2;
-    page.drawCircle({ x: cx, y: cy, size: radius, color: ACCENT, borderColor: rgb(1, 1, 1), borderWidth: Math.max(0.5, radius * 0.12) });
-    page.drawText(label, {
-      x: cx - font.widthOfTextAtSize(label, size) / 2,
-      y: cy - size * 0.36,
-      size,
-      font,
-      color: INK,
-    });
+  if (dry) return;
+  const scale = Math.min(frameWidth / image.width, frameHeight / image.height, 1);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const left = x + (frameWidth - width) / 2;
+  const bottom = top - frameHeight + (frameHeight - height) / 2;
+
+  page.drawImage(image, { x: left, y: bottom, width, height });
+
+  // Region coordinates run from the TOP of the photograph.
+  const areaLeft = left + region.x * width;
+  const areaWidth = region.w * width;
+  const areaHeight = region.h * height;
+  const areaTop = bottom + height - region.y * height;
+  const areaBottom = areaTop - areaHeight;
+
+  // pdf-lib cannot punch a hole in a rectangle, so the veil is four bands
+  // around the area. A band with no width or height is one the area has met an
+  // edge of, and is skipped rather than drawn as a zero-size shape.
+  const bands = [
+    { x: left, y: areaTop, width, height: bottom + height - areaTop },
+    { x: left, y: bottom, width, height: areaBottom - bottom },
+    { x: left, y: areaBottom, width: areaLeft - left, height: areaHeight },
+    {
+      x: areaLeft + areaWidth,
+      y: areaBottom,
+      width: left + width - (areaLeft + areaWidth),
+      height: areaHeight,
+    },
+  ];
+  for (const band of bands) {
+    if (band.width <= 0 || band.height <= 0) continue;
+    page.drawRectangle({ ...band, color: rgb(1, 1, 1), opacity: 0.62 });
   }
+
+  page.drawRectangle({
+    x: areaLeft,
+    y: areaBottom,
+    width: areaWidth,
+    height: areaHeight,
+    borderWidth: 1,
+    borderColor: ACCENT,
+  });
+  page.drawRectangle({
+    x,
+    y: top - frameHeight,
+    width: frameWidth,
+    height: frameHeight,
+    borderWidth: 0.75,
+    borderColor: MUTED,
+  });
 }
 
-/** How many marks a photograph carries, for the caption. */
-function markCaption(marks: Array<{ number: number | null }>): string {
-  const numbered = marks.filter((mark) => mark.number !== null).length;
-  // A photograph whose items all lack a recorded area has no marked area on it.
-  // The old wording here described one anyway ("the marked area indicates the
-  // item") over a photograph with no marks — the same empty promise as printing
-  // a pin number for a picture that will not load. Found in a real issued
-  // document on 8 Oct 2026, on a photograph carrying two unmarked items.
-  if (numbered === 0) return "no marked area was recorded";
-  return numbered === 1 ? "one pin on this photograph" : `${numbered} pins on this photograph`;
-}
+/* No pin caption: the plate prints unmarked, so there is no marker to describe. */
 
 /**
  * How many pins a photograph actually carries — zero where none of its items has
@@ -668,7 +694,6 @@ function drawImage(
   maxWidth: number,
   maxHeight: number,
   layers: MarkupLayer[] = [],
-  marks: Array<{ region: DocRegion; number: number | null }> = [],
 ): void {
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
   const width = image.width * scale;
@@ -684,16 +709,9 @@ function drawImage(
     width,
     height,
   });
+  // Nothing is drawn on the photograph. Every image in this document is printed
+  // as it was taken; the pointer lives beside the item it belongs to instead.
   drawMarkup(writer.cursor.page, layers, writer.margin, writer.cursor.y - height, width, height, writer.bold);
-  drawRegionMarks(
-    writer.cursor.page,
-    marks,
-    writer.margin,
-    writer.cursor.y - height,
-    width,
-    height,
-    writer.bold,
-  );
   writer.cursor.y -= height + 8;
 }
 
@@ -1291,17 +1309,17 @@ async function drawFindingBody(
     });
   }
 
-  // Where this item sits on its photograph, in words, so the pin can be traced
-  // without hunting back for the plate it was printed on.
-  const pinned = finding.photos.find((attached) => pinFor(pins, attached.photo.id, finding.id));
-  const pin = pinned ? pinFor(pins, pinned.photo.id, finding.id) : null;
+  // Which photograph this item was found on. Nothing is drawn on the plate, so
+  // there is no pin number to quote: the item's own faded copy carries the
+  // pointer, printed beside this description.
+  const onPhoto = finding.photos[0]?.photo ?? null;
 
   const chips = [
     `Status: ${status.label}`,
     severity ? `Severity: ${severity.label}` : null,
     finding.assignedTrade ? `Trade: ${finding.assignedTrade}` : null,
     finding.dueDate ? `Target: ${formatDocumentDate(finding.dueDate)}` : null,
-    pin && pinned ? `Photograph ${pinned.photo.sequence}, pin ${pin.number}` : null,
+    onPhoto ? `Photograph ${onPhoto.sequence}` : null,
   ].filter((entry): entry is string => !!entry);
   drawText(writer, chips.join("   ·   "), {
     size: 9,
@@ -1377,22 +1395,15 @@ async function drawFindingBody(
       if (!image) continue;
       const shared = plated.has(attached.photo.id);
       if (!shared) {
-        // A photograph carrying one item: full width beside that item, with the
-        // area it refers to drawn on it. No pin — there is nothing to tell apart.
-        drawImage(
-          writer,
-          image,
-          writer.contentWidth * 0.62,
-          260,
-          attached.photo.layers,
-          attached.region ? [{ region: attached.region, number: null }] : [],
-        );
+        // A photograph carrying one item: full width beside that item, printed
+        // exactly as it was taken. There is nothing to tell apart on it.
+        drawImage(writer, image, writer.contentWidth * 0.62, 260, attached.photo.layers);
         continue;
       }
-      // The photograph is printed once, above the schedule, carrying every pin.
-      // Here the item prints a tight crop of its own patch instead of another
-      // full-width copy of the same frame — this is what takes the pages out.
-      const pin = pinFor(pins, attached.photo.id, finding.id);
+      // The photograph is printed once, above the schedule, exactly as it was
+      // taken. Here the item prints a copy of it with everything but its own
+      // area faded back — the point is context plus a highlight, and no ink on
+      // the evidence itself.
       if (!attached.region) {
         // "Printed on its own page with its pins" is only true if the photograph
         // has pins. A photograph whose bytes would not come back leaves no plate
@@ -1412,13 +1423,13 @@ async function drawFindingBody(
         );
         continue;
       }
-      const frameWidth = writer.contentWidth * 0.4;
-      const frameHeight = CROP_FRAME_HEIGHT;
-      // Reserve exactly what the crop will consume, so an entry that measures as
-      // fitting is never broken here afterwards.
+      const frameWidth = writer.contentWidth * HIGHLIGHT_FRAME_WIDTH_RATIO;
+      const frameHeight = HIGHLIGHT_FRAME_HEIGHT;
+      // Reserve exactly what the frame will consume, so an entry that measures
+      // as fitting is never broken here afterwards.
       ensure(writer, frameHeight + CROP_FRAME_GAP);
       const top = writer.cursor.y;
-      drawImageCrop(
+      drawFadedHighlight(
         writer.cursor.page,
         image,
         attached.region,
@@ -1428,9 +1439,7 @@ async function drawFindingBody(
         frameHeight,
         writer.dry,
       );
-      const caption = pin
-        ? `Pin ${pin.number} of ${pin.total} - photograph ${attached.photo.sequence}`
-        : `Photograph ${attached.photo.sequence} - the marked area`;
+      const caption = `Photograph ${attached.photo.sequence} - the area this item refers to`;
       drawSnippet(writer, caption, {
         x: writer.margin + frameWidth + 10,
         y: top - 14,
@@ -1439,7 +1448,7 @@ async function drawFindingBody(
         color: ACCENT,
         maxWidth: writer.contentWidth - frameWidth - 10,
       });
-      drawSnippet(writer, "A crop of the area this item refers to.", {
+      drawSnippet(writer, "The same photograph, with everything but this item's area faded back.", {
         x: writer.margin + frameWidth + 10,
         y: top - 26,
         size: 8,
@@ -1565,7 +1574,9 @@ async function drawPhotoPlateBody(
   );
 
   drawPlateLead(writer, showIntro);
-  drawImage(writer, image, writer.contentWidth, photoHeight, photo.layers, marks);
+  // The plate is the evidence: printed exactly as it was taken, with nothing
+  // drawn on it at all.
+  drawImage(writer, image, writer.contentWidth, photoHeight, photo.layers);
   drawPlateTail(writer, document, photo, plate);
 }
 
@@ -1576,7 +1587,7 @@ function drawPlateLead(writer: Writer, showIntro: boolean): void {
   eyebrow(writer, "Photographs carrying several items");
   drawText(
     writer,
-    "Each of these takes a page of its own: a numbered pin on the photograph for every item found on it, and those items listed underneath in pin order. An item's entry in the schedule points back at its pin.",
+    "Each of these takes a page of its own, printed exactly as it was taken with nothing drawn on it. The items found on it are listed underneath, and each item's own entry in the schedule carries a copy of this photograph with everything but that item's area faded back.",
     { size: 9, colour: MUTED, gapAfter: 6, align: "justify" },
   );
 }
@@ -1590,21 +1601,18 @@ function drawPlateTail(
 ): void {
   drawText(
     writer,
-    `Photograph ${photo.sequence} - ${plate.items} items on this photograph, ${markCaption(
-      plate.marks
-        .filter((mark): mark is typeof mark & { region: DocRegion } => mark.region !== null)
-        .map((mark) => ({ region: mark.region, number: mark.number })),
-    )}`,
+    `Photograph ${photo.sequence} - ${plate.items} items on this photograph, printed as it was taken and unmarked. Each item's entry highlights its own area.`,
     { size: 8, colour: MUTED, gapAfter: 8 },
   );
   drawPlateFindings(writer, document, plate);
 }
 
-/** The items on a plate, in pin order, listed under the photograph. */
+/** The items on a plate, listed under the photograph in the report's own order. */
 function drawPlateFindings(writer: Writer, document: ReportDocument, plate: PhotoPlate): void {
-  const listed = plate.marks
-    .filter((mark) => mark.number !== null)
-    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+  // Every item found on the photograph, in the order the plates assembled them.
+  // No pin number: the plate carries no marks to look up, so quoting one would
+  // point the reader at nothing.
+  const listed = plate.marks.filter((mark) => mark.number !== null);
   if (listed.length === 0) return;
   drawText(writer, "Findings on this photograph", {
     size: 8,
@@ -1615,7 +1623,7 @@ function drawPlateFindings(writer: Writer, document: ReportDocument, plate: Phot
   for (const mark of listed) {
     const finding = document.findings.find((candidate) => candidate.id === mark.findingId);
     const headline = finding ? plateHeadline(finding) : "";
-    drawText(writer, `Pin ${mark.number} - ${itemLabel(mark.ref)}${headline ? ` - ${headline}` : ""}`, {
+    drawText(writer, `${itemLabel(mark.ref)}${headline ? ` - ${headline}` : ""}`, {
       size: 9,
       gapAfter: 2,
     });
@@ -2003,16 +2011,12 @@ function drawScheduleOfItems(
 
   const size = 7.6;
   const row = (offset: number) => writer.margin + offset;
-  // The item's photograph and the pin it carries, in words, so the table can
-  // be read on its own without the plates.
+  // The photograph each item was found on, in words, so the table can be read
+  // on its own without the plates. No pin number: the plates carry no marks, so
+  // a pin reference would point the reader at nothing.
   const markOf = (finding: DocFinding): string => {
-    const pinned = finding.photos.find((attached) => pinFor(pins, attached.photo.id, finding.id));
-    if (!pinned) {
-      const single = finding.photos[0];
-      return single ? `Ph ${single.photo.sequence}` : "-";
-    }
-    const pin = pinFor(pins, pinned.photo.id, finding.id);
-    return pin ? `Ph ${pinned.photo.sequence} / pin ${pin.number}` : `Ph ${pinned.photo.sequence}`;
+    const single = finding.photos[0];
+    return single ? `Ph ${single.photo.sequence}` : "-";
   };
 
   let y = writer.cursor.y;
