@@ -385,17 +385,63 @@ export type FindingPatch = Partial<{
   lifecycle_updated_at: string | null;
 }>;
 
+/**
+ * The fields that carry the content a person is vouching for when they confirm
+ * an item. Editing any of them withdraws the approval, because the approval was
+ * about that wording, that remedy, that severity.
+ *
+ * Deliberately NOT here: assignment and dates. "This is a bricklayer's job" and
+ * "it is due on Friday" are decisions about routing and programme, not about
+ * whether the description is true -- and treating allocation as approval of the
+ * wording is the defect this list exists to stop.
+ */
+export const MATERIAL_CONTENT_FIELDS = [
+  "finding_text",
+  "snag_title",
+  "remedial_text",
+  "rectification_alt",
+  "tradesman_hack",
+  "hs_notes",
+  "likely_cause",
+  "capture_fields",
+  "severity",
+  "condition_grade",
+  "regulatory_reference",
+] as const;
+
+/** Does this patch change what the item SAYS, as opposed to where it is routed? */
+export function withdrawsConfirmation(patch: FindingPatch): boolean {
+  return MATERIAL_CONTENT_FIELDS.some((field) => patch[field] !== undefined);
+}
+
 export async function updateFinding(
   reportId: string,
   findingId: string,
   patch: FindingPatch,
   before: Record<string, unknown>,
+  /**
+   * Named so that allocation reads as allocation in the audit trail. Without
+   * this every write looks like "finding.update" and the record cannot tell a
+   * trade decision from a wording correction.
+   */
+  auditAction: string = "finding.update",
 ): Promise<void> {
+  // The rule lives here, in the one write path, rather than on each screen. A
+  // screen can be forgotten; this cannot.
+  //
+  // A patch that states its own confirmation is a confirmation and keeps it --
+  // that is what the review screen sends when a person approves an item.
+  const withdraw: FindingPatch =
+    withdrawsConfirmation(patch) && patch.confirmed_at === undefined
+      ? { confirmed_at: null, confirmed_by: null }
+      : {};
+  const next: FindingPatch = { ...patch, ...withdraw };
+
   const { error } = await from("findings")
-    .update({ ...patch, human_edited: true })
+    .update({ ...next, human_edited: true })
     .eq("id", findingId);
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
-  await writeAudit({ reportId, findingId, action: "finding.update", before, after: patch });
+  await writeAudit({ reportId, findingId, action: auditAction, before, after: next });
 }
 
 /**
