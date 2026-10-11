@@ -18,7 +18,11 @@ import type { SiteConditionRow } from "@/lib/weather/site-conditions.functions";
  * renders inside a router.
  */
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children }: { children?: ReactNode }) => <a href="#project">{children}</a>,
+  Link: ({ children, className }: { children?: ReactNode; className?: string }) => (
+    <a href="#project" className={className}>
+      {children}
+    </a>
+  ),
 }));
 
 const conditions = (over: Partial<NonNullable<SiteConditionRow["conditions"]>> = {}) => ({
@@ -107,6 +111,40 @@ describe("wind panel", () => {
     expect(unpinned?.textContent).toContain("Riverside Depot");
     expect(unpinned?.textContent).toContain("Add a postcode to see this one");
     expect(unpinned?.textContent).not.toContain("mph");
+  });
+
+  it("puts the postcode prompt on its own line, under the name", () => {
+    // On a phone the prompt jumped ABOVE the project name. Source order was
+    // already right, so the guard is the class that forces the line break.
+    // A mixed list, because a list with nothing pinned shows the paragraph
+    // instead of rows.
+    const { container } = render(
+      <SiteConditionsList
+        rows={[row(), row({ projectId: "p2", name: "Demo property", state: "no_postcode", conditions: null })]}
+      />,
+    );
+    const prompt = container.querySelector("li a");
+    expect(prompt?.className).toContain("basis-full");
+    expect(prompt?.textContent).toBe("Add a postcode to see this one");
+  });
+
+  it("shows two low-wind sites as different numbers, not the same one twice", () => {
+    // London 2.6 m/s and Sheffield 2.8 m/s, 140 miles apart: both used to
+    // print "6 mph from the W" and the panel looked broken.
+    const { container } = render(
+      <SiteConditionsList
+        rows={[
+          row({ projectId: "london", name: "instructSiteTEST", conditions: conditions({ windMph: 5.816, temperatureC: 13.6, windDirectionDeg: 260.5 }) }),
+          row({ projectId: "sheffield", name: "Riverside Court", conditions: conditions({ windMph: 6.263, temperatureC: 13.1, windDirectionDeg: 274.5 }) }),
+        ]}
+      />,
+    );
+    const [london, sheffield] = Array.from(container.querySelectorAll("li")).map((li) => li.textContent ?? "");
+    expect(london).toContain("5.8 mph");
+    expect(sheffield).toContain("6.3 mph");
+    expect(london).not.toBe(sheffield);
+    expect(london).toContain("14°C");
+    expect(sheffield).toContain("13°C");
   });
 
   it("says why a project has no reading rather than showing a zero", () => {

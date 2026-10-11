@@ -96,8 +96,20 @@ export function compassPoint(degrees: number | null): string | null {
   return COMPASS[Math.round(normalised / 22.5) % 16]!;
 }
 
+/**
+ * Wind speed for showing.
+ *
+ * A whole number hides the difference at low wind: two sites 140 miles apart
+ * read 2.6 and 2.8 m/s, both printed "6 mph", and the panel looked broken
+ * (Dal, 11 Oct 2026, from a phone). Below 10 mph a decimal is shown, so 5.8
+ * and 6.3 read as the different readings they are. At and above 10 mph the
+ * decimal is noise and a whole number is what a site reads out: 9.4 mph keeps
+ * its decimal, 9.96 mph reads "10 mph" rather than "10.0".
+ */
 export function formatMph(mph: number): string {
-  return `${Math.round(mph)} mph`;
+  if (!Number.isFinite(mph)) return "- mph";
+  const rounded = Math.round(mph);
+  return rounded < 10 ? `${mph.toFixed(1)} mph` : `${rounded} mph`;
 }
 
 export function formatTemperature(celsius: number | null): string | null {

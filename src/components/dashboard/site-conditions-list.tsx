@@ -82,10 +82,15 @@ export function SiteConditionsList({ rows }: { rows: SiteConditionRow[] }) {
                     ) : null}
                   </span>
                 ) : row.state === "no_postcode" ? (
+                  // basis-full deliberately: the row wraps the moment the
+                  // prompt is long, and wrapping in source order is not what
+                  // the browser did - the link jumped ABOVE the project name
+                  // on a phone (Dal, 11 Oct 2026). Forcing the prompt onto its
+                  // own line puts the name first, always, whatever the width.
                   <Link
                     to="/projects/$id"
                     params={{ id: row.projectId }}
-                    className="shrink-0 text-xs font-semibold text-brand-accent-ink"
+                    className="shrink-0 basis-full text-left text-xs font-semibold text-brand-accent-ink sm:basis-auto"
                   >
                     Add a postcode to see this one
                   </Link>

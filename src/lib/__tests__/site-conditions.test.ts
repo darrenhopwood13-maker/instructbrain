@@ -100,6 +100,19 @@ describe("wind units and Beaufort", () => {
     expect(formatTemperature(14.6)).toBe("15°C");
     expect(formatTemperature(null)).toBeNull();
   });
+
+  it("keeps a decimal at low wind so two sites do not read the same", () => {
+    // The real case, 11 Oct 2026: London 2.6 m/s and Sheffield 2.8 m/s both
+    // printed "6 mph" and the panel looked broken.
+    expect(formatMph(5.816)).toBe("5.8 mph");
+    expect(formatMph(6.263)).toBe("6.3 mph");
+    expect(formatMph(5.816)).not.toBe(formatMph(6.263));
+    // And a whole number once the decimal stops mattering.
+    expect(formatMph(9.4)).toBe("9.4 mph");
+    expect(formatMph(9.96)).toBe("10 mph");
+    expect(formatMph(12.4)).toBe("12 mph");
+    expect(formatMph(Number.NaN)).toBe("- mph");
+  });
 });
 
 describe("weather symbols in plain words", () => {
