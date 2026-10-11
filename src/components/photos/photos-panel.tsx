@@ -170,7 +170,15 @@ export function PhotosPanel({
   const filePickerRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const openCamera = useCallback(() => {
+  /**
+   * The phone's own camera leads on report screens.
+   *
+   * It is full sensor resolution — 3072x4080 against a video track's
+   * 1280x720 — and on a Schedule of Condition the photograph IS the evidence.
+   * The keep-shooting camera is still one tap away and states its cost.
+   */
+  const openCamera = useCallback(() => cameraRef.current?.click(), []);
+  const openInAppCamera = useCallback(() => {
     if (canUseInAppCamera()) setCameraOpen(true);
     else cameraRef.current?.click();
   }, []);
@@ -440,7 +448,9 @@ export function PhotosPanel({
     if (!autoOpenCamera || autoOpenedRef.current) return;
     if (ready !== "ready" || !organisationId) return;
     autoOpenedRef.current = true;
-    if (canUseInAppCamera()) setCameraOpen(true);
+    // The phone's camera, not the in-app one: same resolution argument, and it
+    // is the camera interface the person already knows.
+    cameraRef.current?.click();
   }, [autoOpenCamera, ready, organisationId]);
 
   // Quick capture picks the photographs before the report exists; they are
@@ -797,6 +807,7 @@ export function PhotosPanel({
           <PhotoCaptureActions
             compact
             onCamera={openCamera}
+            onInAppCamera={canUseInAppCamera() ? openInAppCamera : undefined}
             onGallery={() => filePickerRef.current?.click()}
             disabled={atPhotoCap}
             busy={busy}
@@ -983,6 +994,7 @@ export function PhotosPanel({
             compact
             showHint={false}
             onCamera={openCamera}
+            onInAppCamera={canUseInAppCamera() ? openInAppCamera : undefined}
             onGallery={() => filePickerRef.current?.click()}
             busy={busy}
           />

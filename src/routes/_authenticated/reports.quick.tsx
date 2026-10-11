@@ -364,7 +364,13 @@ function CustomReport() {
     }
     waitingShotsRef.current.push(file);
   };
-  const openCamera = () => {
+  /**
+   * The phone's own camera first — full resolution, and this screen is the one
+   * that creates a Schedule of Condition. The keep-shooting in-app camera is
+   * offered beside it, named, with its lower resolution stated.
+   */
+  const openCamera = () => cameraRef.current?.click();
+  const openInAppCamera = () => {
     if (canUseInAppCamera()) setCameraOpen(true);
     else cameraRef.current?.click();
   };
@@ -509,6 +515,7 @@ function CustomReport() {
           </p>
            <PhotoCaptureActions
              onCamera={openCamera}
+             onInAppCamera={canUseInAppCamera() ? openInAppCamera : undefined}
              onGallery={() => pickerRef.current?.click()}
              disabled={!organisationId || focusMissing}
              busy={start.isPending}
