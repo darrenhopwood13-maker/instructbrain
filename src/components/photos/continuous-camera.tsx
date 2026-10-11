@@ -39,6 +39,39 @@ export function trackMeetsMinimum(width: number, height: number): boolean {
 
 type Shot = { id: string; url: string };
 
+/**
+ * How long the shutter waits for a full-resolution still before falling back to
+ * the frame it already froze. Framing beats pixels: a sharp photograph of the
+ * wrong thing is worth less than a slightly softer one of the right thing.
+ */
+const HIGH_RES_BUDGET_MS = 1200;
+
+/**
+ * Blit whatever the viewfinder is showing, right now.
+ *
+ * A GPU copy of one frame — milliseconds — not a sensor capture. That
+ * distinction is the fix. Reported from a phone, 11 Oct: "it says saving, but
+ * it doesn't capture the image until about 5 seconds after you've pressed the
+ * button, so you have to keep the camera in the same position for what feels
+ * like an eternity." The old code pressed the shutter and then waited on the
+ * camera before it owned any image at all, so the person had no choice but to
+ * hold dead still and hope.
+ */
+function freezeFrame(video: HTMLVideoElement): HTMLCanvasElement | null {
+  if (!video.videoWidth || !video.videoHeight) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function encodeCanvas(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+}
+
 export function ContinuousCamera({
   open,
   onOpenChange,
@@ -179,25 +212,33 @@ export function ContinuousCamera({
     setFlash(true);
     window.setTimeout(() => setFlash(false), 120);
     try {
+      // 1. Own the frame immediately, before asking the camera for anything.
+      const frozen = freezeFrame(video);
+
+      // 2. Then ask for a full-resolution still, on a budget. A still that
+      //    lands after the phone has drifted is a photograph of something
+      //    else, so a late one is discarded rather than used.
       let blob: Blob | null = null;
       const Capture = (window as unknown as { ImageCapture?: new (t: MediaStreamTrack) => { takePhoto: () => Promise<Blob> } }).ImageCapture;
       if (Capture) {
         try {
-          blob = await new Capture(track).takePhoto();
+          const still = new Capture(track).takePhoto().catch(() => null);
+          blob = await Promise.race([
+            still,
+            new Promise<null>((resolve) =>
+              window.setTimeout(() => resolve(null), HIGH_RES_BUDGET_MS),
+            ),
+          ]);
         } catch {
           blob = null;
         }
       }
-      if (!blob) {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-        blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, "image/jpeg", 0.95),
-        );
-      }
+
+      // 3. Whatever did not arrive in time comes from the frame we already own,
+      //    so the shot is always the one the person framed.
+      if (!blob && frozen) blob = await encodeCanvas(frozen, 0.95);
       if (!blob) return;
+
       const now = Date.now();
       const file = markAppOwnedFile(new File([blob], `photo-${now}.jpg`, {
         type: blob.type || "image/jpeg",
@@ -206,7 +247,11 @@ export function ContinuousCamera({
       stampFile(file, stampFor(shotAt, fixRef.current));
       const url = URL.createObjectURL(blob);
       setShots((current) => [...current, { id: String(now), url }]);
-      onShot(file);
+      // 4. Hand the upload over only after the browser has painted, so the shot
+      //    appears the moment it is taken rather than behind a decode and two
+      //    re-encodes. This is what made "Saving…" arrive a beat before the
+      //    picture did.
+      window.setTimeout(() => onShot(file), 0);
       if (single) onOpenChange(false);
     } finally {
       setCapturing(false);
