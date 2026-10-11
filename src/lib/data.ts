@@ -67,6 +67,13 @@ function from(table: string) {
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import { locationLabel } from "@/lib/report/location";
+import {
+  overviewFrom,
+  type Overview,
+  type OverviewFindingRow,
+  type OverviewProjectRow,
+  type OverviewReportRow,
+} from "@/lib/analytics/overview";
 export { coerceSnapshot };
 
 
@@ -769,6 +776,56 @@ export const recentReportsQuery = (organisationIds: string[]) =>
         projectId: row.project_id,
         isQuick: row.is_quick === true,
       }));
+    },
+  });
+
+/**
+ * Every number on the dashboard, from one place.
+ *
+ * It reads the same tables the lists beneath it read, so a total cannot
+ * disagree with the list it sits above, and it hands them to a pure function
+ * (`analytics/overview.ts`) that a test pins down. The trend window ends at the
+ * current month.
+ *
+ * `truncated` is reported rather than hidden. PostgREST caps a response at 1000
+ * rows unless told otherwise, and a capped list understates every figure built
+ * from it - so if a list comes back at its limit, the panel says so instead of
+ * showing a confident wrong number.
+ */
+export const orgOverviewQuery = (organisationIds: string[], months = 6) =>
+  queryOptions({
+    queryKey: ["overview", "org", [...organisationIds].sort(), months],
+    enabled: organisationIds.length > 0,
+    queryFn: async (): Promise<{ overview: Overview; truncated: boolean }> => {
+      const REPORT_CAP = 5000;
+      const FINDING_CAP = 20000;
+
+      const [reports, findings, projects] = await Promise.all([
+        from("reports")
+          .select("id, status, created_at, project_id, is_quick")
+          .in("organisation_id", organisationIds)
+          .limit(REPORT_CAP),
+        from("findings")
+          .select("report_id, lifecycle_state, due_date, reports!inner(organisation_id)")
+          .in("reports.organisation_id", organisationIds)
+          .limit(FINDING_CAP),
+        from("projects").select("id, name, reference").in("organisation_id", organisationIds),
+      ]);
+
+      const reportRows = unwrap(reports) as OverviewReportRow[];
+      const findingRows = unwrap(findings) as OverviewFindingRow[];
+      const projectRows = unwrap(projects) as OverviewProjectRow[];
+
+      return {
+        overview: overviewFrom({
+          reports: reportRows,
+          findings: findingRows,
+          projects: projectRows,
+          today: new Date().toISOString(),
+          months,
+        }),
+        truncated: reportRows.length >= REPORT_CAP || findingRows.length >= FINDING_CAP,
+      };
     },
   });
 
