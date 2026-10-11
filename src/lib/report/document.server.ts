@@ -101,7 +101,7 @@ export async function loadReportDocument(
       .order("sequence", { ascending: true }),
     db
       .from("photos")
-      .select("id, sequence, original_filename, captured_at, storage_path, thumbnail_path, capture_fields")
+      .select("id, sequence, original_filename, captured_at, storage_path, thumbnail_path, print_path, capture_fields")
       .eq("report_id", reportId)
       .order("sequence", { ascending: true }),
     db.from("photo_markups").select("photo_id, layers").eq("report_id", reportId),
@@ -135,6 +135,7 @@ export async function loadReportDocument(
   const urls = await signedUrls(db, [
     ...photos.map((photo) => photo["storage_path"] as string),
     ...photos.map((photo) => photo["thumbnail_path"] as string),
+    ...photos.map((photo) => photo["print_path"] as string),
     ...(logoPath ? [logoPath] : []),
     ...(project ? [projectCoverPath(report["organisation_id"], project["id"])] : []),
   ]);
@@ -151,6 +152,7 @@ export async function loadReportDocument(
       (photo["thumbnail_path"] ? urls.get(photo["thumbnail_path"] as string) : null) ??
       urls.get(photo["storage_path"] as string) ??
       null,
+    printUrl: (photo["print_path"] ? urls.get(photo["print_path"] as string) : null) ?? null,
     captureFields: fields(photo["capture_fields"]),
     layers: markupByPhoto.get(photo["id"]) ?? [],
   }));

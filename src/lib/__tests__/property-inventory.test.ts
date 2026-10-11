@@ -84,6 +84,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { room, _photo_role: role },
     });
     const photos: DocPhoto[] = [
@@ -185,6 +186,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { _photo_role: "title_page" },
     }));
     const document = {
@@ -214,6 +216,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: {},
     };
     const document = {
@@ -235,6 +238,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { _photo_role: "exterior_cover" },
     };
     const movedPhoto: DocPhoto = {
@@ -244,6 +248,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { room: "Living room", _photo_role: "inventory_detail" },
     };
     const finding = {
@@ -301,6 +306,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { _photo_role: "exterior_cover" },
     };
     const overviewPhoto: DocPhoto = {
@@ -310,6 +316,7 @@ describe("property inventory", () => {
       capturedAt: null,
       url: null,
       thumbUrl: null,
+      printUrl: null,
       captureFields: { room: "Kitchen", _photo_role: "room_overview" },
     };
     const staleFinding = {

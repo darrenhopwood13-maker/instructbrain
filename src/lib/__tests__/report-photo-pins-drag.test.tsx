@@ -49,6 +49,7 @@ function photo(id: string, sequence: number): DocPhoto {
     capturedAt: "2026-10-01T09:00:00Z",
     url: `https://example.test/${id}.jpg`,
     thumbUrl: `https://example.test/${id}-thumb.jpg`,
+    printUrl: null,
     captureFields: {},
   };
 }

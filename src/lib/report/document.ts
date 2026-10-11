@@ -31,6 +31,8 @@ export type DocPhoto = {
   thumbnailPath?: string | null;
   url: string | null;
   thumbUrl: string | null;
+  /** Print-sized copy (~1600px) for the PDF. Falls back to url, then thumbUrl. */
+  printUrl: string | null;
   captureFields: Record<string, string>;
   layers?: MarkupLayer[];
 };

@@ -91,6 +91,7 @@ export function photo(id: string, sequence: number): DocPhoto {
     capturedAt: "2026-10-01T09:00:00Z",
     url: `https://example.test/${id}.png`,
     thumbUrl: `https://example.test/${id}-thumb.png`,
+    printUrl: null,
     captureFields: {},
   };
 }

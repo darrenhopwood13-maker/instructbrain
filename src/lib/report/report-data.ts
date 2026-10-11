@@ -118,7 +118,7 @@ export const reportDocumentQuery = (reportId: string) =>
           .order("sequence", { ascending: true }),
         from("photos")
           .select(
-            "id, sequence, original_filename, captured_at, storage_path, thumbnail_path, capture_fields",
+            "id, sequence, original_filename, captured_at, storage_path, thumbnail_path, print_path, capture_fields",
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
@@ -149,6 +149,7 @@ export const reportDocumentQuery = (reportId: string) =>
       const urls = await signedUrls([
         ...photos.map((photo) => photo.storage_path),
         ...photos.map((photo) => photo.thumbnail_path).filter(Boolean),
+        ...photos.map((photo) => photo.print_path).filter(Boolean),
         ...(logoPath ? [logoPath] : []),
       ]);
 
@@ -164,6 +165,7 @@ export const reportDocumentQuery = (reportId: string) =>
           (photo.thumbnail_path ? urls.get(photo.thumbnail_path) : null) ??
           urls.get(photo.storage_path) ??
           null,
+        printUrl: (photo.print_path ? urls.get(photo.print_path) : null) ?? null,
         captureFields: fields(photo.capture_fields),
         layers: markupByPhoto.get(photo.id) ?? [],
       }));

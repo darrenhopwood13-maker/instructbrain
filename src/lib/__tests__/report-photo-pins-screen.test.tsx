@@ -25,6 +25,7 @@ function photo(id: string, sequence: number): DocPhoto {
     capturedAt: "2026-10-01T09:00:00Z",
     url: `https://example.test/${id}.jpg`,
     thumbUrl: `https://example.test/${id}-thumb.jpg`,
+    printUrl: null,
     captureFields: {},
   };
 }
@@ -212,7 +213,7 @@ describe("a photograph carrying several items, on screen", () => {
  * the reader cannot keep is worse than bad news.
  */
 function deadPhoto(id: string, sequence: number): DocPhoto {
-  return { ...photo(id, sequence), url: null, thumbUrl: null };
+  return { ...photo(id, sequence), url: null, thumbUrl: null, printUrl: null };
 }
 
 describe("a photograph whose image cannot be read", () => {

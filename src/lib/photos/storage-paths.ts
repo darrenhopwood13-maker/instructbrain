@@ -12,6 +12,8 @@
 export const PHOTO_BUCKET = "report-photos";
 export const THUMBNAIL_SEGMENT = "thumbnails";
 export const ANALYSIS_SEGMENT = "analysis";
+/** The print-sized copy the PDF embeds. See `print-derivative.ts`. */
+export const PRINT_SEGMENT = "prints";
 
 export class ThumbnailNotAnalysableError extends Error {
   constructor(path: string) {
@@ -82,6 +84,17 @@ export function analysisPath(
   const dot = filename.lastIndexOf(".");
   const stem = dot > 0 ? filename.slice(0, dot) : filename;
   return `${organisationId}/${reportId}/${ANALYSIS_SEGMENT}/${stem}.jpg`;
+}
+
+/**
+ * The print-sized copy the report PDF embeds. Neither the grid thumbnail (too
+ * small for paper) nor the original (too large to send), and never what a vision
+ * model reads.
+ */
+export function printPath(organisationId: string, reportId: string, filename: string): string {
+  const dot = filename.lastIndexOf(".");
+  const stem = dot > 0 ? filename.slice(0, dot) : filename;
+  return `${organisationId}/${reportId}/${PRINT_SEGMENT}/${stem}.jpg`;
 }
 
 export function isThumbnailPath(path: string | null | undefined): boolean {

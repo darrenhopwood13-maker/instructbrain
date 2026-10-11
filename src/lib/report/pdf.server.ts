@@ -173,6 +173,11 @@ const MIN_PLATE_PHOTO_HEIGHT = 200;
 const MAX_PLATE_PHOTO_HEIGHT = 640;
 const PHOTO_BUDGET_BYTES = 40 * 1024 * 1024;
 const SINGLE_PHOTO_LIMIT_BYTES = 2.5 * 1024 * 1024;
+/** A print copy is ~300KB by construction; anything far larger is not one. */
+const PRINT_COPY_LIMIT_BYTES = 900 * 1024;
+/** The untouched original is used only while it is cheap enough not to starve
+ *  the rest of the report. Above this the print copy or the thumbnail is used. */
+const ORIGINAL_FALLBACK_LIMIT_BYTES = 700 * 1024;
 
 type Cursor = { page: PDFPage; y: number; pageNumber: number };
 
@@ -422,24 +427,42 @@ async function fetchBytes(url: string): Promise<Uint8Array | null> {
 async function embedPhoto(
   writer: Writer,
   fetcher: PhotoFetcher,
-  photo: { id: string; url: string | null; thumbUrl: string | null },
+  photo: {
+    id: string;
+    url: string | null;
+    thumbUrl: string | null;
+    printUrl: string | null;
+  },
 ): Promise<PDFImage | null> {
   if (fetcher.cache.has(photo.id)) return fetcher.cache.get(photo.id) ?? null;
 
-  // Print-sized copy first: a photo drawn in a small box never needs the
-  // full-resolution original, and using originals exhausted the budget after
-  // a handful of photos, leaving the rest of the report without pictures.
-  // (Display copy only — the AI analysis path is separate and untouched.)
-  const candidates = [photo.thumbUrl, photo.url].filter((url): url is string => !!url);
+  // The order here IS the fix for a real complaint: a plate printed a
+  // photograph too soft to read a defect on.
+  //
+  // The 480px grid thumbnail used to be first, so every report printed a
+  // picture sized for a 90px grid row — roughly 87dpi across a plate, which is
+  // mush. The reason it was first was real: embedding originals exhausted the
+  // budget after a handful of photographs and left the back half of a long
+  // report with no pictures at all.
+  //
+  // So neither extreme. The print copy leads (~1600px, ~300KB, about 290dpi on
+  // a plate), the untouched original stands in while it is cheap, and the
+  // thumbnail is the last resort it always should have been.
+  //
+  // Display copies only — the AI analysis path is separate and untouched: it
+  // reads the original, or the full-resolution analysis derivative.
+  const candidates: Array<{ url: string; maxBytes: number }> = [];
+  if (photo.printUrl) candidates.push({ url: photo.printUrl, maxBytes: PRINT_COPY_LIMIT_BYTES });
+  if (photo.url) candidates.push({ url: photo.url, maxBytes: ORIGINAL_FALLBACK_LIMIT_BYTES });
+  if (photo.thumbUrl) candidates.push({ url: photo.thumbUrl, maxBytes: SINGLE_PHOTO_LIMIT_BYTES });
+
   let embedded: PDFImage | null = null;
 
-  for (const url of candidates) {
+  for (const candidate of candidates) {
     if (fetcher.spent >= PHOTO_BUDGET_BYTES) break;
-    const bytes = await fetchBytes(url);
+    const bytes = await fetchBytes(candidate.url);
     if (!bytes) continue;
-    if (bytes.byteLength > SINGLE_PHOTO_LIMIT_BYTES && url !== candidates[candidates.length - 1]) {
-      continue;
-    }
+    if (bytes.byteLength > candidate.maxBytes) continue;
     const kind = imageKind(bytes);
     if (!kind) continue;
     try {
@@ -2226,7 +2249,7 @@ export async function buildReportPdf(
 
   if (manualFull) {
     const coverUrl = document.project?.coverUrl ?? null;
-    const cover = coverUrl ? { id: "project-cover", url: coverUrl, thumbUrl: null } : null;
+    const cover = coverUrl ? { id: "project-cover", url: coverUrl, thumbUrl: null, printUrl: null } : null;
     if (cover && fetcher) {
       const image = await embedPhoto(writer, fetcher, cover);
       if (image) {

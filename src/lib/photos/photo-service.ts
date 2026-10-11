@@ -4,6 +4,7 @@ import { humanisePlanError } from "@/lib/plans";
 import { readProvenanceFromFile, type PhotoProvenance } from "@/lib/photos/exif";
 import { deviceProvenanceOf, mergeProvenance } from "@/lib/photos/device-provenance";
 import { createDisplayThumbnail } from "@/lib/photos/thumbnail";
+import { createPrintDerivative } from "@/lib/photos/print-derivative";
 import { reduceForManualReport } from "@/lib/photos/manual-upload-image";
 import { isUnreadableFileError } from "@/lib/photos/file-snapshot";
 import {
@@ -15,6 +16,7 @@ import {
   analysisPath,
   collisionSafeFilename,
   originalPath,
+  printPath,
   reportPrefix,
   thumbnailPath,
 } from "@/lib/photos/storage-paths";
@@ -25,6 +27,7 @@ export type PhotoRow = {
   storage_path: string;
   thumbnail_path: string | null;
   analysis_path: string | null;
+  print_path: string | null;
   original_filename: string | null;
   captured_at: string | null;
   gps_lat: number | null;
@@ -38,7 +41,7 @@ export type PhotoRow = {
 };
 
 const photoColumns =
-  "id, report_id, storage_path, thumbnail_path, analysis_path, original_filename, captured_at, gps_lat, gps_lng, width, height, sequence, checksum, capture_fields, created_at";
+  "id, report_id, storage_path, thumbnail_path, analysis_path, print_path, original_filename, captured_at, gps_lat, gps_lng, width, height, sequence, checksum, capture_fields, created_at";
 
 function table() {
   // The generated types lag a migration; the shape above is the contract.
@@ -216,6 +219,22 @@ async function uploadThumbnail(path: string, file: Blob): Promise<string | null>
 }
 
 /**
+ * PRINT COPY. Sits between the two existing derivatives: larger than the grid
+ * thumbnail, so a plate is sharp on paper instead of 87dpi mush; far smaller
+ * than the original, so a forty-photograph report is still a sendable file.
+ * Decoding is the expensive part on a phone, so it shares the thumbnail's slot
+ * limiter rather than starting a third concurrent decode.
+ */
+async function uploadPrint(path: string, file: Blob): Promise<string | null> {
+  const print = await withThumbnailSlot(() => createPrintDerivative(file));
+  if (!print) return null;
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, print.blob, { contentType: "image/jpeg", upsert: true });
+  return error ? null : path;
+}
+
+/**
  * ANALYSIS DERIVATIVE PATH — a third, separate path. Only used for sources a
  * vision model cannot read (HEIC / HEIF / AVIF). Full resolution, never
  * downscaled; see `analysis-derivative.ts` for why it shares no code with the
@@ -305,13 +324,16 @@ export async function uploadPhoto(
   const original = originalPath(target.organisationId, target.reportId, filename);
 
   const thumbTarget = thumbnailPath(target.organisationId, target.reportId, filename);
+  const printTarget = printPath(target.organisationId, target.reportId, filename);
   let analysis: { path: string; blob: Blob } | null = null;
   let thumbnail: string | null;
+  let print: string | null;
   if (target.skipAnalysisDerivative) {
     // No analysis copy at all. The upload always goes first — decoding
     // previews alongside it starved phone uploads.
     await uploadOriginal(original, uploadFile, (fraction) => onProgress(0.05 + fraction * 0.85), signal);
     thumbnail = await uploadThumbnail(thumbTarget, uploadFile);
+    print = await uploadPrint(printTarget, uploadFile);
     onProgress(0.92);
   } else {
     await uploadOriginal(original, file, (fraction) => onProgress(0.05 + fraction * 0.8), signal);
@@ -332,6 +354,11 @@ export async function uploadPhoto(
     thumbnail =
       (await uploadThumbnail(thumbTarget, file)) ??
       (analysis ? await uploadThumbnail(thumbTarget, analysis.blob) : null);
+    // The print copy takes the best source the browser can decode: the original
+    // where possible, otherwise the full-resolution analysis twin.
+    print =
+      (await uploadPrint(printTarget, file)) ??
+      (analysis ? await uploadPrint(printTarget, analysis.blob) : null);
     onProgress(0.92);
   }
 
@@ -341,6 +368,7 @@ export async function uploadPhoto(
       storage_path: original,
       thumbnail_path: thumbnail,
       analysis_path: analysis?.path ?? null,
+      print_path: print,
       original_filename: file.name || null,
       captured_at: provenance.capturedAt,
       gps_lat: provenance.gpsLat,

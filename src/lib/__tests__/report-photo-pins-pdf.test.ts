@@ -100,6 +100,7 @@ function photo(id: string, sequence: number): DocPhoto {
     capturedAt: "2026-10-01T09:00:00Z",
     url: `https://example.test/${id}.png`,
     thumbUrl: `https://example.test/${id}-thumb.png`,
+    printUrl: null,
     captureFields: {},
   };
 }
@@ -263,5 +264,84 @@ describe("the photograph carrying six items, in the printed report", () => {
     ]);
     const built = await buildReportPdf(single, { variant: "full", includePhotos: true });
     expect(await pageCount(built.bytes)).toBeGreaterThan(0);
+  });
+});
+
+describe("which copy of a photograph the report prints", () => {
+  /*
+   * The complaint this guards: a plate printed a photograph too soft to read a
+   * defect on. Cause was an ORDER, not a size — the 480px grid thumbnail was
+   * the first candidate, so a photograph taken with the phone's own camera app
+   * (4080px, 4MB) was printed as a 90px grid row blown up to fill a page,
+   * roughly 87dpi.
+   *
+   * Every other test in this file passes a null printUrl, so all of them would
+   * stay green if that preference silently reverted. These three assert the
+   * order itself.
+   */
+  let served: string[] = [];
+
+  function serveDistinctImages() {
+    served = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: unknown) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : String((input as { url?: string } | null)?.url ?? input);
+        served.push(url);
+        // The print copy is the biggest, the grid thumbnail deliberately tiny.
+        if (url.includes("-print")) return new Response(png(1600, 1200), { status: 200 });
+        if (url.includes("-thumb")) return new Response(png(90, 60), { status: 200 });
+        // An original too heavy to embed: rejected on size before it is decoded,
+        // so the bytes do not need to be a real image.
+        if (url.includes("-huge")) return new Response(new Uint8Array(900 * 1024), { status: 200 });
+        return new Response(png(320, 240), { status: 200 });
+      }),
+    );
+  }
+
+  async function buildWith(photo: DocPhoto) {
+    const built = await buildReportPdf(
+      doc([finding({ id: "a", ref: "F-001", photos: [{ photo, role: "primary", region: null }] })]),
+      { variant: "full", includePhotos: true },
+    );
+    return pageCount(built.bytes);
+  }
+
+  it("takes the print copy when there is one, and never even looks at the thumbnail", async () => {
+    serveDistinctImages();
+    const pages = await buildWith({ ...photo("p1", 4), printUrl: "https://example.test/p1-print.jpg" });
+    expect(pages).toBeGreaterThan(0);
+    expect(served).toContain("https://example.test/p1-print.jpg");
+    // The first candidate succeeded, so nothing else was fetched at all.
+    expect(served).not.toContain("https://example.test/p1-thumb.jpg");
+    expect(served).not.toContain("https://example.test/p1.jpg");
+  });
+
+  it("falls back to the untouched original, never the grid thumbnail, with no print copy", async () => {
+    serveDistinctImages();
+    const base = photo("p1", 4);
+    const pages = await buildWith({ ...base, printUrl: null });
+    expect(pages).toBeGreaterThan(0);
+    expect(served).toContain(base.url);
+    // This is the regression: the thumbnail used to win here, at about 87dpi.
+    expect(served).not.toContain(base.thumbUrl);
+  });
+
+  it("uses the grid thumbnail only when the original is too heavy to embed", async () => {
+    serveDistinctImages();
+    const base = photo("p1", 4);
+    const pages = await buildWith({
+      ...base,
+      url: "https://example.test/p1-huge.jpg",
+      printUrl: null,
+    });
+    expect(pages).toBeGreaterThan(0);
+    // The expensive original was asked for, refused on size, and the thumbnail
+    // stood in — so the byte budget still protects the rest of the report.
+    expect(served).toContain("https://example.test/p1-huge.jpg");
+    expect(served).toContain(base.thumbUrl);
   });
 });
