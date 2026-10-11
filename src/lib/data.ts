@@ -720,28 +720,6 @@ export const overdueItemsQuery = (projectId: string) =>
     },
   });
 
-/** Same as overdueItemsQuery, but across every project AND every quick report
- * in the organisation — the dashboard has no single project to scope to. */
-export const orgOverdueItemsQuery = (organisationIds: string[]) =>
-  queryOptions({
-    queryKey: ["overdue", "org", [...organisationIds].sort()],
-    enabled: organisationIds.length > 0,
-    queryFn: async (): Promise<OverdueItem[]> => {
-      const rows = unwrap(
-        await from("findings")
-          .select(`${overdueFindingColumns}, reports!inner(organisation_id)`)
-          .in("reports.organisation_id", organisationIds)
-          .in("lifecycle_state", ["open", "assigned", "in_progress", "fixed", "rejected"])
-          .lt("due_date", today())
-          .order("due_date", { ascending: true })
-          .limit(10),
-      ) as OverdueFindingRow[];
-      return rows.map(toOverdueItem);
-    },
-  });
-
-/** The most recently touched reports across the organisation, project-based
- * and quick alike — the dashboard's "recent reports" list. */
 export const recentReportsQuery = (organisationIds: string[]) =>
   queryOptions({
     queryKey: ["reports", "recent", [...organisationIds].sort()],

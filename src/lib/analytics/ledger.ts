@@ -81,6 +81,15 @@ export type Ledger = {
     projects: number;
   };
   attention: DashboardItem[];
+  /**
+   * How many items qualified for the attention list, before it was capped.
+   *
+   * Reported so the band can admit when it is showing a subset. This dashboard
+   * no longer has a separate overdue section, so if this number ever exceeds
+   * `attention.length` and the band stayed silent, the difference would be items
+   * that appear nowhere as a row.
+   */
+  attentionTotal: number;
   /** True when the account has no items at all - the state a new user sees. */
   empty: boolean;
 };
@@ -132,6 +141,7 @@ export function buildLedger(input: {
       projects: projectsInWindow.size,
     },
     attention: attentionItems(items, today, 8),
+    attentionTotal: overdueItems + notAssessed,
     empty: items.length === 0 && reports.length === 0,
   };
 }

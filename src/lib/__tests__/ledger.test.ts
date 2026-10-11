@@ -137,6 +137,27 @@ describe("the ledger", () => {
     expect(buildLedger({ items, reports, period: "week", today: TODAY }).from).toBe("2026-10-05");
     expect(buildLedger({ items, reports, period: "all", today: TODAY }).from).toBeNull();
   });
+
+  it("says how many items qualified for attention before the list was capped", () => {
+    // 1 overdue + 1 unassessed in the fixture, and only 1 is listed here.
+    const ledger = buildLedger({
+      items: [item({ id: "late", dueDate: "2026-10-01" }), item({ id: "un", status: "not_assessed" })],
+      reports,
+      period: "all",
+      today: TODAY,
+    });
+    expect(ledger.attention).toHaveLength(2);
+    expect(ledger.attentionTotal).toBe(2);
+  });
+
+  it("counts more qualifying items than it lists, so the band can admit it", () => {
+    const many = Array.from({ length: 15 }, (_, i) =>
+      item({ id: `late${i}`, dueDate: "2026-10-01" }),
+    );
+    const ledger = buildLedger({ items: many, reports, period: "all", today: TODAY });
+    expect(ledger.attention).toHaveLength(8);
+    expect(ledger.attentionTotal).toBe(15);
+  });
 });
 
 describe("the due line", () => {

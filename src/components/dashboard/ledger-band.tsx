@@ -128,7 +128,9 @@ export function LedgerBand({ organisationIds }: { organisationIds: string[] }) {
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h3 className="text-sm font-semibold">Needs attention now</h3>
                   <span className="text-xs text-muted-foreground">
-                    whatever is past its date, then anything nobody has assessed
+                    {ledger.attentionTotal > ledger.attention.length
+                      ? `the ${ledger.attention.length} most urgent of ${ledger.attentionTotal}`
+                      : "whatever is past its date, then anything nobody has assessed"}
                   </span>
                 </div>
                 <ul className="mt-2 overflow-hidden rounded-xl border border-border">

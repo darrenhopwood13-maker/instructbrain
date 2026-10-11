@@ -5,6 +5,7 @@
  */
 export const STRINGS = {
   "nav.dashboard": "Dashboard",
+  "nav.reports": "Reports",
   "nav.field": "On site",
   "nav.projects": "Projects",
   "nav.organisation": "Organisation",

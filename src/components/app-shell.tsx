@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FolderOpen, HardHat, Users, UserCog } from "lucide-react";
+import { LayoutDashboard, FolderOpen, HardHat, Users, UserCog, ClipboardList } from "lucide-react";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth";
@@ -116,12 +116,18 @@ function AccountMenu() {
 }
 
 /**
- * Four evenly sized destinations. Organisation settings is a twice-a-year
- * screen, so it lives in the Account menu and its slot goes to the field
+ * Five evenly sized destinations. Organisation settings is a twice-a-year
+ * screen, so it lives in the Account menu and its slot went to the field
  * cockpit — one tap to capture when someone arrives on site.
+ *
+ * Reports took the slot beside Dashboard on 11 Oct 2026, when the list came off
+ * the dashboard and became a destination in its own right: the dashboard is for
+ * reading the account at a glance, and reaching a specific report is a different
+ * job that wants its own place rather than a section at the bottom of a page.
  */
 const baseNav = [
   { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/reports", key: "nav.reports", icon: ClipboardList, exact: false },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
   { to: "/field", key: "nav.field", icon: HardHat, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },

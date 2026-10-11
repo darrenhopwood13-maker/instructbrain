@@ -1209,6 +1209,47 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
   width: 16px;
   height: 16px;
 }
+/* Dashboard call to action. The two things people come here to do, sized so they
+   are unmistakably the way in rather than another panel to read. */
+.ib-btn-3d.dash-cta {
+  padding: 22px 100px 22px 24px;
+  font-size: 17px;
+  font-weight: 700;
+  gap: 12px;
+  border-width: 2px;
+}
+.ib-btn-3d.dash-cta .obj {
+  right: 16px;
+}
+.ib-btn-3d.dash-cta .obj img {
+  width: 68px;
+  height: 68px;
+}
+/* The primary is filled, not outlined: one button has to win the eye. */
+.ib-btn-3d.dash-cta.primary {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: #062100;
+}
+.ib-btn-3d.dash-cta.primary:hover {
+  background: var(--brand-accent-light);
+  border-color: var(--brand-accent-light);
+}
+.ib-btn-3d.dash-cta.primary:focus-visible {
+  outline: 3px solid var(--brand-accent-ink);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .ib-btn-3d.dash-cta {
+    padding: 18px 76px 18px 18px;
+    font-size: 15px;
+    gap: 9px;
+  }
+  .ib-btn-3d.dash-cta .obj img {
+    width: 54px;
+    height: 54px;
+  }
+}
 .ib-btn-3d:focus-visible {
   outline: 3px solid var(--brand-accent-light);
   outline-offset: 2px;
