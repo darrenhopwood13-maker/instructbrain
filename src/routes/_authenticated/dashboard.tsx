@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
+import { SiteConditions } from "@/components/dashboard/site-conditions";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -269,6 +270,10 @@ function Dashboard() {
           </ul>
         )}
       </CollapsibleSection>
+
+      {/* Ambient, not daily work: the wind sits under the reports, above the
+          setup card, so it never pushes "what came in from site?" down. */}
+      <SiteConditions organisationIds={organisationIds} />
 
       <Dialog open={pickProject} onOpenChange={setPickProject}>
         <DialogContent>
