@@ -584,17 +584,17 @@ function drawFadedHighlight(
   ];
   for (const band of bands) {
     if (band.width <= 0 || band.height <= 0) continue;
-    page.drawRectangle({ ...band, color: rgb(1, 1, 1), opacity: 0.62 });
+    page.drawRectangle({ ...band, color: rgb(1, 1, 1), opacity: 0.72 });
   }
 
-  page.drawRectangle({
-    x: areaLeft,
-    y: areaBottom,
-    width: areaWidth,
-    height: areaHeight,
-    borderWidth: 1,
-    borderColor: ACCENT,
-  });
+  // NO OUTLINE AROUND THE AREA. Reported twice from a phone: "the orange boxes
+  // are still there". The codebase still calls the brand accent "orange" in its
+  // CSS class names, so that is what this was — a Laser Green outline drawn
+  // round each item's area, one per item, which read as a box stapled over the
+  // photograph. Dal asked for "the one with the faded background" and the fade
+  // IS the highlight; boxing it as well was my addition and it is wrong. The
+  // veil went from 0.62 to 0.72 so the untouched area carries the emphasis on
+  // its own. One line to bring the outline back if it is ever wanted.
   page.drawRectangle({
     x,
     y: top - frameHeight,
