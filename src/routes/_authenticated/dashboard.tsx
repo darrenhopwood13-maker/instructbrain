@@ -17,6 +17,7 @@ import { projectsQuery, recentReportsQuery } from "@/lib/data";
 import { SiteConditions } from "@/components/dashboard/site-conditions";
 import { ItemMapPanel } from "@/components/dashboard/item-map";
 import { LedgerBand } from "@/components/dashboard/ledger-band";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -127,6 +128,10 @@ function Dashboard() {
           so the section was a third copy of the same fact. */}
       <ItemMapPanel organisationIds={organisationIds} />
       <LedgerBand organisationIds={organisationIds} />
+
+      {/* What has changed, directly under the state of things: the map says where
+          the weight is, this says what has moved. */}
+      <ActivityFeed organisationIds={organisationIds} />
 
       {/* Ambient, not daily work: the wind sits above the setup card. */}
       <SiteConditions organisationIds={organisationIds} />

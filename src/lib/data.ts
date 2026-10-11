@@ -69,6 +69,7 @@ import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import { locationLabel } from "@/lib/report/location";
 import { firstNonEmptyText, type DashboardItem } from "@/lib/analytics/item-map";
 import type { DashboardReportRow } from "@/lib/analytics/ledger";
+import type { ActivityRow } from "@/lib/analytics/activity";
 export { coerceSnapshot };
 
 
@@ -871,6 +872,119 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
       return { items, reports, truncated: findingRows.length >= ITEM_CAP };
     },
   });
+
+/**
+ * The activity feed: what has actually happened, from the audit trail.
+ *
+ * Read as five plain queries and joined here rather than one nested embed. The
+ * audit table carries no organisation of its own, so the org filter rides on the
+ * report it points at - the same `reports!inner(organisation_id)` pattern the rest
+ * of this file uses.
+ *
+ * Nothing is invented. If a person has closed an item there is an audit row for it;
+ * if no one ever has, this returns an empty feed and the panel says so.
+ */
+export const orgActivityQuery = (organisationIds: string[], limit = 200) =>
+  queryOptions({
+    queryKey: ["activity", "org", [...organisationIds].sort(), limit],
+    enabled: organisationIds.length > 0,
+    queryFn: async (): Promise<{ rows: ActivityRow[]; truncated: boolean }> => {
+      const AUDIT_CAP = 500;
+      const audit = await from("audit_log")
+        .select(
+          "id, report_id, finding_id, actor_name, action, before, after, created_at, reports!inner(organisation_id)",
+        )
+        .in("reports.organisation_id", organisationIds)
+        .order("created_at", { ascending: false })
+        .limit(AUDIT_CAP);
+
+      const auditRows = unwrap(audit) as Array<Record<string, unknown>>;
+      if (auditRows.length === 0) return { rows: [], truncated: false };
+
+      const reportIds = unique(auditRows.map((row) => row["report_id"] as string | null));
+      const findingIds = unique(auditRows.map((row) => row["finding_id"] as string | null));
+
+      const [reports, findings, photos] = await Promise.all([
+        reportIds.length
+          ? from("reports").select("id, reference, title, project_id").in("id", reportIds)
+          : Promise.resolve({ data: [] }),
+        findingIds.length
+          ? from("findings").select("id, ref, snag_title, finding_text, lifecycle_state").in("id", findingIds)
+          : Promise.resolve({ data: [] }),
+        // Close-out evidence, if any exists. The role is the one the trade portal
+        // already writes; it has never been used, so this returns nothing today.
+        findingIds.length
+          ? from("finding_photos")
+              .select("finding_id, role, photos(storage_path)")
+              .in("finding_id", findingIds)
+              .eq("role", "closeout")
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const reportById = new Map(
+        (unwrap(reports) as Array<Record<string, unknown>>).map((row) => [row["id"] as string, row]),
+      );
+      const findingById = new Map(
+        (unwrap(findings) as Array<Record<string, unknown>>).map((row) => [row["id"] as string, row]),
+      );
+      const evidenceByFinding = new Map<string, string>();
+      for (const link of unwrap(photos) as Array<Record<string, unknown>>) {
+        const photo = link["photos"] as { storage_path?: string } | null;
+        if (photo?.storage_path) evidenceByFinding.set(link["finding_id"] as string, photo.storage_path);
+      }
+
+      const projectIds = unique(
+        [...reportById.values()].map((row) => row["project_id"] as string | null),
+      );
+      const projects = projectIds.length
+        ? await from("projects").select("id, name").in("id", projectIds)
+        : { data: [] };
+      const projectNameById = new Map(
+        (unwrap(projects) as Array<Record<string, unknown>>).map((row) => [
+          row["id"] as string,
+          row["name"] as string,
+        ]),
+      );
+
+      const rows: ActivityRow[] = auditRows.map((row) => {
+        const report = reportById.get(row["report_id"] as string) ?? {};
+        const finding = findingById.get(row["finding_id"] as string) ?? {};
+        const projectId = report["project_id"] as string | null;
+        return {
+          id: row["id"] as string,
+          action: row["action"] as string,
+          at: row["created_at"] as string,
+          actorName: (row["actor_name"] as string | null) ?? null,
+          before: row["before"],
+          after: row["after"],
+          subject: {
+            findingRef: (finding["ref"] as string | null) ?? null,
+            findingTitle: finding["id"]
+              ? firstNonEmptyText(
+                  finding["snag_title"] as string | null,
+                  finding["finding_text"] as string | null,
+                  finding["ref"] as string | null,
+                )
+              : null,
+            reportId: (row["report_id"] as string | null) ?? null,
+            reportRef: (report["reference"] as string | null) ?? null,
+            reportTitle: (report["title"] as string | null) ?? null,
+            projectName: projectId ? (projectNameById.get(projectId) ?? null) : null,
+            evidencePath: row["finding_id"]
+              ? (evidenceByFinding.get(row["finding_id"] as string) ?? null)
+              : null,
+          },
+        };
+      });
+
+      return { rows: rows.slice(0, limit), truncated: auditRows.length >= AUDIT_CAP };
+    },
+  });
+
+/** The distinct non-null values in a list, in no particular order. */
+function unique(values: Array<string | null>): string[] {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))];
+}
 
 /** Every report the signed-in account can see, newest first — the "All
  * reports" page. Quick reports with no project belong here too. */

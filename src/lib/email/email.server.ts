@@ -163,6 +163,10 @@ async function audit(
     report_id: entry.reportId,
     finding_id: entry.findingId ?? null,
     actor_id: actorId,
+    // Stamped at write time. Resolved here rather than from claims because this
+    // path is already server-side with the admin client, and the row has to name
+    // its actor from this moment on.
+    actor_name: await accountName(actorId),
     action: entry.action,
     before: null,
     after: entry.after as never,

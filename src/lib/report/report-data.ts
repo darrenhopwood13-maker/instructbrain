@@ -16,6 +16,7 @@ import type {
   ReportDocument,
 } from "@/lib/report/document";
 import { coerceMarkup } from "@/lib/photos/markup";
+import { actorFromUser } from "@/lib/audit/actor";
 
 /* Untyped escape hatch: generated types lag behind applied migrations. */
 function from(table: string) {
@@ -316,12 +317,15 @@ async function writeAudit(entry: {
   after: unknown;
 }): Promise<void> {
   const { data } = await supabase.auth.getUser();
-  const actorId = data.user?.id ?? null;
-  if (!actorId) return;
+  const actor = actorFromUser(data.user);
+  if (!actor.id) return;
   await from("audit_log").insert({
     report_id: entry.reportId,
     finding_id: entry.findingId ?? null,
-    actor_id: actorId,
+    actor_id: actor.id,
+    // Stamped, not derived on read: the name lives in the auth schema, which this
+    // client cannot read, and an audit row should name its actor as at the time.
+    actor_name: actor.name,
     action: entry.action,
     before: entry.before === undefined ? null : (entry.before as never),
     after: entry.after === undefined ? null : (entry.after as never),

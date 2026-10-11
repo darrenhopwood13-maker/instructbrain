@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { assertTransition, coerceLifecycleState } from "@/lib/lifecycle";
 import { collisionSafeFilename, originalPath } from "@/lib/photos/storage-paths";
+import { actorFromTrade } from "@/lib/audit/actor";
 
 /**
  * Token-scoped subcontractor endpoint. No account is involved, so this handler
@@ -118,6 +119,8 @@ async function audit(
     report_id: context.access.report_id,
     finding_id: findingId,
     actor_id: null,
+    // No user behind a token link, so the trade is the honest answer to "who".
+    actor_name: actorFromTrade(context.access).name,
     action,
     before,
     after: {
