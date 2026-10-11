@@ -301,14 +301,18 @@ export function ReportActions({
                 </DropdownMenuItem>
               </>
             ) : (
-              <DropdownMenuItem className="min-h-11" onSelect={() => link.mutate()}>
+              // A client link is a client-facing act: it needs a published
+              // report behind it, exactly as the manualOnly path already
+              // required. Until then the row says why instead of silently
+              // minting a link to a draft.
+              <DropdownMenuItem className="min-h-11" disabled={!issued} onSelect={() => link.mutate()}>
                 <Link2 aria-hidden="true" className="size-4" />
-                Create link
+                {issued ? "Create link" : "Publish before creating a link"}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
               <Download aria-hidden="true" className="size-4" />
-              Download report
+              {issued ? "Download report" : "Download draft PDF"}
             </DropdownMenuItem>
             {canShare ? (
               <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("share")}>
