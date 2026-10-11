@@ -1,4 +1,6 @@
 /** Fixed storage path for a project's cover photograph (organisation-scoped folder). */
+export const PROJECT_COVER_FILENAME = "cover.jpg";
+
 export function projectCoverPath(organisationId: string, projectId: string): string {
-  return `${organisationId}/projects/${projectId}/cover.jpg`;
+  return `${organisationId}/projects/${projectId}/${PROJECT_COVER_FILENAME}`;
 }
