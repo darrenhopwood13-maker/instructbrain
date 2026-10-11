@@ -621,6 +621,17 @@ async function ensureShareLink(
   }
 
   const expires = new Date(Date.now() + 30 * 86_400_000).toISOString();
+
+  // Pinned to the version in force at mint time, the same way the Share menu
+  // does it, so both routes record the same fact about what the client was sent.
+  const { data: versionRows } = await db
+    .from("report_versions")
+    .select("id, version")
+    .eq("report_id", reportId)
+    .order("version", { ascending: false })
+    .limit(1);
+  const versionId = ((versionRows ?? []) as Array<{ id: string }>)[0]?.id ?? null;
+
   const { data: created, error } = await db
     .from("report_shares")
     .insert({
@@ -629,6 +640,7 @@ async function ensureShareLink(
       token: shareToken(),
       label: "Sent by email",
       expires_at: expires,
+      version_id: versionId,
     })
     .select("id, token")
     .single();
@@ -640,7 +652,12 @@ async function ensureShareLink(
     actor_id: null,
     action: "report.share_created",
     before: null,
-    after: { share_id: share.id, expires_at: expires, via: "trade_extract_send" },
+    after: {
+      share_id: share.id,
+      expires_at: expires,
+      version_id: versionId,
+      via: "trade_extract_send",
+    },
   });
   return shareUrlForToken(share.token);
 }
