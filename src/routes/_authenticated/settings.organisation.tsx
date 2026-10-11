@@ -29,6 +29,7 @@ import { PlanUsageMeter } from "@/components/plan-usage-meter";
 import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { deleteOrganisation, getOrganisationDeleteSummary } from "@/lib/delete.functions";
+import { OrganisationMembers } from "@/components/settings/organisation-members";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/organisation")({
@@ -315,6 +316,8 @@ function OrganisationSettings() {
         </form>
       )}
 
+
+      {organisationId ? <OrganisationMembers organisationId={organisationId} /> : null}
 
       {isPlatformAdmin && organisationId ? (
         <DeleteOrganisationZone
