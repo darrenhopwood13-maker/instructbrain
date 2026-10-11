@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { orgOverdueItemsQuery, projectsQuery, recentReportsQuery } from "@/lib/data";
 import { SiteConditions } from "@/components/dashboard/site-conditions";
-import { OverviewPanel } from "@/components/dashboard/overview-panel";
+import { ItemMapPanel } from "@/components/dashboard/item-map";
+import { LedgerBand } from "@/components/dashboard/ledger-band";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -215,6 +216,13 @@ function Dashboard() {
         </CollapsibleSection>
       ) : null}
 
+      {/* The map and the reading under it sit above the reports list, because the
+          list is a convenience and the map is the point. The queue and the overdue
+          warning stay above both: "what came in from site" and "what is late" are
+          the two things that cannot wait, and nothing may push them down. */}
+      <ItemMapPanel organisationIds={organisationIds} />
+      <LedgerBand organisationIds={organisationIds} />
+
       <CollapsibleSection
         id="recent-heading"
         title="Recent reports"
@@ -271,10 +279,6 @@ function Dashboard() {
           </ul>
         )}
       </CollapsibleSection>
-
-      {/* The numbers sit under the daily work: the queue and the reports are
-          still the first thing on the screen. */}
-      <OverviewPanel organisationIds={organisationIds} />
 
       {/* Ambient, not daily work: the wind sits under the reports, above the
           setup card, so it never pushes "what came in from site?" down. */}

@@ -67,13 +67,8 @@ function from(table: string) {
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { sortByPhotoOrder } from "@/lib/report/finding-order";
 import { locationLabel } from "@/lib/report/location";
-import {
-  overviewFrom,
-  type Overview,
-  type OverviewFindingRow,
-  type OverviewProjectRow,
-  type OverviewReportRow,
-} from "@/lib/analytics/overview";
+import { firstNonEmptyText, type DashboardItem } from "@/lib/analytics/item-map";
+import type { DashboardReportRow } from "@/lib/analytics/ledger";
 export { coerceSnapshot };
 
 
@@ -780,52 +775,122 @@ export const recentReportsQuery = (organisationIds: string[]) =>
   });
 
 /**
- * Every number on the dashboard, from one place.
+ * Everything the dashboard draws, in two reads that are joined here rather than
+ * with a nested embed.
  *
- * It reads the same tables the lists beneath it read, so a total cannot
- * disagree with the list it sits above, and it hands them to a pure function
- * (`analytics/overview.ts`) that a test pins down. The trend window ends at the
- * current month.
+ * Nested embedding works, but it puts the shape of the payload at the mercy of a
+ * foreign-key name; three flat selects against patterns already proven elsewhere
+ * in this file are duller and safer. The join is by id in memory - for an
+ * organisation's findings that is thousands of rows at most, not millions.
  *
- * `truncated` is reported rather than hidden. PostgREST caps a response at 1000
- * rows unless told otherwise, and a capped list understates every figure built
- * from it - so if a list comes back at its limit, the panel says so instead of
- * showing a confident wrong number.
+ * `truncated` is reported, never hidden: a capped read understates every figure
+ * built from it, and a confident wrong number is worse than an admitted one.
  */
-export const orgOverviewQuery = (organisationIds: string[], months = 6) =>
+export const orgDashboardQuery = (organisationIds: string[]) =>
   queryOptions({
-    queryKey: ["overview", "org", [...organisationIds].sort(), months],
+    queryKey: ["dashboard", "items", [...organisationIds].sort()],
     enabled: organisationIds.length > 0,
-    queryFn: async (): Promise<{ overview: Overview; truncated: boolean }> => {
-      const REPORT_CAP = 5000;
-      const FINDING_CAP = 20000;
+    queryFn: async (): Promise<{
+      items: DashboardItem[];
+      reports: DashboardReportRow[];
+      truncated: boolean;
+    }> => {
+      const ITEM_CAP = 5000;
 
-      const [reports, findings, projects] = await Promise.all([
-        from("reports")
-          .select("id, status, created_at, project_id, is_quick")
-          .in("organisation_id", organisationIds)
-          .limit(REPORT_CAP),
-        from("findings")
-          .select("report_id, lifecycle_state, due_date, reports!inner(organisation_id)")
-          .in("reports.organisation_id", organisationIds)
-          .limit(FINDING_CAP),
-        from("projects").select("id, name, reference").in("organisation_id", organisationIds),
+      const [findingRows, reportRows, projectRows] = await Promise.all([
+        unwrap(
+          await from("findings")
+            .select(
+              "id, ref, status, lifecycle_state, severity, due_date, created_at, assigned_trade, report_id, snag_title, finding_text, reports!inner(organisation_id)",
+            )
+            .in("reports.organisation_id", organisationIds)
+            .order("created_at", { ascending: false })
+            .limit(ITEM_CAP),
+        ) as Array<{
+          id: string;
+          ref: string | null;
+          status: string | null;
+          lifecycle_state: string | null;
+          severity: string | null;
+          due_date: string | null;
+          created_at: string | null;
+          assigned_trade: string | null;
+          report_id: string;
+          snag_title: string | null;
+          finding_text: string | null;
+        }>,
+        unwrap(
+          await from("reports")
+            .select(
+              "id, reference, title, report_date, created_at, status, is_quick, project_id, survey_type_snapshot",
+            )
+            .in("organisation_id", organisationIds)
+            .limit(5000),
+        ) as Array<{
+          id: string;
+          reference: string | null;
+          title: string | null;
+          report_date: string | null;
+          created_at: string | null;
+          status: string | null;
+          is_quick: boolean | null;
+          project_id: string | null;
+          survey_type_snapshot: { label?: string; id?: string } | null;
+        }>,
+        unwrap(
+          await from("projects").select("id, name, reference").in("organisation_id", organisationIds),
+        ) as Array<{ id: string; name: string; reference: string | null }>,
       ]);
 
-      const reportRows = unwrap(reports) as OverviewReportRow[];
-      const findingRows = unwrap(findings) as OverviewFindingRow[];
-      const projectRows = unwrap(projects) as OverviewProjectRow[];
+      const projectById = new Map(projectRows.map((row) => [row.id, row]));
+      const reportById = new Map(reportRows.map((row) => [row.id, row]));
 
-      return {
-        overview: overviewFrom({
-          reports: reportRows,
-          findings: findingRows,
-          projects: projectRows,
-          today: new Date().toISOString(),
-          months,
-        }),
-        truncated: reportRows.length >= REPORT_CAP || findingRows.length >= FINDING_CAP,
-      };
+      const items: DashboardItem[] = findingRows
+        // A finding whose report is not in this organisation cannot be grouped or
+        // linked, so it is dropped rather than shown against a blank project.
+        .filter((row) => reportById.has(row.report_id))
+        .map((row) => {
+          const report = reportById.get(row.report_id);
+          const project = report?.project_id ? projectById.get(report.project_id) : undefined;
+          return {
+            id: row.id,
+            ref: row.ref,
+            // The surveyor's own words where there are any, falling back to the
+            // reference so a row is never blank. `??` alone is not enough here:
+            // snag_title is frequently an empty string, and "" ?? x is "", which
+            // rendered an item with no title at all on the map and in the drawer.
+            title: firstNonEmptyText(row.snag_title, row.finding_text, row.ref).slice(0, 160),
+            status: row.status,
+            lifecycleState: row.lifecycle_state,
+            severity: row.severity,
+            dueDate: row.due_date,
+            createdAt: row.created_at,
+            assignedTrade: row.assigned_trade,
+            reportId: row.report_id,
+            reportRef: report?.reference ?? null,
+            reportTitle: report?.title ?? null,
+            reportDate: report?.report_date ?? null,
+            surveyLabel: report?.survey_type_snapshot?.label ?? null,
+            projectId: report?.project_id ?? null,
+            projectName: project?.name ?? null,
+            projectRef: project?.reference ?? null,
+          };
+        });
+
+      const reports: DashboardReportRow[] = reportRows.map((row) => ({
+        id: row.id,
+        reference: row.reference,
+        title: row.title,
+        status: row.status,
+        reportDate: row.report_date,
+        createdAt: row.created_at,
+        isQuick: row.is_quick,
+        projectId: row.project_id,
+        projectName: row.project_id ? (projectById.get(row.project_id)?.name ?? null) : null,
+        surveyLabel: row.survey_type_snapshot?.label ?? null,
+      }));
+
+      return { items, reports, truncated: findingRows.length >= ITEM_CAP };
     },
   });
 
