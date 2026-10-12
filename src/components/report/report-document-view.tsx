@@ -1179,9 +1179,29 @@ function PhotoPlate({
             const finding = document.findings.find((candidate) => candidate.id === mark.findingId);
             const headline = finding ? plateHeadline(finding) : "";
             return (
-              <li key={mark.findingId} className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">Pin {mark.number}</span>
-                {` · ${mark.ref}${headline ? ` · ${headline}` : ""}`}
+              <li key={mark.findingId}>
+                {/*
+                 * Dal, 12 Oct 2026, from a screenshot of this very list on his phone: the
+                 * item lines were plain text, so the clipped headline was a dead end - you
+                 * could read half a finding and had no way to reach the rest without
+                 * scrolling the whole document hunting for the reference. Each line now
+                 * opens the item it names, landing on the row that carries the full text,
+                 * the photographs and the trade. The affordance is written out ("full item")
+                 * rather than left as a bare chevron, because this view is read on a phone
+                 * in a hard hat.
+                 */}
+                <a
+                  href={`#finding-${mark.ref ?? ""}`}
+                  className="flex items-start gap-2 rounded-md px-1.5 py-1 text-xs text-muted-foreground no-underline transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-accent"
+                >
+                  <span className="shrink-0 font-semibold text-foreground">Pin {mark.number}</span>
+                  <span className="min-w-0 flex-1">
+                    {`${mark.ref}${headline ? ` · ${headline}` : ""}`}
+                  </span>
+                  <span className="shrink-0 whitespace-nowrap font-semibold text-brand-accent-ink underline">
+                    full item
+                  </span>
+                </a>
               </li>
             );
           })}
