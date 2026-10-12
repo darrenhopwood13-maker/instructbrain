@@ -11,6 +11,7 @@ function report(partial: Partial<RecentReport>): RecentReport {
     updated: "1 January 2026",
     projectId: null,
     isQuick: false,
+    surveyLabel: null,
     ...partial,
   };
 }

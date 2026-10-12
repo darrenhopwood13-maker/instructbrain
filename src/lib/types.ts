@@ -48,6 +48,12 @@ export type RecentReport = {
   /** Null for a quick report that has never been attached to a project. */
   projectId: string | null;
   isQuick: boolean;
+  /**
+   * The survey type's label as it stood when the report was made — the name the
+   * report type is known by on this account. Null on a report that carries no
+   * survey type at all, which is a real state and not the same as an empty name.
+   */
+  surveyLabel: string | null;
 };
 
 export type Report = {
@@ -141,4 +147,3 @@ export type OverdueItem = {
   dueDate?: string;
   daysOverdue?: number;
 };
-

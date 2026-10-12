@@ -26,7 +26,12 @@ import {
 export class DataError extends Error {
   readonly code: string | undefined;
   readonly hint: string | undefined;
-  constructor(message: string, code?: string | null, hint?: string | null, details?: string | null) {
+  constructor(
+    message: string,
+    code?: string | null,
+    hint?: string | null,
+    details?: string | null,
+  ) {
     super([message, details].filter(Boolean).join(" — "));
     this.name = "DataError";
     this.code = code ?? undefined;
@@ -36,7 +41,12 @@ export class DataError extends Error {
 
 type Result<T> = {
   data: T | null;
-  error: { message: string; code?: string | null; hint?: string | null; details?: string | null } | null;
+  error: {
+    message: string;
+    code?: string | null;
+    hint?: string | null;
+    details?: string | null;
+  } | null;
 };
 
 function unwrap<T>(result: Result<T>): T {
@@ -71,8 +81,6 @@ import { firstNonEmptyText, type DashboardItem } from "@/lib/analytics/item-map"
 import type { DashboardReportRow } from "@/lib/analytics/ledger";
 import type { ActivityRow } from "@/lib/analytics/activity";
 export { coerceSnapshot };
-
-
 
 /* ------------------------------------------------------------------ */
 /* Memberships and organisation                                         */
@@ -122,10 +130,7 @@ export const organisationQuery = (organisationId: string | null) =>
  * The account switch for the trade allocation layer. Its own write so that
  * flipping it can never overwrite a half-typed name or logo in the same form.
  */
-export async function setTradeAllocation(
-  organisationId: string,
-  enabled: boolean,
-): Promise<void> {
+export async function setTradeAllocation(organisationId: string, enabled: boolean): Promise<void> {
   const { error } = await from("organisations")
     .update({ trade_allocation_enabled: enabled })
     .eq("id", organisationId);
@@ -182,7 +187,9 @@ export const projectsQuery = (organisationIds: string[]) =>
     queryFn: async (): Promise<Project[]> => {
       const rows = unwrap(
         await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor, status")
+          .select(
+            "id, organisation_id, name, reference, client_name, address, principal_contractor, status",
+          )
           .in("organisation_id", organisationIds)
           .order("created_at", { ascending: false }),
       ) as ProjectRow[];
@@ -190,9 +197,7 @@ export const projectsQuery = (organisationIds: string[]) =>
 
       const projectIds = rows.map((row) => row.id);
       const reports = unwrap(
-        await from("reports")
-          .select("id, project_id, status")
-          .in("project_id", projectIds),
+        await from("reports").select("id, project_id, status").in("project_id", projectIds),
       ) as Array<{ id: string; project_id: string; status: string }>;
 
       const reportProject = new Map(reports.map((report) => [report.id, report.project_id]));
@@ -233,7 +238,9 @@ export const projectQuery = (projectId: string) =>
     queryFn: async (): Promise<Project | null> => {
       const rows = unwrap(
         await from("projects")
-          .select("id, organisation_id, name, reference, client_name, address, principal_contractor, status")
+          .select(
+            "id, organisation_id, name, reference, client_name, address, principal_contractor, status",
+          )
           .eq("id", projectId)
           .limit(1),
       ) as ProjectRow[];
@@ -251,10 +258,7 @@ export type NewProject = {
   principalContractor: string;
 };
 
-export async function updateProjectStatus(
-  projectId: string,
-  status: ProjectStatus,
-): Promise<void> {
+export async function updateProjectStatus(projectId: string, status: ProjectStatus): Promise<void> {
   const { error } = await from("projects").update({ status }).eq("id", projectId);
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
 }
@@ -427,7 +431,6 @@ export async function createReport(input: NewReport): Promise<string> {
       ...(input.brief ? { brief: JSON.parse(JSON.stringify(input.brief)) } : {}),
       ...(input.surveyTypeIds?.length ? { survey_type_ids: input.surveyTypeIds } : {}),
     })
-
 
     .select("id")
     .single();
@@ -728,7 +731,9 @@ export const recentReportsQuery = (organisationIds: string[]) =>
     queryFn: async (): Promise<RecentReport[]> => {
       const rows = unwrap(
         await from("reports")
-          .select("id, title, reference, status, updated_at, project_id, is_quick")
+          .select(
+            "id, title, reference, status, updated_at, project_id, is_quick, survey_type_snapshot",
+          )
           .in("organisation_id", organisationIds)
           .order("updated_at", { ascending: false })
           .limit(8),
@@ -740,6 +745,7 @@ export const recentReportsQuery = (organisationIds: string[]) =>
         updated_at: string;
         project_id: string | null;
         is_quick: boolean | null;
+        survey_type_snapshot: { label?: string } | null;
       }>;
       return rows.map((row) => ({
         id: row.id,
@@ -749,6 +755,7 @@ export const recentReportsQuery = (organisationIds: string[]) =>
         updated: dateFormatter.format(new Date(row.updated_at)),
         projectId: row.project_id,
         isQuick: row.is_quick === true,
+        surveyLabel: row.survey_type_snapshot?.label ?? null,
       }));
     },
   });
@@ -817,7 +824,9 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
           survey_type_snapshot: { label?: string; id?: string } | null;
         }>,
         unwrap(
-          await from("projects").select("id, name, reference").in("organisation_id", organisationIds),
+          await from("projects")
+            .select("id, name, reference")
+            .in("organisation_id", organisationIds),
         ) as Array<{ id: string; name: string; reference: string | null }>,
       ]);
 
@@ -909,7 +918,9 @@ export const orgActivityQuery = (organisationIds: string[], limit = 200) =>
           ? from("reports").select("id, reference, title, project_id").in("id", reportIds)
           : Promise.resolve({ data: [] }),
         findingIds.length
-          ? from("findings").select("id, ref, snag_title, finding_text, lifecycle_state").in("id", findingIds)
+          ? from("findings")
+              .select("id, ref, snag_title, finding_text, lifecycle_state")
+              .in("id", findingIds)
           : Promise.resolve({ data: [] }),
         // Close-out evidence, if any exists. The role is the one the trade portal
         // already writes; it has never been used, so this returns nothing today.
@@ -922,15 +933,22 @@ export const orgActivityQuery = (organisationIds: string[], limit = 200) =>
       ]);
 
       const reportById = new Map(
-        (unwrap(reports) as Array<Record<string, unknown>>).map((row) => [row["id"] as string, row]),
+        (unwrap(reports) as Array<Record<string, unknown>>).map((row) => [
+          row["id"] as string,
+          row,
+        ]),
       );
       const findingById = new Map(
-        (unwrap(findings) as Array<Record<string, unknown>>).map((row) => [row["id"] as string, row]),
+        (unwrap(findings) as Array<Record<string, unknown>>).map((row) => [
+          row["id"] as string,
+          row,
+        ]),
       );
       const evidenceByFinding = new Map<string, string>();
       for (const link of unwrap(photos) as Array<Record<string, unknown>>) {
         const photo = link["photos"] as { storage_path?: string } | null;
-        if (photo?.storage_path) evidenceByFinding.set(link["finding_id"] as string, photo.storage_path);
+        if (photo?.storage_path)
+          evidenceByFinding.set(link["finding_id"] as string, photo.storage_path);
       }
 
       const projectIds = unique(
@@ -995,7 +1013,9 @@ export const allReportsQuery = (organisationIds: string[]) =>
     queryFn: async (): Promise<RecentReport[]> => {
       const rows = unwrap(
         await from("reports")
-          .select("id, title, reference, status, updated_at, project_id, is_quick")
+          .select(
+            "id, title, reference, status, updated_at, project_id, is_quick, survey_type_snapshot",
+          )
           .in("organisation_id", organisationIds)
           .order("updated_at", { ascending: false }),
       ) as Array<{
@@ -1006,6 +1026,7 @@ export const allReportsQuery = (organisationIds: string[]) =>
         updated_at: string;
         project_id: string | null;
         is_quick: boolean | null;
+        survey_type_snapshot: { label?: string } | null;
       }>;
       return rows.map((row) => ({
         id: row.id,
@@ -1015,12 +1036,10 @@ export const allReportsQuery = (organisationIds: string[]) =>
         updated: dateFormatter.format(new Date(row.updated_at)),
         projectId: row.project_id,
         isQuick: row.is_quick === true,
+        surveyLabel: row.survey_type_snapshot?.label ?? null,
       }));
     },
   });
-
-
-
 
 /* ------------------------------------------------------------------ */
 /* Directory                                                            */
