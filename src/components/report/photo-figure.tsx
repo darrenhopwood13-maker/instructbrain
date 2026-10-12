@@ -215,14 +215,22 @@ export function PhotoFigure({
                       }
                       onClick={zoomable ? () => setZoomed(mark) : undefined}
                       className={
-                        "absolute z-10 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center " +
-                        "rounded-full border-2 border-background bg-brand-accent text-[11px] font-bold leading-none " +
-                        "text-brand-accent-ink shadow-raised " +
+                        // The dot itself is small; the tap area around it is not. Dal, 12 Oct
+                        // 2026: "these orange dots are too big". They were 24px, which on a
+                        // phone is a tenth of the photograph's width and reads as a blob
+                        // sitting on the evidence. The visible circle is 18px now, inside a
+                        // 36px target, so it is easier to hit than it looks and still never
+                        // swallows a neighbouring pin (two dots need their centres within
+                        // 36px to contend, which means the two items were on top of each
+                        // other anyway).
+                        "absolute z-10 flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center " +
                         (zoomable ? "pointer-events-auto cursor-zoom-in" : "pointer-events-none")
                       }
                       style={{ left: `${centreX}%`, top: `${centreY}%` }}
                     >
-                      {number}
+                      <span className="flex size-[18px] items-center justify-center rounded-full border-[1.5px] border-background bg-brand-accent text-[10px] font-bold leading-none text-brand-accent-ink shadow-raised">
+                        {number}
+                      </span>
                     </button>
                   ) : null}
                 </span>

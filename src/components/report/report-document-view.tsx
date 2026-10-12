@@ -1238,7 +1238,7 @@ function PinReference({
       className="block rounded-lg border border-border bg-surface-sunken p-3 text-xs no-underline"
     >
       <span className="flex items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-background bg-brand-accent text-[11px] font-bold leading-none text-brand-accent-ink">
+        <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-background bg-brand-accent text-[10px] font-bold leading-none text-brand-accent-ink">
           {readable && pin ? pin.number : "·"}
         </span>
         <span className="font-semibold text-foreground">{label}</span>
