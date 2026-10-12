@@ -91,7 +91,7 @@ describe("pulling the open items apart", () => {
     expect(rows[0]!.label).toBe("Nobody allocated");
   });
 
-  it("shows severity as the words the templates use, with unset kept apart", () => {
+  it("groups severity onto the urgency ladder, worst first, and keeps unset out of it", () => {
     const rows = breakdownOf(
       [
         item({ id: "a", severity: "danger_present" }),
@@ -102,12 +102,18 @@ describe("pulling the open items apart", () => {
       "severity",
       TODAY,
     );
-    const byLabel = new Map(rows.map((row) => [row.label, row.count]));
-    expect(byLabel.get("Danger present")).toBe(1);
-    expect(byLabel.get("Housekeeping")).toBe(1);
-    expect(byLabel.get("Not set")).toBe(2);
-    // Two unset beats one of anything: order is by count, so it leads.
-    expect(rows[0]!.label).toBe("Not set");
+    expect(rows.map((row) => row.label)).toEqual([
+      "Do it now",
+      "This week",
+      "Planned in",
+      "Just a record",
+      "Not set",
+    ]);
+    // Order is the ladder, not the count: two unset items do not lead the chart.
+    expect(rows[0]!.count).toBe(1);
+    expect(rows[4]!.count).toBe(2);
+    // The item still reads in its own template's words underneath.
+    expect(severityLabel(rows[0]!.items[0]!.severity)).toBe("Danger present");
   });
 
   it("reads an unknown severity key as words, never as an invented one", () => {
