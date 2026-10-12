@@ -32,7 +32,7 @@ import { HUB_THEME_COLOUR } from "@/lib/hub/theme";
 
 const HUB_TITLE = "The Instruct family - share any product in one tap";
 const HUB_DESCRIPTION =
-  "The Instruct family of construction products in one place: instructBrain, instructSite, instructSite Enterprise and instructDABS. Tap a product to send it to someone with a message ready to go.";
+  "The Instruct family of construction products in one place: instructBrain, instructSite, instructSite Enterprise and instructDABS. Tap a product to send it to someone with a message ready to go, or open the product itself from its tile.";
 
 export const Route = createFileRoute("/hub")({
   head: ({ match }) => {
@@ -128,7 +128,7 @@ function InstructFamilyHub() {
           <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-foreground/80">
             The Instruct family
           </p>
-          <p className="text-[0.6875rem] text-foreground/60">Tap a product to send it</p>
+          <p className="text-[0.6875rem] text-foreground/60">Send or open a product</p>
         </header>
 
         {showInstallOffer ? (

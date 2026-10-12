@@ -1547,8 +1547,10 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 @utility hub-tile {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 0.875rem;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 0.5rem;
   width: 100%;
   flex: 1 1 0;
   min-height: 0;
@@ -1603,13 +1605,17 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
   align-items: baseline;
 }
 
-/* On a tile the wordmark shares a row with a 48px control and must still fit
-   "instructEnterprise" inside 360px, so it is deliberately small. The showcase
+/* On a tile the wordmark shares a row with the round control and must still fit
+   "instructEnterprise" inside 320px, so it is deliberately small. The showcase
    has the width to shout.
    
-   Sized in vw, not rem: the binding constraint is the narrowest screen, and at
-   360px anything above ~4vw pushes the widest wordmark past the row and drags
-   the whole tile wider than the phone. Measured, not guessed - see
+   Sized in vw, not rem: the binding constraint is the narrowest screen, and
+   anything above ~4.7vw pushes the widest wordmark past the row, where the row's
+   `overflow: hidden` clips the end of the product name silently.
+
+   Unchanged on 12 Oct 2026, when the tile gained a way in: that control is a
+   labelled button on its own line, so it took no width from this row. The
+   tolerance was re-measured in the DOM at 320/360/375/390/430px - see
    `src/lib/__tests__/hub-tokens.test.ts` for the containment reasoning. */
 @utility hub-wordmark-tile {
   font-size: clamp(0.9375rem, 4.7vw, 1.6rem);
@@ -1670,6 +1676,53 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
    floor holds. Components never name a colour of their own. */
 @utility hub-accent-text {
   color: var(--hub-accent-pale);
+}
+
+/* The top line of a tile: the wordmark row, which shares the product, and the
+   round control that runs the demo. */
+@utility hub-tile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/* The way IN to the product itself: a labelled button on its own line under the
+   row, so it costs the row no width at all. 44px tall, which is Apple's minimum
+   comfortable target and well above the 24px WCAG floor - it is the control the
+   owner uses most, so it is not a tiny glyph and it is not hidden in a menu. */
+@utility hub-open-button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in oklab, var(--hub-accent) 55%, transparent);
+  background-color: color-mix(in oklab, var(--hub-accent) 10%, transparent);
+  color: var(--hub-accent-pale);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--hub-accent);
+    background-color: color-mix(in oklab, var(--hub-accent) 20%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--hub-accent-pale);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 /* The small round play control on each tile: a discreet in-person demo, not a

@@ -34,6 +34,31 @@ export type HubProduct = {
   label: string;
   /** Where a recipient is sent. */
   domain: string;
+  /**
+   * Where the tile's open control goes: into the product itself.
+   *
+   * Deliberately not `share.url` and not `domain`. `share.url` is where a
+   * *recipient* is sent and `domain` is the front door; on instructBrain neither
+   * of those is the app, so an owner tapping one lands on a page about the
+   * product instead of inside it - which is exactly how the launcher ended up
+   * with no way in.
+   *
+   * Absent where there is no app to open. instructDABS has no live site, so its
+   * tile offers no control: one that went nowhere would undo the early-access
+   * promise the rest of that tile keeps.
+   */
+  open?: {
+    /** Relative for this app's own routes, absolute for another product's site. */
+    href: string;
+    /**
+     * The button's own words, shown on the tile. Not a hidden accessible name:
+     * a glyph beside a play control told nobody that it was the way in, so this
+     * is the text on the button.
+     */
+    label: string;
+    /** Another origin, so it opens in a new tab and leaves this page behind it. */
+    external?: boolean;
+  };
   status: HubProductStatus;
   /** One line under the wordmark in the recipient showcase. */
   tagline: string;
@@ -86,6 +111,10 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     name: "Brain",
     label: "instructBrain",
     domain: "https://instructbrain.com",
+    // The app's own front door once you are signed in. `/dashboard` sits behind
+    // the auth guard, so a signed-out stranger tapping it gets the sign-in page
+    // rather than an error - which is the honest place for them.
+    open: { href: "/dashboard", label: "Open dashboard" },
     status: "live",
     tagline:
       "Site photographs in, client-ready construction reports out - drafted by the AI, reviewed and published by you.",
@@ -119,6 +148,7 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     name: "Site",
     label: "instructSite",
     domain: "https://instructsite.ai",
+    open: { href: "https://instructsite.ai", label: "Open instructSite", external: true },
     status: "live",
     tagline:
       "Real-time construction site management - subcontractor coordination and daily operational command.",
@@ -153,6 +183,11 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     name: "Enterprise",
     label: "instructSite Enterprise",
     domain: "https://instructsite.com",
+    open: {
+      href: "https://instructsite.com",
+      label: "Open instructSite Enterprise",
+      external: true,
+    },
     status: "live",
     tagline:
       "Corporate site governance for contractors running more than one job.",

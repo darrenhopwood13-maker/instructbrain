@@ -157,6 +157,46 @@ describe("a launcher tile", () => {
     renderTile(site);
     expect(screen.queryByTestId("hub-early-access")).toBeNull();
   });
+
+  it("carries a labelled Open dashboard button, as the way in", () => {
+    renderTile(brain);
+    const open = screen.getByRole("link", { name: "Open dashboard" });
+    expect(open.getAttribute("href")).toBe("/dashboard");
+    // Visible words on the button, not a hidden accessible name: Dal's own
+    // report was that a glyph beside the play control told him nothing.
+    expect(open.textContent).toContain("Open dashboard");
+    // This app's own route: a new tab here would park the launcher behind the
+    // app and make "back to the launcher" a browser-history exercise.
+    expect(open.getAttribute("target")).toBeNull();
+  });
+
+  it("names the product on the others, and opens their site in a new tab", () => {
+    renderTile(site);
+    const open = screen.getByRole("link", { name: "Open instructSite" });
+    expect(open.getAttribute("href")).toBe("https://instructsite.ai");
+    expect(open.getAttribute("target")).toBe("_blank");
+    expect(open.getAttribute("rel")).toContain("noreferrer");
+  });
+
+  it("offers no way in on the product that has not launched", () => {
+    renderTile(dabs);
+    expect(screen.queryByRole("link", { name: /^Open / })).toBeNull();
+  });
+
+  it("keeps the way in out of the share control, where it would be unreachable by touch", () => {
+    renderTile(brain);
+    const open = screen.getByRole("link", { name: "Open dashboard" });
+    expect(open.closest("button")).toBeNull();
+  });
+
+  it("keeps sending and the demo on every tile, alongside the way in", () => {
+    for (const product of [brain, site, dabs]) {
+      renderTile(product);
+      expect(screen.getByRole("button", { name: new RegExp(`Send ${product.label}`) })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /Play the|Open the/ })).toBeTruthy();
+      cleanup();
+    }
+  });
 });
 
 describe("the QR code", () => {

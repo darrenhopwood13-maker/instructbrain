@@ -57,6 +57,43 @@ describe("instructDABS is not live, and the launcher must say so", () => {
   });
 });
 
+describe("every live product has a way in", () => {
+  it("gives each live product an open destination, and none to instructDABS", () => {
+    for (const product of HUB_PRODUCTS) {
+      if (product.status === "live") {
+        expect(product.open, `${product.id} has no way in from the launcher`).toBeTruthy();
+        // A button, not a glyph: it has to say what it does.
+        expect(product.open!.label).toMatch(/^Open /);
+        expect(product.open!.label.length).toBeGreaterThan(8);
+      } else {
+        expect(product.open).toBeUndefined();
+      }
+    }
+  });
+
+  it("sends instructBrain's arrow at the app, not at a page about the app", () => {
+    // The defect this exists to prevent: the row was the only tap target and it
+    // opens the send panel, so an owner could send instructBrain to somebody
+    // else all day and never open it themselves. `/` and `/hub?product=brain`
+    // are the marketing surfaces; `/dashboard` is the app.
+    const brain = findHubProduct("brain")!;
+    expect(brain.open?.href).toBe("/dashboard");
+    expect(brain.open?.external).toBeFalsy();
+    expect(brain.open?.href).not.toBe(brain.share.url);
+    expect(brain.open?.href).not.toBe(brain.domain);
+    // The words Dal asked for, in his words.
+    expect(brain.open?.label).toBe("Open dashboard");
+  });
+
+  it("marks another origin as external, so it leaves the launcher behind", () => {
+    for (const id of ["site", "enterprise"] as const) {
+      const product = findHubProduct(id)!;
+      expect(product.open?.external).toBe(true);
+      expect(product.open?.href.startsWith("https://")).toBe(true);
+    }
+  });
+});
+
 describe("the instructBrain offer", () => {
   const brain = HUB_PRODUCTS.find((product) => product.id === "brain")!;
 
