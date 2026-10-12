@@ -15,6 +15,7 @@ import {
   type BreakdownAxis,
 } from "@/lib/analytics/control-room";
 import { canCloseOut } from "@/lib/report/close-out";
+import { LADDER } from "@/lib/analytics/severity-ladder";
 import { CloseOutItem } from "@/components/dashboard/close-out-item";
 import { daysLate, firstNonEmptyText, type DashboardItem } from "@/lib/analytics/item-map";
 import { orgDashboardQuery } from "@/lib/data";
@@ -47,6 +48,9 @@ export function ControlRoom({ organisationIds }: { organisationIds: string[] }) 
   const totals = useMemo(() => controlRoomTotals(items, reports, today), [items, reports, today]);
   const weeks = useMemo(() => raisedByWeek(items, 12, today), [items, today]);
   const rows = useMemo(() => breakdownOf(items, axis, today), [items, axis, today]);
+  // The severity axis always draws its four rungs, so the sentence counts the
+  // groups that actually hold something rather than the rows on screen.
+  const groups = useMemo(() => rows.filter((row) => row.count > 0).length, [rows]);
   const late = useMemo(() => overdueItems(items, today).slice(0, 6), [items, today]);
 
   if (organisationIds.length === 0) return null;
@@ -114,8 +118,8 @@ export function ControlRoom({ organisationIds }: { organisationIds: string[] }) 
                 <>
                   <p className="mt-2 text-xs text-muted-foreground">
                     {totals.openItems} open item{totals.openItems === 1 ? "" : "s"} in{" "}
-                    {rows.length} {BREAKDOWN_LABEL[axis].toLowerCase()} group
-                    {rows.length === 1 ? "" : "s"}. Tap one to see what is in it.
+                    {groups} {BREAKDOWN_LABEL[axis].toLowerCase()} group
+                    {groups === 1 ? "" : "s"}. Tap one to see what is in it.
                   </p>
                   <ul className="mt-2 space-y-1">
                     {rows.map((row) => {
@@ -147,23 +151,29 @@ export function ControlRoom({ organisationIds }: { organisationIds: string[] }) 
                             </span>
                           </button>
                           {open ? (
-                            <ul className="mb-2 ml-2 space-y-1 border-l-2 border-border pl-2">
-                              {row.items.slice(0, 12).map((item) => (
-                                <li key={item.id} className="text-xs">
-                                  <span className="font-medium">{firstNonEmptyText(item.title, item.ref)}</span>
-                                  <span className="text-muted-foreground">
-                                    {item.ref ? ` · ${item.ref}` : ""}
-                                    {item.surveyLabel ? ` · ${item.surveyLabel}` : ""}
-                                    {lateSuffix(item, today)}
-                                  </span>
-                                </li>
-                              ))}
-                              {row.items.length > 12 ? (
-                                <li className="text-xs text-muted-foreground">
-                                  and {row.items.length - 12} more
-                                </li>
+                            <>
+                              {row.meaning ? (
+                                <p className="mb-1 ml-2 text-xs italic text-muted-foreground">{row.meaning}</p>
                               ) : null}
-                            </ul>
+                              <ul className="mb-2 ml-2 space-y-1 border-l-2 border-border pl-2">
+                                {row.items.slice(0, 12).map((item) => (
+                                  <li key={item.id} className="text-xs">
+                                    <span className="font-medium">{firstNonEmptyText(item.title, item.ref)}</span>
+                                    <span className="text-muted-foreground">
+                                      {item.ref ? ` · ${item.ref}` : ""}
+                                      {axis === "severity" ? ` · ${severityLabel(item.severity)}` : ""}
+                                      {item.surveyLabel ? ` · ${item.surveyLabel}` : ""}
+                                      {lateSuffix(item, today)}
+                                    </span>
+                                  </li>
+                                ))}
+                                {row.items.length > 12 ? (
+                                  <li className="text-xs text-muted-foreground">
+                                    and {row.items.length - 12} more
+                                  </li>
+                                ) : null}
+                              </ul>
+                            </>
                           ) : null}
                         </li>
                       );
@@ -171,8 +181,10 @@ export function ControlRoom({ organisationIds }: { organisationIds: string[] }) 
                   </ul>
                   {axis === "severity" ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Each template carries its own severity scale, so these are the words your
-                      templates use. Anything nobody has set reads {UNSET_LABEL}.
+                      Every template counts in its own words, so these are grouped onto four rungs of
+                      urgency - {LADDER.map((step) => step.label).join(", ")} - worst first. Open a rung
+                      to read each item in its own template&rsquo;s words. Anything with no severity
+                      reads {UNSET_LABEL}: nobody has set one, or that report type does not carry one.
                     </p>
                   ) : null}
                 </>

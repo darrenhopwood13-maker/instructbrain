@@ -1,4 +1,5 @@
 import { daysLate, stateOf, type DashboardItem } from "@/lib/analytics/item-map";
+import { LADDER, LADDER_UNSET_KEY, ladderRank, ladderStepFor } from "@/lib/analytics/severity-ladder";
 
 /**
  * The control room: the reading, not the record.
@@ -97,6 +98,12 @@ export type BreakdownRow = {
   overdue: number;
   /** The members, worst first, so a row can be opened. */
   items: DashboardItem[];
+  /**
+   * One plain sentence saying what the bucket means, where the axis needs one.
+   * Only the severity rungs carry it, because "Planned in" is not self-explanatory
+   * the way "Electrical" is.
+   */
+  meaning: string | null;
 };
 
 export const UNSET_LABEL = "Not set";
@@ -104,8 +111,14 @@ export const UNSET_LABEL = "Not set";
 /**
  * The severity scales in the product are per template, and the stored value is the
  * template's own key (`danger_present`, `this_week`, `improvement_item`). Reading
- * them back as they were chosen is the honest thing to do: the code is not a
- * sentence, and there is no single ladder these values share.
+ * them back as they were chosen is the honest thing to do on the record and on the
+ * report: the code is not a sentence, and each template's words belong to that
+ * template.
+ *
+ * On the dashboard, where items from every template are read together, those words
+ * are grouped onto the urgency ladder instead - see `severity-ladder.ts` for the
+ * four rungs and the one place the mapping lives. The item still reads in its own
+ * words underneath; only the grouping is on urgency.
  */
 const SEVERITY_WORDS: Record<string, string> = {
   critical: "Critical",
@@ -177,12 +190,15 @@ function projectLabel(item: DashboardItem): string {
 function bucket(items: readonly DashboardItem[], axis: BreakdownAxis, today: string): Map<string, BreakdownRow> {
   const rows = new Map<string, BreakdownRow>();
 
-  const add = (key: string, label: string, item: DashboardItem) => {
-    const row = rows.get(key) ?? { key, label, count: 0, overdue: 0, items: [] };
+  const add = (key: string, label: string, item: DashboardItem, meaning: string | null = null) => {
+    let row = rows.get(key);
+    if (!row) {
+      row = { key, label, count: 0, overdue: 0, items: [], meaning };
+      rows.set(key, row);
+    }
     row.count += 1;
     if (stateOf(item, today) === "overdue") row.overdue += 1;
     row.items.push(item);
-    rows.set(key, row);
   };
 
   for (const item of items) {
@@ -191,8 +207,12 @@ function bucket(items: readonly DashboardItem[], axis: BreakdownAxis, today: str
         add(tradeLabel(item), tradeLabel(item), item);
         break;
       case "severity": {
-        const value = (item.severity ?? "").trim();
-        add(value || "unset", severityLabel(value), item);
+        const step = ladderStepFor(item.severity);
+        if (!step) {
+          add(LADDER_UNSET_KEY, UNSET_LABEL, item);
+          break;
+        }
+        add(step.id, step.label, item, step.meaning);
         break;
       }
       case "raised": {
@@ -222,6 +242,30 @@ export function breakdownOf(
   const rows = [...bucket(open, axis, today).values()];
   for (const row of rows) {
     row.items.sort((a, b) => (daysLate(b, today) ?? -1) - (daysLate(a, today) ?? -1) || a.id.localeCompare(b.id));
+  }
+  // The severity axis is a scale, not a list: it is drawn worst first, every rung
+  // is shown even when nothing is on it (an empty "Do it now" is information), and
+  // anything the ladder cannot read stays at the bottom under its own heading.
+  if (axis === "severity") {
+    const present = new Map(rows.map((row) => [row.key, row]));
+    const ordered: BreakdownRow[] = [];
+    for (const step of LADDER) {
+      ordered.push(
+        present.get(step.id) ?? {
+          key: step.id,
+          label: step.label,
+          count: 0,
+          overdue: 0,
+          items: [],
+          meaning: step.meaning,
+        },
+      );
+      present.delete(step.id);
+    }
+    for (const row of [...present.values()].sort((a, b) => ladderRank(a.key) - ladderRank(b.key))) {
+      ordered.push(row);
+    }
+    return ordered;
   }
   return rows.sort(
     (a, b) =>
