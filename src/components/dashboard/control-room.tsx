@@ -14,6 +14,8 @@ import {
   severityLabel,
   type BreakdownAxis,
 } from "@/lib/analytics/control-room";
+import { canCloseOut } from "@/lib/report/close-out";
+import { CloseOutItem } from "@/components/dashboard/close-out-item";
 import { daysLate, firstNonEmptyText, type DashboardItem } from "@/lib/analytics/item-map";
 import { orgDashboardQuery } from "@/lib/data";
 
@@ -179,14 +181,33 @@ export function ControlRoom({ organisationIds }: { organisationIds: string[] }) 
 
             {late.length > 0 ? (
               <div className="rounded-2xl border border-fail/40 bg-fail-soft/60 p-3">
-                <h3 className="text-sm font-bold text-fail">Past their date</h3>
-                <ul className="mt-2 space-y-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="text-sm font-bold text-fail">Past their date</h3>
+                  <span className="text-xs text-muted-foreground">
+                    Close one out here, with a comment or a photograph
+                  </span>
+                </div>
+                <ul className="mt-2 space-y-2">
                   {late.map((item) => (
-                    <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
-                      <span className="min-w-0 truncate font-medium">
-                        {firstNonEmptyText(item.title, item.ref)}
+                    <li
+                      key={item.id}
+                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+                    >
+                      <span className="min-w-0 flex-1 text-xs">
+                        <span className="block truncate font-medium">
+                          {firstNonEmptyText(item.title, item.ref)}
+                        </span>
+                        <span className="block text-muted-foreground">
+                          {item.ref ? `${item.ref} · ` : ""}
+                          {item.surveyLabel ?? "No template"}
+                        </span>
                       </span>
-                      <span className="shrink-0 font-semibold text-fail">{lateLabel(item, today)}</span>
+                      <span className="shrink-0 text-xs font-semibold text-fail">
+                        {lateLabel(item, today)}
+                      </span>
+                      {canCloseOut(item.lifecycleState) ? (
+                        <CloseOutItem item={item} today={today} />
+                      ) : null}
                     </li>
                   ))}
                 </ul>
