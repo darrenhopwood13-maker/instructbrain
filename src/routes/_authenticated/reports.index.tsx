@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ClipboardList, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { allReportsQuery } from "@/lib/data";
+import { reportStacks, stackSummary } from "@/lib/reports/report-stacks";
 import { useOrganisations } from "@/lib/use-organisations";
 import { bulkDeleteReports } from "@/lib/delete.functions";
 import { toast } from "sonner";
@@ -50,6 +51,27 @@ function AllReports() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const list = reports.data ?? [];
 
+  /* One stack per report type, newest type first, so the page reads as a few
+     headings rather than one long wall of reports. */
+  const stacks = useMemo(() => reportStacks(list), [list]);
+
+  /* Which stacks are open. Null means nobody has touched them yet, in which case
+     the newest type is already open - landing on a page of closed lids tells you
+     nothing about what you have. */
+  const [openStacks, setOpenStacks] = useState<string[] | null>(null);
+  const openKeys = openStacks ?? (stacks[0] ? [stacks[0].key] : []);
+  const toggleStack = (key: string) =>
+    setOpenStacks((current) => {
+      const base = new Set(current ?? (stacks[0] ? [stacks[0].key] : []));
+      if (base.has(key)) {
+        base.delete(key);
+      } else {
+        base.add(key);
+      }
+      return [...base];
+    });
+  const allOpen = stacks.length > 0 && stacks.every((stack) => openKeys.includes(stack.key));
+
   const allSelected = list.length > 0 && list.every((report) => selected.has(report.id));
 
   const toggle = (id: string) =>
@@ -67,18 +89,14 @@ function AllReports() {
     setSelected(allSelected ? new Set() : new Set(list.map((report) => report.id)));
 
   const bulk = useMutation({
-    mutationFn: async () =>
-      bulkDeleteReports({ data: { reportIds: [...selected] } }),
+    mutationFn: async () => bulkDeleteReports({ data: { reportIds: [...selected] } }),
     onSuccess: async (result) => {
-      toast.success(
-        `${result.deleted} ${result.deleted === 1 ? "report" : "reports"} deleted.`,
-      );
+      toast.success(`${result.deleted} ${result.deleted === 1 ? "report" : "reports"} deleted.`);
       setSelected(new Set());
       setConfirmOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
-    onError: (error: Error) =>
-      toast.error(error.message || "The reports could not be deleted."),
+    onError: (error: Error) => toast.error(error.message || "The reports could not be deleted."),
   });
 
   return (
@@ -90,8 +108,8 @@ function AllReports() {
             <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">All reports</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               {reports.isSuccess
-                ? `${list.length} report${list.length === 1 ? "" : "s"}, newest first. Select to delete several at once.`
-                : "Every report on your account, newest first."}
+                ? `${list.length} report${list.length === 1 ? "" : "s"} in ${stacks.length} report type${stacks.length === 1 ? "" : "s"}, newest type first. Open a stack to see what is in it, or select reports to delete.`
+                : "Every report on your account, grouped by report type, newest type first."}
             </p>
           </div>
           {/* The list of reports is where a person looks for one; starting one
@@ -124,8 +142,8 @@ function AllReports() {
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   Each one is permanently deleted with every finding, photograph, published version
-                  and share link. Any completed registers attached to them are archived as
-                  evidence first. This cannot be undone.
+                  and share link. Any completed registers attached to them are archived as evidence
+                  first. This cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -161,56 +179,111 @@ function AllReports() {
           />
         ) : (
           <>
-            <label className="mb-3 grid min-h-11 w-fit cursor-pointer grid-cols-[2.75rem_minmax(0,1fr)] items-center text-sm text-muted-foreground hover:text-foreground">
-              <span className="grid size-11 place-items-center">
-              <input
-                type="checkbox"
-                aria-label="Select all reports"
-                checked={allSelected}
-                onChange={toggleAll}
-                  className="size-5 accent-brand-blue"
-              />
-              </span>
-              Select all on this page
-            </label>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {list.map((report) => (
-                <li key={report.id} className="min-w-0">
-                  <div className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-surface-raised p-2 shadow-raised transition-colors hover:border-brand-blue/40 sm:p-3">
-                    <label className="grid size-11 cursor-pointer place-items-center self-start">
-                      <span className="sr-only">Select {report.title}</span>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${report.title}`}
-                        checked={selected.has(report.id)}
-                        onChange={() => toggle(report.id)}
-                        className="size-5 accent-brand-blue"
-                      />
-                    </label>
-                  <Link
-                    to="/reports/$id"
-                    params={{ id: report.id }}
-                      className="flex min-w-0 flex-col gap-2 px-1 py-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <label className="grid min-h-11 w-fit cursor-pointer grid-cols-[2.75rem_minmax(0,1fr)] items-center text-sm text-muted-foreground hover:text-foreground">
+                <span className="grid size-11 place-items-center">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all reports"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="size-5 accent-brand-blue"
+                  />
+                </span>
+                Select all {list.length} report{list.length === 1 ? "" : "s"}
+              </label>
+              <Button
+                variant="quiet"
+                className="min-h-11"
+                onClick={() => setOpenStacks(allOpen ? [] : stacks.map((stack) => stack.key))}
+              >
+                {allOpen ? "Close every stack" : "Open every stack"}
+              </Button>
+            </div>
+            <ul className="grid gap-3">
+              {stacks.map((stack) => {
+                const open = openKeys.includes(stack.key);
+                return (
+                  <li
+                    key={stack.key}
+                    className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface-raised shadow-raised"
                   >
-                      <div className="grid min-w-0 gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
-                        <span className="line-clamp-2 min-w-0 break-words font-semibold leading-snug">
-                          {report.title}
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => toggleStack(stack.key)}
+                      className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-surface"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">{stack.label}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {stackSummary(stack)}
                         </span>
-                        <span className="w-fit shrink-0">
-                          <ReportStatusPill status={report.status} />
-                        </span>
-                    </div>
-                      <span className="flex min-w-0 flex-col gap-0.5 break-words text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1">
-                        <span>{report.isQuick && !report.projectId ? "Custom report" : "Project report"}</span>
-                        <span className="hidden sm:inline" aria-hidden="true">·</span>
-                        <span><span className="font-medium text-foreground/80">Reference:</span> {report.reference || "None"}</span>
-                        <span className="hidden sm:inline" aria-hidden="true">·</span>
-                        <span><span className="font-medium text-foreground/80">Updated:</span> {report.updated}</span>
                       </span>
-                  </Link>
-                  </div>
-                </li>
-              ))}
+                      <span className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-semibold">
+                        {open ? "Hide" : "Open"}
+                      </span>
+                    </button>
+                    {open ? (
+                      <ul className="grid gap-2 border-t border-border p-2 sm:grid-cols-2 sm:p-3">
+                        {stack.reports.map((report) => (
+                          <li key={report.id} className="min-w-0">
+                            <div className="grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-surface-raised p-2 shadow-raised transition-colors hover:border-brand-blue/40 sm:p-3">
+                              <label className="grid size-11 cursor-pointer place-items-center self-start">
+                                <span className="sr-only">Select {report.title}</span>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select ${report.title}`}
+                                  checked={selected.has(report.id)}
+                                  onChange={() => toggle(report.id)}
+                                  className="size-5 accent-brand-blue"
+                                />
+                              </label>
+                              <Link
+                                to="/reports/$id"
+                                params={{ id: report.id }}
+                                className="flex min-w-0 flex-col gap-2 px-1 py-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-accent/70"
+                              >
+                                <div className="grid min-w-0 gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
+                                  <span className="line-clamp-2 min-w-0 break-words font-semibold leading-snug">
+                                    {report.title}
+                                  </span>
+                                  <span className="w-fit shrink-0">
+                                    <ReportStatusPill status={report.status} />
+                                  </span>
+                                </div>
+                                <span className="flex min-w-0 flex-col gap-0.5 break-words text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1">
+                                  <span>
+                                    {report.isQuick && !report.projectId
+                                      ? "Custom report"
+                                      : "Project report"}
+                                  </span>
+                                  <span className="hidden sm:inline" aria-hidden="true">
+                                    ·
+                                  </span>
+                                  <span>
+                                    <span className="font-medium text-foreground/80">
+                                      Reference:
+                                    </span>{" "}
+                                    {report.reference || "None"}
+                                  </span>
+                                  <span className="hidden sm:inline" aria-hidden="true">
+                                    ·
+                                  </span>
+                                  <span>
+                                    <span className="font-medium text-foreground/80">Updated:</span>{" "}
+                                    {report.updated}
+                                  </span>
+                                </span>
+                              </Link>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </>
         )}
