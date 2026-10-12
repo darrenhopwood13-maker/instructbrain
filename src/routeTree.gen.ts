@@ -34,6 +34,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsIdRouteImport } from './routes/_authenticated/reports.$id'
+import { Route as AuthenticatedReportsChooseRouteImport } from './routes/_authenticated/reports.choose'
 import { Route as AuthenticatedReportsNewRouteImport } from './routes/_authenticated/reports.new'
 import { Route as AuthenticatedReportsQuickRouteImport } from './routes/_authenticated/reports.quick'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings.account'
@@ -180,6 +181,12 @@ const AuthenticatedReportsIdRoute = AuthenticatedReportsIdRouteImport.update({
   path: '/reports/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReportsChooseRoute =
+  AuthenticatedReportsChooseRouteImport.update({
+    id: '/reports/choose',
+    path: '/reports/choose',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsNewRoute = AuthenticatedReportsNewRouteImport.update({
   id: '/reports/new',
   path: '/reports/new',
@@ -310,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/reports/choose': typeof AuthenticatedReportsChooseRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/shared/$token': typeof SharedTokenRoute
   '/trade/$token': typeof TradeTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/reports/choose': typeof AuthenticatedReportsChooseRoute
   '/reports/new': typeof AuthenticatedReportsNewRoute
   '/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRouteWithChildren
   '/_authenticated/reports/$id': typeof AuthenticatedReportsIdRouteWithChildren
+  '/_authenticated/reports/choose': typeof AuthenticatedReportsChooseRoute
   '/_authenticated/reports/new': typeof AuthenticatedReportsNewRoute
   '/_authenticated/reports/quick': typeof AuthenticatedReportsQuickRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/projects/$id'
     | '/reports/$id'
+    | '/reports/choose'
     | '/reports/new'
     | '/reports/quick'
     | '/settings/account'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/shared/$token'
     | '/trade/$token'
     | '/.lovable/oauth/consent'
+    | '/reports/choose'
     | '/reports/new'
     | '/reports/quick'
     | '/settings/account'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/_authenticated/projects/$id'
     | '/_authenticated/reports/$id'
+    | '/_authenticated/reports/choose'
     | '/_authenticated/reports/new'
     | '/_authenticated/reports/quick'
     | '/_authenticated/settings/account'
@@ -752,6 +765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/choose': {
+      id: '/_authenticated/reports/choose'
+      path: '/reports/choose'
+      fullPath: '/reports/choose'
+      preLoaderRoute: typeof AuthenticatedReportsChooseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/new': {
       id: '/_authenticated/reports/new'
       path: '/reports/new'
@@ -948,6 +968,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRouteWithChildren
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
+  AuthenticatedReportsChooseRoute: typeof AuthenticatedReportsChooseRoute
   AuthenticatedReportsNewRoute: typeof AuthenticatedReportsNewRoute
   AuthenticatedReportsQuickRoute: typeof AuthenticatedReportsQuickRoute
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
@@ -964,6 +985,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRouteWithChildren,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,
+  AuthenticatedReportsChooseRoute: AuthenticatedReportsChooseRoute,
   AuthenticatedReportsNewRoute: AuthenticatedReportsNewRoute,
   AuthenticatedReportsQuickRoute: AuthenticatedReportsQuickRoute,
   AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,

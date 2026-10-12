@@ -12,6 +12,7 @@ import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
 import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
 import { photoWorkflowOf } from "@/lib/survey-types";
 import { TemplateSelect } from "@/components/template-select";
+import { LAST_BRIEF_KEY } from "@/lib/report/last-template";
 import {
   Select,
   SelectContent,
@@ -72,22 +73,6 @@ export const Route = createFileRoute("/_authenticated/reports/quick")({
   },
   component: CustomReport,
 });
-
-// Group headings only — the templates themselves carry every discipline term.
-const CATEGORY_LABELS: Record<string, string> = {
-  condition_survey: "Building fabric",
-  condition: "Building fabric",
-  snagging: "Quality & handover",
-  fit_out: "Quality & handover",
-  site_walk: "Site & safety",
-  inventory: "Property records",
-  electrical: "Electrical",
-  mechanical: "Mechanical & HVAC",
-  record: "Photographic records",
-};
-
-/** Device-local memory of the last brief used, so capture needs no set-up. */
-const LAST_BRIEF_KEY = "instructbrain.custom-report.last-brief";
 
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", {
@@ -213,20 +198,6 @@ function CustomReport() {
       null,
     [templateId],
   );
-
-  const groupedTemplates = useMemo(() => {
-    const groups: { category: string; label: string; definitions: typeof systemDefinitions }[] = [];
-    for (const definition of systemDefinitions) {
-      const category = definition.category ?? "other";
-      let group = groups.find((entry) => entry.category === category);
-      if (!group) {
-        group = { category, label: CATEGORY_LABELS[category] ?? "Other", definitions: [] };
-        groups.push(group);
-      }
-      group.definitions.push(definition);
-    }
-    return groups;
-  }, []);
 
   const identifier = reportType === "identifier";
   // A minimal record template carries no fix, no severity and no report type

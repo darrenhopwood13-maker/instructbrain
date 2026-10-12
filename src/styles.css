@@ -249,6 +249,29 @@
 }
 
 /*
+ * Radix renders a select popup in a portal on <body>, outside whichever surface
+ * opened it, so the popup has to carry that surface's own tokens with it. Without
+ * this the report template list rendered in the console's navy on a white working
+ * screen - a navy panel inside a white screen reads as a hole rather than as
+ * something you opened. Dal asked for the white panel on 12 Oct 2026.
+ */
+.popover-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.035 262);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.035 262);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.035 262);
+  --muted: oklch(0.962 0.006 262);
+  --muted-foreground: oklch(0.44 0.025 262);
+  --accent: oklch(0.97 0.045 135);
+  --accent-foreground: oklch(0.4273 0.1344 138.9);
+  --border: oklch(0.9 0.012 262);
+  --border-strong: oklch(0.8 0.02 262);
+  --ring: oklch(0.44 0.16 258);
+}
+
+/*
  * Working-screen scope — capture, photos, review and the compliance register.
  * Same light sheet as `.paper`, with the exact dashboard brand orange used for
  * primary actions and accents. Chrome is stripped: no

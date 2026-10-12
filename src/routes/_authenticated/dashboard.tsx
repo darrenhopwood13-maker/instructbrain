@@ -97,7 +97,7 @@ function Dashboard() {
           <button
             type="button"
             onClick={() => {
-              void navigate({ to: "/reports/quick", search: {} });
+              void navigate({ to: "/reports/choose", search: {} });
             }}
             className="ib-btn-3d dash-cta primary"
           >
