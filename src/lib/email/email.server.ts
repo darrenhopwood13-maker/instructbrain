@@ -352,11 +352,20 @@ export async function sendReportSharedEmail(
 ): Promise<SendOutcome> {
   const { data: report, error } = await db
     .from("reports")
-    .select("id, title, reference, report_date, issued_at, project_id, projects(name)")
+    .select("id, title, reference, report_date, issued_at, status, project_id, projects(name)")
     .eq("id", input.reportId)
     .single();
   if (error || !report) throw new Error("That report could not be read, so nothing was sent.");
   const row = report as Record<string, any>;
+
+  // Nothing external exists for a report that is not published. Sending anyway
+  // did not fail loudly: the client email lost its share link and its
+  // attachment and went out empty, which is worse than being refused.
+  if ((row["status"] as string | null) !== "issued") {
+    throw new Error(
+      "This report has not been published yet, so there is nothing for the client to open. Publish it, then send.",
+    );
+  }
 
   const { data: share } = await db
     .from("report_shares")
@@ -612,6 +621,17 @@ async function ensureShareLink(
   }
 
   const expires = new Date(Date.now() + 30 * 86_400_000).toISOString();
+
+  // Pinned to the version in force at mint time, the same way the Share menu
+  // does it, so both routes record the same fact about what the client was sent.
+  const { data: versionRows } = await db
+    .from("report_versions")
+    .select("id, version")
+    .eq("report_id", reportId)
+    .order("version", { ascending: false })
+    .limit(1);
+  const versionId = ((versionRows ?? []) as Array<{ id: string }>)[0]?.id ?? null;
+
   const { data: created, error } = await db
     .from("report_shares")
     .insert({
@@ -620,6 +640,7 @@ async function ensureShareLink(
       token: shareToken(),
       label: "Sent by email",
       expires_at: expires,
+      version_id: versionId,
     })
     .select("id, token")
     .single();
@@ -631,7 +652,12 @@ async function ensureShareLink(
     actor_id: null,
     action: "report.share_created",
     before: null,
-    after: { share_id: share.id, expires_at: expires, via: "trade_extract_send" },
+    after: {
+      share_id: share.id,
+      expires_at: expires,
+      version_id: versionId,
+      via: "trade_extract_send",
+    },
   });
   return shareUrlForToken(share.token);
 }
@@ -697,6 +723,10 @@ export async function sendTradeExtractEmail(
       items,
       itemListUrl: link?.url ?? null,
       itemListIsReadOnly: link?.readOnly ?? false,
+      // A work pack for a report that is not published yet goes out labelled as
+      // a draft, so a supplier can start early without it reading as the
+      // client's finished report.
+      isDraft: (row["status"] as string | null) !== "issued",
       sentByName: await senderNameFor(row["author_id"] as string | null, actor.claims, "Your surveyor"),
       attachment,
     },
@@ -737,7 +767,7 @@ export async function sendCloseOutRequestEmail(
 ): Promise<SendOutcome> {
   const { data: finding, error } = await db
     .from("findings")
-    .select("id, ref, remedial_text, finding_text, due_date, is_confidential, capture_fields")
+    .select("id, ref, remedial_text, finding_text, due_date, is_confidential, capture_fields, assigned_trade")
     .eq("id", input.findingId)
     .single();
   if (error || !finding) throw new Error("That item could not be read, so nothing was sent.");
@@ -748,15 +778,26 @@ export async function sendCloseOutRequestEmail(
 
   const { data: report } = await db
     .from("reports")
-    .select("projects(name)")
+    .select("id, status, organisation_id, projects(name)")
     .eq("id", input.reportId)
     .single();
+  const reportRow = (report ?? {}) as Record<string, any>;
   const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
 
   const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
   const attachment = await buildEmailPdf(db, input.reportId, {
     variant: "item",
     findingIds: [input.findingId],
+  });
+
+  // The close-out link goes to the same no-sign-in page the trade pack uses.
+  // It used to be an in-app /reports/<id> URL, which a subcontractor cannot
+  // open -- contradicting the rule stated above `itemListLinkFor`.
+  const link = await itemListLinkFor(db, {
+    reportId: input.reportId,
+    organisationId: (reportRow["organisation_id"] as string | null) ?? null,
+    trade: (row["assigned_trade"] as string | null) ?? null,
+    status: (reportRow["status"] as string | null) ?? null,
   });
 
   const message: EmailMessage = {
@@ -766,8 +807,8 @@ export async function sendCloseOutRequestEmail(
       location: resolveLocation(fields) || "Not recorded",
       requiredAction: (row["remedial_text"] as string) || (row["finding_text"] as string) || "",
       targetDate: (row["due_date"] as string | null) ?? null,
-      projectName: ((report as Record<string, any>)?.["projects"]?.["name"] as string) ?? "this project",
-      itemListUrl: absoluteUrl(`/reports/${input.reportId}`),
+      projectName: (reportRow["projects"]?.["name"] as string) ?? "this project",
+      itemListUrl: link?.url ?? null,
       sentByName: actorName(actor.claims, "Your surveyor"),
       attachment,
     },

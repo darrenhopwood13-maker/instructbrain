@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { shareAccessDecision } from "@/lib/report/share-access";
+
 /**
  * Read-only share link. No account is needed, so this endpoint does the work
  * that RLS would otherwise do: it validates the token, checks the expiry, and
@@ -90,15 +92,24 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
         const rawReport = reports?.[0];
         if (!rawReport) return Response.json({ error: "Report not found." }, { status: 404 });
 
+        // One rule, stated once: nothing outside the organisation reads a report
+        // that is not published. The status check used to live inside the manual
+        // branch only, so an ordinary report's link served live content whatever
+        // its status -- including the working copy after `reopenReport`.
+        const access = shareAccessDecision({
+          status: (rawReport.status as string | null) ?? null,
+          manualOnly: rawReport.survey_type_snapshot?.manualOnly === true,
+        });
+        if (!access.allowed) {
+          return Response.json(
+            { reason: access.reason, error: access.error },
+            { status: access.httpStatus },
+          );
+        }
+
         // Manual photographic reports are shared as the finished PDF only —
         // no review page, so no report content leaves through this endpoint.
-        if (rawReport.survey_type_snapshot?.manualOnly === true) {
-          if (rawReport.status !== "issued") {
-            return Response.json(
-              { reason: "unknown", error: "This report is not currently published." },
-              { status: 404 },
-            );
-          }
+        if (access.pdfOnly) {
           const { data: org } = await admin
             .from("organisations")
             .select("name")

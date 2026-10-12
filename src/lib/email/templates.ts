@@ -88,6 +88,12 @@ export type TradeExtractPayload = {
    * sign in.
    */
   itemListUrl: string | null;
+  /**
+   * True when the report behind this work pack has not been published yet. The
+   * pack is still sent -- a supplier can usefully start early -- but it must be
+   * impossible to mistake for a client report.
+   */
+  isDraft?: boolean;
   /** True when the link opens a read-only copy of the report, not a live list. */
   itemListIsReadOnly?: boolean;
   sentByName: string;
@@ -100,7 +106,7 @@ export type CloseOutPayload = {
   requiredAction: string;
   targetDate: string | null;
   projectName: string;
-  itemListUrl: string;
+  itemListUrl: string | null;
   sentByName: string;
   attachment?: EmailAttachment | null;
 };
@@ -394,10 +400,14 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   const earliest = earliestTargetDate(data.items);
   // A custom report has no project to name, so the subject leaves it out rather
   // than naming a placeholder.
-  const subject = [data.trade, `${count} item${count === 1 ? "" : "s"}`, data.projectName]
-    .filter(Boolean)
-    .join(" — ")
-    .concat(data.reportReference ? ` (${data.reportReference})` : "");
+  // A work pack for an unpublished report says so, in the subject line and on
+  // the face of the message. It is still sent -- starting early is the point --
+  // but it must not read as the client's report.
+  const subject = (data.isDraft ? "DRAFT WORK PACK — " : "")
+    + [data.trade, `${count} item${count === 1 ? "" : "s"}`, data.projectName]
+      .filter(Boolean)
+      .join(" — ")
+      .concat(data.reportReference ? ` (${data.reportReference})` : "");
   const breakdownLine = breakdown.map((entry) => `${entry.label}: ${entry.count}`).join(", ");
 
   // With no project to point at, the survey is identified by the day it was
@@ -415,6 +425,13 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   const html = shell(subject, [
     h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
     p(`${data.sentByName} has sent you the items below from ${surveyPhrase}.`),
+    ...(data.isDraft
+      ? [
+          p(
+            "<strong>DRAFT WORK PACK.</strong> The report behind these items has not been published yet, so the wording and the list may still change.",
+          ),
+        ]
+      : []),
     definitions([
       ...(data.projectName ? [["Project", data.projectName] as [string, string]] : []),
       ["Report reference", data.reportReference ?? ""],
@@ -433,6 +450,12 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
     `${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`,
     "",
     `${data.sentByName} has sent you the items below from ${surveyPhrase}.`,
+    ...(data.isDraft
+      ? [
+          "",
+          "DRAFT WORK PACK - the report behind these items has not been published yet, so the list may still change.",
+        ]
+      : []),
     "",
     data.projectName ? `Project: ${data.projectName}` : "",
     data.reportReference ? `Report reference: ${data.reportReference}` : "",
@@ -469,13 +492,16 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
       ["Required action", data.requiredAction],
       ["Target date", data.targetDate ?? "Not set"],
     ]),
-    button("Update this item", data.itemListUrl),
+    ...(data.itemListUrl ? [button("Update this item", data.itemListUrl)] : []),
     small(
-      data.attachment
-        ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
-        : "Recording the close-out keeps the report complete and defensible.",
+      data.itemListUrl
+        ? data.attachment
+          ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
+          : "Recording the close-out keeps the report complete and defensible."
+        : "Reply to this email with an update on this item and the surveyor will record the close-out.",
     ),
   ].join(""));
+
   const text = textShell([
     `${itemLabel(data.ref)} is overdue`,
     "",
@@ -487,7 +513,9 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
     `Required action: ${data.requiredAction}`,
     `Target date: ${data.targetDate ?? "Not set"}`,
     "",
-    `Update this item: ${data.itemListUrl}`,
+    ...(data.itemListUrl
+      ? [`Update this item: ${data.itemListUrl}`]
+      : ["Reply to this email with an update on this item."]),
     ...(data.attachment ? ["", "A PDF of this item is attached."] : []),
   ]);
   return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };

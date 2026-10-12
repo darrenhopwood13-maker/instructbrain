@@ -385,17 +385,63 @@ export type FindingPatch = Partial<{
   lifecycle_updated_at: string | null;
 }>;
 
+/**
+ * The fields that carry the content a person is vouching for when they confirm
+ * an item. Editing any of them withdraws the approval, because the approval was
+ * about that wording, that remedy, that severity.
+ *
+ * Deliberately NOT here: assignment and dates. "This is a bricklayer's job" and
+ * "it is due on Friday" are decisions about routing and programme, not about
+ * whether the description is true -- and treating allocation as approval of the
+ * wording is the defect this list exists to stop.
+ */
+export const MATERIAL_CONTENT_FIELDS = [
+  "finding_text",
+  "snag_title",
+  "remedial_text",
+  "rectification_alt",
+  "tradesman_hack",
+  "hs_notes",
+  "likely_cause",
+  "capture_fields",
+  "severity",
+  "condition_grade",
+  "regulatory_reference",
+] as const;
+
+/** Does this patch change what the item SAYS, as opposed to where it is routed? */
+export function withdrawsConfirmation(patch: FindingPatch): boolean {
+  return MATERIAL_CONTENT_FIELDS.some((field) => patch[field] !== undefined);
+}
+
 export async function updateFinding(
   reportId: string,
   findingId: string,
   patch: FindingPatch,
   before: Record<string, unknown>,
+  /**
+   * Named so that allocation reads as allocation in the audit trail. Without
+   * this every write looks like "finding.update" and the record cannot tell a
+   * trade decision from a wording correction.
+   */
+  auditAction: string = "finding.update",
 ): Promise<void> {
+  // The rule lives here, in the one write path, rather than on each screen. A
+  // screen can be forgotten; this cannot.
+  //
+  // A patch that states its own confirmation is a confirmation and keeps it --
+  // that is what the review screen sends when a person approves an item.
+  const withdraw: FindingPatch =
+    withdrawsConfirmation(patch) && patch.confirmed_at === undefined
+      ? { confirmed_at: null, confirmed_by: null }
+      : {};
+  const next: FindingPatch = { ...patch, ...withdraw };
+
   const { error } = await from("findings")
-    .update({ ...patch, human_edited: true })
+    .update({ ...next, human_edited: true })
     .eq("id", findingId);
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
-  await writeAudit({ reportId, findingId, action: "finding.update", before, after: patch });
+  await writeAudit({ reportId, findingId, action: auditAction, before, after: next });
 }
 
 /**
@@ -514,7 +560,40 @@ export type ShareLink = {
   label: string | null;
   expires_at: string | null;
   revoked_at: string | null;
+  /**
+   * The issued report version this link was minted against, or null for a link
+   * created before version pinning existed.
+   *
+   * Recorded on mint. NOT YET READ by the public endpoint, on purpose: serving
+   * a link from its frozen version needs a mapper from the stored document
+   * shape to the public payload shape, and a mapper that is subtly wrong shows
+   * a client the WRONG report -- a worse failure than showing the current
+   * published one. The safety half (refusing to serve anything unpublished) is
+   * in place via share-access.ts; this column is the raw material for the
+   * fidelity half.
+   */
+  version_id: string | null;
 };
+
+/** The id of the version the report currently points at, or null if it has none. */
+async function currentVersionId(reportId: string): Promise<string | null> {
+  const { data: reports } = await from("reports")
+    .select("current_version")
+    .eq("id", reportId)
+    .limit(1);
+  // 0 and null both mean "never issued" -- issueReport numbers versions from 1.
+  // A draft therefore has nothing to pin to, which is correct: a link cannot be
+  // pinned to a version that was never written.
+  const current = (reports as Array<{ current_version: number | null }> | null)?.[0]?.current_version;
+  if (!current) return null;
+
+  const { data: versions } = await from("report_versions")
+    .select("id")
+    .eq("report_id", reportId)
+    .eq("version", current)
+    .limit(1);
+  return (versions as Array<{ id: string }> | null)?.[0]?.id ?? null;
+}
 
 export const reportSharesQuery = (reportId: string) =>
   queryOptions({
@@ -522,7 +601,7 @@ export const reportSharesQuery = (reportId: string) =>
     queryFn: async (): Promise<ShareLink[]> =>
       unwrap(
         await from("report_shares")
-          .select("id, token, label, expires_at, revoked_at")
+          .select("id, token, label, expires_at, revoked_at, version_id")
           .eq("report_id", reportId)
           .order("created_at", { ascending: false }),
       ) as ShareLink[],
@@ -544,6 +623,11 @@ export async function createShareLink(input: {
   const { data: userData } = await supabase.auth.getUser();
   const expires =
     input.days === null ? null : new Date(Date.now() + input.days * 86_400_000).toISOString();
+  // Pin the link to the version in force at the moment it is minted. Recorded
+  // now so that "what did this client actually see" becomes answerable; the
+  // public endpoint still reads live content until the frozen-document reader
+  // lands (see the note on ShareLink.version_id).
+  const versionId = await currentVersionId(input.reportId);
   const { data, error } = await from("report_shares")
     .insert({
       report_id: input.reportId,
@@ -551,9 +635,10 @@ export async function createShareLink(input: {
       token: shareToken(),
       label: input.label ?? null,
       expires_at: expires,
+      version_id: versionId,
       created_by: userData.user?.id ?? null,
     })
-    .select("id, token, label, expires_at, revoked_at")
+    .select("id, token, label, expires_at, revoked_at, version_id")
     .single();
   if (error) throw new DataError(error.message, error.code, error.hint, error.details);
   const share = data as ShareLink;
@@ -561,7 +646,7 @@ export async function createShareLink(input: {
     reportId: input.reportId,
     action: "report.share_created",
     before: null,
-    after: { share_id: share.id, expires_at: expires },
+    after: { share_id: share.id, expires_at: expires, version_id: versionId },
   });
   return share;
 }

@@ -199,7 +199,6 @@ function ReportWorkspace() {
    */
   const onAssignTrade = async (findingId: string, assignment: TradeAssignment) => {
     const before = (findings.data ?? []).find((item) => item.id === findingId);
-    const { data: user } = await supabase.auth.getUser();
     const confirmedAt = new Date();
     const snapshot = query.data?.report.surveyTypeSnapshot ?? null;
     const derived = deriveDueDate(snapshot, before?.severity ?? null, confirmedAt);
@@ -213,8 +212,6 @@ function ReportWorkspace() {
         due_date: dueDate,
         due_date_overridden:
           assignment.dueDateOverridden && dueDate !== derived.dueDate,
-        confirmed_at: confirmedAt.toISOString(),
-        confirmed_by: user.user?.id ?? null,
         lifecycle_state: assignment.trade
           ? stateAfterAssignment(before?.lifecycleState)
           : "open",
@@ -224,6 +221,10 @@ function ReportWorkspace() {
         ai_suggested_trade: before?.aiSuggestedTrade ?? null,
         due_date: before?.dueDate ?? null,
       },
+      // Allocation is not approval of the wording. It used to write
+      // confirmed_at/confirmed_by here, which quietly satisfied the publish
+      // gate: a report could be issued asserting every item had been read.
+      "finding.allocate",
     );
     await refresh();
   };
@@ -235,7 +236,6 @@ function ReportWorkspace() {
    */
   const assignTradeToMany = async (findingIds: string[], trade: string) => {
     if (findingIds.length === 0) return;
-    const { data: user } = await supabase.auth.getUser();
     const confirmedAt = new Date();
     const snapshot = query.data?.report.surveyTypeSnapshot ?? null;
     const all = findings.data ?? [];
@@ -250,8 +250,6 @@ function ReportWorkspace() {
         {
           assigned_trade: trade,
           due_date: before.dueDateOverridden ? (before.dueDate ?? null) : derived.dueDate,
-          confirmed_at: confirmedAt.toISOString(),
-          confirmed_by: user.user?.id ?? null,
           lifecycle_state: stateAfterAssignment(before.lifecycleState),
         },
         {
@@ -259,6 +257,9 @@ function ReportWorkspace() {
           ai_suggested_trade: before.aiSuggestedTrade ?? null,
           due_date: before.dueDate ?? null,
         },
+        // Same rule as the single assignment above: routing a batch of items is
+        // not reading them. This path used to write confirmed_at too.
+        "finding.allocate",
       );
     }
     await refresh();
