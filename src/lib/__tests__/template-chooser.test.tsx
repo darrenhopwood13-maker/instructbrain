@@ -49,7 +49,7 @@ describe("choosing a report on a working screen", () => {
     renderChooser();
     expect(
       screen.getByText(
-        "Condition of each element, room by room, on a four-step grade. Records, does not ask for a fix.",
+        "Condition of each building element on a four-step grade, A to D. It records; it does not ask for a fix.",
       ),
     ).toBeTruthy();
   });

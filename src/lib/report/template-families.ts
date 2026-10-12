@@ -40,7 +40,17 @@ export type TemplateChoice = {
   purpose: string;
 };
 
-/** Keyed by the definition id: the id is the contract, the label is not. */
+/**
+ * Keyed by the definition id: the id is the contract, the label is not.
+ *
+ * Every line here was checked against the template it describes - its severity
+ * scale, its statuses, what it asks for and its output sections - on 12 Oct 2026,
+ * because a line that promises something the template does not do is worse than no
+ * line at all. Two were corrected by that check: the schedule of condition records
+ * building ELEMENTS, not rooms, and the weatherproofing survey has no "extent
+ * affected" field, so neither claim is made. A test fails if a template ever loses
+ * its line.
+ */
 export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
   snagging: {
     family: "snagging",
@@ -50,20 +60,22 @@ export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
   fitout_quality: {
     family: "snagging",
     purpose:
-      "Finished work checked against the drawing and the specification, including tolerances.",
+      "Finished work checked against the drawing and the specification, including tolerances and unresolved junctions.",
   },
   schedule_of_condition: {
     family: "condition",
     purpose:
-      "Condition of each element, room by room, on a four-step grade. Records, does not ask for a fix.",
+      "Condition of each building element on a four-step grade, A to D. It records; it does not ask for a fix.",
   },
   weatherproofing: {
     family: "condition",
-    purpose: "Roof and membrane condition, with the membrane type and the extent affected.",
+    purpose:
+      "Roof and membrane condition, with the membrane type named and whether water is getting in now.",
   },
   damp_moisture: {
     family: "condition",
-    purpose: "Moisture diagnosed as active, historic or widespread, with a meter reading.",
+    purpose:
+      "Moisture read as active, historic or surface marking, with a meter reading. Mould where people live escalates.",
   },
   site_walk: {
     family: "site",
@@ -79,11 +91,12 @@ export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
   },
   property_inventory: {
     family: "records",
-    purpose: "Rooms, contents and condition item by item, with quantities.",
+    purpose:
+      "Rooms, contents and condition item by item, with quantities. Built for check-in and check-out.",
   },
   certificate_register: {
     family: "records",
-    purpose: "The register of certificates: what it covers, who issued it, when it runs out.",
+    purpose: "The register of certificates: what each one covers and when it runs out.",
   },
   manual_photo_report: {
     family: "records",
@@ -91,7 +104,8 @@ export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
   },
   photo_condition_record: {
     family: "records",
-    purpose: "A dated photographic record. Nothing is graded and nothing is analysed.",
+    purpose:
+      "One photograph per item, marked sound or as an issue. No severity ladder, nothing analysed.",
   },
 };
 
