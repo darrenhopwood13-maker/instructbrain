@@ -1864,14 +1864,15 @@ async function buildInventoryReportPdf(
     const gap = 10;
     const width = Math.min(214, (writer.contentWidth - gap * Math.max(0, available.length - 1)) / Math.max(1, available.length));
     const totalWidth = width * available.length + gap * Math.max(0, available.length - 1);
-    // drawImageAt takes the image's TOP edge, and a title photograph can be a full 100pt tall,
-    // so a top of 135 puts the strip at y 35-135 - straight over the report date (y 95) and the
-    // reference footer (y 62), both of which are page-centred. That is what hid the start of
-    // both lines on every inventory cover. The strip now sits in the clear band under the
-    // header block, so its lowest possible edge (305 - 100) stays well clear of the date.
+    // drawImageAt takes the image's TOP edge, and a title photograph can be a full 100pt tall.
+    // A top of 135 put the strip at y 35-135 - straight over the report date (y 95) and the
+    // reference footer (y 62), both page-centred, which is what hid the start of both lines.
+    // The clear band on this cover runs from the client line down to the date: the header block
+    // ends at about y 265 (client line) and the date glyphs start at about y 106. With a top of
+    // 250 the strip occupies y 150-250, clear of both.
     const startX = (LANDSCAPE_LETTER.width - totalWidth) / 2;
     available.forEach((entry, index) => {
-      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 305, width, 100);
+      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 250, width, 100);
     });
   }
 
