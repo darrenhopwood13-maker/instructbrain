@@ -20,9 +20,9 @@ import { absoluteUrl } from "@/lib/site-url";
 import { BRAND_CREDIT } from "@/lib/brand";
 
 // Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
-const TITLE = "instructBrain — construction reports from site photographs";
+const TITLE = "instructBrain — client-ready reports from site photographs";
 const DESCRIPTION =
-  "instructBrain turns site photographs into client-ready construction reports: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and publish. Free for your first 3 reports.";
+  "instructBrain turns site photographs into client-ready reports, referenced against the health and safety and building regulations that apply: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and publish. Free for your first 3 reports.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -95,6 +95,7 @@ function Landing() {
         <TrustStrip />
         <HowItWorks />
         <PlainEnglish />
+        <RegulationReference />
         <Pricing />
         <ClosingCta />
       </main>
@@ -169,8 +170,9 @@ function Hero() {
             Walk the site. Publish the same afternoon.
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
-            Point, shoot, done. instructBrain turns your site photos into a referenced
-            construction report — with the proof and the dates regulators ask for.
+            Point, shoot, done. instructBrain turns your site photos into a client-ready report,
+            referenced against the health and safety and building regulations that apply — with the
+            proof and the dates regulators ask for.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
             <Link to="/auth/sign-up" className="ib-btn-split">
@@ -509,6 +511,12 @@ function PlainEnglish() {
             review, correct anything wrong, and publish.
           </p>
         </Reveal>
+        <Reveal delayMs={250}>
+          <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+            Where a finding sits under a regulation, it names the one from the verified set — and
+            never invents a number.
+          </p>
+        </Reveal>
         <Reveal delayMs={300}>
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
             <li className="glass-panel rounded-xl p-5">
@@ -521,6 +529,87 @@ function PlainEnglish() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Findings involving people are restricted to supervisors and above, and excluded
                 from every subcontractor distribution at the database level.
+              </p>
+            </li>
+          </ul>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+const REGULATION_GROUPS = [
+  "Health and safety framework, and the duties that sit on people",
+  "Site hazards and occupational health",
+  "Building, fire and statutory compliance",
+  "British Standards",
+  "Statutory and HSE guidance",
+];
+
+const REGULATION_INSTRUMENTS = [
+  "HSWA 1974",
+  "MHSWR 1999",
+  "RIDDOR 2013",
+  "COSHH 2002",
+  "Work at Height 2005",
+  "Building Regulations 2010 Parts A, B, M and L",
+  "Fire Safety Order 2005",
+  "Building Safety Act 2022",
+  "BS 7671",
+  "BS 5839-1",
+  "BS 8102",
+];
+
+function RegulationReference() {
+  return (
+    <section className="shell-container py-12 lg:py-16" aria-labelledby="regs-heading">
+      <div className="max-w-3xl">
+        <Reveal>
+          <p className="eyebrow">Health, safety and building regulations</p>
+          <h2 id="regs-heading" className="editorial-title mt-3 text-3xl font-bold sm:text-4xl">
+            Every type of building reg, powered by instructBrain
+          </h2>
+        </Reveal>
+        <Reveal delayMs={100}>
+          <p className="mt-8 text-lg leading-relaxed text-muted-foreground">
+            Every finding can name the regulation it sits under — chosen from a verified set, never
+            invented. The set covers:
+          </p>
+        </Reveal>
+        <Reveal delayMs={200}>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {REGULATION_GROUPS.map((group) => (
+              <li key={group} className="glass-panel rounded-xl p-5 text-sm text-muted-foreground">
+                {group}
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+        <Reveal delayMs={300}>
+          <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            {REGULATION_INSTRUMENTS.join(" · ")}
+          </p>
+        </Reveal>
+        <Reveal delayMs={400}>
+          <p className="glass-panel editorial-title mt-8 rounded-2xl p-7 text-xl font-semibold leading-relaxed sm:text-2xl">
+            A regulation is cited from the verified list, or it isn’t cited at all. If the instrument
+            you want isn’t in it, the citation is named in words and flagged for confirmation. An
+            invented clause number is the one thing that never happens.
+          </p>
+        </Reveal>
+        <Reveal delayMs={500}>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            <li className="glass-panel rounded-xl p-5">
+              <p className="mt-2 text-sm text-muted-foreground">
+                The set is UK law — England and Wales. Scotland and Northern Ireland differ, and
+                where a project sits outside England and Wales the report says the citation must be
+                checked for that jurisdiction.
+              </p>
+            </li>
+            <li className="glass-panel rounded-xl p-5">
+              <p className="mt-2 text-sm text-muted-foreground">
+                British Standard numbers are reliable; editions and amendments move, so where an
+                edition matters the report notes that it should be confirmed.
               </p>
             </li>
           </ul>
@@ -676,7 +765,8 @@ function ClosingCta() {
             </h2>
             <p className="mt-4 text-base text-muted-foreground sm:text-lg">
               Three reports free. No card required. Custom Reports, Project Reports and Compliance
-              Registers — bring the photographs you already have.
+              Registers, written against the regs that apply — bring the photographs you already
+              have.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button variant="brand" size="lg" asChild>

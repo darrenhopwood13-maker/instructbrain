@@ -25,12 +25,12 @@ export const Route = createFileRoute("/auth/sign-up")({
       {
         name: "description",
         content:
-          "Turn site photos into client-ready construction reports. Start with 3 free reports, no card needed.",
+          "Turn site photos into client-ready reports, referenced against the health and safety and building regulations that apply. Start with 3 free reports, no card needed.",
       },
       { property: "og:title", content: "3 free reports — instructBrain" },
       {
         property: "og:description",
-        content: "Turn site photos into client-ready construction reports. Start with 3 free reports, no card needed.",
+        content: "Turn site photos into client-ready reports, referenced against the health and safety and building regulations that apply. Start with 3 free reports, no card needed.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -99,7 +99,7 @@ function SignUp() {
   return (
     <AuthLayout
       title="3 free reports — no card needed"
-      intro="Turn your site photos into client-ready construction reports in minutes. Start now — your first three are on us."
+      intro="Turn your site photos into client-ready reports in minutes, referenced against the health and safety and building regulations that apply. Start now — your first three are on us."
       footer={
         <span className="text-muted-foreground">
           Already have an account?{" "}
