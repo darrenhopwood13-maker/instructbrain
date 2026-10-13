@@ -1864,9 +1864,14 @@ async function buildInventoryReportPdf(
     const gap = 10;
     const width = Math.min(214, (writer.contentWidth - gap * Math.max(0, available.length - 1)) / Math.max(1, available.length));
     const totalWidth = width * available.length + gap * Math.max(0, available.length - 1);
+    // drawImageAt takes the image's TOP edge, and a title photograph can be a full 100pt tall,
+    // so a top of 135 puts the strip at y 35-135 - straight over the report date (y 95) and the
+    // reference footer (y 62), both of which are page-centred. That is what hid the start of
+    // both lines on every inventory cover. The strip now sits in the clear band under the
+    // header block, so its lowest possible edge (305 - 100) stays well clear of the date.
     const startX = (LANDSCAPE_LETTER.width - totalWidth) / 2;
     available.forEach((entry, index) => {
-      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 135, width, 100);
+      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 305, width, 100);
     });
   }
 
