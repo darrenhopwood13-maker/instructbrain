@@ -4,7 +4,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
-  ClipboardList,
   FileText,
   Languages,
   ScanLine,
@@ -131,6 +130,14 @@ function LandingHeader() {
   );
 }
 
+// The three things a visitor can make, in the page's own words (see useCases below).
+// Each one opens sign-up; the 3D objects are the same set the product uses elsewhere.
+const REPORT_WAYS = [
+  { label: "Custom report", line: "One-off inspections and specialist audits", img: "/3d/hard-hat-t.png" },
+  { label: "Project report", line: "Site walks, snagging, weatherproofing", img: "/3d/blueprints-t.png" },
+  { label: "Compliance register", line: "Six checks, on a six-week cycle", img: "/3d/clipboard-t.png" },
+];
+
 function Hero() {
   return (
     <section className="shell-container hero-blueprint hero-topo pb-12 pt-8 lg:pb-20 lg:pt-12">
@@ -147,17 +154,37 @@ function Hero() {
         .ib-btn-minline:hover { background:rgba(26,26,46,.05); }
         /* Blueprint grid backdrop */
         .hero-blueprint { position:relative; }
-        .hero-blueprint::before { content:""; position:absolute; inset:0; background-image: linear-gradient(rgba(43,75,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(43,75,255,.06) 1px, transparent 1px); background-size:38px 38px; pointer-events:none; }
+        .hero-blueprint::before { content:""; position:absolute; inset:0; background-image: linear-gradient(color-mix(in oklab, var(--brand-blue) 32%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--brand-blue) 32%, transparent) 1px, transparent 1px); background-size:38px 38px; pointer-events:none; }
         /* 3D Element buttons live in styles.css (.ib-btn-3d) — shared with the
            dashboard's three feature buttons so both get the same treatment. */
-        .cta-deck { background: rgba(43,75,255,.07); border:1px solid rgba(43,75,255,.22); border-radius:22px; padding:30px 26px 26px; box-shadow:0 10px 34px rgba(43,75,255,.12); }
+        .cta-deck { background: color-mix(in oklab, var(--brand-accent) 7%, transparent); border:1px solid color-mix(in oklab, var(--brand-accent) 26%, transparent); border-radius:22px; padding:30px 26px 26px; box-shadow:0 10px 34px color-mix(in oklab, var(--brand-accent) 10%, transparent); }
         /* hero z-order so the 3D objects sit above the deck edge */
         .cta-deck > * { position:relative; z-index:1; }
         .cta-deck::before { content:""; position:absolute; inset:0; border-radius:22px; background:color-mix(in oklab, var(--brand-accent) 12%, transparent); pointer-events:none; }
-        .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, rgba(43,75,255,.05) 30px 32px); border-radius:50%; pointer-events:none; }
+        /* Hero: the copy gets the width, then the report screen, then the three ways in.
+           One column means there is no second edge to align to, so no block can end up
+           stranded down one side. */
+        .land-hero-top { text-align:center; }
+        /* The site's editorial typography sets paragraphs to justify + text-align-last:start,
+           which lays a single-line paragraph out flush left even when it is told to centre -
+           so the hero's own copy has to say both. */
+        .land-hero-top p { text-align:center; text-align-last:center; }
+        .land-hero-top .ctas { justify-content:center; }
+        .land-hero-screen { margin-top:34px; }
+        .ways-heading { margin:0 0 16px; text-align:center; text-align-last:center; font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-foreground); }
+        .land-ways { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
+        .land-way { display:flex; align-items:center; gap:14px; width:100%; padding:14px 18px; border-radius:16px; background:var(--glass-surface); border:1.5px solid var(--brand-accent); color:var(--foreground); text-decoration:none; transition:background-color .15s, border-color .15s; }
+        .land-way:hover { background:var(--glass-accent-surface); border-color:var(--brand-accent-light); }
+        .land-way img { width:46px; height:46px; flex:0 0 auto; border-radius:50%; object-fit:cover; }
+        .land-way .txt { min-width:0; text-align:left; }
+        .land-way .txt b { display:block; font-size:16px; font-weight:700; }
+        .land-way .txt span { display:block; font-size:13px; color:var(--muted-foreground); }
+        .land-way .go { margin-left:auto; flex:0 0 auto; }
+        @media (max-width: 900px) { .land-ways { grid-template-columns:1fr; } }
+        .hero-topo::after { content:""; position:absolute; right:-70px; top:-70px; width:380px; height:380px; background: repeating-radial-gradient(circle at 30% 30%, transparent 0 30px, color-mix(in oklab, var(--brand-blue) 28%, transparent) 30px 32px); border-radius:50%; pointer-events:none; }
         .hero-topo > * { position:relative; z-index:1; }
       `}</style>
-      <div className="land-hero-grid">
+      <div className="land-hero-top">
         <div>
           <p className="wordmark whitespace-nowrap text-[clamp(2rem,6.5vw,3rem)] leading-none">
             <span className="text-foreground">instruct</span>
@@ -166,15 +193,15 @@ function Hero() {
           <p className="mt-3 text-lg font-light leading-snug text-foreground/90 sm:text-xl">
             Photos in. Client-ready reports out.
           </p>
-          <h1 className="editorial-title mt-4 text-left text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
+          <h1 className="editorial-title mx-auto mt-4 max-w-4xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
             Walk the site. Publish the same afternoon.
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-foreground/85 sm:text-lg">
             Point, shoot, done. instructBrain turns your site photos into a client-ready report,
             referenced against the health and safety and building regulations that apply — with the
             proof and the dates regulators ask for.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="ctas mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
             <Link to="/auth/sign-up" className="ib-btn-split">
               <span className="txt">Start free</span>
               <span className="arrow">
@@ -186,36 +213,26 @@ function Hero() {
             </a>
           </div>
         </div>
-        <ConsoleMock />
       </div>
 
-      <div className="rule-top mt-10 max-w-4xl pt-8">
-        <div className="cta-deck mt-10 max-w-4xl">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Link to="/auth/sign-up" className="ib-btn-3d">
-              <ClipboardList aria-hidden="true" />
-              Create custom report
-              <span className="obj">
-                <ArrowRight aria-hidden="true" />
-                <img src="/3d/hard-hat-t.png" alt="3D hard hat" />
-              </span>
-            </Link>
-            <Link to="/auth/sign-up" className="ib-btn-3d orange">
-              <FileText aria-hidden="true" />
-              Create project report
-              <span className="obj">
-                <ArrowRight aria-hidden="true" />
-                <img src="/3d/blueprints-t.png" alt="3D blueprints" />
-              </span>
-            </Link>
-            <Link to="/auth/sign-up" className="ib-btn-3d whitespace-nowrap">
-              <ShieldCheck aria-hidden="true" />
-              Create register
-              <span className="obj">
-                <ArrowRight aria-hidden="true" />
-                <img src="/3d/clipboard-t.png" alt="3D clipboard" />
-              </span>
-            </Link>
+      <div className="land-hero-screen">
+        <ConsoleMock wide />
+      </div>
+
+      <div className="rule-top mt-10 pt-8">
+        <div className="cta-deck mt-10">
+          <p className="ways-heading">What are you writing up?</p>
+          <div className="land-ways">
+            {REPORT_WAYS.map((way) => (
+              <Link key={way.label} to="/auth/sign-up" className="land-way">
+                <img src={way.img} alt="" aria-hidden="true" />
+                <span className="txt">
+                  <b>{way.label}</b>
+                  <span>{way.line}</span>
+                </span>
+                <ArrowRight aria-hidden="true" className="go size-5" />
+              </Link>
+            ))}
           </div>
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Free for your first 3 reports. No card required.
@@ -225,7 +242,7 @@ function Hero() {
         <RotatingSlogans />
       </div>
 
-      <div className="mt-10 max-w-4xl">
+      <div className="mt-10">
         <PhotoToReport />
       </div>
     </section>
@@ -335,9 +352,14 @@ function UseCases() {
   );
 }
 
-function ConsoleMock() {
+// `wide` is the landing hero's full-width report screen: a longer filmstrip so the screen
+// reads as the product across the page instead of a card floating in a column.
+const CONSOLE_PHOTOS = ["/demo/photo-1.jpg", "/demo/photo-2.jpg", "/demo/photo-5.jpg"];
+const CONSOLE_PHOTOS_WIDE = [...CONSOLE_PHOTOS, "/demo/photo-4.jpg", "/demo/photo-3.jpg"];
+
+function ConsoleMock({ wide = false }: { wide?: boolean } = {}) {
   return (
-    <div className="land-console">
+    <div className={wide ? "land-console land-console-wide" : "land-console"}>
       <div className="topbar">
         <span className="wordmark">
           <span className="i">instruct</span>
@@ -346,9 +368,9 @@ function ConsoleMock() {
         <span>Site walk · ALM-2026-0142</span>
       </div>
       <div className="photostrip">
-        <img src="/demo/photo-1.jpg" alt="" />
-        <img src="/demo/photo-2.jpg" alt="" />
-        <img src="/demo/photo-5.jpg" alt="" />
+        {(wide ? CONSOLE_PHOTOS_WIDE : CONSOLE_PHOTOS).map((photo) => (
+          <img key={photo} src={photo} alt="" />
+        ))}
       </div>
       <div className="panel">
         <div className="rhead">

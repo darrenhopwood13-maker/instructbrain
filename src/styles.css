@@ -1305,8 +1305,13 @@ body:has(.work-surface) :where(button, [role="button"]).bg-destructive:hover,
 .land-console .chip.warn { background:#fff3d9; color:#a87000; }
 .land-console .chip.na { background:#eef0f6; color:#5b6480; }
 .land-console .dock { display:flex; flex-wrap:wrap; gap:8px; padding:12px 14px; background:#fff; border-top:1px solid rgba(26,26,46,.1); }
-.land-console .dock .mini-btn { flex:1 1 auto; min-width:0; text-align:center; font-size:.72rem; font-weight:700; padding:9px 8px; border-radius:999px; border:1px solid rgba(43,75,255,.35); color:#2b4bff; cursor:pointer; white-space:nowrap; }
-.land-console .dock .mini-btn.solid { background:linear-gradient(180deg,rgba(43,75,255,.9),rgba(30,40,90,.95)); color:#fff; border-color:transparent; box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+.land-console .dock .mini-btn { flex:1 1 auto; min-width:0; text-align:center; font-size:.72rem; font-weight:700; padding:9px 8px; border-radius:999px; border:1px solid color-mix(in oklab, var(--brand-accent-deep) 60%, transparent); color:var(--brand-accent-deep); cursor:pointer; white-space:nowrap; }
+.land-console .dock .mini-btn.solid { background:linear-gradient(180deg,var(--brand-accent),var(--brand-accent-deep)); color:#10221a; border-color:transparent; box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+/* the hero's full-width screen: a longer filmstrip and a wider dock, so the screen reads
+   as the product across the page rather than a card floating in a column */
+.land-console-wide .photostrip img { height:132px; }
+.land-console-wide .panel { margin:14px; }
+.land-console-wide .dock .mini-btn { font-size:.78rem; padding:11px 10px; }
 .land-console .topbar .wordmark .i { color:var(--foreground); }
 .land-console .topbar .wordmark .b { color:var(--brand-accent); }
 .land-band { background:#24417B; color:#fff; }
