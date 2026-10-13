@@ -1864,15 +1864,16 @@ async function buildInventoryReportPdf(
     const gap = 10;
     const width = Math.min(214, (writer.contentWidth - gap * Math.max(0, available.length - 1)) / Math.max(1, available.length));
     const totalWidth = width * available.length + gap * Math.max(0, available.length - 1);
-    // drawImageAt takes the image's TOP edge, and a title photograph can be a full 100pt tall.
-    // A top of 135 put the strip at y 35-135 - straight over the report date (y 95) and the
-    // reference footer (y 62), both page-centred, which is what hid the start of both lines.
-    // The clear band on this cover runs from the client line down to the date: the header block
-    // ends at about y 265 (client line) and the date glyphs start at about y 106. With a top of
-    // 250 the strip occupies y 150-250, clear of both.
+    // drawImageAt takes the image's TOP edge and draws at y: top - height, so the strip's
+    // footprint runs from top down to top - height. Measured baselines on this cover: date 95
+    // and footer line 62 (both page-centred), client line 207, project reference 232, address 259.
+    // A top of 135 put the strip over the date and reference; a top of 305 put it over the client
+    // line and the project reference; a top of 250 still reached the client line. The clear band
+    // is between the date glyphs (top ~103) and the client line (glyphs top ~215), so a top of
+    // 200 with an 82pt cap sits the strip at y 118-200 - about 15pt clear of the text either side.
     const startX = (LANDSCAPE_LETTER.width - totalWidth) / 2;
     available.forEach((entry, index) => {
-      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 250, width, 100);
+      drawImageAt(coverPage, entry.image, startX + index * (width + gap), 200, width, 82);
     });
   }
 
