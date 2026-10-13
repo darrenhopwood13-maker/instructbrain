@@ -117,7 +117,7 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     open: { href: "/dashboard", label: "Open dashboard" },
     status: "live",
     tagline:
-      "Site photographs in, client-ready construction reports out - drafted by the AI, reviewed and published by you.",
+      "Site photographs in, client-ready reports out - drafted by the AI, reviewed and published by you.",
     bullets: [
       "Defensible evidence: every photograph carries its own GPS, timestamp and capture details.",
       "The AI drafts each finding and cites the regulation it engages - you review and confirm before anything is published.",
@@ -133,9 +133,9 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     },
     share: {
       message:
-        "Take a look at instructBrain — turns site photos into client-ready construction reports in minutes. Condition surveys, snagging and compliance. Try your first 3 reports free: https://instructbrain.com/hub?product=brain",
+        "Take a look at instructBrain — turns site photos into client-ready reports in minutes, referenced against the regs that apply. Condition surveys, snagging and compliance. Try your first 3 reports free: https://instructbrain.com/hub?product=brain",
       url: "https://instructbrain.com/hub?product=brain",
-      subject: "instructBrain - construction reports from site photographs",
+      subject: "instructBrain - client-ready reports from site photographs",
     },
     cta: {
       label: "Start with 3 Free Reports — no card needed",

@@ -17,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/projects/")({
       {
         name: "description",
         content:
-          "Site photographs in, client-ready construction reports out. Manage every project, survey and published report in one place.",
+          "Site photographs in, client-ready reports out. Manage every project, survey and published report in one place.",
       },
       { property: "og:title", content: "Projects — instructBrain" },
       {
         property: "og:description",
         content:
-          "Site photographs in, client-ready construction reports out. Manage every project, survey and published report in one place.",
+          "Site photographs in, client-ready reports out. Manage every project, survey and published report in one place.",
       },
     ],
   }),

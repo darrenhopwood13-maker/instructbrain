@@ -156,7 +156,7 @@ describe("the share copy is final copy", () => {
   it("carries the approved wording for instructBrain, verbatim", () => {
     const brain = HUB_PRODUCTS.find((product) => product.id === "brain")!;
     expect(brain.share.message).toBe(
-      "Take a look at instructBrain — turns site photos into client-ready construction reports in minutes. Condition surveys, snagging and compliance. Try your first 3 reports free: https://instructbrain.com/hub?product=brain",
+      "Take a look at instructBrain — turns site photos into client-ready reports in minutes, referenced against the regs that apply. Condition surveys, snagging and compliance. Try your first 3 reports free: https://instructbrain.com/hub?product=brain",
     );
   });
 
