@@ -73,7 +73,26 @@ export type GroupableFinding = {
 export const UNASSIGNED_GROUP = "__unassigned__";
 
 /** One firm's hold on one trade, as the directory stores it. */
-export type DirectoryHolder = { id: string; trade: string | null; contactIds: string[] };
+export type DirectoryHolder = {
+  id: string;
+  trade: string | null;
+  company: string;
+  contactIds: string[];
+};
+
+/**
+ * A firm is identified by its NAME, not by a directory row.
+ *
+ * This is the difference between one extract and four. A directory row is one
+ * firm's hold on ONE trade, so a firm holding four trades has four rows — and
+ * grouping on the row sent that firm four extracts of its own work, which is
+ * exactly what grouping by trade already did. The firm is the recipient, so the
+ * firm is the group.
+ */
+export function firmKeyOf(companyName: string | null | undefined): string | null {
+  const named = (companyName ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return named === "" ? null : `firm:${named}`;
+}
 
 /**
  * Which firm a finding belongs to.
@@ -106,7 +125,11 @@ export function resolveFirmKey(
   const tradeKey = (finding.assignedTrade ?? "").trim().toLowerCase();
   if (tradeKey === "") return null;
   const holders = holdersByTrade.get(tradeKey) ?? [];
-  return holders.length === 1 ? (holders[0]?.id ?? null) : null;
+  if (holders.length === 0) return null;
+  // One holder is unambiguous. Several holders of the SAME firm is also
+  // unambiguous: it is one firm, whatever rows it keeps.
+  const firms = new Set(holders.map((holder) => firmKeyOf(holder.company) ?? holder.id));
+  return firms.size === 1 ? ([...firms][0] ?? null) : null;
 }
 
 /** Kept as this module's own name for the shared answer, not a second opinion. */

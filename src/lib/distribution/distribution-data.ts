@@ -5,6 +5,7 @@ import {
   buildExtractDocument,
   groupForDistribution,
   resolveFirmKey,
+  firmKeyOf,
   resolveGrouping,
   toExtractItem,
   UNASSIGNED_GROUP,
@@ -268,19 +269,26 @@ export const distributionPlanQuery = (
       // part of a trade. Two firms on one trade must be told apart on screen,
       // because that is the decision the row is asking a person to make.
       const firmLabels = new Map<string, string>();
+      // firm key -> the rows that firm keeps, so the recipient and the record
+      // come from the firm rather than from one of its trades
+      const rowsByFirm = new Map<string, Array<Record<string, any>>>();
       const holdersByTrade = new Map<string, DirectoryHolder[]>();
       const firmByContact = new Map<string, string>();
       for (const row of directoryRows) {
         const packageLabel = (row["package_label"] as string | null)?.trim() ?? "";
         const company = (row["company_name"] as string | null)?.trim() ?? "Unnamed firm";
-        firmLabels.set(row["id"] as string, packageLabel ? `${company} - ${packageLabel}` : company);
-        for (const contact of (row["directory_contacts"] ?? []) as Array<Record<string, any>>) {
-          if (typeof contact["id"] === "string") firmByContact.set(contact["id"], row["id"] as string);
+        const key = firmKeyOf(company);
+        if (key) {
+          rowsByFirm.set(key, [...(rowsByFirm.get(key) ?? []), row]);
+          for (const contact of (row["directory_contacts"] ?? []) as Array<Record<string, any>>) {
+            if (typeof contact["id"] === "string") firmByContact.set(contact["id"], key);
+          }
         }
         const tradeKey = ((row["trade"] as string | null) ?? "").trim().toLowerCase();
         if (tradeKey !== "") {
           const holder: DirectoryHolder = {
             id: row["id"] as string,
+            company,
             trade: (row["trade"] as string | null) ?? null,
             contactIds: ((row["directory_contacts"] ?? []) as Array<Record<string, any>>)
               .map((contact) => contact["id"])
@@ -294,6 +302,12 @@ export const distributionPlanQuery = (
       // a trade held by exactly one firm is unambiguous and resolves to it.
       // A trade held by two firms is a decision, not a guess: it goes to nobody
       // until a person says which package it belongs to.
+      for (const [key, rows] of rowsByFirm) {
+        const company = (rows[0]?.["company_name"] as string | null)?.trim() ?? "Unnamed firm";
+        const only = rows.length === 1 ? ((rows[0]?.["package_label"] as string | null)?.trim() ?? "") : "";
+        firmLabels.set(key, only ? `${company} - ${only}` : company);
+      }
+
       const routed = findings.map((finding) => ({
         ...finding,
         assignedFirmKey: resolveFirmKey(finding, holdersByTrade, firmByContact),
@@ -301,14 +315,19 @@ export const distributionPlanQuery = (
 
       const rows: PlanRow[] = groupForDistribution(routed, grouping, snapshot, firmLabels).map((group) => {
         const unassigned = group.key === UNASSIGNED_GROUP;
+        const firmRows = grouping === "subcontractor" ? (rowsByFirm.get(group.key) ?? []) : [];
         const entry = unassigned
           ? undefined
           : grouping === "subcontractor"
-            ? directoryRows.find((candidate) => candidate["id"] === group.key)
+            ? (firmRows[0] as Record<string, any> | undefined)
             : directoryRows.find((candidate) => candidate["trade"] === group.key);
-        const contacts = (entry?.["directory_contacts"] ?? []) as Array<Record<string, any>>;
+        // Across a firm's rows the first primary contact wins, so one firm has
+        // one recipient however many trades it holds.
+        const allContacts = (grouping === "subcontractor" ? firmRows : [entry ?? {}]).flatMap(
+          (row) => ((row["directory_contacts"] ?? []) as Array<Record<string, any>>),
+        );
         const primary =
-          contacts.find((contact) => contact["is_primary"] === true) ?? contacts[0];
+          allContacts.find((contact) => contact["is_primary"] === true) ?? allContacts[0];
 
         const recipientName = unassigned
           ? (fallback.name ?? "Fallback recipient")
