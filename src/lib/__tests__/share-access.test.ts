@@ -7,10 +7,16 @@ import { shareAccessDecision } from "@/lib/report/share-access";
  * link already sent to a client began serving the working copy.
  */
 describe("what a share link is allowed to serve", () => {
-  it("serves a published report as a review page", () => {
-    const decision = shareAccessDecision({ status: "issued", manualOnly: false });
-    expect(decision.allowed).toBe(true);
-    if (decision.allowed) expect(decision.pdfOnly).toBe(false);
+  it("serves every published report as the finished PDF, never a live review page", () => {
+    // The bug Dal hit on 14 Oct 2026: an ordinary site condition report's link
+    // fell through to the inline viewer, which re-reads live rows, so the client
+    // saw the working copy as a draft. Any published report, of any type, now
+    // serves its frozen PDF and nothing else.
+    for (const manualOnly of [true, false]) {
+      const decision = shareAccessDecision({ status: "issued", manualOnly });
+      expect(decision.allowed).toBe(true);
+      if (decision.allowed) expect(decision.pdfOnly).toBe(true);
+    }
   });
 
   it("serves a published manual report as PDF only", () => {

@@ -18,7 +18,11 @@
 export type ShareAccessInput = {
   /** The report's own `status` column, exactly as stored. */
   status: string | null;
-  /** True for a manual photographic report: PDF only, never a review page. */
+  /**
+   * True for a manual photographic report. Kept in the input because callers
+   * already know it, but it no longer changes what a link serves: every
+   * published report is shared as the finished PDF.
+   */
   manualOnly: boolean;
 };
 
@@ -43,5 +47,14 @@ export function shareAccessDecision(input: ShareAccessInput): ShareAccessDecisio
       error: "This report is not currently published.",
     };
   }
-  return { allowed: true, pdfOnly: input.manualOnly };
+  // Every published report is shared as the frozen PDF, whatever its type.
+  //
+  // It used to be `pdfOnly: input.manualOnly`, which meant an ordinary report's
+  // link fell through to the inline viewer. That viewer re-reads the live rows,
+  // so a client with a link was looking at the working copy - a draft - and the
+  // PDF endpoint refused the same report outright, because it also required the
+  // manual-only shape. Dal, 14 Oct 2026: "when we create a share link it needs
+  // to be the finished PDF". A published report has exactly one canonical
+  // output and the link now serves it.
+  return { allowed: true, pdfOnly: true };
 }

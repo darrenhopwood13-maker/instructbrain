@@ -64,14 +64,18 @@ export async function buildIssuedEmailPdf(
 }
 
 /**
- * The frozen published PDF of a report — shared by the email attachment and the
- * PDF-only share link. Confidential items never leave the server.
+ * The frozen published PDF of a report — shared by the email attachment and
+ * every share link. Confidential items never leave the server.
+ *
+ * Pass `versionId` to serve the exact version a share link was pinned to; leave
+ * it null to serve the report's current issued version.
  */
 export async function buildIssuedPdfBytes(
   db: Db,
   reportId: string,
   options: BuildPdfOptions,
   maxBytes: number = MAX_ATTACHMENT_BYTES,
+  versionId: string | null = null,
 ): Promise<{ filename: string; bytes: Uint8Array } | null> {
   const { data: report } = await db
     .from("reports")
@@ -79,16 +83,23 @@ export async function buildIssuedPdfBytes(
     .eq("id", reportId)
     .single();
   const current = report as { current_version?: number; status?: string } | null;
-  if (!current || current.status !== "issued" || !current.current_version) {
+  if (!current || current.status !== "issued") {
     throw new Error("Issue this report before emailing its PDF.");
   }
-  const { data: version } = await db
-    .from("report_versions")
-    .select("document")
-    .eq("report_id", reportId)
-    .eq("version", current.current_version)
-    .single();
-  const snapshot = (version as { document?: ReportDocument } | null)?.document;
+  const { data: versions } = await (versionId
+    ? db
+        .from("report_versions")
+        .select("document")
+        .eq("report_id", reportId)
+        .eq("id", versionId)
+        .limit(1)
+    : db
+        .from("report_versions")
+        .select("document")
+        .eq("report_id", reportId)
+        .eq("version", current.current_version ?? -1)
+        .limit(1));
+  const snapshot = (versions as { document?: ReportDocument }[] | null)?.[0]?.document;
   if (!snapshot) throw new Error("The issued report copy could not be read, so nothing was sent.");
 
   const paths = snapshot.photos.flatMap((photo) =>
