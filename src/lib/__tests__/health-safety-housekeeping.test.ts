@@ -18,7 +18,7 @@ describe("health, safety and housekeeping inspection", () => {
   it("ships in the reporting area, in the site and safety family", () => {
     expect(systemDefinitions.some((item) => item.id === "health_safety_housekeeping")).toBe(true);
     expect(familyOf(definition.id)).toBe("site");
-    expect(purposeOf(definition.id).length).toBeGreaterThan(20);
+    expect((purposeOf(definition.id) ?? "").length).toBeGreaterThan(20);
   });
 
   it("walks the six checks and nothing about the building", () => {
@@ -46,7 +46,7 @@ describe("health, safety and housekeeping inspection", () => {
       "not_assessed",
     ]);
     expect(new Set(definition.statuses.map((status) => status.tone)).size).toBe(4);
-    expect(definition.statuses[3].tone).toBe("flag");
+    expect(definition.statuses[3]?.tone).toBe("flag");
   });
 
   it("puts every severity on a rung of the urgency ladder", () => {
