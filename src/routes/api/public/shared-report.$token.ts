@@ -99,6 +99,7 @@ export const Route = createFileRoute("/api/public/shared-report/$token")({
         const access = shareAccessDecision({
           status: (rawReport.status as string | null) ?? null,
           manualOnly: rawReport.survey_type_snapshot?.manualOnly === true,
+          issuedAt: (rawReport.issued_at as string | null) ?? null,
         });
         if (!access.allowed) {
           return Response.json(

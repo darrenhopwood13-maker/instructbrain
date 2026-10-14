@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { assertTransition, coerceLifecycleState } from "@/lib/lifecycle";
 import { collisionSafeFilename, originalPath } from "@/lib/photos/storage-paths";
 import { actorFromTrade } from "@/lib/audit/actor";
+import { UNPUBLISHED_MESSAGE, reportReadableOutside } from "@/lib/report/share-access";
 
 /**
  * Token-scoped subcontractor endpoint. No account is involved, so this handler
@@ -80,6 +81,27 @@ async function resolveAndRun(
   }
   if (access.expires_at && new Date(access.expires_at).getTime() < Date.now()) {
     return problem("expired", "This link has expired.");
+  }
+
+  // The publication rule, the same function the share link and the PDF use. A
+  // trade link is a live door into a report's findings, so it opens only on a
+  // report that is published - or on one reopened for correction having been
+  // published before, where the crew still needs the list they were sent.
+  const { data: reportRows } = await admin
+    .from("reports")
+    .select("status, issued_at")
+    .eq("id", access.report_id)
+    .limit(1);
+  const reportRow = (reportRows ?? [])[0] as
+    | { status?: string | null; issued_at?: string | null }
+    | undefined;
+  if (
+    !reportReadableOutside({
+      status: reportRow?.status ?? null,
+      issuedAt: reportRow?.issued_at ?? null,
+    })
+  ) {
+    return problem("unpublished", UNPUBLISHED_MESSAGE);
   }
 
   try {

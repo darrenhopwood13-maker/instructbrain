@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { reportReadableOutside } from "@/lib/report/share-access";
+
 /**
  * The PDF behind every share link. Serves the frozen published PDF — never a
  * review page, and never the live working copy — and only while the link is
@@ -31,13 +33,20 @@ export const Route = createFileRoute("/api/public/shared-report-pdf/$token")({
         }
         const { data: reports } = await admin
           .from("reports")
-          .select("status, current_version")
+          .select("status, current_version, issued_at")
           .eq("id", share.report_id)
           .limit(1);
         const report = reports?.[0];
-        // One rule for every report type: a link serves a published report's
-        // frozen copy, and nothing at all while it is unpublished.
-        if (!report || report.status !== "issued") {
+        // The same publication rule the link page uses, from the same function -
+        // so a reopened report keeps serving the frozen copy its client already
+        // has, and live rows are never served through this door.
+        if (
+          !report ||
+          !reportReadableOutside({
+            status: report.status as string | null,
+            issuedAt: (report.issued_at as string | null) ?? null,
+          })
+        ) {
           return new Response("This report is not available as a PDF.", { status: 404 });
         }
         const { buildIssuedPdfBytes } = await import("@/lib/report/pdf-attachment.server");

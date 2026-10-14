@@ -172,6 +172,9 @@ function tradeFixture(): Record<string, Row[]> {
         report_date: "2026-01-01",
         project_id: "p1",
         survey_type_snapshot: siteWalkDefinition,
+        // A trade link opens only on a published report: see the gate tests below.
+        status: "issued",
+        issued_at: "2026-01-01T00:00:00.000Z",
       },
     ],
     projects: [{ id: "p1", name: "Test project", address: "Somewhere" }],
@@ -250,6 +253,24 @@ describe("the subcontractor trade link", () => {
     tables["trade_access"]![0]!["expires_at"] = "2020-01-01T00:00:00Z";
     const expired = await GET({ params: { token: TOKEN } });
     expect((await expired.json()).reason).toBe("expired");
+  });
+
+  it("refuses a trade link on a report that has never been published", async () => {
+    const { GET } = await tradeHandlers();
+    tables["reports"]![0]!["status"] = "draft";
+    tables["reports"]![0]!["issued_at"] = null;
+    const response = await GET({ params: { token: TOKEN } });
+    expect(response.status).toBe(404);
+    expect((await response.json()).reason).toBe("unpublished");
+  });
+
+  it("keeps the crew's list open while the report is reopened for correction", async () => {
+    // The published history is what matters here: the crew was sent this list,
+    // and a correction pass is not a reason to take it off them.
+    const { GET } = await tradeHandlers();
+    tables["reports"]![0]!["status"] = "in_review";
+    const response = await GET({ params: { token: TOKEN } });
+    expect(response.status).toBe(200);
   });
 
   it("records progress and audits it, and refuses another trade's item", async () => {

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DataError } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site-url";
+import { reportReadableOutside } from "@/lib/report/share-access";
 
 /**
  * Trade links let a subcontractor respond without an account, exactly like a
@@ -73,6 +74,22 @@ export async function ensureTradeLink(input: {
   trade: string;
   label?: string | null;
 }): Promise<TradeLink> {
+  // Publish first, exactly as the share menu requires before it will mint a link.
+  // This is the same door for a subcontractor: it opens a live view of the
+  // findings, so it cannot exist on work that has never been published.
+  const reportRows = unwrap(
+    await table("reports").select("status, issued_at").eq("id", input.reportId).limit(1),
+  ) as Array<Record<string, any>>;
+  const report = reportRows[0];
+  if (
+    !reportReadableOutside({
+      status: (report?.["status"] as string | null) ?? null,
+      issuedAt: (report?.["issued_at"] as string | null) ?? null,
+    })
+  ) {
+    throw new DataError("Publish the report before creating a trade link.");
+  }
+
   const existing = await listTradeLinks(input.reportId);
   const live = existing.find(
     (link) =>
