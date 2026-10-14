@@ -189,6 +189,73 @@ export async function createDirectoryEntry(input: {
   return (data as { id: string }).id;
 }
 
+/**
+ * One subcontractor against several trades, in one action.
+ *
+ * This is how a job is actually let, and the shape the list was missing: a main
+ * subcontractor owns a package, and that package is usually several trades - so
+ * the same firm ends up on four rows that were each typed in by hand, and the
+ * contact on them can drift apart without anybody noticing.
+ *
+ * The firm is asked for once, the trades are ticked, and the same contact is
+ * copied to every row as its primary. A trade the firm already holds is left
+ * alone rather than duplicated, so running it twice is safe.
+ *
+ * Returns how many trades were added. Trades with no name are ignored, because
+ * a blank trade is not a row anything can be routed to.
+ */
+export async function createDirectoryFirm(input: {
+  projectId: string;
+  company: string;
+  trades: string[];
+  contact?: { name: string; email: string; phone?: string | null } | null;
+}): Promise<number> {
+  const company = input.company.trim();
+  if (company === "") throw new DataError("A subcontractor needs a name.");
+
+  const wanted: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of input.trades) {
+    const named = candidate.trim();
+    const key = named.toLowerCase();
+    if (named === "" || seen.has(key)) continue;
+    seen.add(key);
+    wanted.push(named);
+  }
+  if (wanted.length === 0) throw new DataError("Choose at least one trade for this subcontractor.");
+
+  const existing = unwrap(
+    await from("project_directory")
+      .select("trade, company_name")
+      .eq("project_id", input.projectId),
+  ) as Array<Record<string, any>>;
+  const alreadyHeld = new Set(
+    existing
+      .filter((row) => ((row["company_name"] as string | null) ?? "").trim().toLowerCase() === company.toLowerCase())
+      .map((row) => ((row["trade"] as string | null) ?? "").trim().toLowerCase()),
+  );
+
+  let added = 0;
+  for (const trade of wanted) {
+    if (alreadyHeld.has(trade.toLowerCase())) continue;
+    const entryId = await createDirectoryEntry({ projectId: input.projectId, trade, company });
+    if (input.contact && (input.contact.name.trim() !== "" || input.contact.email.trim() !== "")) {
+      check(
+        await from("directory_contacts").insert({
+          directory_id: entryId,
+          name: input.contact.name.trim() || input.contact.email.trim(),
+          email: input.contact.email.trim() || null,
+          phone: input.contact.phone?.trim() || null,
+          is_primary: true,
+          receives_copies: false,
+        }),
+      );
+    }
+    added += 1;
+  }
+  return added;
+}
+
 export async function updateDirectoryEntry(
   entryId: string,
   patch: { trade?: string; company?: string; notes?: string | null; isActive?: boolean },

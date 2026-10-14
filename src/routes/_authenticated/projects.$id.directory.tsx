@@ -42,6 +42,7 @@ import {
   copyDirectoryFromProject,
   copyableProjectsQuery,
   createDirectoryEntry,
+  createDirectoryFirm,
   deleteDirectoryContact,
   deleteDirectoryEntry,
   directoryTemplatesQuery,
@@ -137,8 +138,9 @@ function ProjectDirectory() {
           {project.data?.name ?? "This project"}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every trade working on this job, and the one person who receives anything nobody has
-          been assigned. Extracts are addressed to the primary contact for each trade.
+          The main subcontractor for each trade, and the one person who receives anything nobody
+          has been assigned. A firm holding several trades is one contact and receives one
+          extract &mdash; their own sub-subcontractors work for them, not for you.
         </p>
       </header>
 
@@ -150,6 +152,23 @@ function ProjectDirectory() {
       />
 
       <section className="mt-8 flex flex-wrap items-center gap-2">
+        <AddFirmDialog
+          existingTrades={entries.map((entry) => entry.trade)}
+          onSubmit={async (values) => {
+            const added = await createDirectoryFirm({
+              projectId: id,
+              company: values.company,
+              trades: values.trades,
+              contact: { name: values.contactName, email: values.contactEmail },
+            });
+            await refresh();
+            toast.success(
+              added === 0
+                ? `${values.company.trim()} already holds those trades`
+                : `${values.company.trim()} added against ${added} trade${added === 1 ? "" : "s"}`,
+            );
+          }}
+        />
         <AddEntryDialog
           existingTrades={entries.map((entry) => entry.trade)}
           onSubmit={(values) =>
@@ -517,6 +536,154 @@ function EntryCard({
         </Button>
       </form>
     </li>
+  );
+}
+
+/**
+ * A subcontractor, and everything they hold, in one action.
+ *
+ * The list used to be built one trade at a time, which is not how a job is let:
+ * a main subcontractor owns a package, that package is usually several trades,
+ * and they are the single point of contact for all of it. Typing the same firm
+ * four times is how a contact address drifts apart between its own rows.
+ *
+ * So the firm is asked for once, the trades are ticked, and the same contact
+ * goes onto every row as its primary.
+ */
+function AddFirmDialog({
+  onSubmit,
+  existingTrades = [],
+}: {
+  onSubmit: (values: {
+    company: string;
+    trades: string[];
+    contactName: string;
+    contactEmail: string;
+  }) => Promise<void>;
+  existingTrades?: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [company, setCompany] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const options = useMemo(() => tradeOptions(existingTrades), [existingTrades]);
+  const ready = company.trim() !== "" && picked.length > 0 && !busy;
+
+  const toggle = (trade: string) =>
+    setPicked((current) =>
+      current.includes(trade) ? current.filter((item) => item !== trade) : [...current, trade],
+    );
+
+  const submit = async () => {
+    if (!ready) return;
+    setBusy(true);
+    try {
+      await onSubmit({ company, trades: picked, contactName, contactEmail });
+      setCompany("");
+      setContactName("");
+      setContactEmail("");
+      setPicked([]);
+      setOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="brand" className="min-h-11">
+          <Plus aria-hidden="true" className="size-4" />
+          Add a subcontractor
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add a subcontractor</DialogTitle>
+          <DialogDescription>
+            A main subcontractor owns a package and is the single point of contact for it. Tick
+            every trade they hold &mdash; you only enter the firm once, and their contact goes onto
+            each of them.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="firm-company" className="eyebrow block text-muted-foreground">
+              Subcontractor
+            </label>
+            <input
+              id="firm-company"
+              value={company}
+              onChange={(event) => setCompany(event.target.value)}
+              placeholder="The firm's name, as you'd write it on a drawing"
+              autoComplete="organization"
+              className="mt-1 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="firm-contact" className="eyebrow block text-muted-foreground">
+                Site contact
+              </label>
+              <input
+                id="firm-contact"
+                value={contactName}
+                onChange={(event) => setContactName(event.target.value)}
+                placeholder="Who receives their extracts"
+                autoComplete="name"
+                className="mt-1 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+              />
+            </div>
+            <div>
+              <label htmlFor="firm-email" className="eyebrow block text-muted-foreground">
+                Their email
+              </label>
+              <input
+                id="firm-email"
+                type="email"
+                value={contactEmail}
+                onChange={(event) => setContactEmail(event.target.value)}
+                placeholder="name@firm.co.uk"
+                autoComplete="email"
+                className="mt-1 min-h-11 w-full rounded-md border border-input bg-surface-raised p-2 text-base"
+              />
+            </div>
+          </div>
+          <fieldset className="rounded-xl border border-border p-3">
+            <legend className="eyebrow px-1 text-muted-foreground">Trades they hold</legend>
+            <div className="mt-1 grid max-h-64 gap-1 overflow-y-auto sm:grid-cols-2">
+              {options.map((option) => (
+                <label
+                  key={option}
+                  className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-surface-sunken"
+                >
+                  <input
+                    type="checkbox"
+                    checked={picked.includes(option)}
+                    onChange={() => toggle(option)}
+                    className="size-4"
+                  />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {picked.length === 0
+                ? "Nothing ticked yet."
+                : `${picked.length} trade${picked.length === 1 ? "" : "s"} will be added, each receiving their own extract.`}
+            </p>
+          </fieldset>
+        </div>
+        <DialogFooter>
+          <Button variant="brand" className="min-h-11" disabled={!ready} onClick={() => void submit()}>
+            {busy ? "Adding\u2026" : "Add subcontractor"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
