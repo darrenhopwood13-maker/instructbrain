@@ -57,6 +57,34 @@ describe("report brief", () => {
     expect(toneById("technical").id).toBe("meticulous");
   });
 
+  it("offers short and sweet, and keeps it distinct from sharp", () => {
+    const crisp = toneById("crisp");
+    expect(crisp.label).toBe("Short and sweet");
+    expect(crisp.description).toContain("straight to the point");
+    // Terse and short-and-sweet are two different instructions. If they ever read
+    // the same, one of them should be deleted rather than kept for the look of it.
+    expect(crisp.instruction).not.toBe(toneById("sharp").instruction);
+    expect(crisp.maxOutputTokens).toBeLessThanOrEqual(toneById("sharp").maxOutputTokens);
+    expect(toneById("sharp").instruction).toContain("terse");
+  });
+
+  it("keeps short and sweet cheap: no second call, no model escalation", () => {
+    const crisp = toneById("crisp");
+    expect(crisp.voicePass).toBe(false);
+    expect(crisp.escalate).toBe(false);
+  });
+
+  it("carries the brevity instruction into the prompt it actually builds", () => {
+    const section = briefPromptSection({ ...EMPTY_BRIEF, tone: "crisp" });
+    expect(section).toContain("Writing style — Short and sweet:");
+    expect(section).toContain("One short line per observation");
+  });
+
+  it("never lets a new tone steel the default", () => {
+    expect(EMPTY_BRIEF.tone).toBe("formal");
+    expect(toneById("nonsense").label).toBe("Formal");
+  });
+
   it("caps and flattens the special request", () => {
     const long = "a ".repeat(600);
     expect(sanitiseSpecialRequest(long).length).toBe(500);

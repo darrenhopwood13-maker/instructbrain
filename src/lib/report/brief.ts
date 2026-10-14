@@ -51,6 +51,21 @@ export const REPORT_TONES = [
     escalate: false,
   },
   {
+    id: "crisp",
+    label: "Short and sweet",
+    description: "One line per finding, plain words, straight to the point.",
+    instruction:
+      "Keep it short and say it plainly. Lead with the thing itself. One short line per observation, two at the very most. Use the words a site team would use, not technical vocabulary. No preamble, no restating the question, no closing remark, and no commentary on how anything looks. Every line has to carry a fact.",
+    // Measured against the other terseness on the shelf: "sharp" is terse, and
+    // terse reads as clipped. This one has to stay friendly while it stays short,
+    // which is a different instruction, not a shorter version of that one.
+    voiceExamples: [] as string[],
+    voicePass: false,
+    rules: ["strip-finding-label", "strip-leading-article"] as ToneRule[],
+    maxOutputTokens: 2500,
+    escalate: false,
+  },
+  {
     id: "meticulous",
     label: "Meticulous",
     description: "Fuller technical description for a specialist reader.",
