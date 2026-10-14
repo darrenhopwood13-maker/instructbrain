@@ -249,26 +249,101 @@
 }
 
 /*
- * Radix renders a select popup in a portal on <body>, outside whichever surface
- * opened it, so the popup has to carry that surface's own tokens with it. Without
- * this the report template list rendered in the console's navy on a white working
- * screen - a navy panel inside a white screen reads as a hole rather than as
- * something you opened. Dal asked for the white panel on 12 Oct 2026.
+ * Overlay light scope - every menu, select, popover, dialog, sheet and toast.
+ *
+ * Radix renders each of these in a portal on <body>, outside whichever surface
+ * opened it, so an overlay has to carry that surface's own tokens with it. Without
+ * this a panel opened on a white working screen rendered in the console's navy, and
+ * a navy panel inside a white screen reads as a hole rather than as something you
+ * opened. Dal asked for the white report-template panel on 12 Oct 2026, and on
+ * 14 Oct 2026 for "all the blue menus boxes" to be white like the rest of the
+ * working screens.
+ *
+ * `.popover-light` is the original explicit opt-in, still carried by
+ * `TemplateSelect`. The `body:has(.work-surface)` form is the general rule, so no
+ * component has to know which surface opened it: while a working screen is on the
+ * page, every overlay opened on it reads as that working screen. On the navy
+ * console the rule does not match, so dashboard menus and dialogs keep their
+ * console treatment. Tokens only - each panel's own `bg-*` utility paints the fill.
+ *
+ * The glass tokens travel with it: `.glass`, `.glass-navy` and `.glass-orange` are
+ * utilities built from them, and the console's translucent-white glass is
+ * invisible on a white panel.
  */
-.popover-light {
+.popover-light,
+body:has(.work-surface) :where(
+  [role="menu"],
+  [role="listbox"],
+  [role="dialog"],
+  [role="alertdialog"],
+  [data-radix-popper-content-wrapper],
+  [data-vaul-drawer],
+  [data-sonner-toaster]
+) {
   --background: oklch(1 0 0);
   --foreground: oklch(0.21 0.035 262);
-  --card: oklch(1 0 0);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(0.975 0.012 262);
+  --surface-sunken: oklch(0.955 0.018 262);
+
+  --card: oklch(0.965 0.018 262);
   --card-foreground: oklch(0.21 0.035 262);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.035 262);
+
+  --primary: oklch(0.8773 0.2803 139.6);
+  --primary-foreground: oklch(0.26 0.072 263);
+  --secondary: oklch(0.962 0.006 262);
+  --secondary-foreground: oklch(0.28 0.045 262);
   --muted: oklch(0.962 0.006 262);
   --muted-foreground: oklch(0.44 0.025 262);
   --accent: oklch(0.97 0.045 135);
   --accent-foreground: oklch(0.4273 0.1344 138.9);
-  --border: oklch(0.9 0.012 262);
-  --border-strong: oklch(0.8 0.02 262);
-  --ring: oklch(0.44 0.16 258);
+  --destructive: oklch(0.5 0.2 27);
+  --destructive-foreground: oklch(0.99 0.003 27);
+
+  --brand-blue: oklch(0.4 0.11 262);
+  --brand-blue-soft: oklch(0.965 0.018 262);
+  --brand-blue-ink: oklch(0.3 0.09 262);
+  --brand-accent: oklch(0.8773 0.2803 139.6);
+  --brand-accent-deep: oklch(0.5566 0.1764 139.3);
+  --brand-accent-light: oklch(0.9566 0.0929 133.5);
+  --brand-accent-soft: oklch(0.97 0.045 135);
+  --brand-accent-ink: oklch(0.4273 0.1344 138.9);
+  --work-blue: oklch(0.4 0.11 262);
+  --work-blue-deep: oklch(0.34 0.1 262);
+  --work-control: oklch(0.975 0.004 262);
+  --work-control-edge: oklch(0.79 0.025 262);
+
+  --border: oklch(0.82 0.022 262);
+  --border-strong: oklch(0.7 0.035 262);
+  --input: oklch(0.76 0.028 262);
+  --ring: oklch(0.5566 0.1764 139.3);
+
+  --pass: oklch(0.42 0.11 158);
+  --pass-soft: oklch(0.955 0.03 158);
+  --fail: oklch(0.47 0.19 27);
+  --fail-soft: oklch(0.958 0.025 27);
+  --warn: oklch(0.45 0.11 95);
+  --warn-soft: oklch(0.96 0.05 100);
+  --flag: oklch(0.4 0.15 258);
+  --flag-soft: oklch(0.955 0.025 258);
+
+  --glass-surface: oklch(0.98 0.004 262);
+  --glass-surface-hover: oklch(0.955 0.006 262);
+  --glass-border: oklch(0.9 0.012 262);
+  --glass-border-hover: oklch(0.8 0.02 262);
+  --glass-highlight: oklch(1 0 0 / 0%);
+
+  --gradient-panel: none;
+  --shadow-raised: 0 1px 2px oklch(0.3 0.06 262 / 5%);
+
+  /* An overlay is a portalled sibling of the working screen, not a descendant, so
+     its own text colour would otherwise inherit the console's white from <body>.
+     `Input` and `DialogTitle` carry no colour class of their own, which is how a
+     whitened panel becomes white text on white. Measured, not assumed: see
+     `work/ib-film/measure_overlay_colours.py`. */
+  color: var(--foreground);
 }
 
 /*
@@ -425,7 +500,8 @@
 
 /* White working screens follow the approved editorial reference: orange is
    reserved for the primary action, while supporting controls stay quiet. */
-.work-surface .glass-orange {
+.work-surface .glass-orange,
+body:has(.work-surface) .glass-orange {
   background: var(--brand-accent);
   border-color: var(--brand-accent-deep);
   color: var(--primary-foreground);
@@ -433,7 +509,8 @@
   box-shadow: 0 2px 8px -6px color-mix(in oklab, var(--brand-accent) 45%, transparent);
 }
 
-.work-surface .glass-orange svg {
+.work-surface .glass-orange svg,
+body:has(.work-surface) .glass-orange svg {
   color: currentColor;
 }
 
@@ -468,7 +545,9 @@
 }
 
 .work-surface .glass-navy,
-.work-surface .glass {
+.work-surface .glass,
+body:has(.work-surface) .glass-navy,
+body:has(.work-surface) .glass {
   background: var(--brand-blue-soft);
   border: 1px solid var(--border-strong);
   color: var(--brand-blue-ink);
@@ -478,22 +557,37 @@
 }
 
 .work-surface .glass-navy svg,
-.work-surface .glass svg {
+.work-surface .glass svg,
+body:has(.work-surface) .glass-navy svg,
+body:has(.work-surface) .glass svg {
   color: currentColor;
 }
 
-/* Cards, fields and framed controls use one fine neutral-blue edge. */
-.work-surface :where(.border-border, .border-input, [class*="border-border/"], [class*="border-input/"]):not(.paper *) {
+/* Cards, fields and framed controls use one fine neutral-blue edge. The
+   `body:has(.work-surface)` half carries the same edge inside a portalled overlay,
+   which is not a descendant of the working surface that opened it. */
+.work-surface :where(.border-border, .border-input, [class*="border-border/"], [class*="border-input/"]):not(.paper *),
+body:has(.work-surface) :where(.border-border, .border-input, [class*="border-border/"], [class*="border-input/"]):not(.paper *) {
   border-color: var(--work-control-edge);
   box-shadow: var(--shadow-raised);
 }
 
-.work-surface :where(input, textarea, select, [role="combobox"]) {
+/* 44px thumb targets, on the screen and in the overlays opened from it. */
+.work-surface :where(input, textarea, select, [role="combobox"]),
+body:has(.work-surface) :where(input, textarea, select, [role="combobox"]) {
   min-height: 2.75rem;
 }
 
 /* Portalled menus and dialogs sit outside `.work-surface`; keep the same fine edge. */
-body:has(.work-surface) :where([role="dialog"], [role="menu"], [role="listbox"]) {
+body:has(.work-surface) :where(
+  [role="dialog"],
+  [role="alertdialog"],
+  [role="menu"],
+  [role="listbox"],
+  [data-radix-popper-content-wrapper],
+  [data-vaul-drawer],
+  [data-sonner-toaster]
+) {
   border-color: var(--work-control-edge);
   box-shadow: var(--shadow-raised);
 }
