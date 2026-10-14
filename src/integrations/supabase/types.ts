@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -135,6 +135,7 @@ export type Database = {
         Row: {
           action: string
           actor_id: string | null
+          actor_name: string | null
           after: Json | null
           before: Json | null
           created_at: string
@@ -145,6 +146,7 @@ export type Database = {
         Insert: {
           action: string
           actor_id?: string | null
+          actor_name?: string | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -155,6 +157,7 @@ export type Database = {
         Update: {
           action?: string
           actor_id?: string | null
+          actor_name?: string | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -532,6 +535,57 @@ export type Database = {
           report_id?: string | null
           row_data?: Json
           source_table?: string
+        }
+        Relationships: []
+      }
+      demo_film_backup_20261012: {
+        Row: {
+          assigned_trade: string | null
+          created_at: string | null
+          due_date: string | null
+          id: string | null
+          lifecycle_note: string | null
+          lifecycle_state: string | null
+          lifecycle_updated_at: string | null
+          severity: string | null
+          status: string | null
+        }
+        Insert: {
+          assigned_trade?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Update: {
+          assigned_trade?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      demo_film_backup_reports_20261012: {
+        Row: {
+          id: string | null
+          status: string | null
+        }
+        Insert: {
+          id?: string | null
+          status?: string | null
+        }
+        Update: {
+          id?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -1132,6 +1186,7 @@ export type Database = {
           height: number | null
           id: string
           original_filename: string | null
+          print_path: string | null
           report_id: string
           sequence: number
           storage_path: string
@@ -1151,6 +1206,7 @@ export type Database = {
           height?: number | null
           id?: string
           original_filename?: string | null
+          print_path?: string | null
           report_id: string
           sequence?: number
           storage_path: string
@@ -1170,6 +1226,7 @@ export type Database = {
           height?: number | null
           id?: string
           original_filename?: string | null
+          print_path?: string | null
           report_id?: string
           sequence?: number
           storage_path?: string
@@ -1416,6 +1473,7 @@ export type Database = {
           revoked_at: string | null
           token: string
           updated_at: string
+          version_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1428,6 +1486,7 @@ export type Database = {
           revoked_at?: string | null
           token: string
           updated_at?: string
+          version_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1440,6 +1499,7 @@ export type Database = {
           revoked_at?: string | null
           token?: string
           updated_at?: string
+          version_id?: string | null
         }
         Relationships: [
           {
@@ -1454,6 +1514,13 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_shares_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
             referencedColumns: ["id"]
           },
         ]
