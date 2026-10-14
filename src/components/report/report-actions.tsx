@@ -14,6 +14,7 @@ import {
   Share2,
   Smartphone,
   Unlock,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -254,6 +255,18 @@ export function ReportActions({
             Publish report
           </Button>
         )}
+        {/*
+          The distribution screen existed with no way in: no button, no menu item,
+          no link anywhere in the app pointed at it, so its only door was the URL.
+          It sits here, as a button rather than a menu item, because a control
+          nobody can find is the same as a control that is not there.
+        */}
+        <Button variant="quiet" className="min-h-11 w-full sm:w-auto" asChild>
+          <Link to="/reports/$id/distribute" params={{ id: document.report.id }}>
+            <Users aria-hidden="true" className="size-4" />
+            Distribute
+          </Link>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
