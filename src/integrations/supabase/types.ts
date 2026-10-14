@@ -1354,6 +1354,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          package_label: string | null
           template_id: string
           trade: string
           updated_at: string
@@ -1364,6 +1365,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          package_label?: string | null
           template_id: string
           trade: string
           updated_at?: string
@@ -1374,6 +1376,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          package_label?: string | null
           template_id?: string
           trade?: string
           updated_at?: string
@@ -2012,6 +2015,7 @@ export type Database = {
           id: string
           is_active: boolean
           notes: string | null
+          package_label: string | null
           project_id: string
           trade: string
           updated_at: string
@@ -2022,6 +2026,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          package_label?: string | null
           project_id: string
           trade: string
           updated_at?: string
@@ -2032,6 +2037,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          package_label?: string | null
           project_id?: string
           trade?: string
           updated_at?: string
