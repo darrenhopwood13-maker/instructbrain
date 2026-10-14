@@ -76,57 +76,39 @@ export function HelpSheet() {
           <DialogHeader>
             <DialogTitle>Help</DialogTitle>
             <DialogDescription>
-              Short, silent clips, one per task - and the whole walkthrough at the end.
+              Short clips, one per task, each with a voice-over.
             </DialogDescription>
           </DialogHeader>
 
           <ul className="space-y-3">
-            {HELP_TOPICS.map((topic) => {
-              const row =
-                "flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3";
-              const body = (
-                <>
-                  <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-sunken">
-                    {topic.clipUrl ? (
-                      <video
-                        src={topic.clipUrl}
-                        className="size-full object-cover"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <Film aria-hidden="true" className="size-6 text-muted-foreground" />
-                    )}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">{topic.title}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {topic.clipUrl || topic.href ? topic.caption : "Clip coming soon"}
-                    </span>
-                  </span>
-                </>
-              );
-              // A long clip opens in its own tab rather than autoplaying in the sheet.
-              return topic.href ? (
-                <li key={topic.id}>
-                  <a
-                    href={topic.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${row} transition-colors hover:bg-surface-sunken`}
-                  >
-                    {body}
-                  </a>
-                </li>
-              ) : (
-                <li key={topic.id} className={row}>
-                  {body}
-                </li>
-              );
-            })}
-          </ul>
+          {HELP_TOPICS.map((topic) => (
+            <li
+              key={topic.id}
+              className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3"
+            >
+              <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-sunken">
+                {topic.clipUrl ? (
+                  <video
+                    src={topic.clipUrl}
+                    className="size-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <Film aria-hidden="true" className="size-6 text-muted-foreground" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">{topic.title}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {topic.clipUrl ? topic.caption : "Clip coming soon"}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
         </DialogContent>
       </Dialog>
     </>

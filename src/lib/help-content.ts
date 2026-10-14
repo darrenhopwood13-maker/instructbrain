@@ -1,15 +1,16 @@
 /**
- * One short, silent, looping clip per task. No narration on a task clip: sound is
- * useless on site, and the Help sheet plays these inline in a thumbnail.
+ * One short clip per task, with a voice-over and a visible pointer, played inline
+ * in the Help sheet. Thirteen tasks, in the order a person actually works: set the
+ * directory up, run the report, send it out.
  *
- * The walkthrough is the exception, and is deliberately a link rather than a clip:
- * it is ninety seconds and narrated, so `href` opens it in its own tab. A topic
- * with an `href` is not streamed inside the sheet - a four-megabyte video on
- * autoplay in a 64-pixel box is a data bill on a phone, not help.
+ * The narration is recorded from the same script the clip is filmed to, so the
+ * voice and the screen agree. Long-form walkthroughs are deliberately NOT here -
+ * they live on the promo page, where a four-megabyte video can stream properly
+ * instead of autoplaying in a 64-pixel thumbnail.
  *
  * `clipUrl` is null until real footage exists - the sheet renders "Clip coming
- * soon" rather than blocking on content. Adding a discipline's own clip later is
- * just adding an entry here, never a code change.
+ * soon" rather than blocking on content. Adding footage later is just a URL here,
+ * never a code change.
  */
 export type HelpTopic = {
   id: string;
@@ -44,6 +45,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     id: "review",
     title: "Review findings",
     caption: "Confirm or correct what the AI drafted.",
+    clipUrl: null,
+  },
+  {
+    id: "tone",
+    title: "Set the tone and language",
+    caption: "Pick the register, and the language it goes out in.",
     clipUrl: null,
   },
   {
@@ -93,12 +100,5 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Correct an issued report",
     caption: "Reopen, fix, reissue - the client's link stays as issued.",
     clipUrl: null,
-  },
-  {
-    id: "walkthrough",
-    title: "The whole thing, start to finish",
-    caption: "Ninety seconds, narrated: the directory to the subcontractor's extract.",
-    clipUrl: null,
-    href: "https://darrenhopwood13-maker.github.io/instructbrain-plan/promo-001/IB-WALK-001-directory-to-extract.mp4",
   },
 ];
