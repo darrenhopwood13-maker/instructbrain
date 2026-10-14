@@ -85,6 +85,7 @@ export function ReviewList({
   onConfirm,
   onConfirmMany,
   tradeOptions = [],
+  soleHolders,
   onAssignTrade,
   tradeEnabled = true,
   onAddTradeToDirectory,
@@ -103,6 +104,8 @@ export function ReviewList({
   tradeEnabled?: boolean;
   /** Trades from this project's directory plus the definition's defaults. */
   tradeOptions?: string[];
+  /** Trade -> the only firm holding it, so a single-press allocation is possible. */
+  soleHolders?: Map<string, string> | undefined;
   /** Persists a human's trade decision and its derived target date. */
   onAssignTrade?: (findingId: string, assignment: TradeAssignment) => Promise<void>;
   onAddTradeToDirectory?: (trade: string) => void;
@@ -1012,6 +1015,7 @@ export function ReviewList({
                     finding={item}
                     snapshot={snapshot}
                     tradeOptions={tradeOptions}
+                    soleHolders={soleHolders}
                     {...(onAddTradeToDirectory ? { onAddTradeToDirectory } : {})}
                     onAssign={async (assignment) => {
                       try {

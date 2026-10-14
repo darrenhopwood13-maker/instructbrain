@@ -20,6 +20,18 @@ import { resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
  * are never overwritten. A person chooses; only their choice is distributed.
  */
 
+/**
+ * The confidence at which a suggestion is worth ONE press instead of two.
+ *
+ * Below this the suggestion is still shown, still pre-selected, and still costs
+ * a person a look - which is the point of the tier. Above it, and on a trade
+ * only one firm holds, there is genuinely nothing left to decide: the trade is
+ * the register's, the firm is the trade's, and making somebody press twice only
+ * encourages them to stop reading. That is the difference between an allocation
+ * that happens and one that gets left for the office.
+ */
+export const ONE_PRESS_CONFIDENCE = 0.8;
+
 export type TradeAssignment = {
   trade: string | null;
   dueDate: string | null;
@@ -35,6 +47,7 @@ export function TradeAssignmentCard({
   finding,
   snapshot,
   tradeOptions,
+  soleHolders,
   onAssign,
   onAddTradeToDirectory,
   disabled,
@@ -43,6 +56,12 @@ export function TradeAssignmentCard({
   snapshot: SurveyTypeSnapshot;
   /** Directory trades for this project, plus the definition's default trades. */
   tradeOptions: string[];
+  /**
+   * Trade (lower-cased) -> the one firm that holds it, for every trade on this
+   * job with exactly one holder. A trade with two holders is deliberately absent:
+   * that is a decision, and it belongs in the picker.
+   */
+  soleHolders?: Map<string, string> | undefined;
   onAssign: (assignment: TradeAssignment) => Promise<void> | void;
   /** Offered when a person types a trade the project directory does not hold. */
   onAddTradeToDirectory?: (trade: string) => void;
@@ -65,6 +84,16 @@ export function TradeAssignmentCard({
     () => new Set(tradeOptions.map((trade) => trade.toLowerCase())),
     [tradeOptions],
   );
+
+  const soleHolder = suggested
+    ? (soleHolders?.get(suggested.trim().toLowerCase()) ?? null)
+    : null;
+  const onePress =
+    assigned === null &&
+    suggested !== null &&
+    soleHolder !== null &&
+    typeof finding.aiTradeConfidence === "number" &&
+    finding.aiTradeConfidence >= ONE_PRESS_CONFIDENCE;
 
   const chosen = draft === "__other__" ? freeText.trim() : draft.trim();
   const unknownTrade = chosen !== "" && !inDirectory.has(chosen.toLowerCase());
@@ -220,9 +249,29 @@ export function TradeAssignmentCard({
             </p>
           ) : null}
 
+          {onePress ? (
+            <div className="mt-4 rounded-lg border border-border bg-surface-sunken p-3">
+              <p className="text-sm">
+                {confidenceLabel(finding.aiTradeConfidence)} that this is{" "}
+                <span className="font-semibold text-foreground">{suggested}</span>, and one firm
+                holds that trade on this job:{" "}
+                <span className="font-semibold text-foreground">{soleHolder}</span>. Nothing is
+                left to decide, so this is one press.
+              </p>
+              <Button
+                variant="brand"
+                className="mt-2 min-h-11 w-full sm:w-auto"
+                disabled={disabled || saving}
+                onClick={() => void save(suggested, dueDraft || null)}
+              >
+                {saving ? "Allocating…" : `Confirm and allocate to ${soleHolder}`}
+              </Button>
+            </div>
+          ) : null}
+
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
-              variant="brand"
+              variant={onePress ? "quiet" : "brand"}
               className="min-h-11 w-full sm:w-auto"
               disabled={disabled || saving}
               onClick={() => void save(chosen === "" ? null : chosen, dueDraft || null)}

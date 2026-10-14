@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMemo, useCallback, useEffect, useRef, useState } from "react";
+import { registerFirstOptions } from "@/lib/trades/known-trades";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ChevronRight, History, FolderInput } from "lucide-react";
@@ -302,12 +303,49 @@ function ReportWorkspace() {
     await refresh();
   };
 
-  const tradeOptions = Array.from(
-    new Set([
-      ...(directory.data ?? []).filter((entry) => entry.isActive).map((entry) => entry.trade),
-      ...tradesOf(query.data?.report.surveyTypeSnapshot ?? null),
-    ]),
-  ).sort((a, b) => a.localeCompare(b));
+  /**
+   * The list offered when a person allocates an item: THIS JOB'S register.
+   *
+   * It used to be the register plus every trade the product knows, which offered
+   * choices that could not work — a trade this job has let nobody for has nobody
+   * to send to, so picking it looks like an allocation and delivers the item to
+   * the fallback recipient instead. The register is what a job can actually
+   * route, and it can be extended on purpose from here rather than by accident.
+   *
+   * A custom report has no project and therefore no register, so it falls back to
+   * the template's own list, which is the best that can be done without a job.
+   */
+  const registerTrades = (directory.data ?? [])
+    .filter((entry) => entry.isActive)
+    .map((entry) => entry.trade)
+    .filter((trade) => trade.trim() !== "");
+  const tradeOptions = registerFirstOptions(
+    registerTrades,
+    tradesOf(query.data?.report.surveyTypeSnapshot ?? null),
+  );
+
+  /**
+   * Which trades only one firm holds, so an allocation with nothing left to
+   * decide can be one press.
+   *
+   * A trade held by two firms is left OUT on purpose: that is a choice, and it
+   * belongs in the picker where a person can see both names.
+   */
+  const soleHolders = useMemo(() => {
+    const firmsByTrade = new Map<string, Set<string>>();
+    for (const entry of directory.data ?? []) {
+      if (!entry.isActive) continue;
+      const key = entry.trade.trim().toLowerCase();
+      const firm = entry.company.trim();
+      if (key === "" || firm === "") continue;
+      firmsByTrade.set(key, new Set([...(firmsByTrade.get(key) ?? []), firm]));
+    }
+    const out = new Map<string, string>();
+    for (const [trade, firms] of firmsByTrade) {
+      if (firms.size === 1) out.set(trade, [...firms][0] as string);
+    }
+    return out;
+  }, [directory.data]);
 
   const findingsAll = findings.data ?? [];
   const docEarly = document.data ?? null;
@@ -590,6 +628,7 @@ function ReportWorkspace() {
               onConfirmMany={writeConfirmations}
               onEditText={onEditText}
               tradeOptions={tradeOptions}
+              soleHolders={soleHolders}
               tradeEnabled={doc?.tradeEnabled ?? true}
               onAssignTrade={onAssignTrade}
               onAssignGrade={gradeFinding}
