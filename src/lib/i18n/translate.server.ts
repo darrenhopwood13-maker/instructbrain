@@ -3,10 +3,16 @@
  * here overwrites a finding, a document or a version. Translations are cached
  * per report AND per language, so one report can exist in several languages at
  * once and be sent in each of them.
+ *
+ * IT RUNS ON THE DEPLOYMENT'S OWN PROVIDER. This used to be hard-wired to
+ * OpenAI with its own key, which meant a translation silently depended on a
+ * second key being alive while everything else ran on one — and when that key
+ * went stale the 30-language feature failed on its own, with nothing in the
+ * analysis path to show for it. It now uses whichever provider the app is
+ * configured with and the same key as everything else.
  */
 
-const ENDPOINT = "https://api.openai.com/v1/chat/completions";
-const MODEL = "gpt-4o-mini";
+import { aiConfig, aiIsConfigured } from "@/lib/ai/config";
 
 const PRESERVE =
   'Preserve exactly: product names ("instructBrain", "instructSite", "Instruct"), company and trade names, ' +
@@ -14,42 +20,101 @@ const PRESERVE =
   "regulatory references and clause numbers, measurements, units, dates, currency, reference codes such as F-012, " +
   "numbers, and placeholders like {plan}.";
 
-async function callModel(system: string, payload: unknown): Promise<Record<string, unknown>> {
-  const apiKey = process.env["OPENAI_API_KEY"];
-  if (!apiKey) throw new Error("The translation service is not configured.");
+const MAX_OUTPUT_TOKENS = 4096;
 
-  const response = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: JSON.stringify(payload) },
-      ],
-    }),
-  });
+async function callModel(system: string, payload: unknown): Promise<Record<string, unknown>> {
+  if (!aiIsConfigured()) throw new Error("The translation service is not configured.");
+
+  const config = aiConfig();
+  const model = config.models.triage;
+  // DeepSeek accepts only `json_object` and requires the literal word "json" in
+  // the prompt, so the shape is named in every language here rather than
+  // enforced by the API. Harmless for the providers that do enforce it.
+  const asks = `${system}\n\nReturn valid json only.`;
+  const user = JSON.stringify(payload);
+
+  let response: Response;
+  let contentOf: (json: unknown) => string;
+
+  if (config.provider === "anthropic") {
+    response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": config.apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        system: asks,
+        messages: [{ role: "user", content: user }],
+      }),
+    });
+    contentOf = (json) =>
+      ((json as { content?: { text?: string }[] })?.content ?? [])
+        .map((part) => part?.text ?? "")
+        .join("");
+  } else if (config.provider === "google") {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: asks }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: { responseMimeType: "application/json", maxOutputTokens: MAX_OUTPUT_TOKENS },
+        }),
+      },
+    );
+    contentOf = (json) =>
+      ((json as { candidates?: { content?: { parts?: { text?: string }[] } }[] })?.candidates?.[0]
+        ?.content?.parts ?? [])
+        .map((part) => part?.text ?? "")
+        .join("");
+  } else {
+    const deepseek = config.provider === "deepseek";
+    response = await fetch(
+      deepseek ? "https://api.deepseek.com/chat/completions" : "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          // DeepSeek takes max_tokens, OpenAI takes max_completion_tokens.
+          ...(deepseek
+            ? { max_tokens: MAX_OUTPUT_TOKENS, thinking: { type: "disabled" } }
+            : { max_completion_tokens: MAX_OUTPUT_TOKENS }),
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: asks },
+            { role: "user", content: user },
+          ],
+        }),
+      },
+    );
+    contentOf = (json) =>
+      (json as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content ?? "";
+  }
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(`The translation service returned ${response.status}. ${body.slice(0, 200)}`);
   }
 
-  const json = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const content = json.choices?.[0]?.message?.content ?? "";
+  const content = contentOf(await response.json());
   try {
     return JSON.parse(content) as Record<string, unknown>;
   } catch {
     throw new Error("The translation could not be read back.");
   }
 }
+
 
 /** Interface strings: same keys in, same keys out, English kept on any miss. */
 export async function translateFlat(

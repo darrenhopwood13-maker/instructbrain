@@ -114,9 +114,10 @@ export async function analysePhotograph(
   attempts.push(triage);
 
   // Escalation is optional and may live on another provider entirely — see
-  // escalationTarget. The derived config differs from the triage config only in
-  // which provider answers and which model it is asked for, so the adapter,
-  // the key and the price all follow from it.
+  // escalationTarget. The derived config differs from the triage config in
+  // which provider answers, which model it is asked for, and whether that
+  // second pass may reason — so the adapter, the key and the price all follow
+  // from it.
   const target = escalationTarget();
   const escalationConfig: AiConfig | null = target
     ? {
@@ -124,16 +125,24 @@ export async function analysePhotograph(
         provider: target.provider,
         apiKey: target.apiKey,
         models: { ...config.models, escalation: target.model },
+        thinking: {
+          ...config.thinking,
+          escalation: target.thinking ?? config.thinking.escalation,
+        },
       }
     : null;
 
   const escalationModel = escalationConfig?.models.escalation ?? config.models.escalation;
   const escalationProvider = escalationConfig?.provider ?? config.provider;
-  // Escalating to the same provider on the same model as triage is paying twice
-  // for one opinion, so it is skipped. This is the case DeepSeek falls into of
-  // its own accord, and the reason a target is worth naming at all.
+  const escalationThinking = escalationConfig?.thinking.escalation ?? config.thinking.escalation;
+  // Escalating to the same provider, on the same model, asked the same way, is
+  // paying twice for one opinion and is skipped. On a provider with one vision
+  // model the way out is a reasoning second pass, which differs by config
+  // rather than by model name — hence the third test.
   const escalationDiffers =
-    escalationProvider !== config.provider || escalationModel !== config.models.triage;
+    escalationProvider !== config.provider ||
+    escalationModel !== config.models.triage ||
+    escalationThinking !== config.thinking.triage;
 
   let chosen = triage;
   if (

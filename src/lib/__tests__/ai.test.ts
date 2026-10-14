@@ -592,6 +592,9 @@ describe("escalation may live on another provider", () => {
     "AI_ESCALATION_MODEL_ANTHROPIC",
     "AI_ESCALATION_MODEL_OPENAI",
     "AI_ESCALATION_MODEL_GOOGLE",
+    "AI_THINKING",
+    "AI_TRIAGE_THINKING",
+    "AI_ESCALATION_THINKING",
     "AI_TRIAGE_MODEL_ANTHROPIC",
     "AI_TRIAGE_MODEL_OPENAI",
     "AI_TRIAGE_MODEL_GOOGLE",
@@ -624,52 +627,72 @@ describe("escalation may live on another provider", () => {
     return warnings;
   }
 
-  it("has nothing to fall back to when no second key exists, and says so", () => {
-    // DeepSeek on its own. Both tiers are deepseek-flash, so escalation cannot
-    // run there, and there is no other key to run it on.
+it("asks the same model again, with reasoning on, when there is no second model", () => {
+    // DeepSeek exposes one vision model, so there is nothing to escalate TO. The
+    // second look is made different by letting it reason instead: same provider,
+    // same key, same model. Nothing here needs a second key — which is the
+    // point, because one key is one thing that can go stale.
     withEnv(DEEPSEEK, () => {
-      let target: unknown = "unset";
       const warnings = silenceWarnings(() => {
-        target = escalationTarget();
+        expect(escalationTarget()).toEqual({
+          provider: "deepseek",
+          apiKey: "test-key-not-used",
+          model: "deepseek-flash",
+          thinking: true,
+        });
       });
-      expect(target).toBeNull();
-      expect(warnings.join("\n")).toContain("OPENAI_API_KEY");
+      expect(warnings.join("\n")).toContain("reasoning on");
     });
   });
 
-  it("finds another provider on its own, so the second look is not silently lost", () => {
-    // THE PRODUCTION BUG THIS CLOSES. AI_ESCALATION_PROVIDER unset used to mean
-    // escalation never ran at all on DeepSeek — every finding had exactly one
-    // attempt, including fail-tone snags that should escalate, for two days of
-    // reports, with nothing alerting. An unset variable is not a decision to
-    // switch the safety net off.
+  
+it("stays on its own provider rather than borrowing a key it does not need", () => {
+    // This used to reach for whichever other key was present, which is how a
+    // deployment ended up firing every escalation at a stale key elsewhere for
+    // twelve days. A reasoning pass needs no second key, so another provider is
+    // used only when it is NAMED.
     withEnv({ ...DEEPSEEK, ...ANTHROPIC }, () => {
       const warnings = silenceWarnings(() => {
         expect(escalationTarget()).toEqual({
-          provider: "anthropic",
+          provider: "deepseek",
           apiKey: "test-key-not-used",
-          model: "claude-sonnet-4-5",
+          model: "deepseek-flash",
+          thinking: true,
         });
       });
-      expect(warnings.join("\n")).toContain("AI_ESCALATION_PROVIDER is unset");
+      expect(warnings.join("\n")).toContain("AI_ESCALATION_PROVIDER");
     });
   });
 
-  it("prefers a cheap vision model first, then the others", () => {
-    withEnv({ ...DEEPSEEK, ...ANTHROPIC }, () => {
-      silenceWarnings(() => expect(escalationTarget()?.provider).toBe("anthropic"));
-    });
-    withEnv({ ...DEEPSEEK, ...ANTHROPIC, ...OPENAI }, () => {
-      silenceWarnings(() => {
-        expect(escalationTarget()?.provider).toBe("openai");
-        expect(escalationTarget()?.model).toBe("gpt-4.1");
-      });
-    });
-    withEnv({ ...DEEPSEEK, ...GOOGLE }, () => {
-      silenceWarnings(() => expect(escalationTarget()?.provider).toBe("google"));
+  it("asks for reasoning when the named provider is the triage provider itself", () => {
+    // Named back at DeepSeek, the one-model problem returns, so the flag has to
+    // be set here too — otherwise analysePhotograph skips the tier and the
+    // naming achieves nothing at all.
+    withEnv({ ...DEEPSEEK, AI_ESCALATION_PROVIDER: "deepseek" }, () => {
+      expect(escalationTarget()).toEqual({
+          provider: "deepseek",
+          apiKey: "test-key-not-used",
+          model: "deepseek-flash",
+          thinking: true,
+        });
     });
   });
 
+  
+it("honours a named provider for each of the others", () => {
+    // Naming one is an instruction, not a guess: a deployment holding a live key
+    // elsewhere can still buy a true second brain.
+    withEnv({ ...DEEPSEEK, ...OPENAI, AI_ESCALATION_PROVIDER: "openai" }, () => {
+      expect(escalationTarget()?.provider).toBe("openai");
+      expect(escalationTarget()?.model).toBe("gpt-4.1");
+    });
+    withEnv({ ...DEEPSEEK, ...GOOGLE, AI_ESCALATION_PROVIDER: "google" }, () => {
+      expect(escalationTarget()?.provider).toBe("google");
+      expect(escalationTarget()?.model).toBe("gemini-2.5-pro");
+    });
+  });
+
+  
   it("leaves a provider that can escalate within itself completely alone", () => {
     // OpenAI's own two tiers differ (gpt-4.1-mini -> gpt-4.1), so it needs no
     // help and gets none. This is the branch that keeps a working deployment
@@ -735,9 +758,16 @@ describe("escalation may live on another provider", () => {
   describe("and actually runs there, or does not", () => {
     const original = { deepseek: adapters.deepseek, anthropic: adapters.anthropic };
 
-    function stub(label: string, calls: string[], payload: unknown) {
-      return (async () => {
+    type SeenCall = { tier: string; model: string; thinking: boolean };
+
+    function stub(label: string, calls: string[], payload: unknown, seen: SeenCall[]) {
+      return (async (request: { tier: string; model: string; config: { thinking: Record<string, boolean> } }) => {
         calls.push(label);
+        seen.push({
+          tier: request.tier,
+          model: request.model,
+          thinking: request.config.thinking[request.tier] === true,
+        });
         return { payload, raw: {}, usage: { inputTokens: 10, outputTokens: 5 } };
       }) as unknown as typeof adapters.deepseek;
     }
@@ -760,8 +790,9 @@ describe("escalation may live on another provider", () => {
 
     async function run(vars: Record<string, string>) {
       const calls: string[] = [];
-      (adapters as Record<string, unknown>)["deepseek"] = stub("deepseek", calls, unsure);
-      (adapters as Record<string, unknown>)["anthropic"] = stub("anthropic", calls, definite);
+      const seen: SeenCall[] = [];
+      (adapters as Record<string, unknown>)["deepseek"] = stub("deepseek", calls, unsure, seen);
+      (adapters as Record<string, unknown>)["anthropic"] = stub("anthropic", calls, definite, seen);
       let outcome: Awaited<ReturnType<typeof analysePhotograph>> | null = null;
       // withEnv is synchronous, so the env must be applied around the await.
       const before = MANAGED.map((name) => [name, process.env[name]] as const);
@@ -775,30 +806,44 @@ describe("escalation may live on another provider", () => {
           else process.env[name] = value;
         }
       }
-      return { calls, outcome: outcome! };
+      return { calls, seen, outcome: outcome! };
     }
 
-    it("skips escalation entirely when both tiers are the same model", async () => {
-      // This is DeepSeek as shipped: one vision model, so the second look has
-      // nowhere to go and silently never happens.
-      const { calls, outcome } = await run(DEEPSEEK);
-      expect(calls).toEqual(["deepseek"]);
-      expect(outcome.tier).toBe("triage");
-      expect(outcome.attempts).toHaveLength(1);
-    });
-
-    it("escalates on the provider it found by itself, with nothing configured", async () => {
-      // The end-to-end proof: no AI_ESCALATION_PROVIDER, two keys present, and
-      // the second look actually runs — two adapter calls, the escalation's
-      // answer kept, and the model named on the attempt that ran.
-      const { calls, outcome } = await run({ ...DEEPSEEK, ...ANTHROPIC });
-      expect(calls).toEqual(["deepseek", "anthropic"]);
+it("escalates on the same model, with reasoning on for that pass alone", async () => {
+      // The end-to-end shape of "one vision model": two calls to the same
+      // provider and the same model, the second one allowed to reason. The
+      // triage pass is untouched and stays on the cost.
+      const { calls, seen, outcome } = await run(DEEPSEEK);
+      expect(calls).toEqual(["deepseek", "deepseek"]);
+      expect(seen.map((entry) => entry.thinking)).toEqual([false, true]);
+      expect(seen.map((entry) => entry.model)).toEqual(["deepseek-flash", "deepseek-flash"]);
       expect(outcome.tier).toBe("escalation");
-      expect(outcome.attempts.map((attempt) => attempt.provider)).toEqual(["deepseek", "anthropic"]);
-      expect(outcome.attempts[1]!.model).toBe("claude-sonnet-4-5");
-      expect(outcome.envelope?.observations[0]!.confidence).toBe(0.9);
+      expect(outcome.attempts).toHaveLength(2);
     });
 
+    it("still skips it when the second pass would be the identical call", async () => {
+      // With reasoning already on for triage, a reasoning escalation is the same
+      // call twice over, so the guard skips it — which is what it is for.
+      const { calls, outcome } = await run({ ...DEEPSEEK, AI_TRIAGE_THINKING: "true" });
+      expect(calls).toEqual(["deepseek"]);
+      expect(outcome.attempts).toHaveLength(1);
+      expect(outcome.tier).toBe("triage");
+    });
+
+    
+it("does not borrow another provider's key when nothing is configured", async () => {
+      // ANTHROPIC_API_KEY is present and deliberately unused: the second look
+      // stays on DeepSeek, where the app already runs, because a second key is
+      // exactly the thing that broke.
+      const { calls, seen, outcome } = await run({ ...DEEPSEEK, ...ANTHROPIC });
+      expect(calls).toEqual(["deepseek", "deepseek"]);
+      expect(seen.map((entry) => entry.thinking)).toEqual([false, true]);
+      expect(outcome.tier).toBe("escalation");
+      expect(outcome.attempts.map((attempt) => attempt.provider)).toEqual(["deepseek", "deepseek"]);
+      expect(outcome.attempts[1]!.model).toBe("deepseek-flash");
+    });
+
+    
     it("escalates to the named provider, and records which model answered", async () => {
       const { calls, outcome } = await run({
         ...DEEPSEEK,

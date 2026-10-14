@@ -208,6 +208,11 @@ export type EscalationTarget = {
   provider: ProviderId;
   apiKey: string;
   model: string;
+  /**
+   * Whether the second look may reason before it answers. Only set when the
+   * second look is the SAME model as triage — see autoEscalationTarget.
+   */
+  thinking?: boolean;
 };
 
 /**
@@ -224,7 +229,9 @@ export type EscalationTarget = {
  * tier exists for: a false negative on a defect costs far more than the tokens.
  *
  * So escalation may be pointed at a different provider — usually the cheap
- * tier of one already trusted — while triage stays where the volume is:
+ * tier of one already trusted — while triage stays where the volume is. Naming
+ * one is optional: left alone, the same model is asked again with reasoning on
+ * (see autoEscalationTarget), which needs no second key at all:
  *
  *   AI_ESCALATION_PROVIDER=anthropic
  *
@@ -264,32 +271,40 @@ export function escalationTarget(): EscalationTarget | null {
     return null;
   }
 
-  return {
-    provider: profile.id,
-    apiKey,
-    model: resolveModel(profile.id, "escalation", profile.escalationModel),
-  };
+  const model = resolveModel(profile.id, "escalation", profile.escalationModel);
+  // Named at the provider that already runs triage, on the same model: the
+  // second look only becomes different if it reasons, so ask for that rather
+  // than resolve to an identical call that analysePhotograph will skip.
+  const triage = selectProfile();
+  const sameAsTriage = triage !== null && triage.id === profile.id && model === triage.triageModel;
+  return { provider: profile.id, apiKey, model, ...(sameAsTriage ? { thinking: true } : {}) };
 }
-
-/**
- * Fallback providers for the escalation tier, cheapest credible second opinion
- * first. DeepSeek is deliberately absent: its one vision model is the model
- * triage has just used, so escalating to it is paying twice for one opinion.
- */
-const ESCALATION_FALLBACK_ORDER: ProviderId[] = ["openai", "anthropic", "google"];
 
 /**
  * The escalation tier solved without being asked.
  *
- * Only the broken shape is touched: a provider whose two tiers resolve to the
- * same model cannot escalate within itself, and analysePhotograph then skips
- * the second look entirely. An unset AI_ESCALATION_PROVIDER used to mean that
- * stayed silent for months. If another provider's key is present, it is used
- * for escalation alone — triage keeps running where the volume is, which is the
- * cost decision. Naming AI_ESCALATION_PROVIDER always wins over this.
+ * ONE VISION MODEL IS THE WHOLE PROBLEM. DeepSeek exposes exactly one model
+ * that can see — `deepseek-flash` — so both tiers resolve to the same name and
+ * `analysePhotograph` skips the second look, because escalating to the model
+ * that just answered is paying twice for one opinion. That is not a decision
+ * anyone made; it is a shape the configuration fell into, and it silently
+ * switched a safety net off.
  *
- * A provider that CAN escalate within itself is left exactly as it was, so this
- * changes nothing for OpenAI, Anthropic or Google deployments.
+ * THE SECOND LOOK IS MADE DIFFERENT IN THE ONLY WAY THAT IS LEFT: it reasons.
+ * Same provider, same key, same model, with thinking on for the escalation
+ * tier alone. It is a genuinely different attempt at the same photograph — a
+ * different pass, with room to be unsure out loud — which is what the tier
+ * exists for. What it is NOT is a different brain: a second opinion from the
+ * same model, asked to reason, is weaker evidence than a second opinion from
+ * another provider, and the code should not pretend otherwise.
+ *
+ * It also means ONE key to keep alive instead of two. This was written after a
+ * deployment ran for twelve days with every escalation attempt bouncing off a
+ * stale key at another provider: the tier was firing and the door was locked.
+ *
+ * Naming AI_ESCALATION_PROVIDER always wins over this, so a deployment that
+ * wants a true second brain — and holds a live key for it — can still say so.
+ * Nothing here changes a provider whose two tiers already differ.
  */
 function autoEscalationTarget(): EscalationTarget | null {
   const triage = selectProfile();
@@ -297,27 +312,15 @@ function autoEscalationTarget(): EscalationTarget | null {
   // Both tiers on one model is the only case that needs help.
   if (triage.triageModel !== triage.escalationModel) return null;
 
-  for (const id of ESCALATION_FALLBACK_ORDER) {
-    if (id === triage.id) continue;
-    const profile = providerProfiles().find((candidate) => candidate.id === id);
-    if (!profile) continue;
-    const apiKey = env(profile.keyEnv);
-    if (!apiKey) continue;
-    const model = resolveModel(profile.id, "escalation", profile.escalationModel);
-    console.warn(
-      `[ai-config] "${triage.id}" runs one vision model on both tiers, so escalation cannot run there. ` +
-        `AI_ESCALATION_PROVIDER is unset; escalating on "${profile.id}" (${model}). ` +
-        `Set AI_ESCALATION_PROVIDER to choose a different one.`,
-    );
-    return { provider: profile.id, apiKey, model };
-  }
+  const apiKey = env(triage.keyEnv);
+  if (!apiKey) return null;
 
   console.warn(
-    `[ai-config] "${triage.id}" runs one vision model on both tiers, and no other provider key is set, ` +
-      `so the escalation tier cannot run at all. Add OPENAI_API_KEY, ANTHROPIC_API_KEY or GOOGLE_API_KEY ` +
-      `beside it, or set AI_ESCALATION_PROVIDER.`,
+    `[ai-config] "${triage.id}" runs one vision model on both tiers, so escalation cannot use a different ` +
+      `model. Escalating on the same model with reasoning on (${triage.escalationModel}), which is what makes ` +
+      `the second look different. Set AI_ESCALATION_PROVIDER to use a different provider instead.`,
   );
-  return null;
+  return { provider: triage.id, apiKey, model: triage.escalationModel, thinking: true };
 }
 
 export function aiConfig(): AiConfig {
