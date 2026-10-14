@@ -81,6 +81,11 @@ export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
     family: "site",
     purpose: "A walk of the site: safety, housekeeping, access and welfare, each with a time to fix.",
   },
+  health_safety_housekeeping: {
+    family: "site",
+    purpose:
+      "Safety and housekeeping on their own: six checks, an outcome per point, and nothing about the building's condition.",
+  },
   electrical_installation: {
     family: "mne",
     purpose: "Defects graded against BS 7671, with the board or circuit for each item.",

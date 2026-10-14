@@ -105,6 +105,12 @@ const STEP_OF: Record<string, LadderStepId> = {
   medium: "planned", // "Localised defect. Schedule within current programme."
   low: "record", // "Cosmetic or minor wear. No immediate risk."
 
+  // Health, safety & housekeeping inspection - 0 / 8 / 120 / 168 hours.
+  stop_activity: "now", // "Imminent danger to anyone on site. Stop the activity, isolate the area." (0h)
+  before_shift_end: "now", // "A hazard that could hurt somebody before the shift is out." (8h)
+  within_the_week: "week", // "A real risk with no immediate danger." (120h)
+  order_and_tidiness: "planned", // "Housekeeping and general order." (168h)
+
   // Snagging - no target times, so the rungs follow its wording.
   structural_safety: "now", // "Potential risk to structure or to persons. Escalate immediately."
   compliance: "week", // "May not satisfy Building Regulations. Escalate for verification."

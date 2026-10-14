@@ -1263,10 +1263,136 @@ export const certificateRegisterDefinition: SurveyDefinition = {
   supportsDistribution: false,
 };
 
+/**
+ * Health, safety and housekeeping inspection.
+ *
+ * WHY THIS EXISTS
+ * Asked for on 14 Oct 2026: a report scoped purely to health, safety and
+ * housekeeping, with nothing about the fabric of the building in it. The site
+ * condition walk covers safety, but it is named for condition and it carries the
+ * fabric alongside, so a safety-only inspection had nowhere to go and a client
+ * could not tell the two apart by name.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO
+ * It carries no regulatory citations, and that is a decision rather than an
+ * omission. A finding here describes a condition and the action it needs; it never
+ * asserts that anything is a breach of a regulation. The report is a record that
+ * supports a site's own health and safety file, and its wording must not let a
+ * reader treat "compliant" as a legal warranty. The certificate register is the
+ * template that names instruments, and it names them for a certificate's own
+ * expiry, never as an assessment of the site.
+ *
+ * The six sections are the walk itself: housekeeping, welfare, protective
+ * equipment, fire and escape, routes, and the paperwork held on site.
+ */
+export const healthSafetyHousekeepingDefinition: SurveyDefinition = {
+  id: "health_safety_housekeeping",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Health, safety & housekeeping inspection",
+  category: "site_safety",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "compliant", label: "Compliant — nothing to do", tone: "pass" },
+    { id: "non_compliant", label: "Non-compliant — put it right", tone: "fail" },
+    { id: "not_applicable", label: "Not applicable here", tone: "neutral" },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [
+    {
+      id: "stop_activity",
+      label: "Stop the activity — make safe",
+      guidance:
+        "Imminent danger to anyone on site. Stop the activity, isolate the area and tell the site manager in person.",
+      targetHours: 0,
+    },
+    {
+      id: "before_shift_end",
+      label: "Before the shift ends",
+      guidance:
+        "A hazard that could hurt somebody before the shift is out. Make it safe before the area is used again.",
+      targetHours: 8,
+    },
+    {
+      id: "within_the_week",
+      label: "Within the week",
+      guidance: "A real risk with no immediate danger. Programme it, and close it out this week.",
+      targetHours: 120,
+    },
+    {
+      id: "order_and_tidiness",
+      label: "Order and tidiness",
+      guidance: "Housekeeping and general order. Put it right in the normal course of the work.",
+      targetHours: 168,
+    },
+  ],
+  hazardCategories: [
+    {
+      id: "housekeeping_order",
+      label: "Housekeeping and order",
+      defaultTrades: ["Principal contractor"],
+    },
+    { id: "welfare_facilities", label: "Welfare facilities", defaultTrades: ["Principal contractor"] },
+    { id: "protective_equipment", label: "Protective equipment", defaultTrades: [] },
+    {
+      id: "fire_escape_first_aid",
+      label: "Fire, escape and first aid",
+      defaultTrades: ["Principal contractor"],
+    },
+    { id: "routes_and_separation", label: "Routes and separation", defaultTrades: [] },
+    { id: "paperwork_on_site", label: "Paperwork held on site", defaultTrades: ["Principal contractor"] },
+  ],
+  captureFields: [
+    {
+      id: "location",
+      label: "Where",
+      type: "text",
+      required: true,
+      hint: "The zone, level or room the inspection covers",
+    },
+    {
+      id: "raised_with",
+      label: "Raised with",
+      type: "text",
+      hint: "Who was told and when — leave it blank if nobody has been told yet",
+    },
+  ],
+  aiGuidance: {
+    persona: `A health and safety inspection on a live site, walked by the site manager. Practical and direct, written as a record for the health and safety file.
+
+Report conditions only, and never give a legal opinion. Do not state or imply that anything is a breach of a regulation, do not cite an instrument, and do not describe a finding as illegal, unlawful or a prosecution risk. Say what can be seen and what it needs: that is the whole job.
+
+The report is a record that supports the site's own health and safety file. It is not a legal instrument and must never read as one.
+
+One finding per distinct issue. Never merge two issues into one line: they have different owners, different urgency and different fixes.`,
+    focus:
+      "Work areas and walkways clear, materials stacked and stored safely, waste segregated and removed, trailing leads and temporary power, standing water and spillages, welfare facilities clean, stocked and usable, protective equipment worn and serviceable, fire points and extinguishers clear and in date, escape routes and signage, first aid provision, pedestrian and plant routes separated, barriers and edge protection, and the check sheets, permits and inspections held on site.",
+    multiFindingGuidance:
+      "One photograph may show several separate issues. Return one finding per distinct issue — do not merge unrelated issues into one finding, and do not split one issue across several.",
+    failCriteria:
+      "Any condition that could injure somebody, obstructs a route or an escape, leaves welfare short of a usable standard, or would be raised on a client or an HSE walk.",
+    excludeCriteria:
+      "Work in progress with materials in active, controlled use is NOT a finding, and neither is a tidy, well-managed area. Do not manufacture a finding to fill a section: an inspection that finds everything in order is a result, not a gap.",
+    peopleGuidance:
+      "Describe conditions and never people. Do not describe, identify, count or characterise any person in the photograph, and never attribute a condition to a named individual.",
+    tradeGuidance:
+      "Where the responsible trade can be reasonably inferred from the materials, tools or work visible, suggest it and say what the inference rests on. If it cannot be inferred, return null rather than guessing. Never state a trade as certain.",
+    abstainGuidance:
+      "If the photograph is too dark, blurred or ambiguous to judge, return not_assessed.",
+  },
+  outputSections: ["cover", "scope", "summary", "schedule_by_area", "appendix"],
+  requiresTradeAssignment: true,
+  standardTrades: ["Principal contractor"],
+  requiresLifecycle: true,
+  supportsDistribution: true,
+  defaultDistributionGrouping: "trade",
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
   siteWalkDefinition,
+  healthSafetyHousekeepingDefinition,
   scheduleOfConditionDefinition,
   weatherproofingDefinition,
   propertyInventoryDefinition,

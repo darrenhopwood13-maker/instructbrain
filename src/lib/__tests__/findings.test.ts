@@ -222,6 +222,18 @@ describe("no discipline's vocabulary leaks into another", () => {
     "hse hsg274 - legionella technical guidance",
     "epb_2012",
     "epb regulations 2012 - air-conditioning inspections",
+    // Added 14 Oct 2026, when the health, safety and housekeeping inspection gained
+    // its six sections. Its vocabulary IS the site safety vocabulary, and that is the
+    // point rather than a collision: housekeeping, welfare, fire and the urgency words
+    // name the same checks and the same rungs on the site condition walk and on a
+    // safety-only inspection alike. A finding that names one has to mean the same
+    // thing on either template, or a reader comparing the two reports is misled.
+    "housekeeping",
+    "welfare",
+    "facilities",
+    "fire",
+    "stop",
+    "week",
   ]);
 
   const tokens = (definition: SurveyTypeSnapshot) =>
