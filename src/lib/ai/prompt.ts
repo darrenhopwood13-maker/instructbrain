@@ -91,6 +91,14 @@ export function buildSystemPrompt(
   snapshot: SurveyTypeSnapshot,
   brief?: ReportBrief | null,
   findingsRule?: BriefFindingsRule,
+  /**
+   * The trades this PROJECT actually has, from its own directory. When present
+   * it is the closed list: a suggestion that is not on it can never match a
+   * recipient, so the finding silently falls to the fallback instead of the firm
+   * that should have fixed it. Null means the report has no project behind it,
+   * and the template's own list is the best that can be done.
+   */
+  projectTrades?: readonly string[] | null,
 ): string {
   const multiple = allowsMultipleFindingsPerPhoto(snapshot, findingsRule ?? brief ?? null);
 
@@ -149,7 +157,15 @@ export function buildSystemPrompt(
         group.items.map((item) => `${item.id} — ${item.label}`),
       ),
     ),
-    list("Trades this survey type recognises", tradesOf(snapshot)),
+    projectTrades && projectTrades.length > 0
+      ? [
+          list("Trades on this job — choose one of these, or none", [...projectTrades]),
+          "These are the trades this job actually has, taken from the project directory. Choose " +
+            "the closest one. If none of them fits the finding, return suggested_trade as null " +
+            "and say nothing about a trade at all: a trade that is not on the list above cannot " +
+            "be given to anybody, so naming one loses the finding its recipient.",
+        ].join("\n\n")
+      : list("Trades this survey type recognises", tradesOf(snapshot)),
     aiCaptureFieldsOf(snapshot).length > 0
       ? list(
           "Per-observation capture fields — return capture_fields with exactly these ids on every observation",

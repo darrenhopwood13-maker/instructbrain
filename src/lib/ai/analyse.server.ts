@@ -166,7 +166,7 @@ export function snapshotKey(
 async function loadReport(client: AnyClient, reportId: string) {
   const { data, error } = await table(client, "reports")
     .select(
-      "id, organisation_id, cover_photo_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
+      "id, organisation_id, project_id, cover_photo_id, survey_type_snapshot, brief, project:projects(name, client_name, address)",
     )
     .eq("id", reportId)
     .maybeSingle();
@@ -175,6 +175,7 @@ async function loadReport(client: AnyClient, reportId: string) {
   return data as {
     id: string;
     organisation_id: string;
+    project_id: string | null;
     cover_photo_id: string | null;
     survey_type_snapshot: unknown;
     brief: unknown;
@@ -315,6 +316,33 @@ async function clearPreviousDrafts(
  * cancellable and resumable: cancelling mid-run leaves completed findings
  * intact, and resuming picks up whatever is still unanalysed.
  */
+/**
+ * The project's own trade register, as the prompt's closed list.
+ *
+ * Read from the directory rather than the template: the template is every trade
+ * the product knows, the directory is what this job has actually let. A trade
+ * that is not on the list cannot be matched to a recipient, so the model is
+ * asked to choose from it or decline. Null when there is no project behind the
+ * report, so a custom report keeps the template's list rather than an empty one.
+ */
+async function projectTradesFor(
+  client: AnyClient,
+  projectId: string | null | undefined,
+): Promise<string[] | null> {
+  if (!projectId) return null;
+  const { data, error } = await table(client, "project_directory")
+    .select("trade")
+    .eq("project_id", projectId)
+    .eq("is_active", true);
+  if (error) return null;
+  const trades = new Set<string>();
+  for (const row of (data ?? []) as Array<{ trade?: string | null }>) {
+    const named = (row.trade ?? "").trim();
+    if (named !== "") trades.add(named);
+  }
+  return trades.size > 0 ? [...trades].sort((x, y) => x.localeCompare(y)) : null;
+}
+
 export async function analysePhotoForReport(
   client: AnyClient,
   input: { reportId: string; photoId: string; force?: boolean; fast?: boolean },
@@ -381,7 +409,7 @@ export async function analysePhotoForReport(
 
   // Built here, before the key, because the key carries a fingerprint of it: a
   // prompt that has changed must not match an answer written under an older one.
-  const systemPrompt = buildSystemPrompt(snapshot, brief, findingsRule);
+  const systemPrompt = buildSystemPrompt(snapshot, brief, findingsRule, await projectTradesFor(client, report.project_id));
 
   const key = snapshotKey(
     snapshot,

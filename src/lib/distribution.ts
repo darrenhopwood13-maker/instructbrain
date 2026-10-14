@@ -27,10 +27,19 @@ export function distributionRefs(findings: Finding[], trade?: string): string[] 
 /* Grouping                                                             */
 /* ------------------------------------------------------------------ */
 
-/** The definition chooses how a report is broken up for distribution. */
-export type GroupingKey = "trade" | "area" | "severity";
+/**
+ * How a report is broken up for distribution.
+ *
+ * "subcontractor" is the one that answers the question a site actually asks:
+ * who is going to receive this? Trade is what a survey can name, but a firm is
+ * what receives an extract, and the two are not the same thing — one firm can
+ * hold several trades, and one trade can be held by two firms working different
+ * packages. Grouping by trade sends a firm an extract per trade and cannot tell
+ * two firms apart at all.
+ */
+export type GroupingKey = "trade" | "area" | "severity" | "subcontractor";
 
-const GROUPINGS: GroupingKey[] = ["trade", "area", "severity"];
+const GROUPINGS: GroupingKey[] = ["trade", "area", "severity", "subcontractor"];
 
 export function resolveGrouping(value: unknown): GroupingKey {
   return GROUPINGS.includes(value as GroupingKey) ? (value as GroupingKey) : "trade";
@@ -42,6 +51,17 @@ export type GroupableFinding = {
   ref: string;
   sequence?: number;
   assignedTrade: string | null;
+  /**
+   * The directory row this finding belongs to, resolved by the caller.
+   *
+   * It is resolved outside this module because the answer needs the project's
+   * directory, and resolution is a database question, not a grouping one. An
+   * explicit assignment wins; a trade held by exactly one firm resolves to that
+   * firm; anything else stays null and is handed to a person.
+   */
+  assignedFirmKey?: string | null;
+  /** The contact a person explicitly assigned this item to, if any. */
+  assignedContactId?: string | null;
   severityId: string | null;
   captureFields: Record<string, string>;
   isConfidential: boolean;
@@ -51,6 +71,43 @@ export type GroupableFinding = {
 };
 
 export const UNASSIGNED_GROUP = "__unassigned__";
+
+/** One firm's hold on one trade, as the directory stores it. */
+export type DirectoryHolder = { id: string; trade: string | null; contactIds: string[] };
+
+/**
+ * Which firm a finding belongs to.
+ *
+ * The order matters and each step has a reason:
+ *
+ *   1. An explicit assignment wins. A person put this item somewhere, and the
+ *      machine does not overrule a person.
+ *   2. Failing that, a trade held by exactly ONE firm resolves to it. There is
+ *      nothing to decide, so making somebody decide would be noise.
+ *   3. A trade held by TWO firms resolves to nobody. This is the case that used
+ *      to go wrong silently: the old lookup took the first directory row whose
+ *      trade matched, so a second firm on the same trade was simply never sent
+ *      anything and nobody was told. A decision belongs to a person, and an
+ *      item that is nobody's shows up as "Nobody allocated" where it can be
+ *      seen.
+ *
+ * Returns the directory row id, which is what a firm is identified by.
+ */
+export function resolveFirmKey(
+  finding: { assignedContactId?: string | null; assignedTrade: string | null },
+  holdersByTrade: Map<string, DirectoryHolder[]>,
+  firmByContact: Map<string, string>,
+): string | null {
+  const contactId = (finding.assignedContactId ?? "").trim();
+  if (contactId !== "") {
+    const firm = firmByContact.get(contactId);
+    if (firm) return firm;
+  }
+  const tradeKey = (finding.assignedTrade ?? "").trim().toLowerCase();
+  if (tradeKey === "") return null;
+  const holders = holdersByTrade.get(tradeKey) ?? [];
+  return holders.length === 1 ? (holders[0]?.id ?? null) : null;
+}
 
 /** Kept as this module's own name for the shared answer, not a second opinion. */
 export function locationOf(captureFields: Record<string, string>): string {
@@ -67,6 +124,10 @@ export function groupKeyOf(
   if (grouping === "severity") {
     return resolveSeverity(snapshot, finding.severityId)?.id ?? UNASSIGNED_GROUP;
   }
+  if (grouping === "subcontractor") {
+    const firm = (finding.assignedFirmKey ?? "").trim();
+    return firm === "" ? UNASSIGNED_GROUP : firm;
+  }
   const trade = (finding.assignedTrade ?? "").trim();
   return trade === "" ? UNASSIGNED_GROUP : trade;
 }
@@ -75,15 +136,19 @@ export function groupLabelOf(
   key: string,
   grouping: GroupingKey,
   snapshot?: SurveyTypeSnapshot | null,
+  firmLabels?: Map<string, string> | null,
 ): string {
   if (key === UNASSIGNED_GROUP) {
     return grouping === "trade"
       ? "No trade assigned"
-      : grouping === "area"
-        ? "No location recorded"
-        : "No severity recorded";
+      : grouping === "subcontractor"
+        ? "Nobody allocated"
+        : grouping === "area"
+          ? "No location recorded"
+          : "No severity recorded";
   }
   if (grouping === "severity") return resolveSeverity(snapshot, key)?.label ?? key;
+  if (grouping === "subcontractor") return firmLabels?.get(key) ?? key;
   return key;
 }
 
@@ -103,6 +168,7 @@ export function groupForDistribution(
   findings: GroupableFinding[],
   grouping: GroupingKey,
   snapshot?: SurveyTypeSnapshot | null,
+  firmLabels?: Map<string, string> | null,
 ): ExtractGroup[] {
   const groups = new Map<string, ExtractGroup>();
 
@@ -111,7 +177,7 @@ export function groupForDistribution(
     const key = groupKeyOf(finding, grouping, snapshot);
     const group = groups.get(key) ?? {
       key,
-      label: groupLabelOf(key, grouping, snapshot),
+      label: groupLabelOf(key, grouping, snapshot, firmLabels),
       findings: [],
       items: [],
     };

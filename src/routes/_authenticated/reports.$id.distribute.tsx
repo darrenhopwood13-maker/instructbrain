@@ -20,6 +20,32 @@ function isLikelyEmail(value: string): boolean {
 }
 
 /**
+ * The lens this screen opens on.
+ *
+ * Subcontractor, not trade, because a firm is what receives an extract: one
+ * firm holding three trades should get one document, and a trade held by two
+ * firms has to be split. Trade stays available for anyone who thinks in trades,
+ * and it is honest about its own limit — where two firms hold one trade it can
+ * only show that the item needs a decision.
+ */
+const GROUPINGS = ["subcontractor", "trade", "severity"] as const;
+type GroupingChoice = (typeof GROUPINGS)[number];
+
+const GROUPING_LABEL: Record<GroupingChoice, string> = {
+  subcontractor: "By subcontractor",
+  trade: "By trade",
+  severity: "By severity",
+};
+
+const GROUPING_BLURB: Record<string, string> = {
+  subcontractor:
+    "Grouped by subcontractor, so each firm is sent one extract holding only its own items.",
+  trade: "Grouped by responsible trade.",
+  severity: "Grouped by severity.",
+  area: "Grouped by location.",
+};
+
+/**
  * The distribution review screen. NOTHING SENDS AUTOMATICALLY, EVER.
  *
  * Every send on this page is a person pressing a button: there is no send on
@@ -27,6 +53,8 @@ function isLikelyEmail(value: string): boolean {
  * the rows the person has left included, one explicit action.
  */
 export const Route = createFileRoute("/_authenticated/reports/$id/distribute")({
+  // grouping is chosen per visit, not stored: it changes how a person reads the
+  // plan, not what the plan is.
   head: () => {
     const title = "Review distribution — instructBrain";
     const description =
@@ -67,7 +95,8 @@ function deliveryLabel(row: PlanRow): { text: string; tone: string } {
 function DistributionReview() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
-  const plan = useQuery(distributionPlanQuery(id));
+  const [grouping, setGrouping] = useState<GroupingChoice>("subcontractor");
+  const plan = useQuery(distributionPlanQuery(id, grouping));
   const [excluded, setExcluded] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
   // Only used when the plan has no project directory to source a recipient from.
@@ -222,9 +251,33 @@ function DistributionReview() {
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {isQuick
             ? "A custom report has no project directory, so the whole report goes to one recipient you enter below."
-            : `Grouped by ${data?.grouping === "trade" ? "responsible trade" : data?.grouping}.`}{" "}
+            : (GROUPING_BLURB[data?.grouping ?? "trade"] ?? "Grouped by responsible trade.")}{" "}
           Nothing leaves instructBrain until you press send.
         </p>
+        {!isQuick && data ? (
+          <div
+            role="radiogroup"
+            aria-label="How the extracts are grouped"
+            className="mt-4 inline-flex flex-wrap gap-1 rounded-lg border border-border bg-surface-sunken p-1"
+          >
+            {GROUPINGS.map((choice) => (
+              <button
+                key={choice}
+                type="button"
+                role="radio"
+                aria-checked={grouping === choice}
+                onClick={() => setGrouping(choice)}
+                className={
+                  grouping === choice
+                    ? "rounded-md bg-surface-raised px-3 py-1.5 text-sm font-semibold text-foreground"
+                    : "rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+                }
+              >
+                {GROUPING_LABEL[choice]}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {data && data.withheldCount > 0 ? (
           <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface-sunken px-3 py-2 text-sm">
             <Lock aria-hidden="true" className="size-4" />

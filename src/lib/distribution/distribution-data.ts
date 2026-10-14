@@ -4,6 +4,7 @@ import { DataError } from "@/lib/data";
 import {
   buildExtractDocument,
   groupForDistribution,
+  resolveFirmKey,
   resolveGrouping,
   toExtractItem,
   UNASSIGNED_GROUP,
@@ -11,6 +12,7 @@ import {
   type ExtractSource,
   type GroupableFinding,
   type GroupingKey,
+  type DirectoryHolder,
 } from "@/lib/distribution";
 import { earliestTargetDate, severityBreakdown } from "@/lib/email/templates";
 import { distributionGrouping, type SurveyTypeSnapshot } from "@/lib/survey-types";
@@ -167,9 +169,12 @@ function buildQuickPlan(
   };
 }
 
-export const distributionPlanQuery = (reportId: string) =>
+export const distributionPlanQuery = (
+  reportId: string,
+  requestedGrouping?: GroupingKey | null,
+) =>
   queryOptions({
-    queryKey: ["distribution-plan", reportId],
+    queryKey: ["distribution-plan", reportId, requestedGrouping ?? "default"],
     queryFn: async (): Promise<DistributionPlan> => {
       const reportRows = unwrap(
         await table("reports")
@@ -188,7 +193,7 @@ export const distributionPlanQuery = (reportId: string) =>
       const findingRows = unwrap(
         await table("findings")
           .select(
-            "id, ref, sequence, assigned_trade, severity, capture_fields, is_confidential, finding_text, remedial_text, due_date",
+            "id, ref, sequence, assigned_trade, assigned_contact_id, severity, capture_fields, is_confidential, finding_text, remedial_text, due_date",
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
@@ -199,6 +204,7 @@ export const distributionPlanQuery = (reportId: string) =>
         ref: row["ref"] as string,
         sequence: (row["sequence"] as number) ?? 0,
         assignedTrade: (row["assigned_trade"] as string | null) ?? null,
+        assignedContactId: (row["assigned_contact_id"] as string | null) ?? null,
         severityId: (row["severity"] as string | null) ?? null,
         captureFields: (row["capture_fields"] ?? {}) as Record<string, string>,
         isConfidential: row["is_confidential"] === true,
@@ -239,11 +245,16 @@ export const distributionPlanQuery = (reportId: string) =>
         return buildQuickPlan(reportId, report, findings, distributionRows, snapshot, source);
       }
 
-      const grouping = resolveGrouping(distributionGrouping(snapshot));
+      // The definition still decides where there is nothing better to go on, but
+      // a project with a directory routes by FIRM: that is who receives an
+      // extract, and a trade is only what the survey can name.
+      const grouping = resolveGrouping(requestedGrouping ?? "subcontractor");
 
       const directoryRows = unwrap(
         await table("project_directory")
-          .select("id, trade, company_name, is_active, directory_contacts(name, email, is_primary)")
+          .select(
+            "id, trade, company_name, package_label, is_active, directory_contacts(id, name, email, is_primary, receives_copies)",
+          )
           .eq("project_id", report["project_id"])
           .eq("is_active", true),
       ) as Array<Record<string, any>>;
@@ -253,13 +264,51 @@ export const distributionPlanQuery = (reportId: string) =>
         email: (project["fallback_recipient_email"] as string | null) ?? null,
       };
 
-      const rows: PlanRow[] = groupForDistribution(findings, grouping, snapshot).map((group) => {
+      // Firm labels: the company, and the package where this firm holds only
+      // part of a trade. Two firms on one trade must be told apart on screen,
+      // because that is the decision the row is asking a person to make.
+      const firmLabels = new Map<string, string>();
+      const holdersByTrade = new Map<string, DirectoryHolder[]>();
+      const firmByContact = new Map<string, string>();
+      for (const row of directoryRows) {
+        const packageLabel = (row["package_label"] as string | null)?.trim() ?? "";
+        const company = (row["company_name"] as string | null)?.trim() ?? "Unnamed firm";
+        firmLabels.set(row["id"] as string, packageLabel ? `${company} - ${packageLabel}` : company);
+        for (const contact of (row["directory_contacts"] ?? []) as Array<Record<string, any>>) {
+          if (typeof contact["id"] === "string") firmByContact.set(contact["id"], row["id"] as string);
+        }
+        const tradeKey = ((row["trade"] as string | null) ?? "").trim().toLowerCase();
+        if (tradeKey !== "") {
+          const holder: DirectoryHolder = {
+            id: row["id"] as string,
+            trade: (row["trade"] as string | null) ?? null,
+            contactIds: ((row["directory_contacts"] ?? []) as Array<Record<string, any>>)
+              .map((contact) => contact["id"])
+              .filter((id): id is string => typeof id === "string"),
+          };
+          holdersByTrade.set(tradeKey, [...(holdersByTrade.get(tradeKey) ?? []), holder]);
+        }
+      }
+
+      // Who does this item belong to? An explicit assignment wins. Failing that,
+      // a trade held by exactly one firm is unambiguous and resolves to it.
+      // A trade held by two firms is a decision, not a guess: it goes to nobody
+      // until a person says which package it belongs to.
+      const routed = findings.map((finding) => ({
+        ...finding,
+        assignedFirmKey: resolveFirmKey(finding, holdersByTrade, firmByContact),
+      }));
+
+      const rows: PlanRow[] = groupForDistribution(routed, grouping, snapshot, firmLabels).map((group) => {
         const unassigned = group.key === UNASSIGNED_GROUP;
-        const entry = directoryRows.find(
-          (candidate) => !unassigned && candidate["trade"] === group.key,
-        );
+        const entry = unassigned
+          ? undefined
+          : grouping === "subcontractor"
+            ? directoryRows.find((candidate) => candidate["id"] === group.key)
+            : directoryRows.find((candidate) => candidate["trade"] === group.key);
         const contacts = (entry?.["directory_contacts"] ?? []) as Array<Record<string, any>>;
-        const primary = contacts.find((contact) => contact["is_primary"] === true) ?? contacts[0];
+        const primary =
+          contacts.find((contact) => contact["is_primary"] === true) ?? contacts[0];
 
         const recipientName = unassigned
           ? (fallback.name ?? "Fallback recipient")
