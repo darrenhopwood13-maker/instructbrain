@@ -78,6 +78,7 @@ import {
   resolveRegulatoryReference,
   resolveSeverity,
   resolveStatus,
+  severitiesOf,
 } from "@/lib/survey-types";
 import {
   SCHEDULE_OF_CONDITION_HEADING,
@@ -416,6 +417,62 @@ function eyebrow(writer: Writer, text: string): void {
     gapAfter: 2,
     align: "center",
   });
+}
+
+/**
+ * A field's own caption, set the way the screen sets it: small, accent, upper
+ * case, and ranged left over the paragraph it belongs to. The screen has always
+ * captioned an entry this way - FINDING, REQUIRED ACTION - while the PDF set the
+ * same words as grey 8pt, so on paper a caption and a footnote looked alike.
+ */
+function fieldLabel(writer: Writer, text: string): void {
+  drawText(writer, text.toUpperCase(), {
+    size: 8,
+    bold: true,
+    colour: ACCENT,
+    gapAfter: 2,
+  });
+}
+
+/**
+ * An item's state as a filled pill: the tone's own colour, its label in the
+ * paper's white. The screen has shown an item's state this way from the start;
+ * the printed item only had one coloured sentence, which gave the item's status,
+ * its severity and its target date all the same weight - so "Defective -
+ * rectification required" arrived at the same volume as "Target: 29 October".
+ * The pill carries the judgement; the quiet line under it carries the detail.
+ */
+function drawStatusPill(writer: Writer, label: string, colour: ReturnType<typeof rgb>): void {
+  const size = 9;
+  const padX = 8;
+  const height = 15;
+  const gapAfter = 5;
+  const text = sanitise(label);
+  const width = writer.bold.widthOfTextAtSize(text, size) + padX * 2;
+  ensure(writer, height + gapAfter + 2);
+  if (writer.dry) {
+    writer.cursor.y -= height + gapAfter;
+    return;
+  }
+  const top = writer.cursor.y;
+  const page = writer.cursor.page;
+  page.drawRectangle({
+    x: writer.margin,
+    y: top - height,
+    width,
+    height,
+    color: colour,
+    borderColor: colour,
+    borderWidth: 0.75,
+  });
+  page.drawText(text, {
+    x: writer.margin + padX,
+    y: top - height + 4.5,
+    size,
+    font: writer.bold,
+    color: PAPER_WHITE,
+  });
+  writer.cursor.y = top - height - gapAfter;
 }
 
 /** One line placed by hand at a y offset, so a measuring pass can skip it. */
@@ -1569,19 +1626,19 @@ async function drawFindingBody(
   // pointer, printed beside this description.
   const onPhoto = finding.photos[0]?.photo ?? null;
 
-  const chips = [
-    `Status: ${status.label}`,
+  // The state, as a pill in the status's own tone, then everything else in one
+  // quiet line. The status itself is never softened: a fail-tone status is the
+  // report's judgement on the item and keeps the pill colour the screen uses.
+  drawStatusPill(writer, status.label, TONE_COLOURS[status.tone] ?? MUTED);
+  const meta = [
     severity ? `Severity: ${severity.label}` : null,
     finding.assignedTrade ? `Trade: ${finding.assignedTrade}` : null,
     finding.dueDate ? `Target: ${formatDocumentDate(finding.dueDate)}` : null,
     onPhoto ? `Photograph ${onPhoto.sequence}` : null,
   ].filter((entry): entry is string => !!entry);
-  drawText(writer, chips.join("   ·   "), {
-    size: 9,
-    bold: true,
-    colour: TONE_COLOURS[status.tone] ?? MUTED,
-    gapAfter: 4,
-  });
+  if (meta.length > 0) {
+    drawText(writer, meta.join("   ·   "), { size: 9, colour: MUTED, gapAfter: 4 });
+  }
 
   if (notAssessed) {
     drawText(
@@ -1604,22 +1661,27 @@ async function drawFindingBody(
     });
   }
 
-  if (finding.findingText)
+  if (finding.findingText) {
+    // The observation, under its own caption. Uncapped it was one more
+    // paragraph among the action, the alternates and the reference, and the
+    // one line a reader must not skim past looked like all the others.
+    fieldLabel(writer, "Finding");
     drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
+  }
   if (finding.remedialText) {
-    drawText(writer, "Required action", { size: 8, bold: true, colour: MUTED });
+    fieldLabel(writer, "Required action");
     drawText(writer, finding.remedialText, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.rectificationAlt) {
-    drawText(writer, "Alternative", { size: 8, bold: true, colour: MUTED });
+    fieldLabel(writer, "Alternative");
     drawText(writer, finding.rectificationAlt, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.tradesmanHack) {
-    drawText(writer, "Trade tip", { size: 8, bold: true, colour: MUTED });
+    fieldLabel(writer, "Trade tip");
     drawText(writer, finding.tradesmanHack, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.hsNotes) {
-    drawText(writer, "Health and safety", { size: 8, bold: true, colour: MUTED });
+    fieldLabel(writer, "Health and safety");
     drawText(writer, finding.hsNotes, { size: 10, gapAfter: 4, align: "justify" });
   }
   if (finding.likelyCause) {
@@ -2818,6 +2880,36 @@ export async function buildReportPdf(
           await drawFinding(writer, document, finding, fetcher, pins, plated, platesPrinted);
         }
         writer.cursor.y -= 6;
+      }
+    }
+
+    // What this document found, by severity, in the severity scale's own order -
+    // the same breakdown the screen prints under Statistics, counted from the
+    // same place: the items THIS document prints. A filtered document can never
+    // advertise a count it does not carry. Counted, never asserted, and only the
+    // severities that actually occur are named.
+    const scale = severitiesOf(document.snapshot);
+    const counts = new Map<string, number>();
+    for (const finding of findings) {
+      const id = finding.severityId ?? "";
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    const parts = scale
+      .filter((severity) => counts.has(severity.id))
+      .map((severity) => `${severity.label}: ${counts.get(severity.id)}`);
+    const unset = counts.get("") ?? 0;
+    if (parts.length > 0 || unset > 0) {
+      ensure(writer, 44);
+      drawRule(writer, 12, 8);
+      fieldLabel(writer, "Items by severity");
+      if (parts.length > 0) {
+        drawText(writer, parts.join("   ·   "), { size: 10, gapAfter: 2 });
+      }
+      if (unset > 0) {
+        drawText(writer, `${unset} ${unset === 1 ? "item" : "items"} with no severity recorded.`, {
+          size: 9,
+          colour: MUTED,
+        });
       }
     }
   } else {
