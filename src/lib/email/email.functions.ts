@@ -129,6 +129,9 @@ export const sendTradeExtract = createServerFn({ method: "POST" })
       email: requiredEmail(value["email"]),
       name: typeof value["name"] === "string" ? value["name"] : null,
       directoryId: typeof value["directoryId"] === "string" ? value["directoryId"] : null,
+      // How the plan was grouped: it is what makes an unassigned key mean
+      // "nobody allocated" rather than "no trade".
+      grouping: typeof value["grouping"] === "string" ? value["grouping"] : null,
     };
   })
   .handler(async ({ data, context }): Promise<SendOutcome> => {

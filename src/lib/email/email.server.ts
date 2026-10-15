@@ -19,6 +19,7 @@ import { isManualOnly, resolveSeverity, type SurveyTypeSnapshot } from "@/lib/su
 import { absoluteUrl } from "@/lib/site-url";
 import { shareUrlForToken } from "@/lib/report/share-url";
 import { resolveLocation } from "@/lib/report/location";
+import { resolveGroupScope, NO_MATCHING_ID } from "@/lib/distribution/group-findings.server";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -480,7 +481,13 @@ export async function buildTradeExtractItems(
   db: Db,
   reportId: string,
   trade: string | null,
-): Promise<{ items: ExtractItem[]; findingIds: string[]; snapshot: SurveyTypeSnapshot | null }> {
+  grouping: string | null = "trade",
+): Promise<{
+  items: ExtractItem[];
+  findingIds: string[];
+  snapshot: SurveyTypeSnapshot | null;
+  label: string | null;
+}> {
   const { data: report } = await db
     .from("reports")
     .select("survey_type_snapshot")
@@ -488,6 +495,14 @@ export async function buildTradeExtractItems(
     .single();
   const snapshot = ((report as { survey_type_snapshot?: unknown } | null)?.survey_type_snapshot ??
     null) as SurveyTypeSnapshot | null;
+
+  // The key is resolved the same way the plan screen resolved it. A firm row's
+  // key is a firm, so matching it against `assigned_trade` found nothing and the
+  // send died with "no items assigned to firm:…" while the row showed the items.
+  const scope = await resolveGroupScope(db, reportId, trade, grouping);
+  // A firm group goes out under the firm's name, not under its internal key.
+  const label =
+    scope.kind === "findings" ? scope.label : scope.kind === "trade" ? scope.trade : null;
 
   let query = db
     .from("findings")
@@ -497,13 +512,28 @@ export async function buildTradeExtractItems(
     .eq("report_id", reportId)
     .eq("is_confidential", false);
 
-  // A null trade is the fallback set: everything nobody has been given yet.
-  query = trade === null ? query.is("assigned_trade", null) : query.eq("assigned_trade", trade);
+  if (scope.kind === "unassigned") {
+    // The fallback set: everything nobody has been given yet.
+    query = query.is("assigned_trade", null);
+  } else if (scope.kind === "trade") {
+    query = query.eq("assigned_trade", scope.trade);
+  } else if (scope.kind === "findings") {
+    query = query.in("id", scope.ids.length > 0 ? scope.ids : [NO_MATCHING_ID]);
+  }
 
   const { data, error } = await query.order("sequence", { ascending: true });
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as Array<Record<string, any>>;
+
+  // The items the person reviewed are the items that go out. If the set changed
+  // underneath the send (an item deleted, or marked confidential), this refuses
+  // rather than emailing a different document from the one on screen.
+  if (scope.kind === "findings" && rows.length !== scope.ids.length) {
+    throw new Error(
+      "The items on this report changed while the extract was being built, so nothing was sent. Open distribution again and check the row.",
+    );
+  }
 
   // The covering list is read by the subcontractor, so it follows the report's
   // issue language. English is used unchanged if the translation is unavailable.
@@ -544,7 +574,7 @@ export async function buildTradeExtractItems(
   // Belt and braces before anything is rendered or sent.
   assertNoConfidentialItems(items);
 
-  return { items, findingIds: rows.map((row) => row["id"] as string), snapshot };
+  return { items, findingIds: rows.map((row) => row["id"] as string), snapshot, label };
 }
 
 /**
@@ -666,8 +696,13 @@ export async function sendTradeExtractEmail(
   db: Db,
   input: {
     reportId: string;
-    /** Null sends the unassigned set to the project's fallback recipient. */
+    /**
+     * The plan's group key: a trade name, `firm:<name>` for a firm grouped by
+     * subcontractor, or null for the unassigned/fallback set.
+     */
     trade: string | null;
+    /** How the plan was grouped, which is what makes an unassigned key mean something. */
+    grouping?: string | null;
     email: string;
     name?: string | null;
     directoryId?: string | null;
@@ -684,26 +719,34 @@ export async function sendTradeExtractEmail(
   if (error || !report) throw new Error("That report could not be read, so nothing was sent.");
   const row = report as Record<string, any>;
 
-  const { items, findingIds } = await buildTradeExtractItems(db, input.reportId, input.trade);
+  const { items, findingIds, label } = await buildTradeExtractItems(
+    db,
+    input.reportId,
+    input.trade,
+    input.grouping ?? "trade",
+  );
+  // "Unassigned items" is how the app talks to itself, and it stays in the audit
+  // trail. A recipient reads the firm's name, or the report's own title.
+  const tradeLabel = label ?? input.trade ?? "Unassigned items";
+  const heading = label ?? input.trade ?? (row["title"] as string | null) ?? "Your report";
+
   if (items.length === 0) {
     throw new Error(
       input.trade === null
         ? "Every item on this report is assigned to a trade, so there was nothing to send to the fallback recipient."
-        : `There are no items assigned to ${input.trade} on this report, so nothing was sent.`,
+        : `There are no items assigned to ${tradeLabel} on this report, so nothing was sent.`,
     );
   }
 
-  // "Unassigned items" is how the app talks to itself, and it stays in the audit
-  // trail. A recipient reads the report's own title instead.
-  const tradeLabel = input.trade ?? "Unassigned items";
-  const heading = input.trade ?? (row["title"] as string | null) ?? "Your report";
-
   // Confidential items are already excluded above; the PDF builder excludes
-  // them again for the trade variant.
+  // them again for the trade variant. It is handed the same item ids the email
+  // carries, so the attachment and the list can never disagree.
   const { buildEmailPdf } = await import("@/lib/report/pdf-attachment.server");
   const attachment = await buildEmailPdf(db, input.reportId, {
     variant: "trade",
     trade: input.trade,
+    tradeLabel: label,
+    findingIds,
   });
 
   const link = await itemListLinkFor(db, {

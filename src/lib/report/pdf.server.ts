@@ -89,7 +89,14 @@ export type BuildPdfOptions = {
   view?: ResultView;
   /** Trade extract: null means the unassigned fallback set. */
   trade?: string | null;
-  /** Item chase: the single finding. */
+  /**
+   * How the extract names its recipient-facing subject. A firm grouped by
+   * subcontractor has a key of `firm:<name>`, which is not something to print,
+   * so the group's own label is passed here and used for the filename and the
+   * extract line on the cover.
+   */
+  tradeLabel?: string | null;
+  /** The items to print for a `trade` extract; the ids the email carried. */
   findingIds?: string[] | null;
   includePhotos?: boolean;
 };
@@ -1732,6 +1739,13 @@ export function selectFindings(document: ReportDocument, options: BuildPdfOption
     return document.findings.filter((finding) => ids.has(finding.id) && !finding.isConfidential);
   }
   if (options.variant === "trade") {
+    // Explicit ids win: a firm grouped by subcontractor is not a trade, so its
+    // items are named rather than matched. The email and its attachment are then
+    // the same document by construction.
+    if (options.findingIds && options.findingIds.length > 0) {
+      const ids = new Set(options.findingIds);
+      return document.findings.filter((finding) => ids.has(finding.id) && !finding.isConfidential);
+    }
     const trade = options.trade ?? null;
     return document.findings.filter(
       (finding) =>
@@ -1781,7 +1795,9 @@ export function reportFilenameBase(document: ReportDocument): string {
 
 export function pdfFilename(document: ReportDocument, options: BuildPdfOptions): string {
   const base = reportFilenameBase(document);
-  if (options.variant === "trade") return `${base}-${safeName(options.trade ?? "unassigned")}.pdf`;
+  if (options.variant === "trade") {
+    return `${base}-${safeName(options.tradeLabel ?? options.trade ?? "unassigned")}.pdf`;
+  }
   if (options.variant === "item") return `${base}-item.pdf`;
   return `${base}.pdf`;
 }
@@ -2200,12 +2216,16 @@ export async function buildReportPdf(
     drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, gapAfter: 6, align: "center" });
   }
   if (options.variant === "trade") {
-    drawText(writer, `Extract for ${options.trade ?? "items not yet assigned to a trade"}`, {
-      size: 12,
-      bold: true,
-      colour: ACCENT,
-      gapAfter: 4,
-    });
+    drawText(
+      writer,
+      `Extract for ${options.tradeLabel ?? options.trade ?? "items not yet assigned to a trade"}`,
+      {
+        size: 12,
+        bold: true,
+        colour: ACCENT,
+        gapAfter: 4,
+      },
+    );
   }
   drawRule(writer, 10, 12);
 

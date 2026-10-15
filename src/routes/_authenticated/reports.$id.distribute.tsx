@@ -129,6 +129,9 @@ function DistributionReview() {
           reportId: id,
           organisationId: plan.data.organisationId,
           trade: row.key,
+          // The firm's name, so the page a crew opens is addressed to a firm
+          // rather than to an internal key.
+          label: row.label,
         });
       }
       const outcome = await sendTradeExtract({
@@ -138,6 +141,9 @@ function DistributionReview() {
           email,
           name,
           directoryId: row.directoryId,
+          // The lens the person was reading. Sending is resolved the same way
+          // the row was worked out, so the extract holds the items on screen.
+          grouping: plan.data?.grouping ?? null,
         },
       });
       if (!outcome.ok) {
@@ -192,6 +198,7 @@ function DistributionReview() {
         reportId: id,
         organisationId: plan.data.organisationId,
         trade: row.key,
+        label: row.label,
       });
       await navigator.clipboard.writeText(link.url);
       toast.success("Trade link copied", {

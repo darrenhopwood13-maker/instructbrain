@@ -3,13 +3,15 @@ import { assertTransition, coerceLifecycleState } from "@/lib/lifecycle";
 import { collisionSafeFilename, originalPath } from "@/lib/photos/storage-paths";
 import { actorFromTrade } from "@/lib/audit/actor";
 import { UNPUBLISHED_MESSAGE, reportReadableOutside } from "@/lib/report/share-access";
+import { resolveGroupScope, isFirmKey, NO_MATCHING_ID } from "@/lib/distribution/group-findings.server";
 
 /**
  * Token-scoped subcontractor endpoint. No account is involved, so this handler
  * does the work RLS would otherwise do:
  *
- *  - the token resolves to exactly ONE trade on ONE report;
- *  - only that trade's findings are ever returned;
+ *  - the token resolves to ONE group on ONE report: a trade, or a firm when the
+ *    report is routed by subcontractor;
+ *  - only that group's findings are ever returned;
  *  - a confidential finding is filtered out HERE, on the server (Invariant 7);
  *  - the holder may report progress only — never finding text, status,
  *    severity, trade or due date;
@@ -119,14 +121,28 @@ const FINDING_COLUMNS =
 
 /** The one query that defines what a token holder may see. */
 async function scopedFindings(context: Context) {
-  const { data } = await context.admin
+  // The key on the token is resolved the same way the send resolved it. A firm
+  // grouped by subcontractor holds `firm:<name>`, which is not a trade: matching
+  // it against `assigned_trade` returned nothing, so the crew opened a link to an
+  // empty list.
+  const scope = await resolveGroupScope(context.admin, context.access.report_id, context.access.trade);
+
+  let query = context.admin
     .from("findings")
     .select(FINDING_COLUMNS)
     .eq("report_id", context.access.report_id)
-    .eq("assigned_trade", context.access.trade)
     // Invariant 7 — never a confidential finding, filtered server-side.
-    .eq("is_confidential", false)
-    .order("sequence", { ascending: true });
+    .eq("is_confidential", false);
+
+  if (scope.kind === "trade") {
+    query = query.eq("assigned_trade", scope.trade);
+  } else if (scope.kind === "unassigned") {
+    query = query.is("assigned_trade", null);
+  } else if (scope.kind === "findings") {
+    query = query.in("id", scope.ids.length > 0 ? scope.ids : [NO_MATCHING_ID]);
+  }
+
+  const { data } = await query.order("sequence", { ascending: true });
   return (data ?? []) as Array<Record<string, any>>;
 }
 
@@ -299,7 +315,10 @@ async function transition(context: Context, request: Request): Promise<Response>
   const next = assertTransition(from, body.to, "subcontractor");
   const note = typeof body.note === "string" ? body.note.slice(0, 500) : null;
 
-  const { error } = await context.admin
+  // Defence in depth: the update itself is re-scoped. `scopedFindings` above
+  // proved this item is on the token's list; a firm key is not a trade, so that
+  // list is re-scoped by item id rather than by a trade name that cannot match.
+  let update = context.admin
     .from("findings")
     .update({
       lifecycle_state: next,
@@ -307,11 +326,20 @@ async function transition(context: Context, request: Request): Promise<Response>
       lifecycle_updated_at: new Date().toISOString(),
     })
     .eq("id", finding["id"])
-    // Defence in depth: the update itself is re-scoped to the token's trade.
     .eq("report_id", context.access.report_id)
-    .eq("assigned_trade", context.access.trade)
     .eq("is_confidential", false);
+  if (!isFirmKey(context.access.trade)) {
+    update = update.eq("assigned_trade", context.access.trade);
+  }
+
+  const { data: updated, error } = await update.select("id");
   if (error) throw new Error(error.message);
+  // A scoped update that matched nothing reports success at the API level, so
+  // the row count is checked: a crew must never be told their update landed when
+  // it did not.
+  if (!Array.isArray(updated) || updated.length === 0) {
+    return problem("error", "That item could not be updated. Refresh the list and try again.", 409);
+  }
 
   await audit(context, finding["id"] as string, "lifecycle.transition", { lifecycle_state: from }, {
     lifecycle_state: next,

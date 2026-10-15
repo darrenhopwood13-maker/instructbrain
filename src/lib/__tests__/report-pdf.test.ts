@@ -401,3 +401,52 @@ describe("production PDF entry points", () => {
     expect(built.filename).toContain("compliance-pack-fire-riverside-works");
   });
 });
+
+/**
+ * A firm grouped by subcontractor is not a trade, so its extract is built from
+ * the item ids the email carried rather than from a trade name that cannot
+ * match. The screen showed those items; the PDF has to be the same document.
+ */
+describe("an extract built from named items", () => {
+  it("prints exactly the items it was given", () => {
+    const selected = selectFindings(document, {
+      variant: "trade",
+      trade: "firm:mep solutions",
+      findingIds: ["b"],
+    });
+    expect(selected.map((item) => item.id)).toEqual(["b"]);
+  });
+
+  it("never prints a confidential item, even when one is named", () => {
+    const selected = selectFindings(document, {
+      variant: "trade",
+      trade: "firm:mep solutions",
+      findingIds: ["a", "c"],
+    });
+    expect(selected.map((item) => item.id)).toEqual(["a"]);
+  });
+
+  it("still matches by trade when no items are named", () => {
+    const selected = selectFindings(document, { variant: "trade", trade: "Roofing" });
+    expect(selected.map((item) => item.id)).toEqual(["a"]);
+  });
+
+  it("names the file after the firm, not after its internal key", () => {
+    expect(
+      pdfFilename(document, {
+        variant: "trade",
+        trade: "firm:mep solutions",
+        tradeLabel: "MEP Solutions",
+      }),
+    ).toBe("Condition-survey-IB-0001-2026-09-01-MEP-Solutions.pdf");
+  });
+
+  it("prints named items in the report's own order, whatever order they arrive in", () => {
+    const selected = selectFindings(document, {
+      variant: "trade",
+      trade: "firm:mep solutions",
+      findingIds: ["b", "a"],
+    });
+    expect(selected.map((item) => item.id)).toEqual(["a", "b"]);
+  });
+});
