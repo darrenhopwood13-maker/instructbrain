@@ -104,13 +104,13 @@ export function FieldCard({
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto rounded-t-2xl">
-              <DialogHeader>
+              <DialogHeader className="min-w-0">
                 <DialogTitle className="editorial-title">{label}</DialogTitle>
                 <DialogDescription>
                   {popOutDescription ?? "The complete text, at a comfortable reading size."}
                 </DialogDescription>
               </DialogHeader>
-              <div className="max-w-prose break-words text-base leading-relaxed">
+              <div className="min-w-0 max-w-prose break-words text-base leading-relaxed">
                 {popOut ?? children}
               </div>
             </DialogContent>

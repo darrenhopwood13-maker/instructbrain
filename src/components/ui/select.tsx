@@ -12,6 +12,14 @@ const SelectGroup = SelectPrimitive.Group;
 
 const SelectValue = SelectPrimitive.Value;
 
+/**
+ * A chosen value is frequently an instrument's own long title. A flex item
+ * defaults to `min-width: auto`, so the value span's min-content — the whole
+ * label on one line, never wrapping — was setting the width of the box around
+ * it. Inside a dialog that meant the card grew past the edge of the screen and
+ * the rest of it hung off, unreadable and unscrollable (Dal: "Screen Layout
+ * large and frozen"). `min-w-0` lets the label ellipsise instead.
+ */
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
@@ -19,7 +27,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background cursor-pointer data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background cursor-pointer data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:min-w-0 [&>span]:line-clamp-1",
       className,
     )}
     {...props}
