@@ -215,6 +215,12 @@ type Writer = {
    * any of it is committed. See `measureHeight` and `drawFinding`.
    */
   dry: boolean;
+  /**
+   * Collects an item's index entry as it is committed to a page. The page cannot be
+   * worked out from outside: an item that will not fit is moved to a fresh page
+   * first, so only the drawing code knows which sheet it began on.
+   */
+  index?: (entry: ReportIndexEntry) => void;
 };
 
 function newPage(writer: Writer): void {
@@ -1013,61 +1019,101 @@ function drawInventoryHeader(writer: Writer, title = "Property inventory"): void
   writer.cursor.y = writer.pageSize.height - writer.margin - 34;
 }
 
-type InventoryIndexEntry = { label: string; page: number; detail?: string };
+type ReportIndexEntry = { label: string; page: number; detail?: string };
+
+/** The inventory's own name for the same row, kept so its call sites read as they have. */
+type InventoryIndexEntry = ReportIndexEntry;
+
+/** Where the first row sits below the page head, and how far apart the rows sit. */
+const INDEX_FIRST_ROW_GAP = 58;
+const INDEX_ROW_HEIGHT = 24;
+/** The left edge of the detail column, and so the right edge of the label column. */
+const INDEX_DETAIL_X = 255;
+
+/** How many index rows one sheet holds. */
+function indexRowsPerPage(writer: Writer): number {
+  const first = writer.pageSize.height - writer.margin - INDEX_FIRST_ROW_GAP;
+  const last = writer.margin + 24;
+  return Math.max(1, Math.floor((first - last) / INDEX_ROW_HEIGHT) + 1);
+}
+
+/** One line of label, cut at the column it has so it can never reach the page number. */
+function indexLabelFor(label: string, writer: Writer): string {
+  const width = writer.margin + INDEX_DETAIL_X - (writer.margin + 38) - 8;
+  const lines = wrap(sanitise(label), writer.bold, 10, width);
+  const first = lines[0] ?? "";
+  return lines.length > 1 ? `${first.replace(/[\s,;:.-]+$/, "")}...` : first;
+}
 
 function drawInventoryIndexPage(
   writer: Writer,
   page: PDFPage,
   entries: InventoryIndexEntry[],
 ): void {
-  page.drawText("Index", {
-    x: (writer.pageSize.width - writer.bold.widthOfTextAtSize("Index", 16)) / 2,
-    y: writer.pageSize.height - writer.margin - 3,
-    size: 16,
-    font: writer.bold,
-    color: INK,
-  });
-  page.drawLine({
-    start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 18 },
-    end: {
-      x: writer.pageSize.width - writer.margin,
-      y: writer.pageSize.height - writer.margin - 18,
-    },
-    thickness: 0.85,
-    color: ACCENT,
-  });
+  drawIndexPages(writer, [page], entries);
+}
 
-  let y = writer.pageSize.height - writer.margin - 58;
-  for (const [index, entry] of entries.entries()) {
-    if (y < writer.margin + 24) break;
-    const number = String(index + 1).padStart(2, "0");
-    const pageLabel = String(entry.page);
-    page.drawText(number, { x: writer.margin, y, size: 9, font: writer.bold, color: ACCENT });
-    page.drawText(sanitise(entry.label), {
-      x: writer.margin + 38,
-      y,
-      size: 10,
+/**
+ * The index: what the document holds, in order, and the page each item begins on.
+ *
+ * Reserved straight after the cover and filled in at the end, because a page number
+ * cannot be known until everything above it has been laid out. The inventory's own
+ * index draws through here too, so there is one house style rather than two.
+ */
+function drawIndexPages(writer: Writer, pages: PDFPage[], entries: ReportIndexEntry[]): void {
+  if (pages.length === 0) return;
+  const perPage = indexRowsPerPage(writer);
+  pages.forEach((page, pageIndex) => {
+    page.drawText("Index", {
+      x: (writer.pageSize.width - writer.bold.widthOfTextAtSize("Index", 16)) / 2,
+      y: writer.pageSize.height - writer.margin - 3,
+      size: 16,
       font: writer.bold,
       color: INK,
     });
-    if (entry.detail) {
-      page.drawText(sanitise(entry.detail), {
-        x: writer.margin + 255,
+    page.drawLine({
+      start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 18 },
+      end: {
+        x: writer.pageSize.width - writer.margin,
+        y: writer.pageSize.height - writer.margin - 18,
+      },
+      thickness: 0.85,
+      color: ACCENT,
+    });
+
+    let y = writer.pageSize.height - writer.margin - INDEX_FIRST_ROW_GAP;
+    for (const [offset, entry] of entries
+      .slice(pageIndex * perPage, (pageIndex + 1) * perPage)
+      .entries()) {
+      const number = String(pageIndex * perPage + offset + 1).padStart(2, "0");
+      const pageLabel = String(entry.page);
+      page.drawText(number, { x: writer.margin, y, size: 9, font: writer.bold, color: ACCENT });
+      page.drawText(indexLabelFor(entry.label, writer), {
+        x: writer.margin + 38,
         y,
-        size: 8,
+        size: 10,
+        font: writer.bold,
+        color: INK,
+      });
+      if (entry.detail) {
+        page.drawText(sanitise(entry.detail), {
+          x: writer.margin + INDEX_DETAIL_X,
+          y,
+          size: 8,
+          font: writer.regular,
+          color: MUTED,
+        });
+      }
+      page.drawText(pageLabel, {
+        x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(pageLabel, 9),
+        y,
+        size: 9,
         font: writer.regular,
         color: MUTED,
       });
+      y -= INDEX_ROW_HEIGHT;
     }
-    page.drawText(pageLabel, {
-      x: writer.pageSize.width - writer.margin - writer.regular.widthOfTextAtSize(pageLabel, 9),
-      y,
-      size: 9,
-      font: writer.regular,
-      color: MUTED,
-    });
-    y -= 24;
-  }
+  });
 }
 
 async function drawInventoryOverviewPhotos(
@@ -1463,7 +1509,21 @@ async function drawFinding(
     drawFindingBody(writer, document, finding, fetcher, pins, plated, platesPrinted),
   );
   if (shouldBreakBeforeEntry(needed, roomOnPage(writer), roomOnFreshPage(writer))) newPage(writer);
+  // The index learns which sheet this item begins on here, and only here: an item
+  // that would not fit has just been moved to a fresh page, so this is the first
+  // point at which the answer is known.
+  writer.index?.({
+    label: indexEntryLabel(finding),
+    page: writer.cursor.pageNumber,
+    detail: finding.assignedTrade ?? "",
+  });
   await drawFindingBody(writer, document, finding, fetcher, pins, plated, platesPrinted);
+}
+
+/** The one line an index gives an item: its reference and what it is. */
+function indexEntryLabel(finding: DocFinding): string {
+  const subject = (finding.snagTitle ?? finding.findingText ?? "").split("\n")[0]?.trim() ?? "";
+  return subject ? `${finding.ref} - ${subject}` : finding.ref;
 }
 
 async function drawFindingBody(
@@ -2602,6 +2662,30 @@ export async function buildReportPdf(
 
   /* Summary */
   const summary = document.report.executiveSummary ?? document.synthesis?.executiveSummary ?? "";
+  /* The index. Reserved here - after the cover, before the body - and filled in at
+     the end: what the document holds is known now, but the page each item begins on
+     is not. The manual photographic report has its own running order and returns
+     above, and an extract is not a document anyone reads from an index. */
+  const appendixReferences =
+    document.regulationCitations === false ? [] : citedReferencesOf(document.snapshot, findings);
+  const indexEntries: ReportIndexEntry[] = [];
+  const indexPages: PDFPage[] = [];
+  if (options.variant === "full") {
+    const rows = findings.length + (appendixReferences.length > 0 ? 1 : 0);
+    if (rows > 0) {
+      const sheets = Math.ceil(rows / indexRowsPerPage(writer));
+      for (let sheet = 0; sheet < sheets; sheet += 1) {
+        newPage(writer);
+        indexPages.push(writer.cursor.page);
+      }
+      // The reserved sheets belong to the index alone. Without this the body's
+      // first block would be drawn on top of the index, because a freshly started
+      // page looks like an empty one to everything that follows.
+      newPage(writer);
+      writer.index = (entry: ReportIndexEntry) => indexEntries.push(entry);
+    }
+  }
+
   if (options.variant === "full" && summary.trim()) {
     drawRule(writer, 14, 10);
     eyebrow(writer, "Report summary");
@@ -2779,9 +2863,14 @@ export async function buildReportPdf(
      list, and this is what that id means. Only what is cited, once each, with the
      instrument's own formal reference and the page it was verified against, so a
      reader can check it themselves. A report that names nothing prints nothing. */
-  const cited = citedReferencesOf(document.snapshot, findings);
-  if (document.regulationCitations !== false && cited.length > 0) {
+  const cited = appendixReferences;
+  if (cited.length > 0) {
     ensure(writer, 80);
+    indexEntries.push({
+      label: "References",
+      page: writer.cursor.pageNumber,
+      detail: `${cited.length} instrument${cited.length === 1 ? "" : "s"}`,
+    });
     drawRule(writer, 16, 10);
     eyebrow(writer, "References");
     drawText(writer, "The instruments named by the findings in this report.", {
@@ -2807,6 +2896,9 @@ export async function buildReportPdf(
       );
     }
   }
+
+  /* The index, now that every item has been committed to a page. */
+  drawIndexPages(writer, indexPages, indexEntries);
 
   drawFooters(writer);
 
