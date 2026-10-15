@@ -84,7 +84,16 @@ export function HelpSheet() {
       )}
 
       <Dialog open={open} onOpenChange={onChange}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogContent
+          className={
+            watching
+              ? // A clip needs the room. The dialog widens when one is playing and the
+                // player fills it, so tapping a clip opens something watchable rather
+                // than a postage stamp the user has to hunt for full screen.
+                "max-h-[94dvh] overflow-y-auto sm:max-w-5xl"
+              : "max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+          }
+        >
           <DialogHeader>
             <DialogTitle>{watching ? watching.title : "Help"}</DialogTitle>
             <DialogDescription>
@@ -112,7 +121,7 @@ export function HelpSheet() {
                 autoPlay
                 playsInline
                 preload="auto"
-                className="mx-auto block max-h-[58dvh] w-auto max-w-full rounded-xl bg-black"
+                className="mx-auto block max-h-[74dvh] w-full rounded-xl bg-black"
               />
               <a
                 href={watching.clipUrl ?? "#"}
