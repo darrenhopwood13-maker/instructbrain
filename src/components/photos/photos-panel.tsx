@@ -7,10 +7,7 @@ import { toast } from "sonner";
 import { setCoverPhoto } from "@/lib/report/branding";
 import { Button } from "@/components/ui/button";
 import { PhotoCaptureActions } from "@/components/photos/photo-capture-actions";
-import {
-  ContinuousCamera,
-  canUseInAppCamera,
-} from "@/components/photos/continuous-camera";
+import { ContinuousCamera, canUseInAppCamera } from "@/components/photos/continuous-camera";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { analysePhoto } from "@/lib/ai/analyse.functions";
@@ -72,6 +69,7 @@ import {
   isManualOnly,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
+import { isFast, readAnalysisSpeed } from "@/lib/ai/speed";
 
 const CONCURRENCY = 12;
 
@@ -121,7 +119,6 @@ export function PhotosPanel({
   /** Field cockpit: no mobile navigation underneath, so the bar sits on the edge. */
   bottomFlush?: boolean;
 }) {
-
   const { session, loading: sessionLoading } = useSession();
   const fields = useMemo(() => captureFieldsOf(snapshot), [snapshot]);
   const workflow = useMemo(() => photoWorkflowOf(snapshot), [snapshot]);
@@ -193,12 +190,17 @@ export function PhotosPanel({
   const analyseOnArrival = useCallback(
     async (photoId: string) => {
       const gate = analysingRef.current;
-      if (gate.active >= CONCURRENCY) await new Promise<void>((resolve) => gate.waiting.push(resolve));
+      if (gate.active >= CONCURRENCY)
+        await new Promise<void>((resolve) => gate.waiting.push(resolve));
       gate.active += 1;
       try {
         // Title-page photos and anything the template excludes are skipped on
         // the server; failures are recorded there as Not assessed.
-        await runAnalysis({ data: { reportId, photoId, force: false, fast: false } });
+        // Honour the speed chosen on the Analysis panel: this path used to run the
+        // second opinion whatever the person had asked for.
+        await runAnalysis({
+          data: { reportId, photoId, force: false, fast: isFast(readAnalysisSpeed()) },
+        });
       } catch {
         // Left un-analysed: Draft the findings picks it up later.
       } finally {
@@ -215,7 +217,6 @@ export function PhotosPanel({
     },
     [runAnalysis, reportId, queryClient],
   );
-
 
   const refresh = useCallback(async () => {
     const rows = await listPhotos(reportId);
@@ -301,10 +302,7 @@ export function PhotosPanel({
         const reservation = reserveRef.current.then(async () => {
           const databaseNext = await nextSequence(reportId);
           const pendingNext =
-            Math.max(
-              0,
-              ...[...pendingRef.current.values()].map((item) => item.sequence ?? 0),
-            ) + 1;
+            Math.max(0, ...[...pendingRef.current.values()].map((item) => item.sequence ?? 0)) + 1;
           assignUploadSequences(items, Math.max(databaseNext, pendingNext));
         });
         reserveRef.current = reservation.catch(() => undefined);
@@ -313,7 +311,9 @@ export function PhotosPanel({
       const overviewCounts = new Map<string, number>();
       if (inventoryWorkflow?.sectionField && inventoryWorkflow.overviewRoleId) {
         for (const photo of photos) {
-          if (photo.capture_fields?.[inventoryWorkflow.roleField] !== inventoryWorkflow.overviewRoleId) {
+          if (
+            photo.capture_fields?.[inventoryWorkflow.roleField] !== inventoryWorkflow.overviewRoleId
+          ) {
             continue;
           }
           const roomKey = (photo.capture_fields?.[inventoryWorkflow.sectionField] ?? "")
@@ -346,7 +346,9 @@ export function PhotosPanel({
                 sequence !== 1 &&
                 !captureFields[inventoryWorkflow.roleField]
               ) {
-                const roomKey = (captureFields[inventoryWorkflow.sectionField] ?? "").trim().toLowerCase();
+                const roomKey = (captureFields[inventoryWorkflow.sectionField] ?? "")
+                  .trim()
+                  .toLowerCase();
                 const usedOverviews = overviewCounts.get(roomKey) ?? 0;
                 const maxOverviews = inventoryWorkflow.maxOverviewPhotos ?? 3;
                 // Never automatic: only an explicit choice makes a room overview.
@@ -398,7 +400,19 @@ export function PhotosPanel({
         await refresh();
       }
     },
-    [organisationId, reportId, workflow, inventoryWorkflow, inventoryUploadMode, photos, snapshot, coverPhotoId, applyProgress, refresh, analyseOnArrival],
+    [
+      organisationId,
+      reportId,
+      workflow,
+      inventoryWorkflow,
+      inventoryUploadMode,
+      photos,
+      snapshot,
+      coverPhotoId,
+      applyProgress,
+      refresh,
+      analyseOnArrival,
+    ],
   );
 
   const addFiles = useCallback(
@@ -474,7 +488,10 @@ export function PhotosPanel({
   const groupedForGrid = useMemo(() => {
     if (!inventoryWorkflow) return { unallocatedIds: new Set<string>(), count: 0 };
     const { unallocated } = groupPhotosByRoom(photos, inventoryWorkflow);
-    return { unallocatedIds: new Set(unallocated.map((photo) => photo.id)), count: unallocated.length };
+    return {
+      unallocatedIds: new Set(unallocated.map((photo) => photo.id)),
+      count: unallocated.length,
+    };
   }, [photos, inventoryWorkflow]);
 
   const uploadedCount = uploads.filter((item) => item.state === "done").length;
@@ -501,7 +518,6 @@ export function PhotosPanel({
       readiness,
     });
   }, [onStatus, photos.length, uploadsActive, uploadedCount, uploadsTotal, readiness]);
-
 
   const retry = useCallback(
     (ids: string[]) => {
@@ -575,7 +591,9 @@ export function PhotosPanel({
             photo.capture_fields?.[inventoryWorkflow.roleField] === role.id,
         ).length;
         if (existing + selectedPhotos.length > role.maxPerReport) {
-          toast.error(`Choose no more than ${role.maxPerReport} ${role.label.toLowerCase()} photographs.`);
+          toast.error(
+            `Choose no more than ${role.maxPerReport} ${role.label.toLowerCase()} photographs.`,
+          );
           return;
         }
       }
@@ -631,11 +649,12 @@ export function PhotosPanel({
     const nextRole = workflow.roles.find((item) => item.id === roleId);
     if (nextRole?.maxPerReport) {
       const existing = photos.filter(
-        (item) =>
-          item.id !== photo.id && item.capture_fields?.[workflow.roleField] === nextRole.id,
+        (item) => item.id !== photo.id && item.capture_fields?.[workflow.roleField] === nextRole.id,
       ).length;
       if (existing >= nextRole.maxPerReport) {
-        toast.error(`Choose no more than ${nextRole.maxPerReport} ${nextRole.label.toLowerCase()} photographs.`);
+        toast.error(
+          `Choose no more than ${nextRole.maxPerReport} ${nextRole.label.toLowerCase()} photographs.`,
+        );
         return;
       }
     }
@@ -657,7 +676,9 @@ export function PhotosPanel({
         setCoverPhotoId(replacement?.id ?? null);
       }
       await refresh();
-      toast.success(role ? `Photograph #${photo.sequence} set as ${role.label}.` : "Photograph type cleared.");
+      toast.success(
+        role ? `Photograph #${photo.sequence} set as ${role.label}.` : "Photograph type cleared.",
+      );
     } catch (error) {
       toast.error("Could not update photograph type", {
         description: error instanceof Error ? error.message : "Please try again.",
@@ -731,7 +752,8 @@ export function PhotosPanel({
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold">Current room</h3>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  Set the room before uploading. The first three room photographs become overviews; the rest become inventory items.
+                  Set the room before uploading. The first three room photographs become overviews;
+                  the rest become inventory items.
                 </p>
               </div>
               <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -767,7 +789,8 @@ export function PhotosPanel({
 
         {workflow ? (
           <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted-foreground">
-            Label uploaded photographs before analysis. Room overviews, keys, meters, exterior and title-page photographs are kept as evidence and are not analysed.
+            Label uploaded photographs before analysis. Room overviews, keys, meters, exterior and
+            title-page photographs are kept as evidence and are not analysed.
           </p>
         ) : null}
 
@@ -801,8 +824,6 @@ export function PhotosPanel({
           }}
         />
 
-
-
         <div className="mt-4 hidden sm:block">
           <PhotoCaptureActions
             compact
@@ -823,8 +844,6 @@ export function PhotosPanel({
             {remainingPhotos} of {photoCap} photographs remaining on this report.
           </p>
         ) : null}
-
-
       </section>
 
       <ContinuousCamera
@@ -862,7 +881,6 @@ export function PhotosPanel({
               <p className="text-sm text-muted-foreground">{selected.size} selected</p>
             </div>
             <div className="flex min-w-0 flex-wrap gap-2">
-
               <Button
                 variant="quiet"
                 size="sm"
@@ -907,8 +925,7 @@ export function PhotosPanel({
               inventoryWorkflow
                 ? photos.filter(
                     (photo) =>
-                      photo.id === coverPhotoId ||
-                      groupedForGrid.unallocatedIds.has(photo.id),
+                      photo.id === coverPhotoId || groupedForGrid.unallocatedIds.has(photo.id),
                   )
                 : photos
             }
@@ -972,7 +989,6 @@ export function PhotosPanel({
 
           <ReadinessChecklist steps={readiness} />
         </>
-
       )}
 
       {nextAction ? (
@@ -983,7 +999,9 @@ export function PhotosPanel({
 
       {/* One-handed controls on a phone: the next step on top, capture beneath,
           in one bar so nothing is ever hidden behind anything else. */}
-      <div className={`fixed inset-x-0 ${bottomFlush ? "bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(3.5rem+env(safe-area-inset-bottom))] pb-2"} z-20 space-y-1.5 border-t border-border bg-background/95 px-2 pt-2 backdrop-blur sm:hidden`}>
+      <div
+        className={`fixed inset-x-0 ${bottomFlush ? "bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(3.5rem+env(safe-area-inset-bottom))] pb-2"} z-20 space-y-1.5 border-t border-border bg-background/95 px-2 pt-2 backdrop-blur sm:hidden`}
+      >
         {nextAction}
         {atPhotoCap ? (
           <p className="text-center text-sm text-fail-soft">
@@ -1001,7 +1019,6 @@ export function PhotosPanel({
         )}
       </div>
 
-
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1017,27 +1034,45 @@ export function PhotosPanel({
                 Room or area
                 <input
                   list="inventory-room-suggestions"
-                  value={inventoryWorkflow.sectionField ? bulkValues[inventoryWorkflow.sectionField] ?? "" : ""}
+                  value={
+                    inventoryWorkflow.sectionField
+                      ? (bulkValues[inventoryWorkflow.sectionField] ?? "")
+                      : ""
+                  }
                   onChange={(event) => {
                     if (!inventoryWorkflow.sectionField) return;
-                    setBulkValues((current) => ({ ...current, [inventoryWorkflow.sectionField as string]: event.target.value }));
+                    setBulkValues((current) => ({
+                      ...current,
+                      [inventoryWorkflow.sectionField as string]: event.target.value,
+                    }));
                   }}
                   className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
                   placeholder="Choose or type a room"
                 />
                 <datalist id="inventory-room-suggestions">
-                  {(inventoryWorkflow.sectionSuggestions ?? []).map((room) => <option key={room} value={room} />)}
+                  {(inventoryWorkflow.sectionSuggestions ?? []).map((room) => (
+                    <option key={room} value={room} />
+                  ))}
                 </datalist>
               </label>
               <label className="block text-sm font-medium text-foreground">
                 Photograph type
                 <select
                   value={bulkValues[inventoryWorkflow.roleField] ?? ""}
-                  onChange={(event) => setBulkValues((current) => ({ ...current, [inventoryWorkflow.roleField]: event.target.value }))}
+                  onChange={(event) =>
+                    setBulkValues((current) => ({
+                      ...current,
+                      [inventoryWorkflow.roleField]: event.target.value,
+                    }))
+                  }
                   className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-base"
                 >
                   <option value="">Leave unchanged</option>
-                  {inventoryWorkflow.roles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+                  {inventoryWorkflow.roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
@@ -1045,7 +1080,9 @@ export function PhotosPanel({
             <CaptureFieldsForm
               fields={fields}
               values={bulkValues}
-              onChange={(fieldId, value) => setBulkValues((current) => ({ ...current, [fieldId]: value }))}
+              onChange={(fieldId, value) =>
+                setBulkValues((current) => ({ ...current, [fieldId]: value }))
+              }
               idPrefix="bulk"
             />
           )}
@@ -1071,42 +1108,42 @@ export function PhotosPanel({
           onSaved={() => void refresh()}
         />
       ) : (
-      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Photograph #{editing?.sequence}</DialogTitle>
-            <DialogDescription>
-              {editing?.captured_at
-                ? `Captured ${new Date(editing.captured_at).toLocaleString("en-GB")} — read from the file's own metadata.`
-                : "No capture time was present in the file. Nothing has been assumed."}
-            </DialogDescription>
-          </DialogHeader>
-          <CaptureFieldsForm
-            fields={
-              inventoryWorkflow
-                ? fields.filter(
-                    (field) =>
-                      field.id !== inventoryWorkflow.sectionField &&
-                      field.id !== inventoryWorkflow.roleField,
-                  )
-                : fields
-            }
-            values={editValues}
-            onChange={(fieldId, value) =>
-              setEditValues((current) => ({ ...current, [fieldId]: value }))
-            }
-            idPrefix="edit"
-          />
-          <DialogFooter>
-            <Button variant="quiet" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-            <Button variant="brand" onClick={() => void saveEdit()}>
-              Save details
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Photograph #{editing?.sequence}</DialogTitle>
+              <DialogDescription>
+                {editing?.captured_at
+                  ? `Captured ${new Date(editing.captured_at).toLocaleString("en-GB")} — read from the file's own metadata.`
+                  : "No capture time was present in the file. Nothing has been assumed."}
+              </DialogDescription>
+            </DialogHeader>
+            <CaptureFieldsForm
+              fields={
+                inventoryWorkflow
+                  ? fields.filter(
+                      (field) =>
+                        field.id !== inventoryWorkflow.sectionField &&
+                        field.id !== inventoryWorkflow.roleField,
+                    )
+                  : fields
+              }
+              values={editValues}
+              onChange={(fieldId, value) =>
+                setEditValues((current) => ({ ...current, [fieldId]: value }))
+              }
+              idPrefix="edit"
+            />
+            <DialogFooter>
+              <Button variant="quiet" onClick={() => setEditing(null)}>
+                Cancel
+              </Button>
+              <Button variant="brand" onClick={() => void saveEdit()}>
+                Save details
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

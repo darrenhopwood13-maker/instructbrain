@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, CircleDashed, Loader2, RotateCcw, Sparkles, TriangleAlert, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDashed,
+  Loader2,
+  RotateCcw,
+  Sparkles,
+  TriangleAlert,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -21,6 +29,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAnalysisRun, type PhotoRun } from "@/lib/ai/use-analysis-run";
 import { definitionLabel, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import {
+  readAnalysisSpeed,
+  speedFromValue,
+  writeAnalysisSpeed,
+  type AnalysisSpeed,
+} from "@/lib/ai/speed";
 
 /**
  * The only entry point to AI analysis in the UI. Nothing here confirms a
@@ -37,10 +51,14 @@ const STATE_LABEL: Record<PhotoRun["state"], string> = {
 
 function StateIcon({ state }: { state: PhotoRun["state"] }) {
   const className = "size-4 shrink-0";
-  if (state === "running") return <Loader2 aria-hidden="true" className={`${className} animate-spin text-accent`} />;
-  if (state === "done") return <CheckCircle2 aria-hidden="true" className={`${className} text-accent`} />;
-  if (state === "failed") return <TriangleAlert aria-hidden="true" className={`${className} text-destructive`} />;
-  if (state === "skipped") return <XCircle aria-hidden="true" className={`${className} text-muted-foreground`} />;
+  if (state === "running")
+    return <Loader2 aria-hidden="true" className={`${className} animate-spin text-accent`} />;
+  if (state === "done")
+    return <CheckCircle2 aria-hidden="true" className={`${className} text-accent`} />;
+  if (state === "failed")
+    return <TriangleAlert aria-hidden="true" className={`${className} text-destructive`} />;
+  if (state === "skipped")
+    return <XCircle aria-hidden="true" className={`${className} text-muted-foreground`} />;
   return <CircleDashed aria-hidden="true" className={`${className} text-muted-foreground`} />;
 }
 
@@ -109,7 +127,7 @@ export function AnalysisPanel({
     });
   }, [onStatus, pendingKnown, run.running, run.totals.completed, run.totals.total]);
   // Standard keeps the second opinion. Fast is a single pass, chosen per run.
-  const [speed, setSpeed] = useState<"standard" | "fast">("standard");
+  const [speed, setSpeed] = useState<AnalysisSpeed>(() => readAnalysisSpeed());
   const fast = speed === "fast";
   // Once a run is done the list collapses to what still needs a person —
   // failures, cancellations and photographs with Not assessed findings.
@@ -136,10 +154,9 @@ export function AnalysisPanel({
               Analyse photographs, then review every finding
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Each photograph is assessed at full resolution against the{" "}
-              {definitionLabel(snapshot)} report template. Anything uncertain is re-checked by a
-              stronger model, and anything still uncertain is marked{" "}
-              <strong>Not assessed</strong> for a person to resolve.
+              Each photograph is assessed at full resolution against the {definitionLabel(snapshot)}{" "}
+              report template. Anything uncertain is re-checked by a stronger model, and anything
+              still uncertain is marked <strong>Not assessed</strong> for a person to resolve.
             </p>
           </div>
 
@@ -150,7 +167,11 @@ export function AnalysisPanel({
               </Label>
               <Select
                 value={speed}
-                onValueChange={(value) => setSpeed(value === "fast" ? "fast" : "standard")}
+                onValueChange={(value) => {
+                  const next = speedFromValue(value);
+                  setSpeed(next);
+                  writeAnalysisSpeed(next);
+                }}
                 disabled={run.running}
               >
                 <SelectTrigger id="analysis-speed" className="mt-1">
@@ -201,8 +222,8 @@ export function AnalysisPanel({
               <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
             </div>
             <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
-              {run.totals.completed} of {run.totals.total} photographs · {run.totals.findings}{" "}
-              draft findings · {run.totals.notAssessed} not assessed
+              {run.totals.completed} of {run.totals.total} photographs · {run.totals.findings} draft
+              findings · {run.totals.notAssessed} not assessed
               {run.totals.failed > 0 ? ` · ${run.totals.failed} failed` : ""}
             </p>
           </div>

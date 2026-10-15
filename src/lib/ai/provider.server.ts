@@ -21,6 +21,7 @@ import {
   type Envelope,
 } from "@/lib/ai/observation";
 import type { SurveyTypeSnapshot } from "@/lib/survey-types";
+import { escalationSkippedBecauseAuth, noteEscalationAuthFailure } from "@/lib/ai/escalation-guard";
 
 export { AiProviderError };
 
@@ -147,6 +148,7 @@ export async function analysePhotograph(
   let chosen = triage;
   if (
     config.escalationEnabled &&
+    !escalationSkippedBecauseAuth() &&
     escalationDiffers &&
     (triage.envelope === null ||
       needsEscalation(
@@ -158,6 +160,9 @@ export async function analysePhotograph(
   ) {
     const escalation = await callTier(input, "escalation", escalationConfig ?? config);
     attempts.push(escalation);
+    // One rejection is enough to know the second opinion is unavailable. Without this
+    // the run pays a round trip per escalated photograph to learn the same thing.
+    noteEscalationAuthFailure(escalation.error);
     if (escalation.envelope !== null) chosen = escalation;
   }
 
