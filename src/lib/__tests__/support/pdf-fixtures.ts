@@ -55,8 +55,11 @@ export function finding(overrides: Partial<DocFinding> = {}): DocFinding {
 export function reportDocument(
   findings: DocFinding[],
   snapshot = snapshotOf(siteWalkDefinition),
+  /** Document-level overrides, so a test can set a switch the document honours. */
+  overrides: Partial<ReportDocument> = {},
 ): ReportDocument {
   return {
+    ...overrides,
     report: {
       id: "r1",
       title: "Site condition",
@@ -216,5 +219,8 @@ export function png(width: number, height: number): Uint8Array {
 export const PHOTO_BYTES = png(1200, 900);
 
 export function serveImages() {
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(PHOTO_BYTES.buffer as ArrayBuffer, { status: 200 })));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(PHOTO_BYTES.buffer as ArrayBuffer, { status: 200 })),
+  );
 }

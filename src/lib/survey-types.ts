@@ -403,6 +403,31 @@ export function resolveRegulatoryReference(
   return regulatoryReferencesOf(snapshot).find((ref) => ref.id === value.trim()) ?? null;
 }
 
+/**
+ * The instruments a set of findings actually names, once each, in the order they are
+ * first cited.
+ *
+ * Only what is cited: a report that names nothing returns an empty list, and the
+ * document then prints no references section at all. An id that is not on the
+ * template's own list resolves to nothing and is left out rather than guessed at.
+ */
+export function citedReferencesOf(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+  findings: ReadonlyArray<{ regulatoryReference?: string | null }>,
+): ReferenceDefinition[] {
+  const seen = new Set<string>();
+  const out: ReferenceDefinition[] = [];
+  for (const finding of findings) {
+    const id = (finding.regulatoryReference ?? "").trim();
+    if (id === "" || seen.has(id)) continue;
+    const reference = resolveRegulatoryReference(snapshot, id);
+    if (!reference) continue;
+    seen.add(id);
+    out.push(reference);
+  }
+  return out;
+}
+
 export function outputSectionsOf(snapshot: SurveyTypeSnapshot | null | undefined): string[] {
   const raw = Array.isArray(snapshot?.outputSections) ? snapshot.outputSections : [];
   return raw.filter((section): section is string => typeof section === "string");

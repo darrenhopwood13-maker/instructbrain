@@ -39,7 +39,12 @@ import {
   type Pin,
 } from "@/lib/report/photo-pins";
 import { formatCaptureDateTime, formatDocumentDate } from "@/lib/report/document";
-import { defaultResultView, groupResults, safeResultView, type ResultView } from "@/lib/report/grouping";
+import {
+  defaultResultView,
+  groupResults,
+  safeResultView,
+  type ResultView,
+} from "@/lib/report/grouping";
 import { itemLabel } from "@/lib/item-label";
 import { recordCopyNotice } from "@/lib/i18n/record-copy";
 import { sectionsFor, readableCaptureFields } from "@/lib/report/sections";
@@ -64,8 +69,9 @@ import {
   meterSlots,
 } from "@/lib/report/handover";
 import {
-  isManualOnly,
   NOT_ASSESSED_ID,
+  citedReferencesOf,
+  isManualOnly,
   photoWorkflowOf,
   requiresConditionGrade,
   resolveRegulatoryReference,
@@ -77,7 +83,13 @@ import {
   SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT,
 } from "@/lib/report/schedule-of-condition";
 import { conditionGradeOf, conditionGradeSummary } from "@/lib/review/condition-grade";
-import { MARKER_UNITS, STROKE_UNITS, TEXT_UNITS, type MarkupColour, type MarkupLayer } from "@/lib/photos/markup";
+import {
+  MARKER_UNITS,
+  STROKE_UNITS,
+  TEXT_UNITS,
+  type MarkupColour,
+  type MarkupLayer,
+} from "@/lib/photos/markup";
 
 /** Kept exported from here for existing callers; the values live in brand.ts. */
 export { MANUAL_REPORT_BRAND } from "@/lib/report/brand";
@@ -343,7 +355,10 @@ function drawText(writer: Writer, text: string, options: TextOptions = {}): void
     const isFinalLine = index === lines.length - 1;
     const words = line.split(/\s+/).filter(Boolean);
     if (alignment === "justify" && !isFinalLine && words.length > 1 && lineWidth < width) {
-      const wordsWidth = words.reduce((total, word) => total + font.widthOfTextAtSize(word, size), 0);
+      const wordsWidth = words.reduce(
+        (total, word) => total + font.widthOfTextAtSize(word, size),
+        0,
+      );
       const gap = (width - wordsWidth) / (words.length - 1);
       let wordX = x;
       for (const word of words) {
@@ -473,7 +488,8 @@ async function embedPhoto(
     const kind = imageKind(bytes);
     if (!kind) continue;
     try {
-      embedded = kind === "jpg" ? await writer.doc.embedJpg(bytes) : await writer.doc.embedPng(bytes);
+      embedded =
+        kind === "jpg" ? await writer.doc.embedJpg(bytes) : await writer.doc.embedPng(bytes);
       fetcher.spent += bytes.byteLength;
       break;
     } catch {
@@ -485,7 +501,15 @@ async function embedPhoto(
   return embedded;
 }
 
-function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, width: number, height: number, font: PDFFont): void {
+function drawMarkup(
+  page: PDFPage,
+  layers: MarkupLayer[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  font: PDFFont,
+): void {
   // Units match the on-screen overlay: 1/1000 of the image height.
   const u = height / 1000;
   const px = (nx: number) => x + nx * width;
@@ -494,33 +518,77 @@ function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, 
   const light = rgb(1, 1, 1);
   for (const layer of layers) {
     const colour = MARKUP_COLOURS[layer.colour];
-    const backing = layer.colour === "white" || layer.colour === "yellow" || layer.colour === "accent" ? dark : light;
+    const backing =
+      layer.colour === "white" || layer.colour === "yellow" || layer.colour === "accent"
+        ? dark
+        : light;
     const sw = Math.max(1, STROKE_UNITS[layer.stroke ?? "m"] * u);
-    const x1 = px(layer.x), y1 = py(layer.y), x2 = px(layer.x2), y2 = py(layer.y2);
+    const x1 = px(layer.x),
+      y1 = py(layer.y),
+      x2 = px(layer.x2),
+      y2 = py(layer.y2);
     const line = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-      page.drawLine({ start: a, end: b, thickness: sw, color: colour, lineCap: LineCapStyle.Round });
+      page.drawLine({
+        start: a,
+        end: b,
+        thickness: sw,
+        color: colour,
+        lineCap: LineCapStyle.Round,
+      });
     if (layer.kind === "arrow" || layer.kind === "line") {
       line({ x: x1, y: y1 }, { x: x2, y: y2 });
       if (layer.kind === "arrow") {
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const head = sw * 3.2;
-        for (const offset of [-0.45, 0.45]) line({ x: x2, y: y2 }, { x: x2 - head * Math.cos(angle + offset), y: y2 - head * Math.sin(angle + offset) });
+        for (const offset of [-0.45, 0.45])
+          line(
+            { x: x2, y: y2 },
+            { x: x2 - head * Math.cos(angle + offset), y: y2 - head * Math.sin(angle + offset) },
+          );
       }
     } else if (layer.kind === "pen" && layer.points) {
       for (let i = 1; i < layer.points.length; i++) {
-        const a = layer.points[i - 1]!, b = layer.points[i]!;
+        const a = layer.points[i - 1]!,
+          b = layer.points[i]!;
         line({ x: px(a[0]), y: py(a[1]) }, { x: px(b[0]), y: py(b[1]) });
       }
     } else if (layer.kind === "rectangle") {
-      page.drawRectangle({ x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1), borderWidth: sw, borderColor: colour });
+      page.drawRectangle({
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1),
+        borderWidth: sw,
+        borderColor: colour,
+      });
     } else if (layer.kind === "ellipse") {
-      page.drawEllipse({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, xScale: Math.abs(x2 - x1) / 2, yScale: Math.abs(y2 - y1) / 2, borderWidth: sw, borderColor: colour });
+      page.drawEllipse({
+        x: (x1 + x2) / 2,
+        y: (y1 + y2) / 2,
+        xScale: Math.abs(x2 - x1) / 2,
+        yScale: Math.abs(y2 - y1) / 2,
+        borderWidth: sw,
+        borderColor: colour,
+      });
     } else if (layer.kind === "marker") {
       const r = MARKER_UNITS[layer.size ?? "m"] * u;
-      page.drawCircle({ x: x1, y: y1, size: r, color: colour, borderColor: light, borderWidth: r * 0.14 });
+      page.drawCircle({
+        x: x1,
+        y: y1,
+        size: r,
+        color: colour,
+        borderColor: light,
+        borderWidth: r * 0.14,
+      });
       const label = String(layer.number ?? 1);
       const fs = r * 1.15;
-      page.drawText(label, { x: x1 - font.widthOfTextAtSize(label, fs) / 2, y: y1 - fs * 0.36, size: fs, font, color: backing });
+      page.drawText(label, {
+        x: x1 - font.widthOfTextAtSize(label, fs) / 2,
+        y: y1 - fs * 0.36,
+        size: fs,
+        font,
+        color: backing,
+      });
     } else {
       const fs = TEXT_UNITS[layer.size ?? "m"] * u;
       const text = sanitise(layer.text ?? "").slice(0, 160);
@@ -531,10 +599,28 @@ function drawMarkup(page: PDFPage, layers: MarkupLayer[], x: number, y: number, 
       const top = y1;
       const isSpeech = layer.kind === "speech";
       if (isSpeech) {
-        page.drawSvgPath(`M ${bx + w * 0.18} ${-(top - h)} l ${-fs * 0.5} ${fs * 0.9} l ${fs * 1.2} ${-fs * 0.9} z`, { x: 0, y: 0, color: light, borderColor: colour, borderWidth: sw * 0.6 });
+        page.drawSvgPath(
+          `M ${bx + w * 0.18} ${-(top - h)} l ${-fs * 0.5} ${fs * 0.9} l ${fs * 1.2} ${-fs * 0.9} z`,
+          { x: 0, y: 0, color: light, borderColor: colour, borderWidth: sw * 0.6 },
+        );
       }
-      page.drawRectangle({ x: bx, y: top - h, width: w, height: h, color: isSpeech ? light : backing, opacity: isSpeech ? 0.97 : 0.82, ...(isSpeech ? { borderColor: colour, borderWidth: sw * 0.6 } : {}) });
-      page.drawText(text, { x: bx + pad, y: top - h / 2 - fs * 0.35, size: fs, font, color: isSpeech ? dark : colour, maxWidth: w - pad });
+      page.drawRectangle({
+        x: bx,
+        y: top - h,
+        width: w,
+        height: h,
+        color: isSpeech ? light : backing,
+        opacity: isSpeech ? 0.97 : 0.82,
+        ...(isSpeech ? { borderColor: colour, borderWidth: sw * 0.6 } : {}),
+      });
+      page.drawText(text, {
+        x: bx + pad,
+        y: top - h / 2 - fs * 0.35,
+        size: fs,
+        font,
+        color: isSpeech ? dark : colour,
+        maxWidth: w - pad,
+      });
     }
   }
 }
@@ -741,7 +827,15 @@ function drawImage(
   });
   // Nothing is drawn on the photograph. Every image in this document is printed
   // as it was taken; the pointer lives beside the item it belongs to instead.
-  drawMarkup(writer.cursor.page, layers, writer.margin, writer.cursor.y - height, width, height, writer.bold);
+  drawMarkup(
+    writer.cursor.page,
+    layers,
+    writer.margin,
+    writer.cursor.y - height,
+    width,
+    height,
+    writer.bold,
+  );
   writer.cursor.y -= height + 8;
 }
 
@@ -909,7 +1003,10 @@ function drawInventoryHeader(writer: Writer, title = "Property inventory"): void
   // room title only. The credit sits once in the page footer.
   writer.cursor.page.drawLine({
     start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 16 },
-    end: { x: writer.pageSize.width - writer.margin, y: writer.pageSize.height - writer.margin - 16 },
+    end: {
+      x: writer.pageSize.width - writer.margin,
+      y: writer.pageSize.height - writer.margin - 16,
+    },
     thickness: 0.85,
     color: ACCENT,
   });
@@ -932,7 +1029,10 @@ function drawInventoryIndexPage(
   });
   page.drawLine({
     start: { x: writer.margin, y: writer.pageSize.height - writer.margin - 18 },
-    end: { x: writer.pageSize.width - writer.margin, y: writer.pageSize.height - writer.margin - 18 },
+    end: {
+      x: writer.pageSize.width - writer.margin,
+      y: writer.pageSize.height - writer.margin - 18,
+    },
     thickness: 0.85,
     color: ACCENT,
   });
@@ -994,7 +1094,13 @@ async function drawInventoryOverviewPhotos(
     const image = await embedPhoto(writer, fetcher, photo);
     if (image) drawImageAt(writer.cursor.page, image, x + 4, top - 4, width - 8, height - 8);
     else
-      writer.cursor.page.drawText("Photo unavailable", { x: x + 6, y: top - height / 2, size: 8, font: writer.regular, color: MUTED });
+      writer.cursor.page.drawText("Photo unavailable", {
+        x: x + 6,
+        y: top - height / 2,
+        size: 8,
+        font: writer.regular,
+        color: MUTED,
+      });
     writer.cursor.page.drawText(`Photo ${photo.sequence}`, {
       x: x + 6,
       y: top - height + 6,
@@ -1014,7 +1120,13 @@ function drawInventoryTableHeader(
   const x = writer.margin;
   const height = 22;
   ensure(writer, height);
-  writer.cursor.page.drawRectangle({ x, y: writer.cursor.y - height, width: writer.contentWidth, height, color: rgb(0.94, 0.96, 0.98) });
+  writer.cursor.page.drawRectangle({
+    x,
+    y: writer.cursor.y - height,
+    width: writer.contentWidth,
+    height,
+    color: rgb(0.94, 0.96, 0.98),
+  });
   let cellX = x;
   for (const [index, label] of labels.entries()) {
     const columnWidth = columns[index] ?? 0;
@@ -1075,7 +1187,9 @@ async function drawInventoryPhotoPages(
       const top = pageTop - row * (cardHeight + 18);
       if (top - cardHeight < writer.margin + 24) continue;
       const { photo, findings, room } = entry;
-      const linkedItems = findings.map((finding) => inventoryItemTableLabel(finding, document)).join(", ") || "No item linked";
+      const linkedItems =
+        findings.map((finding) => inventoryItemTableLabel(finding, document)).join(", ") ||
+        "No item linked";
       writer.cursor.page.drawText(sanitise(`Photo ${photo.sequence} - ${room}`), {
         x,
         y: top - 10,
@@ -1101,15 +1215,26 @@ async function drawInventoryPhotoPages(
       });
       if (fetcher) {
         const image = await embedPhoto(writer, fetcher, photo);
-        if (image) drawImageAt(writer.cursor.page, image, x + 6, top - 42, cardWidth - 12, imageHeight - 12);
+        if (image)
+          drawImageAt(writer.cursor.page, image, x + 6, top - 42, cardWidth - 12, imageHeight - 12);
         else
-          writer.cursor.page.drawText("Photo unavailable", { x: x + 10, y: top - 36 - imageHeight / 2, size: 8, font: writer.regular, color: MUTED });
+          writer.cursor.page.drawText("Photo unavailable", {
+            x: x + 10,
+            y: top - 36 - imageHeight / 2,
+            size: 8,
+            font: writer.regular,
+            color: MUTED,
+          });
       }
     }
   }
   return firstPage === null
     ? null
-    : { label: heading, page: firstPage, detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}` };
+    : {
+        label: heading,
+        page: firstPage,
+        detail: `${entries.length} photo${entries.length === 1 ? "" : "s"}`,
+      };
 }
 
 function drawBoxedPhoto(
@@ -1121,7 +1246,14 @@ function drawBoxedPhoto(
   height: number,
   emptyText: string,
 ): void {
-  writer.cursor.page.drawRectangle({ x, y: top - height, width, height, borderColor: RULE, borderWidth: 0.75 });
+  writer.cursor.page.drawRectangle({
+    x,
+    y: top - height,
+    width,
+    height,
+    borderColor: RULE,
+    borderWidth: 0.75,
+  });
   if (image) drawImageAt(writer.cursor.page, image, x + 4, top - 4, width - 8, height - 8);
   else
     writer.cursor.page.drawText(sanitise(emptyText), {
@@ -1209,15 +1341,30 @@ async function drawInventoryHandoverPages(
     let x = writer.margin;
     cells.forEach((cell, index) => {
       if (index > 0) {
-        writer.cursor.page.drawLine({ start: { x, y: top }, end: { x, y: top - rowHeight }, thickness: 0.5, color: RULE });
+        writer.cursor.page.drawLine({
+          start: { x, y: top },
+          end: { x, y: top - rowHeight },
+          thickness: 0.5,
+          color: RULE,
+        });
       }
-      drawCellText(writer.cursor.page, header || index === 0 ? writer.bold : writer.regular, cell, x + 6, top - 5, (widths[index] ?? 0) - 12, 8.5, header ? MUTED : INK);
+      drawCellText(
+        writer.cursor.page,
+        header || index === 0 ? writer.bold : writer.regular,
+        cell,
+        x + 6,
+        top - 5,
+        (widths[index] ?? 0) - 12,
+        8.5,
+        header ? MUTED : INK,
+      );
       x += widths[index] ?? 0;
     });
     writer.cursor.y -= rowHeight;
   };
   drawRow(["", layout.startLabel, layout.endLabel], true);
-  for (const slot of slots) drawRow([slot.label, meterReadingText(layout, record.meters[slot.id]), ""], false);
+  for (const slot of slots)
+    drawRow([slot.label, meterReadingText(layout, record.meters[slot.id]), ""], false);
   writer.cursor.y -= 12;
   if (layout.meterNotice) drawText(writer, layout.meterNotice, { size: 8.5, colour: MUTED });
 
@@ -1225,7 +1372,9 @@ async function drawInventoryHandoverPages(
   newPage(writer);
   entries.push({ label: layout.keysTitle, page: writer.cursor.pageNumber });
   drawInventoryHeader(writer, layout.keysTitle);
-  const keys = keyPhotos(layout, workflow.roleField, document.photos).sort((a, b) => a.sequence - b.sequence);
+  const keys = keyPhotos(layout, workflow.roleField, document.photos).sort(
+    (a, b) => a.sequence - b.sequence,
+  );
   const keyBoxes = Math.max(1, Math.min(3, keys.length));
   const keyWidth = (writer.contentWidth - gap * (keyBoxes - 1)) / keyBoxes;
   const keyHeight = 150;
@@ -1235,7 +1384,15 @@ async function drawInventoryHandoverPages(
     for (let index = 0; index < keyBoxes; index += 1) {
       const photo = keys[start + index] ?? null;
       if (start + index >= Math.max(1, keys.length)) break;
-      drawBoxedPhoto(writer, await photoOf(photo), writer.margin + index * (keyWidth + gap), top, keyWidth, keyHeight, "no photo");
+      drawBoxedPhoto(
+        writer,
+        await photoOf(photo),
+        writer.margin + index * (keyWidth + gap),
+        top,
+        keyWidth,
+        keyHeight,
+        "no photo",
+      );
     }
     writer.cursor.y = top - keyHeight - 16;
   }
@@ -1250,15 +1407,22 @@ async function drawInventoryHandoverPages(
   writer.cursor.y -= 12;
   for (const question of layout.questions) {
     const answer = record.answers[question.id];
-    drawText(writer, `${question.label}: ${answer === "yes" ? "Yes" : answer === "no" ? "No" : "__________"}`, {
-      size: 10,
-      gapAfter: 4,
-    });
+    drawText(
+      writer,
+      `${question.label}: ${answer === "yes" ? "Yes" : answer === "no" ? "No" : "__________"}`,
+      {
+        size: 10,
+        gapAfter: 4,
+      },
+    );
   }
   return entries;
 }
 
-function drawInventoryBackingPages(writer: Writer, document: ReportDocument): InventoryIndexEntry[] {
+function drawInventoryBackingPages(
+  writer: Writer,
+  document: ReportDocument,
+): InventoryIndexEntry[] {
   const pages = inventoryLayout(document)?.backingPages ?? [];
   if (pages.length === 0) return [];
 
@@ -1379,7 +1543,8 @@ async function drawFindingBody(
     });
   }
 
-  if (finding.findingText) drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
+  if (finding.findingText)
+    drawText(writer, finding.findingText, { size: 10, gapAfter: 4, align: "justify" });
   if (finding.remedialText) {
     drawText(writer, "Required action", { size: 8, bold: true, colour: MUTED });
     drawText(writer, finding.remedialText, { size: 10, gapAfter: 4, align: "justify" });
@@ -1420,11 +1585,10 @@ async function drawFindingBody(
 
   const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);
   if (extras.length > 0) {
-    drawText(
-      writer,
-      extras.map((field) => `${field.label}: ${field.value}`).join("   ·   "),
-      { size: 9, colour: MUTED },
-    );
+    drawText(writer, extras.map((field) => `${field.label}: ${field.value}`).join("   ·   "), {
+      size: 9,
+      colour: MUTED,
+    });
   }
 
   if (fetcher) {
@@ -1605,7 +1769,9 @@ async function drawPhotoPlateBody(
   // of a guessed height that leaves a blank band at the foot of the sheet.
   const room = roomOnPage(writer);
   const leadHeight = await measureHeight(writer, () => drawPlateLead(writer, showIntro));
-  const tailHeight = await measureHeight(writer, () => drawPlateTail(writer, document, photo, plate));
+  const tailHeight = await measureHeight(writer, () =>
+    drawPlateTail(writer, document, photo, plate),
+  );
   const photoHeight = Math.max(
     MIN_PLATE_PHOTO_HEIGHT,
     Math.min(room - leadHeight - tailHeight - 12, MAX_PLATE_PHOTO_HEIGHT),
@@ -1721,7 +1887,15 @@ async function drawManualPhotoPages(
         const x = writer.margin + (writer.contentWidth - width) / 2;
         const y = imageTop - height;
         writer.cursor.page.drawImage(image, { x, y, width, height });
-        drawMarkup(writer.cursor.page, attachment.photo.layers ?? [], x, y, width, height, writer.bold);
+        drawMarkup(
+          writer.cursor.page,
+          attachment.photo.layers ?? [],
+          x,
+          y,
+          width,
+          height,
+          writer.bold,
+        );
       }
     }
 
@@ -1842,7 +2016,14 @@ async function buildInventoryReportPdf(
   drawManualBrandHeader(writer, null);
   const organisationName = document.organisation?.name ?? "instructBrain";
   let coverY = 430;
-  coverY = drawCenteredText(coverPage, bold, organisationName.toUpperCase(), coverY, 27, LANDSCAPE_LETTER.width);
+  coverY = drawCenteredText(
+    coverPage,
+    bold,
+    organisationName.toUpperCase(),
+    coverY,
+    27,
+    LANDSCAPE_LETTER.width,
+  );
   coverPage.drawLine({
     start: { x: LANDSCAPE_LETTER.width / 2 - 88, y: coverY - 12 },
     end: { x: LANDSCAPE_LETTER.width / 2 + 88, y: coverY - 12 },
@@ -1857,24 +2038,47 @@ async function buildInventoryReportPdf(
   coverY -= 15;
   coverY = drawCenteredText(coverPage, regular, address, coverY, 16, LANDSCAPE_LETTER.width);
   if (document.project?.reference) {
-    coverY = drawCenteredText(coverPage, regular, document.project.reference, coverY - 5, 12, LANDSCAPE_LETTER.width, MUTED);
+    coverY = drawCenteredText(
+      coverPage,
+      regular,
+      document.project.reference,
+      coverY - 5,
+      12,
+      LANDSCAPE_LETTER.width,
+      MUTED,
+    );
   }
   if (document.project?.clientName) {
-    drawCenteredText(coverPage, regular, `Client:  ${document.project.clientName}`, coverY - 7, 12, LANDSCAPE_LETTER.width, MUTED);
+    drawCenteredText(
+      coverPage,
+      regular,
+      `Client:  ${document.project.clientName}`,
+      coverY - 7,
+      12,
+      LANDSCAPE_LETTER.width,
+      MUTED,
+    );
   }
   coverPage.drawText(formatDocumentDate(document.report.reportDate), {
-    x: LANDSCAPE_LETTER.width / 2 - regular.widthOfTextAtSize(formatDocumentDate(document.report.reportDate), 11) / 2,
+    x:
+      LANDSCAPE_LETTER.width / 2 -
+      regular.widthOfTextAtSize(formatDocumentDate(document.report.reportDate), 11) / 2,
     y: 95,
     size: 11,
     font: regular,
     color: INK,
   });
-  const footerLine = [document.organisation?.address, document.report.reference ? `Ref: ${document.report.reference}` : null]
+  const footerLine = [
+    document.organisation?.address,
+    document.report.reference ? `Ref: ${document.report.reference}` : null,
+  ]
     .filter((value): value is string => !!value)
     .join(" — ");
   if (footerLine) {
     coverPage.drawText(sanitise(footerLine).slice(0, 110), {
-      x: LANDSCAPE_LETTER.width / 2 - regular.widthOfTextAtSize(sanitise(footerLine).slice(0, 110), 8) / 2,
+      x:
+        LANDSCAPE_LETTER.width / 2 -
+        regular.widthOfTextAtSize(sanitise(footerLine).slice(0, 110), 8) / 2,
       y: 62,
       size: 8,
       font: regular,
@@ -1883,10 +2087,19 @@ async function buildInventoryReportPdf(
   }
   if (titlePhotos.length > 0 && fetcher) {
     const available = (
-      await Promise.all(titlePhotos.map(async (photo) => ({ photo, image: await embedPhoto(writer, fetcher, photo) })))
+      await Promise.all(
+        titlePhotos.map(async (photo) => ({
+          photo,
+          image: await embedPhoto(writer, fetcher, photo),
+        })),
+      )
     ).filter((entry): entry is { photo: DocPhoto; image: PDFImage } => entry.image !== null);
     const gap = 10;
-    const width = Math.min(214, (writer.contentWidth - gap * Math.max(0, available.length - 1)) / Math.max(1, available.length));
+    const width = Math.min(
+      214,
+      (writer.contentWidth - gap * Math.max(0, available.length - 1)) /
+        Math.max(1, available.length),
+    );
     const totalWidth = width * available.length + gap * Math.max(0, available.length - 1);
     // drawImageAt takes the image's TOP edge and draws at y: top - height, so the strip's
     // footprint runs from top down to top - height. Measured baselines on this cover: date 95
@@ -1913,7 +2126,12 @@ async function buildInventoryReportPdf(
     layout?.columns?.condition ?? "Condition",
     layout?.columns?.checkoutComment ?? "Check Out Comment",
   ];
-  const columns: [number, number, number, number] = [92, 336, 124, writer.contentWidth - 92 - 336 - 124];
+  const columns: [number, number, number, number] = [
+    92,
+    336,
+    124,
+    writer.contentWidth - 92 - 336 - 124,
+  ];
 
   const photoGroups = inventoryRoomPhotoGroups(document);
 
@@ -1952,7 +2170,10 @@ async function buildInventoryReportPdf(
     await drawInventoryOverviewPhotos(writer, fetcher, room.overviewPhotos);
     drawInventoryTableHeader(writer, columns, labels);
     if (room.findings.length === 0) {
-      drawText(writer, "No inventory items recorded in this room yet.", { size: 10, colour: MUTED });
+      drawText(writer, "No inventory items recorded in this room yet.", {
+        size: 10,
+        colour: MUTED,
+      });
     }
     for (const finding of room.findings) {
       const values: [string, string, string, string] = [
@@ -1998,7 +2219,9 @@ async function buildInventoryReportPdf(
           rowTop - 6,
           columnWidth - 10,
           8.5,
-          index === 2 ? (TONE_COLOURS[resolveStatus(document.snapshot, finding.statusId).tone] ?? INK) : INK,
+          index === 2
+            ? (TONE_COLOURS[resolveStatus(document.snapshot, finding.statusId).tone] ?? INK)
+            : INK,
         );
         x += columnWidth;
       });
@@ -2079,10 +2302,20 @@ function drawScheduleOfItems(
   // the first break prints over the rows already there and re-prints the
   // heading on top of itself.
   let page = writer.cursor.page;
-  page.drawRectangle({ x: writer.margin, y: y - 22, width: writer.contentWidth, height: 22, color: BRAND_NAVY });
+  page.drawRectangle({
+    x: writer.margin,
+    y: y - 22,
+    width: writer.contentWidth,
+    height: 22,
+    color: BRAND_NAVY,
+  });
   page.drawRectangle({ x: writer.margin, y: y - 22, width: 4, height: 22, color: ACCENT });
   page.drawText(sanitise(`Schedule of items — ${findings.length}`), {
-    x: row(12), y: y - 15, size: 10, font: writer.bold, color: PAPER_WHITE,
+    x: row(12),
+    y: y - 15,
+    size: 10,
+    font: writer.bold,
+    color: PAPER_WHITE,
   });
   y -= 34;
 
@@ -2096,7 +2329,13 @@ function drawScheduleOfItems(
   ];
   const heading = () => {
     for (const [label, offset] of columns) {
-      page.drawText(sanitise(label), { x: row(offset), y: y - 8, size: 7, font: writer.bold, color: MUTED });
+      page.drawText(sanitise(label), {
+        x: row(offset),
+        y: y - 8,
+        size: 7,
+        font: writer.bold,
+        color: MUTED,
+      });
     }
     y -= 15;
   };
@@ -2111,14 +2350,29 @@ function drawScheduleOfItems(
       y = writer.cursor.y;
       heading();
     }
-    page.drawRectangle({ x: writer.margin, y: y - 12, width: writer.contentWidth, height: 15, color: rgb(0.93, 0.95, 0.97) });
+    page.drawRectangle({
+      x: writer.margin,
+      y: y - 12,
+      width: writer.contentWidth,
+      height: 15,
+      color: rgb(0.93, 0.95, 0.97),
+    });
     page.drawText(sanitise(group.label.toUpperCase()), {
-      x: row(0), y: y - 8, size: 7, font: writer.bold, color: BRAND_NAVY,
+      x: row(0),
+      y: y - 8,
+      size: 7,
+      font: writer.bold,
+      color: BRAND_NAVY,
     });
     y -= 15;
     for (const finding of group.findings) {
       index += 1;
-      const titleLines = wrap(finding.snagTitle ?? finding.findingText ?? "", writer.regular, size, 236);
+      const titleLines = wrap(
+        finding.snagTitle ?? finding.findingText ?? "",
+        writer.regular,
+        size,
+        236,
+      );
       const height = Math.max(13, titleLines.length * 9.6 + 3);
       if (y < writer.margin + 60) {
         newPage(writer);
@@ -2126,18 +2380,55 @@ function drawScheduleOfItems(
         y = writer.cursor.y;
         heading();
       }
-      page.drawText(sanitise(String(index)), { x: row(0), y: y - 9, size, font: writer.bold, color: MUTED });
-      page.drawText(sanitise(itemLabel(finding.ref)), { x: row(16), y: y - 9, size, font: writer.bold, color: INK });
+      page.drawText(sanitise(String(index)), {
+        x: row(0),
+        y: y - 9,
+        size,
+        font: writer.bold,
+        color: MUTED,
+      });
+      page.drawText(sanitise(itemLabel(finding.ref)), {
+        x: row(16),
+        y: y - 9,
+        size,
+        font: writer.bold,
+        color: INK,
+      });
       // Every wrapped line is printed and the row is as tall as they are. Printing
       // two of five silently dropped the rest of a long description.
       titleLines.forEach((line, lineIndex) => {
-        page.drawText(sanitise(line), { x: row(50), y: y - 9 - lineIndex * 9.6, size, font: writer.regular, color: INK });
+        page.drawText(sanitise(line), {
+          x: row(50),
+          y: y - 9 - lineIndex * 9.6,
+          size,
+          font: writer.regular,
+          color: INK,
+        });
       });
-      page.drawText(sanitise(finding.assignedTrade ?? "-"), { x: row(292), y: y - 9, size, font: writer.regular, color: INK });
-      page.drawText(sanitise(resolveSeverity(document.snapshot, finding.severityId)?.label ?? "-"), {
-        x: row(380), y: y - 9, size, font: writer.regular, color: INK,
+      page.drawText(sanitise(finding.assignedTrade ?? "-"), {
+        x: row(292),
+        y: y - 9,
+        size,
+        font: writer.regular,
+        color: INK,
       });
-      page.drawText(sanitise(markOf(finding)), { x: row(436), y: y - 9, size, font: writer.regular, color: MUTED });
+      page.drawText(
+        sanitise(resolveSeverity(document.snapshot, finding.severityId)?.label ?? "-"),
+        {
+          x: row(380),
+          y: y - 9,
+          size,
+          font: writer.regular,
+          color: INK,
+        },
+      );
+      page.drawText(sanitise(markOf(finding)), {
+        x: row(436),
+        y: y - 9,
+        size,
+        font: writer.regular,
+        color: MUTED,
+      });
       y -= height;
     }
     y -= 2;
@@ -2202,8 +2493,7 @@ export async function buildReportPdf(
   const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
   // A condition survey is presented as a Schedule of Condition, with its
   // mandatory scope-and-limitations block printed on the artifact.
-  const scheduleCondition =
-    options.variant === "full" && requiresConditionGrade(document.snapshot);
+  const scheduleCondition = options.variant === "full" && requiresConditionGrade(document.snapshot);
   const fetcher: PhotoFetcher | null =
     options.includePhotos === false ? null : { spent: 0, cache: new Map() };
 
@@ -2221,7 +2511,12 @@ export async function buildReportPdf(
     align: "center",
   });
   if (document.report.subtitle) {
-    drawText(writer, document.report.subtitle, { size: 13, colour: MUTED, gapAfter: 6, align: "center" });
+    drawText(writer, document.report.subtitle, {
+      size: 13,
+      colour: MUTED,
+      gapAfter: 6,
+      align: "center",
+    });
   }
   if (options.variant === "trade") {
     drawText(
@@ -2284,7 +2579,9 @@ export async function buildReportPdf(
 
   if (manualFull) {
     const coverUrl = document.project?.coverUrl ?? null;
-    const cover = coverUrl ? { id: "project-cover", url: coverUrl, thumbUrl: null, printUrl: null } : null;
+    const cover = coverUrl
+      ? { id: "project-cover", url: coverUrl, thumbUrl: null, printUrl: null }
+      : null;
     if (cover && fetcher) {
       const image = await embedPhoto(writer, fetcher, cover);
       if (image) {
@@ -2302,8 +2599,6 @@ export async function buildReportPdf(
     const bytes = await doc.save();
     return { bytes, filename: pdfFilename(document, options) };
   }
-
-
 
   /* Summary */
   const summary = document.report.executiveSummary ?? document.synthesis?.executiveSummary ?? "";
@@ -2355,7 +2650,10 @@ export async function buildReportPdf(
       document,
       findings,
       pins,
-      safeResultView(options.view, defaultResultView(document.snapshot, document.tradeEnabled ?? true)),
+      safeResultView(
+        options.view,
+        defaultResultView(document.snapshot, document.tradeEnabled ?? true),
+      ),
     );
     // The entries begin on a page of their own: the schedule is a page to be
     // read, and the first section heading should not sit under the table.
@@ -2453,7 +2751,9 @@ export async function buildReportPdf(
     eyebrow(writer, "Items by grade");
     drawText(
       writer,
-      summary.byGrade.map((grade) => `${grade.code} — ${grade.label}: ${grade.count}`).join("   ·   "),
+      summary.byGrade
+        .map((grade) => `${grade.code} — ${grade.label}: ${grade.count}`)
+        .join("   ·   "),
       { size: 10, gapAfter: 2 },
     );
     drawText(
@@ -2472,6 +2772,40 @@ export async function buildReportPdf(
     drawRule(writer, 14, 10);
     eyebrow(writer, "Advisory");
     drawText(writer, document.advisoryFooter, { size: 9, colour: MUTED, align: "justify" });
+  }
+
+  /* References: the instruments this report's findings actually name.
+     Printed from the definition, never from the model — the AI selects an id from a
+     list, and this is what that id means. Only what is cited, once each, with the
+     instrument's own formal reference and the page it was verified against, so a
+     reader can check it themselves. A report that names nothing prints nothing. */
+  const cited = citedReferencesOf(document.snapshot, findings);
+  if (document.regulationCitations !== false && cited.length > 0) {
+    ensure(writer, 80);
+    drawRule(writer, 16, 10);
+    eyebrow(writer, "References");
+    drawText(writer, "The instruments named by the findings in this report.", {
+      size: 9,
+      colour: MUTED,
+      gapAfter: 7,
+    });
+    for (const reference of cited) {
+      ensure(writer, 40);
+      drawText(
+        writer,
+        reference.instrument ? `${reference.label} — ${reference.instrument}` : reference.label,
+        { size: 10, gapAfter: 1 },
+      );
+      const where = [reference.jurisdiction, reference.source].filter(Boolean).join("  ·  ");
+      if (where) drawText(writer, where, { size: 8, colour: MUTED, gapAfter: 6 });
+    }
+    if (cited.some((reference) => !reference.instrument)) {
+      drawText(
+        writer,
+        "An entry with no formal reference behind it is a document about this job rather than a published instrument.",
+        { size: 8, colour: MUTED, align: "justify" },
+      );
+    }
   }
 
   drawFooters(writer);
