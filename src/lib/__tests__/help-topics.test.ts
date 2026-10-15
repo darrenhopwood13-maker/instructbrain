@@ -22,4 +22,15 @@ describe("help topics", () => {
       if (topic.clipUrl !== null) expect(topic.clipUrl).toMatch(/^https:\/\//);
     }
   });
+
+  it("gives every clip a poster, because the list draws stills", () => {
+    // The list stopped autoplaying videos: a phone will not decode thirteen of
+    // them at once, and the ones it skips cannot be played by tapping either. So
+    // a topic with a clip must have a still to show in its place.
+    for (const topic of HELP_TOPICS) {
+      if (topic.clipUrl === null) continue;
+      expect(topic.posterUrl, `${topic.id} has no poster`).toMatch(/^https:\/\//);
+      expect(topic.posterUrl).toContain("posters/");
+    }
+  });
 });

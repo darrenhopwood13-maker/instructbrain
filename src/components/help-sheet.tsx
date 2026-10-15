@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Film, HelpCircle, X } from "lucide-react";
+import { ArrowLeft, Film, HelpCircle, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HELP_TOPICS } from "@/lib/help-content";
+import { HELP_TOPICS, type HelpTopic } from "@/lib/help-content";
 
 /**
  * localStorage flag remembering that the user dismissed the floating help
@@ -25,10 +25,16 @@ export const OPEN_HELP_EVENT = "instructbrain:open-help";
  *
  * The button itself can be dismissed; the preference persists, and Help
  * remains reachable from the Account menu, which also restores the button.
+ *
+ * The list draws a still from each clip and the clip loads when it is tapped.
+ * Autoplaying thirteen videos inside one dialog is what stopped this working on
+ * a phone: a handset decodes a small number of videos at once, so most of them
+ * never started, and a tap did nothing because tapping was wired to nothing.
  */
 export function HelpSheet() {
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(true);
+  const [watching, setWatching] = useState<HelpTopic | null>(null);
 
   useEffect(() => {
     setHidden(window.localStorage.getItem(HELP_HIDDEN_KEY) === "1");
@@ -44,6 +50,12 @@ export function HelpSheet() {
   const dismiss = useCallback(() => {
     window.localStorage.setItem(HELP_HIDDEN_KEY, "1");
     setHidden(true);
+  }, []);
+
+  /** Closing the sheet puts the list back, so it never reopens mid-clip. */
+  const onChange = useCallback((next: boolean) => {
+    setOpen(next);
+    if (!next) setWatching(null);
   }, []);
 
   return (
@@ -71,44 +83,84 @@ export function HelpSheet() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onChange}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Help</DialogTitle>
+            <DialogTitle>{watching ? watching.title : "Help"}</DialogTitle>
             <DialogDescription>
-              Short clips, one per task, each with a voice-over.
+              {watching
+                ? watching.caption
+                : "Short clips, one per task, each with a voice-over. Tap to watch."}
             </DialogDescription>
           </DialogHeader>
 
-          <ul className="space-y-3">
-          {HELP_TOPICS.map((topic) => (
-            <li
-              key={topic.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3"
-            >
-              <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-sunken">
-                {topic.clipUrl ? (
-                  <video
-                    src={topic.clipUrl}
-                    className="size-full object-cover"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                  />
-                ) : (
-                  <Film aria-hidden="true" className="size-6 text-muted-foreground" />
-                )}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">{topic.title}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {topic.clipUrl ? topic.caption : "Clip coming soon"}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
+          {watching ? (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setWatching(null)}
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground"
+              >
+                <ArrowLeft aria-hidden="true" className="size-4" />
+                All clips
+              </button>
+              <video
+                key={watching.id}
+                src={watching.clipUrl ?? undefined}
+                poster={watching.posterUrl ?? undefined}
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                className="mx-auto block max-h-[58dvh] w-auto max-w-full rounded-xl bg-black"
+              />
+              <a
+                href={watching.clipUrl ?? "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-accent-ink underline"
+              >
+                Open this clip in a new tab
+              </a>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {HELP_TOPICS.map((topic) => (
+                <li key={topic.id}>
+                  <button
+                    type="button"
+                    onClick={() => setWatching(topic)}
+                    disabled={!topic.clipUrl}
+                    className="flex w-full min-h-11 items-center gap-3 rounded-xl border border-border bg-surface-raised p-3 text-left transition-colors hover:bg-surface-sunken disabled:opacity-70"
+                  >
+                    <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-sunken">
+                      {topic.posterUrl ? (
+                        <img
+                          src={topic.posterUrl}
+                          alt=""
+                          loading="lazy"
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <Film aria-hidden="true" className="size-6 text-muted-foreground" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">{topic.title}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {topic.clipUrl ? topic.caption : "Clip coming soon"}
+                      </span>
+                    </span>
+                    {topic.clipUrl ? (
+                      <span className="shrink-0 text-xs font-semibold text-brand-accent-ink">
+                        Play
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </DialogContent>
       </Dialog>
     </>
