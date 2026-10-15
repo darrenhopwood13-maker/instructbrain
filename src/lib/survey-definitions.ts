@@ -113,8 +113,7 @@ export const snaggingDefinition: SurveyDefinition = {
     {
       id: "workmanship",
       label: "Workmanship",
-      guidance:
-        "Below the expected standard of finish or installation. Rectify before handover.",
+      guidance: "Below the expected standard of finish or installation. Rectify before handover.",
     },
     {
       id: "performance",
@@ -165,26 +164,98 @@ export const snaggingDefinition: SurveyDefinition = {
     },
   ],
   regulatoryReferences: [
-    { id: "ad_a", label: "Approved Document A - structure" },
-    { id: "ad_b", label: "Approved Document B - fire safety" },
+    {
+      id: "ad_a",
+      label: "Approved Document A - structure",
+      instrument: "Structure: Approved Document A",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/structure-approved-document-a",
+    },
+    {
+      id: "ad_b",
+      label: "Approved Document B - fire safety",
+      instrument: "Fire safety: Approved Document B",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/fire-safety-approved-document-b",
+    },
     {
       id: "ad_c",
-      label:
-        "Approved Document C - site preparation and resistance to contaminants and moisture",
+      label: "Approved Document C - site preparation and resistance to contaminants and moisture",
+      instrument:
+        "Site preparation and resistance to contaminants and moisture: Approved Document C",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/site-preparation-and-resistance-to-contaminates-and-moisture-approved-document-c",
     },
-    { id: "ad_e", label: "Approved Document E - resistance to the passage of sound" },
-    { id: "ad_f", label: "Approved Document F - ventilation" },
+    {
+      id: "ad_e",
+      label: "Approved Document E - resistance to the passage of sound",
+      instrument: "Resistance to sound: Approved Document E",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/resistance-to-sound-approved-document-e",
+    },
+    {
+      id: "ad_f",
+      label: "Approved Document F - ventilation",
+      instrument:
+        "Approved Document F (Ventilation): Volume 1: Dwellings; Volume 2: Buildings other than dwellings - 2021 edition (in force 15 June 2022); Approved Document F (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/ventilation-approved-document-f",
+    },
     {
       id: "ad_k",
       label: "Approved Document K - protection from falling, collision and impact",
+      instrument: "Protection from falling, collision and impact: Approved Document K",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/protection-from-falling-collision-and-impact-approved-document-k",
     },
-    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
-    { id: "ad_m", label: "Approved Document M - access to and use of buildings" },
-    { id: "ad_part_p", label: "Part P - electrical safety" },
-    { id: "bs_8000", label: "BS 8000 - workmanship on construction sites" },
-    { id: "nhbc", label: "NHBC Standards" },
-    { id: "spec", label: "Project specification / employer's requirements" },
-    { id: "manufacturer", label: "Manufacturer's installation instructions" },
+    {
+      id: "ad_l",
+      label: "Approved Document L - conservation of fuel and power",
+      instrument:
+        "Approved Document L (Conservation of fuel and power): Volume 1: Dwellings (2021 edition incorporating 2023 amendments); Volume 2: Buildings other than dwellings (2021 edition incorporating 2023 amendments); Approved Document L (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/conservation-of-fuel-and-power-approved-document-l",
+    },
+    {
+      id: "ad_m",
+      label: "Approved Document M - access to and use of buildings",
+      instrument: "Access to and use of buildings: Approved Document M",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/access-to-and-use-of-buildings-approved-document-m",
+    },
+    {
+      id: "ad_part_p",
+      label: "Part P - electrical safety",
+      instrument: "Electrical safety: Approved Document P",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/electrical-safety-approved-document-p",
+    },
+    {
+      id: "bs_8000",
+      label: "BS 8000 - workmanship on construction sites",
+      instrument: "BS 8000 series",
+      jurisdiction: "UK",
+      source: "https://landingpage.bsigroup.com/LandingPage/Series?UPI=BS+8000",
+    },
+    {
+      id: "nhbc",
+      label: "NHBC Standards",
+      instrument: "NHBC Standards",
+      jurisdiction: "UK",
+      source: "https://www.nhbc.co.uk/standards",
+    },
+    {
+      id: "spec",
+      label: "Project specification / employer's requirements",
+    },
+    {
+      id: "manufacturer",
+      label: "Manufacturer's installation instructions",
+    },
   ],
   captureFields: [
     {
@@ -283,8 +354,7 @@ export const siteWalkDefinition: SurveyDefinition = {
     {
       id: "housekeeping",
       label: "Housekeeping",
-      guidance:
-        "Tidiness, storage and general order. Rectify in normal course of work.",
+      guidance: "Tidiness, storage and general order. Rectify in normal course of work.",
       targetHours: 168,
     },
   ],
@@ -352,27 +422,153 @@ Describe conditions only. Never describe, identify, count or characterise any pe
       "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. An observation about working at height, plant, temporary power, fire, welfare or storage almost always touches one of these. Name it; do not assert a breach and do not give a legal opinion - the instrument is cited, the duty is described in words.",
   },
   regulatoryReferences: [
-    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
-    { id: "cdm_2015", label: "Construction (Design and Management) Regulations 2015" },
-    { id: "mhswr_1999", label: "Management of Health and Safety at Work Regulations 1999" },
-    { id: "wah_2005", label: "Work at Height Regulations 2005" },
-    { id: "puwer_1998", label: "Provision and Use of Work Equipment Regulations 1998" },
-    { id: "loler_1998", label: "Lifting Operations and Lifting Equipment Regulations 1998" },
-    { id: "coshh_2002", label: "Control of Substances Hazardous to Health Regulations 2002" },
-    { id: "mhor_1992", label: "Manual Handling Operations Regulations 1992" },
-    { id: "ppe_1992", label: "Personal Protective Equipment at Work Regulations 1992" },
-    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
-    { id: "car_2012", label: "Control of Asbestos Regulations 2012" },
-    { id: "confined_spaces_1997", label: "Confined Spaces Regulations 1997" },
-    { id: "dsear_2002", label: "Dangerous Substances and Explosive Atmospheres Regulations 2002" },
-    { id: "noise_2005", label: "Control of Noise at Work Regulations 2005" },
-    { id: "signs_1996", label: "Health and Safety (Safety Signs and Signals) Regulations 1996" },
-    { id: "workplace_1992", label: "Workplace (Health, Safety and Welfare) Regulations 1992" },
-    { id: "first_aid_1981", label: "Health and Safety (First-Aid) Regulations 1981" },
-    { id: "rr_fso_2005", label: "Regulatory Reform (Fire Safety) Order 2005" },
-    { id: "bs_5975", label: "BS 5975 - temporary works procedures" },
-    { id: "l153", label: "HSE L153 - managing health and safety in construction (CDM ACOP)" },
-    { id: "hsg150", label: "HSE HSG150 - health and safety in construction" },
+    {
+      id: "hswa_1974",
+      label: "Health and Safety at Work etc. Act 1974",
+      instrument: "Health and Safety at Work etc. Act 1974, 1974 c. 37",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/ukpga/1974/37/contents",
+    },
+    {
+      id: "cdm_2015",
+      label: "Construction (Design and Management) Regulations 2015",
+      instrument: "SI 2015/51",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2015/51/contents",
+    },
+    {
+      id: "mhswr_1999",
+      label: "Management of Health and Safety at Work Regulations 1999",
+      instrument: "SI 1999/3242",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1999/3242/contents",
+    },
+    {
+      id: "wah_2005",
+      label: "Work at Height Regulations 2005",
+      instrument: "SI 2005/735",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2005/735/contents",
+    },
+    {
+      id: "puwer_1998",
+      label: "Provision and Use of Work Equipment Regulations 1998",
+      instrument: "SI 1998/2306",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1998/2306/contents",
+    },
+    {
+      id: "loler_1998",
+      label: "Lifting Operations and Lifting Equipment Regulations 1998",
+      instrument: "The Lifting Operations and Lifting Equipment Regulations 1998 (SI 1998/2307)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1998/2307/contents",
+    },
+    {
+      id: "coshh_2002",
+      label: "Control of Substances Hazardous to Health Regulations 2002",
+      instrument: "SI 2002/2677",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2002/2677/contents",
+    },
+    {
+      id: "mhor_1992",
+      label: "Manual Handling Operations Regulations 1992",
+      instrument: "SI 1992/2793",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1992/2793/contents",
+    },
+    {
+      id: "ppe_1992",
+      label: "Personal Protective Equipment at Work Regulations 1992",
+      instrument: "SI 1992/2966",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1992/2966/contents",
+    },
+    {
+      id: "eawr_1989",
+      label: "Electricity at Work Regulations 1989",
+      instrument: "SI 1989/635",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+    },
+    {
+      id: "car_2012",
+      label: "Control of Asbestos Regulations 2012",
+      instrument: "The Control of Asbestos Regulations 2012 (SI 2012/632)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2012/632/contents",
+    },
+    {
+      id: "confined_spaces_1997",
+      label: "Confined Spaces Regulations 1997",
+      instrument: "SI 1997/1713",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1997/1713/contents",
+    },
+    {
+      id: "dsear_2002",
+      label: "Dangerous Substances and Explosive Atmospheres Regulations 2002",
+      instrument: "SI 2002/2776",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2002/2776/contents",
+    },
+    {
+      id: "noise_2005",
+      label: "Control of Noise at Work Regulations 2005",
+      instrument: "SI 2005/1643",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2005/1643/contents",
+    },
+    {
+      id: "signs_1996",
+      label: "Health and Safety (Safety Signs and Signals) Regulations 1996",
+      instrument: "SI 1996/341",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1996/341/contents",
+    },
+    {
+      id: "workplace_1992",
+      label: "Workplace (Health, Safety and Welfare) Regulations 1992",
+      instrument: "SI 1992/3004",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1992/3004/contents",
+    },
+    {
+      id: "first_aid_1981",
+      label: "Health and Safety (First-Aid) Regulations 1981",
+      instrument: "SI 1981/917",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1981/917/contents",
+    },
+    {
+      id: "rr_fso_2005",
+      label: "Regulatory Reform (Fire Safety) Order 2005",
+      instrument: "The Regulatory Reform (Fire Safety) Order 2005 (SI 2005/1541)",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2005/1541/contents",
+    },
+    {
+      id: "bs_5975",
+      label: "BS 5975 - temporary works procedures",
+      instrument: "BS 5975",
+      jurisdiction: "UK",
+      source: "https://landingpage.bsigroup.com/LandingPage/Series?UPI=BS+5975",
+    },
+    {
+      id: "l153",
+      label: "HSE L153 - managing health and safety in construction (CDM ACOP)",
+      instrument: "HSE L153 (4th edition, 2015)",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/l153.htm",
+    },
+    {
+      id: "hsg150",
+      label: "HSE HSG150 - health and safety in construction",
+      instrument: "HSE HSG150 (3rd edition, 2006)",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/hsg150.htm",
+    },
   ],
 
   outputSections: ["cover", "summary", "schedule_by_trade", "schedule_by_area", "appendix"],
@@ -478,7 +674,8 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
       {
         id: "title_page",
         label: "Title page",
-        description: "One of up to three photographs shown beneath the title details. It is not analysed.",
+        description:
+          "One of up to three photographs shown beneath the title details. It is not analysed.",
         excludesAi: true,
         countsAsCover: true,
         maxPerReport: 3,
@@ -498,14 +695,16 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
       {
         id: "handover_meter",
         label: "Meter photograph",
-        description: "A meter photographed as evidence of its reading. It is not analysed into a room.",
+        description:
+          "A meter photographed as evidence of its reading. It is not analysed into a room.",
         excludesAi: true,
         outsideSections: true,
       },
       {
         id: "handover_keys",
         label: "Keys photograph",
-        description: "Keys, fobs or access devices photographed as evidence. It is not analysed into a room.",
+        description:
+          "Keys, fobs or access devices photographed as evidence. It is not analysed into a room.",
         excludesAi: true,
         outsideSections: true,
       },
@@ -631,13 +830,55 @@ export const electricalInstallationDefinition: SurveyDefinition = {
   // rather than a hope. Every entry was verified at source on 8 Oct 2026 - see
   // docs/regulatory-citations.md for the source URL behind each one.
   regulatoryReferences: [
-    { id: "bs_7671", label: "BS 7671 - IET Wiring Regulations (18th Edition)" },
-    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
-    { id: "esqcr_2002", label: "Electricity Safety, Quality and Continuity Regulations 2002" },
-    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
-    { id: "ad_p", label: "Approved Document P - electrical safety" },
-    { id: "hsg85", label: "HSE HSG85 - electricity at work, safe working practices" },
-    { id: "hsr25", label: "HSE HSR25 - electrical safety on construction sites" },
+    {
+      id: "bs_7671",
+      label: "BS 7671 - IET Wiring Regulations (18th Edition)",
+      instrument: "BS 7671:2018+A4:2026",
+      jurisdiction: "UK",
+      source: "https://electrical.theiet.org/bs-7671-18th-edition-wiring-regulations/model-forms/",
+    },
+    {
+      id: "eawr_1989",
+      label: "Electricity at Work Regulations 1989",
+      instrument: "SI 1989/635",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+    },
+    {
+      id: "esqcr_2002",
+      label: "Electricity Safety, Quality and Continuity Regulations 2002",
+      instrument: "SI 2002/2665",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2002/2665/contents",
+    },
+    {
+      id: "bldg_regs_2010",
+      label: "Building Regulations 2010 (SI 2010/2214)",
+      instrument: "The Building Regulations 2010, SI 2010/2214",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+    },
+    {
+      id: "ad_p",
+      label: "Approved Document P - electrical safety",
+      instrument: "Approved Document P (2013 edition)",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/electrical-safety-approved-document-p",
+    },
+    {
+      id: "hsg85",
+      label: "HSE HSG85 - electricity at work, safe working practices",
+      instrument: "HSG85 (3rd edition, 2013)",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/hsg85.htm",
+    },
+    {
+      id: "hsr25",
+      label: "HSE HSR25 - electrical safety on construction sites",
+      instrument: "HSR25 (3rd edition, 2015)",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/hsr25.htm",
+    },
   ],
   captureFields: [
     {
@@ -743,26 +984,169 @@ export const mechanicalServicesDefinition: SurveyDefinition = {
   // electrical set - every entry verified at source on 8 Oct 2026, and the model may choose
   // an id from this list and nothing else.
   regulatoryReferences: [
-    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
-    { id: "gsiur_1998", label: "Gas Safety (Installation and Use) Regulations 1998" },
-    { id: "ad_f", label: "Approved Document F - ventilation" },
-    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
-    { id: "ad_j", label: "Approved Document J - combustion appliances and fuel storage" },
-    { id: "ad_g", label: "Approved Document G - sanitation, hot water and water efficiency" },
-    { id: "ad_h", label: "Approved Document H - drainage and waste disposal" },
-    { id: "pssr_2000", label: "Pressure Systems Safety Regulations 2000" },
-    { id: "f_gas_2015", label: "Fluorinated Greenhouse Gases Regulations 2015" },
-    { id: "f_gas_eu", label: "Regulation (EU) 517/2014 - fluorinated gases (retained)" },
-    { id: "epb_2012", label: "EPB Regulations 2012 - air-conditioning inspections" },
-    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
-    { id: "l8_acop", label: "HSE ACOP L8 - Legionnaires' disease control" },
-    { id: "hsg274", label: "HSE HSG274 - legionella technical guidance" },
-    { id: "water_fittings_1999", label: "Water Supply (Water Fittings) Regulations 1999" },
-    { id: "bs_7593", label: "BS 7593 - water treatment in heating and cooling systems" },
-    { id: "bs_en_14336", label: "BS EN 14336 - heating systems installation and commissioning" },
-    { id: "bs_en_12599", label: "BS EN 12599 - ventilation acceptance procedures" },
-    { id: "bs_en_378_1", label: "BS EN 378-1 - refrigerating systems and heat pumps" },
-    { id: "besa_tr19", label: "BESA TR19 - internal cleanliness of ventilation systems" },
+    {
+      id: "bldg_regs_2010",
+      label: "Building Regulations 2010 (SI 2010/2214)",
+      instrument: "The Building Regulations 2010, SI 2010/2214",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+    },
+    {
+      id: "gsiur_1998",
+      label: "Gas Safety (Installation and Use) Regulations 1998",
+      instrument: "Gas Safety (Installation and Use) Regulations 1998, SI 1998/2451",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1998/2451/contents",
+    },
+    {
+      id: "ad_f",
+      label: "Approved Document F - ventilation",
+      instrument:
+        "Approved Document F (Ventilation): Volume 1: Dwellings; Volume 2: Buildings other than dwellings - 2021 edition (in force 15 June 2022); Approved Document F (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/ventilation-approved-document-f",
+    },
+    {
+      id: "ad_l",
+      label: "Approved Document L - conservation of fuel and power",
+      instrument:
+        "Approved Document L (Conservation of fuel and power): Volume 1: Dwellings (2021 edition incorporating 2023 amendments); Volume 2: Buildings other than dwellings (2021 edition incorporating 2023 amendments); Approved Document L (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/conservation-of-fuel-and-power-approved-document-l",
+    },
+    {
+      id: "ad_j",
+      label: "Approved Document J - combustion appliances and fuel storage",
+      instrument:
+        "Approved Document J (Combustion appliances and fuel storage systems), 2010 edition incorporating 2010, 2013 and 2022 amendments (ISBN 978-1-915722-00-3)",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/combustion-appliances-and-fuel-storage-systems-approved-document-j",
+    },
+    {
+      id: "ad_g",
+      label: "Approved Document G - sanitation, hot water and water efficiency",
+      instrument:
+        "Approved Document G: Sanitation, hot water safety and water efficiency - 2015 edition incorporating 2016 and 2024 amendments (for use in England). ISBN 9781859466001",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/sanitation-hot-water-safety-and-water-efficiency-approved-document-g",
+    },
+    {
+      id: "ad_h",
+      label: "Approved Document H - drainage and waste disposal",
+      instrument:
+        "Approved Document H: Drainage and waste disposal (2015 edition, for use in England)",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/drainage-and-waste-disposal-approved-document-h",
+    },
+    {
+      id: "pssr_2000",
+      label: "Pressure Systems Safety Regulations 2000",
+      instrument: "Pressure Systems Safety Regulations 2000 (SI 2000/128)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2000/128/contents",
+    },
+    {
+      id: "f_gas_2015",
+      label: "Fluorinated Greenhouse Gases Regulations 2015",
+      instrument: "The Fluorinated Greenhouse Gases Regulations 2015, SI 2015/310",
+      jurisdiction:
+        "Great Britain (Northern Ireland only for import/export and GB-NI trade controls)",
+      source: "https://www.legislation.gov.uk/uksi/2015/310/contents",
+    },
+    {
+      id: "f_gas_eu",
+      label: "Regulation (EU) 517/2014 - fluorinated gases (retained)",
+      instrument:
+        "Regulation (EU) No 517/2014 of the European Parliament and of the Council of 16 April 2014 on fluorinated greenhouse gases (as retained/assimilated in UK law)",
+      jurisdiction: "Great Britain (retained/assimilated EU law)",
+      source: "https://www.legislation.gov.uk/eur/2014/517/contents",
+    },
+    {
+      id: "epb_2012",
+      label: "EPB Regulations 2012 - air-conditioning inspections",
+      instrument:
+        "The Energy Performance of Buildings (England and Wales) Regulations 2012, SI 2012/3118",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2012/3118/contents",
+    },
+    {
+      id: "hswa_1974",
+      label: "Health and Safety at Work etc. Act 1974",
+      instrument: "Health and Safety at Work etc. Act 1974, 1974 c. 37",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/ukpga/1974/37/contents",
+    },
+    {
+      id: "l8_acop",
+      label: "HSE ACOP L8 - Legionnaires' disease control",
+      instrument:
+        "HSE Approved Code of Practice L8: Legionnaires' disease - The control of legionella bacteria in water systems (4th edition, 2013). ISBN 9780717666157",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/l8.htm",
+    },
+    {
+      id: "hsg274",
+      label: "HSE HSG274 - legionella technical guidance",
+      instrument:
+        "HSE HSG274: Legionnaires' disease - Technical guidance (2nd edition, March 2024)",
+      jurisdiction: "United Kingdom",
+      source: "https://www.hse.gov.uk/pubns/books/hsg274.htm",
+    },
+    {
+      id: "water_fittings_1999",
+      label: "Water Supply (Water Fittings) Regulations 1999",
+      instrument: "Water Supply (Water Fittings) Regulations 1999 (SI 1999/1148), as amended",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/1999/1148/contents",
+    },
+    {
+      id: "bs_7593",
+      label: "BS 7593 - water treatment in heating and cooling systems",
+      instrument:
+        "BS 7593:2019 Code of practice for the preparation, commissioning and maintenance of domestic central heating and cooling water systems",
+      jurisdiction: "UK",
+      source:
+        "https://knowledge.bsigroup.com/products/code-of-practice-for-the-preparation-commissioning-and-maintenance-of-domestic-central-heating-and-cooling-water-systems",
+    },
+    {
+      id: "bs_en_14336",
+      label: "BS EN 14336 - heating systems installation and commissioning",
+      instrument:
+        "BS EN 14336:2004 Heating systems in buildings - Installation and commissioning of water based heating systems",
+      jurisdiction: "UK",
+      source:
+        "https://knowledge.bsigroup.com/products/heating-systems-in-buildings-installation-and-commissioning-of-water-based-heating-systems",
+    },
+    {
+      id: "bs_en_12599",
+      label: "BS EN 12599 - ventilation acceptance procedures",
+      instrument:
+        "BS EN 12599:2012 Ventilation for buildings - Test procedures and measurement methods to hand over air conditioning and ventilation systems",
+      jurisdiction: "UK",
+      source:
+        "https://knowledge.bsigroup.com/products/ventilation-for-buildings-test-procedures-and-measurement-methods-to-hand-over-air-conditioning-and-ventilation-systems",
+    },
+    {
+      id: "bs_en_378_1",
+      label: "BS EN 378-1 - refrigerating systems and heat pumps",
+      instrument:
+        "BS EN 378-1:2016+A1:2020 Refrigerating systems and heat pumps - Safety and environmental requirements. Part 1: Basic requirements, definitions, classification and selection criteria",
+      jurisdiction: "UK",
+      source:
+        "https://knowledge.bsigroup.com/products/refrigerating-systems-and-heat-pumps-safety-and-environmental-requirements-basic-requirements-definitions-classification-and-selection-criteria-1",
+    },
+    {
+      id: "besa_tr19",
+      label: "BESA TR19 - internal cleanliness of ventilation systems",
+      instrument:
+        "BESA TR19 Air - Specification for internal cleanliness and hygiene management of ventilation systems (March 2026 edition)",
+      jurisdiction: "UK",
+      source: "https://publications.thebesa.com/collections/publications",
+    },
   ],
   captureFields: [
     {
@@ -916,26 +1300,120 @@ You do not hold the drawings. Where a point turns on the specification, say what
       "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. A finish, junction or installation defect that departs from workmanship, the specification or the manufacturer's instructions will normally name the material-and-workmanship or the relevant Approved Document entry. Where the point turns on the specification, say what is installed and mark it for verification rather than asserting a breach.",
   },
   regulatoryReferences: [
-    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
-    { id: "ad_a", label: "Approved Document A - structure" },
-    { id: "ad_b", label: "Approved Document B - fire safety" },
+    {
+      id: "bldg_regs_2010",
+      label: "Building Regulations 2010 (SI 2010/2214)",
+      instrument: "The Building Regulations 2010, SI 2010/2214",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+    },
+    {
+      id: "ad_a",
+      label: "Approved Document A - structure",
+      instrument: "Structure: Approved Document A",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/structure-approved-document-a",
+    },
+    {
+      id: "ad_b",
+      label: "Approved Document B - fire safety",
+      instrument: "Fire safety: Approved Document B",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/fire-safety-approved-document-b",
+    },
     {
       id: "ad_c",
-      label:
-        "Approved Document C - site preparation and resistance to contaminants and moisture",
+      label: "Approved Document C - site preparation and resistance to contaminants and moisture",
+      instrument:
+        "Site preparation and resistance to contaminants and moisture: Approved Document C",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/site-preparation-and-resistance-to-contaminates-and-moisture-approved-document-c",
     },
-    { id: "ad_e", label: "Approved Document E - resistance to the passage of sound" },
-    { id: "ad_f", label: "Approved Document F - ventilation" },
-    { id: "ad_k", label: "Approved Document K - protection from falling, collision and impact" },
-    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
-    { id: "ad_m", label: "Approved Document M - access to and use of buildings" },
-    { id: "ad_part_p", label: "Part P - electrical safety" },
-    { id: "ad_o", label: "Approved Document O - overheating" },
-    { id: "ad_7", label: "Approved Document 7 - material and workmanship" },
-    { id: "bs_8000", label: "BS 8000 - workmanship on construction sites" },
-    { id: "nhbc", label: "NHBC Standards" },
-    { id: "spec", label: "Project specification / employer's requirements" },
-    { id: "manufacturer", label: "Manufacturer's installation instructions" },
+    {
+      id: "ad_e",
+      label: "Approved Document E - resistance to the passage of sound",
+      instrument: "Resistance to sound: Approved Document E",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/resistance-to-sound-approved-document-e",
+    },
+    {
+      id: "ad_f",
+      label: "Approved Document F - ventilation",
+      instrument:
+        "Approved Document F (Ventilation): Volume 1: Dwellings; Volume 2: Buildings other than dwellings - 2021 edition (in force 15 June 2022); Approved Document F (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/ventilation-approved-document-f",
+    },
+    {
+      id: "ad_k",
+      label: "Approved Document K - protection from falling, collision and impact",
+      instrument: "Protection from falling, collision and impact: Approved Document K",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/protection-from-falling-collision-and-impact-approved-document-k",
+    },
+    {
+      id: "ad_l",
+      label: "Approved Document L - conservation of fuel and power",
+      instrument:
+        "Approved Document L (Conservation of fuel and power): Volume 1: Dwellings (2021 edition incorporating 2023 amendments); Volume 2: Buildings other than dwellings (2021 edition incorporating 2023 amendments); Approved Document L (2026) for buildings subject to the 2026 standards",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/conservation-of-fuel-and-power-approved-document-l",
+    },
+    {
+      id: "ad_m",
+      label: "Approved Document M - access to and use of buildings",
+      instrument: "Access to and use of buildings: Approved Document M",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/access-to-and-use-of-buildings-approved-document-m",
+    },
+    {
+      id: "ad_part_p",
+      label: "Part P - electrical safety",
+      instrument: "Electrical safety: Approved Document P",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/electrical-safety-approved-document-p",
+    },
+    {
+      id: "ad_o",
+      label: "Approved Document O - overheating",
+      instrument: "Overheating: Approved Document O",
+      jurisdiction: "England",
+      source: "https://www.gov.uk/government/publications/overheating-approved-document-o",
+    },
+    {
+      id: "ad_7",
+      label: "Approved Document 7 - material and workmanship",
+      instrument: "Material and workmanship: Approved Document 7",
+      jurisdiction: "England",
+      source:
+        "https://www.gov.uk/government/publications/material-and-workmanship-approved-document-7",
+    },
+    {
+      id: "bs_8000",
+      label: "BS 8000 - workmanship on construction sites",
+      instrument: "BS 8000 series",
+      jurisdiction: "UK",
+      source: "https://landingpage.bsigroup.com/LandingPage/Series?UPI=BS+8000",
+    },
+    {
+      id: "nhbc",
+      label: "NHBC Standards",
+      instrument: "NHBC Standards",
+      jurisdiction: "UK",
+      source: "https://www.nhbc.co.uk/standards",
+    },
+    {
+      id: "spec",
+      label: "Project specification / employer's requirements",
+    },
+    {
+      id: "manufacturer",
+      label: "Manufacturer's installation instructions",
+    },
   ],
 
   defaultRemedial:
@@ -1008,7 +1486,12 @@ export const dampMoistureDefinition: SurveyDefinition = {
         "Below ground",
       ],
     },
-    { id: "meter_reading", label: "Moisture meter reading", type: "text", hint: "If one was taken" },
+    {
+      id: "meter_reading",
+      label: "Moisture meter reading",
+      type: "text",
+      hint: "If one was taken",
+    },
   ],
   aiGuidance: {
     persona: `Recording evidence of moisture in a building for a report that may end up in a dispute. You are careful about the difference between evidence and cause.
@@ -1073,8 +1556,7 @@ No repairs, no recommendations, no rating of how bad it is, no timescale, no res
       "The item the photograph is plainly focused on. The person commissioning the record states what they are recording; follow that focus.",
     descriptionGuidance:
       "Write the entry as: the item, then its condition or the issue seen. For example 'Skirting to the east wall. Scuffed and lifting at the joint.' Never exceed two sentences and never add commentary on how it looks overall.",
-    remedialGuidance:
-      "This record specifies no works. Always return remedial as null.",
+    remedialGuidance: "This record specifies no works. Always return remedial as null.",
     severityGuidance: "This record does not rate severity. Always return severity as null.",
     failCriteria:
       "Where the photograph plainly shows damage, a defect or an incomplete item, record it as an issue identified. Where the item is plainly in order, record it as sound.",
@@ -1285,18 +1767,94 @@ export const certificateRegisterDefinition: SurveyDefinition = {
   // Every entry verified at source; see docs/regulatory-citations.md. Instruments
   // only - the model may never reach for a clause, table or paragraph.
   regulatoryReferences: [
-    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
-    { id: "rr_fso_2005", label: "Regulatory Reform (Fire Safety) Order 2005" },
-    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
-    { id: "bs_7671", label: "BS 7671 - IET Wiring Regulations (18th Edition)" },
-    { id: "gsiur_1998", label: "Gas Safety (Installation and Use) Regulations 1998" },
-    { id: "loler_1998", label: "Lifting Operations and Lifting Equipment Regulations 1998" },
-    { id: "pssr_2000", label: "Pressure Systems Safety Regulations 2000" },
-    { id: "car_2012", label: "Control of Asbestos Regulations 2012" },
-    { id: "f_gas_2015", label: "Fluorinated Greenhouse Gases Regulations 2015" },
-    { id: "l8_acop", label: "HSE ACOP L8 - Legionnaires' disease control" },
-    { id: "hsg274", label: "HSE HSG274 - legionella technical guidance" },
-    { id: "epb_2012", label: "EPB Regulations 2012 - air-conditioning inspections" },
+    {
+      id: "hswa_1974",
+      label: "Health and Safety at Work etc. Act 1974",
+      instrument: "Health and Safety at Work etc. Act 1974, 1974 c. 37",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/ukpga/1974/37/contents",
+    },
+    {
+      id: "rr_fso_2005",
+      label: "Regulatory Reform (Fire Safety) Order 2005",
+      instrument: "The Regulatory Reform (Fire Safety) Order 2005 (SI 2005/1541)",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2005/1541/contents",
+    },
+    {
+      id: "eawr_1989",
+      label: "Electricity at Work Regulations 1989",
+      instrument: "SI 1989/635",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+    },
+    {
+      id: "bs_7671",
+      label: "BS 7671 - IET Wiring Regulations (18th Edition)",
+      instrument: "BS 7671:2018+A4:2026",
+      jurisdiction: "UK",
+      source: "https://electrical.theiet.org/bs-7671-18th-edition-wiring-regulations/model-forms/",
+    },
+    {
+      id: "gsiur_1998",
+      label: "Gas Safety (Installation and Use) Regulations 1998",
+      instrument: "Gas Safety (Installation and Use) Regulations 1998, SI 1998/2451",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1998/2451/contents",
+    },
+    {
+      id: "loler_1998",
+      label: "Lifting Operations and Lifting Equipment Regulations 1998",
+      instrument: "The Lifting Operations and Lifting Equipment Regulations 1998 (SI 1998/2307)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/1998/2307/contents",
+    },
+    {
+      id: "pssr_2000",
+      label: "Pressure Systems Safety Regulations 2000",
+      instrument: "Pressure Systems Safety Regulations 2000 (SI 2000/128)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2000/128/contents",
+    },
+    {
+      id: "car_2012",
+      label: "Control of Asbestos Regulations 2012",
+      instrument: "The Control of Asbestos Regulations 2012 (SI 2012/632)",
+      jurisdiction: "Great Britain",
+      source: "https://www.legislation.gov.uk/uksi/2012/632/contents",
+    },
+    {
+      id: "f_gas_2015",
+      label: "Fluorinated Greenhouse Gases Regulations 2015",
+      instrument: "The Fluorinated Greenhouse Gases Regulations 2015, SI 2015/310",
+      jurisdiction:
+        "Great Britain (Northern Ireland only for import/export and GB-NI trade controls)",
+      source: "https://www.legislation.gov.uk/uksi/2015/310/contents",
+    },
+    {
+      id: "l8_acop",
+      label: "HSE ACOP L8 - Legionnaires' disease control",
+      instrument:
+        "HSE Approved Code of Practice L8: Legionnaires' disease - The control of legionella bacteria in water systems (4th edition, 2013). ISBN 9780717666157",
+      jurisdiction: "Great Britain",
+      source: "https://www.hse.gov.uk/pubns/books/l8.htm",
+    },
+    {
+      id: "hsg274",
+      label: "HSE HSG274 - legionella technical guidance",
+      instrument:
+        "HSE HSG274: Legionnaires' disease - Technical guidance (2nd edition, March 2024)",
+      jurisdiction: "United Kingdom",
+      source: "https://www.hse.gov.uk/pubns/books/hsg274.htm",
+    },
+    {
+      id: "epb_2012",
+      label: "EPB Regulations 2012 - air-conditioning inspections",
+      instrument:
+        "The Energy Performance of Buildings (England and Wales) Regulations 2012, SI 2012/3118",
+      jurisdiction: "England and Wales",
+      source: "https://www.legislation.gov.uk/uksi/2012/3118/contents",
+    },
   ],
   aiGuidance: {
     regulatoryGuidance:
@@ -1385,7 +1943,11 @@ export const healthSafetyHousekeepingDefinition: SurveyDefinition = {
       label: "Housekeeping and order",
       defaultTrades: ["Principal contractor"],
     },
-    { id: "welfare_facilities", label: "Welfare facilities", defaultTrades: ["Principal contractor"] },
+    {
+      id: "welfare_facilities",
+      label: "Welfare facilities",
+      defaultTrades: ["Principal contractor"],
+    },
     { id: "protective_equipment", label: "Protective equipment", defaultTrades: [] },
     {
       id: "fire_escape_first_aid",
@@ -1393,7 +1955,11 @@ export const healthSafetyHousekeepingDefinition: SurveyDefinition = {
       defaultTrades: ["Principal contractor"],
     },
     { id: "routes_and_separation", label: "Routes and separation", defaultTrades: [] },
-    { id: "paperwork_on_site", label: "Paperwork held on site", defaultTrades: ["Principal contractor"] },
+    {
+      id: "paperwork_on_site",
+      label: "Paperwork held on site",
+      defaultTrades: ["Principal contractor"],
+    },
   ],
   captureFields: [
     {
@@ -1457,7 +2023,6 @@ export const systemDefinitions: SurveyDefinition[] = [
   manualPhotoReportDefinition,
   photoConditionRecordDefinition,
 ];
-
 
 export function getDefinition(id: string): SurveyDefinition | undefined {
   return systemDefinitions.find((definition) => definition.id === id);

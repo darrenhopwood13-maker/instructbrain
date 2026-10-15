@@ -1408,6 +1408,14 @@ async function drawFindingBody(
       size: 9,
       colour: MUTED,
     });
+    // The instrument's own formal reference, where it has one. Printed from the
+    // definition, so it never travels in the prompt. Two of the entries are project
+    // documents rather than published instruments and carry no formal reference -
+    // those print under their name alone, which is the honest answer.
+    const formal = [reference?.instrument, reference?.jurisdiction].filter(Boolean).join(" · ");
+    if (formal && reference?.instrument !== reference?.label) {
+      drawText(writer, formal, { size: 8, colour: MUTED });
+    }
   }
 
   const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);

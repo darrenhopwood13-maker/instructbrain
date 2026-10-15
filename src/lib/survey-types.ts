@@ -92,6 +92,15 @@ export type CategoryDefinition = {
 export type ReferenceDefinition = {
   id: string;
   label: string;
+  /**
+   * The instrument's own formal reference, as its source states it - "SI 2005/735",
+   * "BS 7671:2018+A4:2026". Printed in the report's references; never sent to the model.
+   */
+  instrument?: string;
+  /** Where it applies. Printed so a reader is not left guessing the jurisdiction. */
+  jurisdiction?: string;
+  /** The page it was verified against, so a reader can check it themselves. */
+  source?: string;
 };
 
 export type AiGuidance = Record<string, string>;
@@ -170,9 +179,7 @@ export const NOT_ASSESSED_STATUS: StatusDefinition = {
 };
 
 /** A frozen capability flag; no shared workflow identifies a template by id. */
-export function isManualOnly(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): boolean {
+export function isManualOnly(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.manualOnly === true;
 }
 
@@ -182,9 +189,7 @@ export function isManualOnly(
  * the report is only meaningful alongside it. Sharing this module with a new
  * project-bound template is a data change, not a code change.
  */
-export function isProjectBound(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): boolean {
+export function isProjectBound(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.projectBound === true;
 }
 
@@ -213,11 +218,13 @@ function normaliseTone(value: unknown): StatusTone {
  */
 export function statusesOf(snapshot: SurveyTypeSnapshot | null | undefined): StatusDefinition[] {
   const raw = Array.isArray(snapshot?.statuses) ? snapshot.statuses : [];
-  const cleaned: StatusDefinition[] = raw.filter(isStatusDefinition).map((status) =>
-    status.id === NOT_ASSESSED_ID
-      ? { ...NOT_ASSESSED_STATUS, label: status.label }
-      : { ...status, tone: normaliseTone(status.tone) },
-  );
+  const cleaned: StatusDefinition[] = raw
+    .filter(isStatusDefinition)
+    .map((status) =>
+      status.id === NOT_ASSESSED_ID
+        ? { ...NOT_ASSESSED_STATUS, label: status.label }
+        : { ...status, tone: normaliseTone(status.tone) },
+    );
 
   if (!cleaned.some((status) => status.id === NOT_ASSESSED_ID)) {
     cleaned.push(NOT_ASSESSED_STATUS);
@@ -291,9 +298,7 @@ export function resolveSeverity(
 
 const FIELD_TYPES: CaptureField["type"][] = ["text", "textarea", "select", "number"];
 
-export function captureFieldsOf(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): CaptureField[] {
+export function captureFieldsOf(snapshot: SurveyTypeSnapshot | null | undefined): CaptureField[] {
   const raw = Array.isArray(snapshot?.captureFields) ? snapshot.captureFields : [];
   return raw
     .filter(
@@ -333,9 +338,7 @@ function humaniseKey(key: string): string {
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1).toLowerCase();
 }
 
-export function categoryGroupsOf(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): CategoryGroup[] {
+export function categoryGroupsOf(snapshot: SurveyTypeSnapshot | null | undefined): CategoryGroup[] {
   if (!isRecord(snapshot)) return [];
   const groups: CategoryGroup[] = [];
 
@@ -405,9 +408,7 @@ export function outputSectionsOf(snapshot: SurveyTypeSnapshot | null | undefined
   return raw.filter((section): section is string => typeof section === "string");
 }
 
-export function requiresTradeAssignment(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): boolean {
+export function requiresTradeAssignment(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.requiresTradeAssignment === true;
 }
 
@@ -417,9 +418,7 @@ export function requiresTradeAssignment(
  * as a Schedule of Condition. Data, not code: no renderer decides this by
  * naming a discipline.
  */
-export function requiresConditionGrade(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): boolean {
+export function requiresConditionGrade(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.requiresConditionGrade === true;
 }
 
@@ -471,9 +470,7 @@ export function findingsRuleForPhoto(
 }
 
 /** Whether this type writes its own document header rather than an automatic one. */
-export function asksForDocumentHeader(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): boolean {
+export function asksForDocumentHeader(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.asksForDocumentHeader === true;
 }
 
@@ -487,7 +484,11 @@ export function photoWorkflowOf(
   const raw = snapshot?.photoWorkflow;
   if (!isRecord(raw)) return null;
   const roles = Array.isArray(raw["roles"]) ? raw["roles"].filter(isPhotoWorkflowRole) : [];
-  if (typeof raw["kind"] !== "string" || typeof raw["roleField"] !== "string" || roles.length === 0) {
+  if (
+    typeof raw["kind"] !== "string" ||
+    typeof raw["roleField"] !== "string" ||
+    roles.length === 0
+  ) {
     return null;
   }
   return {
@@ -513,7 +514,9 @@ export function photoWorkflowOf(
         : {}),
     })),
     ...(typeof raw["sectionField"] === "string" ? { sectionField: raw["sectionField"] } : {}),
-    ...(typeof raw["firstPhotoRoleId"] === "string" ? { firstPhotoRoleId: raw["firstPhotoRoleId"] } : {}),
+    ...(typeof raw["firstPhotoRoleId"] === "string"
+      ? { firstPhotoRoleId: raw["firstPhotoRoleId"] }
+      : {}),
     ...(typeof raw["coverRoleId"] === "string" ? { coverRoleId: raw["coverRoleId"] } : {}),
     ...(typeof raw["overviewRoleId"] === "string" ? { overviewRoleId: raw["overviewRoleId"] } : {}),
     ...(typeof raw["detailRoleId"] === "string" ? { detailRoleId: raw["detailRoleId"] } : {}),
@@ -530,7 +533,9 @@ export function photoWorkflowOf(
   };
 }
 
-export function reportLayoutOf(snapshot: SurveyTypeSnapshot | null | undefined): ReportLayout | null {
+export function reportLayoutOf(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): ReportLayout | null {
   const raw = snapshot?.reportLayout;
   if (!isRecord(raw) || typeof raw["kind"] !== "string") return null;
   const columns = isRecord(raw["columns"]) ? raw["columns"] : null;
@@ -559,7 +564,9 @@ export function reportLayoutOf(snapshot: SurveyTypeSnapshot | null | undefined):
             ...(typeof columns["description"] === "string"
               ? { description: columns["description"] }
               : {}),
-            ...(typeof columns["condition"] === "string" ? { condition: columns["condition"] } : {}),
+            ...(typeof columns["condition"] === "string"
+              ? { condition: columns["condition"] }
+              : {}),
             ...(typeof columns["checkoutComment"] === "string"
               ? { checkoutComment: columns["checkoutComment"] }
               : {}),
@@ -598,7 +605,10 @@ export function photoExcludesFromAnalysis(
 ): boolean {
   if (isManualOnly(snapshot)) return true;
   if (options.isCover === true) return true;
-  return photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto === true })?.excludesAi === true;
+  return (
+    photoRoleOf(snapshot, captureFields, { isFirstPhoto: options.isFirstPhoto === true })
+      ?.excludesAi === true
+  );
 }
 
 /** Whether a photo carries a role that sits outside every room / section. */
@@ -628,9 +638,7 @@ export function houseVoiceOf(snapshot: SurveyTypeSnapshot | null | undefined): s
     : null;
 }
 
-export function defaultRemedialOf(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): string | null {
+export function defaultRemedialOf(snapshot: SurveyTypeSnapshot | null | undefined): string | null {
   return typeof snapshot?.defaultRemedial === "string" ? snapshot.defaultRemedial : null;
 }
 
@@ -648,9 +656,7 @@ export type DerivedField = {
   guidance: string | null;
 };
 
-export function derivedFieldsOf(
-  snapshot: SurveyTypeSnapshot | null | undefined,
-): DerivedField[] {
+export function derivedFieldsOf(snapshot: SurveyTypeSnapshot | null | undefined): DerivedField[] {
   const guidance = isRecord(snapshot?.aiGuidance) ? snapshot.aiGuidance : {};
   const fields: DerivedField[] = [];
 
