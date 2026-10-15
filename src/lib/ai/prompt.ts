@@ -14,6 +14,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import { briefPromptSection, toneById, type ReportBrief } from "@/lib/report/brief";
+import { regulationReferencesRule } from "@/lib/citation-switch";
 import { envelopeFieldGuide, type BriefFindingsRule } from "@/lib/ai/observation";
 
 /**
@@ -85,6 +86,20 @@ function voiceExamplesOf(tone: ReportBrief["tone"] | string | null): string | nu
     examples.map((example) => `"${example}"`).join(" "),
     "Their subjects are unrelated to this survey and must not appear anywhere in your answer. Take the dryness and the understatement, and leave their subject matter behind.",
   ].join(" ");
+}
+
+/**
+ * Can this report cite at all?
+ *
+ * The template must declare a citation set (that is what the derived field and the picker are
+ * built from), and the report's brief must not have switched references off. Stated once, here,
+ * so the prompt, the review screen and the PDF cannot drift apart on it.
+ */
+export function allowsRegulationReferences(
+  snapshot: SurveyTypeSnapshot,
+  brief: ReportBrief | null,
+): boolean {
+  return definesField(snapshot, "regulatory_reference") && regulationReferencesRule(brief);
 }
 
 export function buildSystemPrompt(
@@ -174,12 +189,24 @@ export function buildSystemPrompt(
           ),
         )
       : null,
-    definesField(snapshot, "regulatory_reference")
-      ? list(
-          "Regulatory references — regulatory_reference must be one of these ids exactly, or null. Never invent one",
-          regulatoryReferencesOf(snapshot).map((reference) => `${reference.id} — ${reference.label}`),
-        )
-      : "Do not return a regulatory_reference for this survey type; omit it or return null.",
+    // A citation needs TWO things: the template must declare a set, and the report's brief
+    // must not have switched references off. The template's set is the citation surface; the
+    // brief decides whether this particular deliverable uses it. Two different reasons for
+    // "no references here", so they get two different instructions - a model told to cite from
+    // a list that was withheld is exactly where a number gets improvised.
+    !definesField(snapshot, "regulatory_reference")
+      ? // The template carries no set at all. Unchanged wording: this is the case the citation
+        // tests pin, and it must stay explicit.
+        "Do not return a regulatory_reference for this survey type; omit it or return null."
+      : !regulationReferencesRule(brief ?? null)
+        ? // The template has a set, but THIS report's brief switched references off. A different
+          // situation from the one above, so it says so: the instruments exist and are being
+          // withheld deliberately.
+          "Regulation references are switched off for this report. Do not name a regulation, a standard or an Approved Document in any finding, do not refer to any clause, section or table, and return regulatory_reference as null."
+        : list(
+            "Regulatory references — regulatory_reference must be one of these ids exactly, or null. Never invent one",
+            regulatoryReferencesOf(snapshot).map((reference) => `${reference.id} — ${reference.label}`),
+          ),
     definesField(snapshot, "likely_cause")
       ? null
       : "Do not return a likely_cause for this survey type; omit it or return null.",
@@ -210,7 +237,7 @@ export function buildSystemPrompt(
     // schema the coercion reads, so a name can never be described here and
     // expected differently there. It sits before the tone so the tone is still
     // the last writing instruction.
-    envelopeFieldGuide(snapshot),
+    envelopeFieldGuide(snapshot, regulationReferencesRule(brief ?? null)),
     // THE TONE — last, deliberately. This is the final writing instruction the
     // model reads before it generates, which is where a style instruction
     // actually takes hold. It states the boundary explicitly rather than

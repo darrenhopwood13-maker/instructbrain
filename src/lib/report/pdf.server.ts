@@ -1399,7 +1399,7 @@ async function drawFindingBody(
   if (finding.likelyCause) {
     drawText(writer, `Likely cause: ${finding.likelyCause}`, { size: 9, colour: MUTED });
   }
-  if (finding.regulatoryReference) {
+  if (document.regulationCitations !== false && finding.regulatoryReference) {
     // The document names the instrument, never the internal id. The screen has
     // always resolved this; the PDF drew the raw id, so a client read "bs_7671"
     // where the regulation's own title belongs. Same wording as the screen.

@@ -15,6 +15,7 @@ import {
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import {
+  propertyInventoryDefinition,
   snaggingDefinition,
   siteWalkDefinition,
   systemDefinitions,
@@ -141,10 +142,14 @@ describe("definition engine", () => {
     expect(categoryGroupsOf(weatherproofingDefinition)).toEqual([]);
   });
 
-  it("switches the snagging-only finding fields on by definition, not by id", () => {
+  it("switches a finding field on by definition, not by id", () => {
     expect(definesField(snaggingDefinition, "likely_cause")).toBe(true);
     expect(definesField(snaggingDefinition, "regulatory_reference")).toBe(true);
-    for (const other of [siteWalkDefinition, weatherproofingDefinition]) {
+    // site_walk gained a citation set on 15 Oct 2026, so it now derives the same field.
+    // The rule under test is unchanged: the field follows the definition's own data - a
+    // non-empty regulatoryReferences list - and nothing here names a survey type id.
+    expect(definesField(siteWalkDefinition, "regulatory_reference")).toBe(true);
+    for (const other of [propertyInventoryDefinition, weatherproofingDefinition]) {
       expect(definesField(other, "likely_cause")).toBe(false);
       expect(definesField(other, "regulatory_reference")).toBe(false);
     }
@@ -234,7 +239,45 @@ describe("no discipline's vocabulary leaks into another", () => {
     "fire",
     "stop",
     "week",
+    // Added 15 Oct 2026, when site_walk and fit-out quality gained their citation
+    // sets. A site observation and a fit-out finding both engage the health and
+    // safety instruments and the Approved Documents, so the same instrument now
+    // appears in several templates. That is the design: one id and one label per
+    // instrument, everywhere it is cited. The Approved Documents are also spelled
+    // with a hyphen throughout as of today - they were em-dashed in snagging while
+    // mechanical used hyphens, so one instrument was shipping under two spellings.
+    "ad_a",
+    "ad_b",
+    "ad_c",
+    "ad_e",
+    "ad_k",
+    "ad_m",
+    "ad_part_p",
+    "approved document a - structure",
+    "approved document b - fire safety",
+    "approved document c - site preparation and resistance to contaminants and moisture",
+    "approved document e - resistance to the passage of sound",
+    "approved document f - ventilation",
+    "approved document k - protection from falling, collision and impact",
+    "approved document l - conservation of fuel and power",
+    "approved document m - access to and use of buildings",
+    "bs 8000 - workmanship on construction sites",
+    "bs_8000",
+    "car_2012",
+    "control of asbestos regulations 2012",
+    "lifting operations and lifting equipment regulations 1998",
+    "loler_1998",
+    "manufacturer",
+    "manufacturer's installation instructions",
+    "nhbc",
+    "nhbc standards",
+    "part p - electrical safety",
+    "project specification / employer's requirements",
+    "regulatory reform (fire safety) order 2005",
+    "rr_fso_2005",
+    "spec",
   ]);
+
 
   const tokens = (definition: SurveyTypeSnapshot) =>
     new Set(

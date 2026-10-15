@@ -93,7 +93,7 @@ Three real conditions exist, not two. 'Intact' means sound. 'Damaged' means a br
 
 export const snaggingDefinition: SurveyDefinition = {
   id: "snagging",
-  version: 2,
+  version: 3,
   houseVoice: HOUSE_VOICE,
   label: "Finding identification & remedial schedule",
   category: "snagging",
@@ -165,23 +165,23 @@ export const snaggingDefinition: SurveyDefinition = {
     },
   ],
   regulatoryReferences: [
-    { id: "ad_a", label: "Approved Document A — structure" },
-    { id: "ad_b", label: "Approved Document B — fire safety" },
+    { id: "ad_a", label: "Approved Document A - structure" },
+    { id: "ad_b", label: "Approved Document B - fire safety" },
     {
       id: "ad_c",
       label:
-        "Approved Document C — site preparation and resistance to contaminants and moisture",
+        "Approved Document C - site preparation and resistance to contaminants and moisture",
     },
-    { id: "ad_e", label: "Approved Document E — resistance to the passage of sound" },
-    { id: "ad_f", label: "Approved Document F — ventilation" },
+    { id: "ad_e", label: "Approved Document E - resistance to the passage of sound" },
+    { id: "ad_f", label: "Approved Document F - ventilation" },
     {
       id: "ad_k",
-      label: "Approved Document K — protection from falling, collision and impact",
+      label: "Approved Document K - protection from falling, collision and impact",
     },
-    { id: "ad_l", label: "Approved Document L — conservation of fuel and power" },
-    { id: "ad_m", label: "Approved Document M — access to and use of buildings" },
-    { id: "ad_part_p", label: "Part P — electrical safety" },
-    { id: "bs_8000", label: "BS 8000 — workmanship on construction sites" },
+    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
+    { id: "ad_m", label: "Approved Document M - access to and use of buildings" },
+    { id: "ad_part_p", label: "Part P - electrical safety" },
+    { id: "bs_8000", label: "BS 8000 - workmanship on construction sites" },
     { id: "nhbc", label: "NHBC Standards" },
     { id: "spec", label: "Project specification / employer's requirements" },
     { id: "manufacturer", label: "Manufacturer's installation instructions" },
@@ -219,7 +219,7 @@ Select regulatory references only from the supplied list, at document level. Nev
     causeGuidance:
       "State the MOST LIKELY cause as an assessment, not a finding of fact — a photograph rarely contains enough evidence to be certain. Where more than one cause is plausible, say so. Where the cause cannot reasonably be inferred from the image, return null rather than guessing.",
     regulatoryGuidance:
-      "Where the defect plausibly engages a regulation or standard, select the SINGLE most relevant entry from the regulatoryReferences list provided. Select only from that list. NEVER invent, cite or infer a clause, paragraph, section or table number — reference the document only. If no listed reference clearly applies, return null.",
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. Where the defect plausibly engages a regulation or standard, select the SINGLE most relevant entry from the regulatoryReferences list provided. Select only from that list. NEVER invent, cite or infer a clause, paragraph, section or table number — reference the document only. If no listed reference clearly applies, return null.",
     remedialGuidance:
       "Give the most logical and efficient rectification, sequenced where the order of operations matters. Prefer the least invasive fix that properly resolves the defect and its cause rather than only its symptom. State where opening up or further investigation is needed before a fix can be specified.",
     failCriteria:
@@ -250,7 +250,7 @@ Select regulatory references only from the supplied list, at document level. Nev
 
 export const siteWalkDefinition: SurveyDefinition = {
   id: "site_walk",
-  version: 3,
+  version: 4,
   houseVoice: HOUSE_VOICE,
   label: "Site condition",
   category: "site_walk",
@@ -348,7 +348,33 @@ Describe conditions only. Never describe, identify, count or characterise any pe
       "Where the responsible trade can be reasonably inferred from the materials, tools or work visible, suggest it — and state the reason for the inference. If it cannot be reasonably inferred, return null rather than guessing. Never state a trade as certain.",
     abstainGuidance:
       "If the photo is too dark, blurred or ambiguous to identify what is shown, return not_assessed.",
+    regulatoryGuidance:
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. An observation about working at height, plant, temporary power, fire, welfare or storage almost always touches one of these. Name it; do not assert a breach and do not give a legal opinion - the instrument is cited, the duty is described in words.",
   },
+  regulatoryReferences: [
+    { id: "hswa_1974", label: "Health and Safety at Work etc. Act 1974" },
+    { id: "cdm_2015", label: "Construction (Design and Management) Regulations 2015" },
+    { id: "mhswr_1999", label: "Management of Health and Safety at Work Regulations 1999" },
+    { id: "wah_2005", label: "Work at Height Regulations 2005" },
+    { id: "puwer_1998", label: "Provision and Use of Work Equipment Regulations 1998" },
+    { id: "loler_1998", label: "Lifting Operations and Lifting Equipment Regulations 1998" },
+    { id: "coshh_2002", label: "Control of Substances Hazardous to Health Regulations 2002" },
+    { id: "mhor_1992", label: "Manual Handling Operations Regulations 1992" },
+    { id: "ppe_1992", label: "Personal Protective Equipment at Work Regulations 1992" },
+    { id: "eawr_1989", label: "Electricity at Work Regulations 1989" },
+    { id: "car_2012", label: "Control of Asbestos Regulations 2012" },
+    { id: "confined_spaces_1997", label: "Confined Spaces Regulations 1997" },
+    { id: "dsear_2002", label: "Dangerous Substances and Explosive Atmospheres Regulations 2002" },
+    { id: "noise_2005", label: "Control of Noise at Work Regulations 2005" },
+    { id: "signs_1996", label: "Health and Safety (Safety Signs and Signals) Regulations 1996" },
+    { id: "workplace_1992", label: "Workplace (Health, Safety and Welfare) Regulations 1992" },
+    { id: "first_aid_1981", label: "Health and Safety (First-Aid) Regulations 1981" },
+    { id: "rr_fso_2005", label: "Regulatory Reform (Fire Safety) Order 2005" },
+    { id: "bs_5975", label: "BS 5975 - temporary works procedures" },
+    { id: "l153", label: "HSE L153 - managing health and safety in construction (CDM ACOP)" },
+    { id: "hsg150", label: "HSE HSG150 - health and safety in construction" },
+  ],
+
   outputSections: ["cover", "summary", "schedule_by_trade", "schedule_by_area", "appendix"],
   requiresTradeAssignment: true,
   standardTrades: ["Principal contractor"],
@@ -564,7 +590,7 @@ No valuation, no price, no age estimate, no brand or model unless it is legibly 
 
 export const electricalInstallationDefinition: SurveyDefinition = {
   id: "electrical_installation",
-  version: 2,
+  version: 3,
   houseVoice: HOUSE_VOICE,
   label: "Electrical installation condition",
   category: "electrical",
@@ -661,7 +687,7 @@ Nothing in a photograph proves continuity, insulation resistance or polarity. Wh
     abstainGuidance:
       "If the photograph is too dark, distant or obstructed to identify the item or judge how it is installed, return not_assessed.",
     regulatoryGuidance:
-      "Cite a listed instrument only where the visible condition plausibly engages it - an exposed conductor, a missing barrier, an unsealed enclosure, unsupported cable. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. Where the point turns on a test result a photograph cannot show, cite nothing and return the further investigation severity instead.",
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. Cite a listed instrument only where the visible condition plausibly engages it - an exposed conductor, a missing barrier, an unsealed enclosure, unsupported cable. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. Where the point turns on a test result a photograph cannot show, cite nothing and return the further investigation severity instead.",
   },
   defaultRemedial:
     "Isolate, rectify the installation defect and re-test the affected circuit; issue certification for the remedial work.",
@@ -675,7 +701,7 @@ Nothing in a photograph proves continuity, insulation resistance or polarity. Wh
 
 export const mechanicalServicesDefinition: SurveyDefinition = {
   id: "mechanical_services",
-  version: 2,
+  version: 3,
   houseVoice: HOUSE_VOICE,
   label: "Mechanical & HVAC installation",
   category: "mechanical",
@@ -787,7 +813,7 @@ Do not claim a pressure, a flow rate or a set point. None of that is in a photog
     abstainGuidance:
       "If the photograph is too dark, distant or obstructed to identify the service or judge the installation, return not_assessed.",
     regulatoryGuidance:
-      "Cite a listed instrument only where the visible condition plausibly engages it - a gas appliance or flue, a pressure system, a refrigerant circuit, a ventilation or water system. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. A system that is merely incomplete is not a compliance finding - cite nothing and return the incomplete severity instead.",
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. Cite a listed instrument only where the visible condition plausibly engages it - a gas appliance or flue, a pressure system, a refrigerant circuit, a ventilation or water system. Select the SINGLE most relevant entry from the regulatoryReferences list and select only from that list. NEVER invent, cite or infer a regulation, clause, section, table or paragraph number. A system that is merely incomplete is not a compliance finding - cite nothing and return the incomplete severity instead.",
   },
   defaultRemedial:
     "Rectify the installation to the specified detail, reinstate insulation and identification, and re-test the affected section before commissioning.",
@@ -801,7 +827,7 @@ Do not claim a pressure, a flow rate or a set point. None of that is in a photog
 
 export const fitOutQualityDefinition: SurveyDefinition = {
   id: "fitout_quality",
-  version: 1,
+  version: 2,
   houseVoice: HOUSE_VOICE,
   label: "Fit-out & finishes quality",
   category: "fit_out",
@@ -886,7 +912,32 @@ You do not hold the drawings. Where a point turns on the specification, say what
       "Where the responsible package follows plainly from the finish photographed, suggest it and give the reason. Otherwise return null.",
     abstainGuidance:
       "If the photograph is too dark, distant or obstructed to judge the finish, return not_assessed.",
+    regulatoryGuidance:
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. A finish, junction or installation defect that departs from workmanship, the specification or the manufacturer's instructions will normally name the material-and-workmanship or the relevant Approved Document entry. Where the point turns on the specification, say what is installed and mark it for verification rather than asserting a breach.",
   },
+  regulatoryReferences: [
+    { id: "bldg_regs_2010", label: "Building Regulations 2010 (SI 2010/2214)" },
+    { id: "ad_a", label: "Approved Document A - structure" },
+    { id: "ad_b", label: "Approved Document B - fire safety" },
+    {
+      id: "ad_c",
+      label:
+        "Approved Document C - site preparation and resistance to contaminants and moisture",
+    },
+    { id: "ad_e", label: "Approved Document E - resistance to the passage of sound" },
+    { id: "ad_f", label: "Approved Document F - ventilation" },
+    { id: "ad_k", label: "Approved Document K - protection from falling, collision and impact" },
+    { id: "ad_l", label: "Approved Document L - conservation of fuel and power" },
+    { id: "ad_m", label: "Approved Document M - access to and use of buildings" },
+    { id: "ad_part_p", label: "Part P - electrical safety" },
+    { id: "ad_o", label: "Approved Document O - overheating" },
+    { id: "ad_7", label: "Approved Document 7 - material and workmanship" },
+    { id: "bs_8000", label: "BS 8000 - workmanship on construction sites" },
+    { id: "nhbc", label: "NHBC Standards" },
+    { id: "spec", label: "Project specification / employer's requirements" },
+    { id: "manufacturer", label: "Manufacturer's installation instructions" },
+  ],
+
   defaultRemedial:
     "Ease, refix or replace the affected finish to line and level, and close the junction to the agreed benchmark.",
   outputSections: ["cover", "scope", "summary", "schedule", "appendix"],
@@ -1147,7 +1198,7 @@ Grade the element's condition against the four-tier legend. The grade is a sugge
  */
 export const certificateRegisterDefinition: SurveyDefinition = {
   id: "certificate_register",
-  version: 1,
+  version: 2,
   houseVoice: HOUSE_VOICE,
   label: "Statutory certificate register",
   category: "record",
@@ -1248,6 +1299,8 @@ export const certificateRegisterDefinition: SurveyDefinition = {
     { id: "epb_2012", label: "EPB Regulations 2012 - air-conditioning inspections" },
   ],
   aiGuidance: {
+    regulatoryGuidance:
+      "Every finding that touches a listed instrument must name the SINGLE most relevant entry from the regulatoryReferences list provided, by its id. Return null only where no listed instrument touches the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a clause, paragraph, section, table or part number - reference the document by name only. ",
     peopleGuidance:
       "Describe the document and the asset only. Do NOT describe, identify, count or characterise any person visible in the photograph.",
     tradeGuidance:

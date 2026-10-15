@@ -88,6 +88,7 @@ export function ReviewList({
   soleHolders,
   onAssignTrade,
   tradeEnabled = true,
+  regulationsEnabled = true,
   onAddTradeToDirectory,
   onEditText,
   onAssignGrade,
@@ -102,6 +103,11 @@ export function ReviewList({
   onConfirmMany?: (findingIds: string[], patch: ConfirmPatch) => Promise<void>;
   /** Account switch: false hides the whole trade layer for this report. */
   tradeEnabled?: boolean;
+  /**
+   * Whether this report may cite an instrument. Resolved once from the report's brief (default
+   * on) and passed down, so the review screen and the PDF can never disagree about it.
+   */
+  regulationsEnabled?: boolean;
   /** Trades from this project's directory plus the definition's defaults. */
   tradeOptions?: string[];
   /** Trade -> the only firm holding it, so a single-press allocation is possible. */
@@ -219,7 +225,9 @@ export function ReviewList({
 
   const derivedFields = useMemo(() => derivedFieldsOf(snapshot), [snapshot]);
   const showCause = definesField(snapshot, "likely_cause");
-  const showReference = definesField(snapshot, "regulatory_reference");
+  // Two conditions: the template declares a citation set, and this report's brief allows
+  // references. Both come from the document, never re-derived here.
+  const showReference = regulationsEnabled && definesField(snapshot, "regulatory_reference");
   const references = useMemo(() => regulatoryReferencesOf(snapshot), [snapshot]);
   const showTrade = tradeEnabled && requiresTradeAssignment(snapshot) && !!onAssignTrade;
   const showGrade = requiresConditionGrade(snapshot) && !!onAssignGrade;

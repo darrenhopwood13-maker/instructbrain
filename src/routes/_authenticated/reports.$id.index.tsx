@@ -630,6 +630,7 @@ function ReportWorkspace() {
               tradeOptions={tradeOptions}
               soleHolders={soleHolders}
               tradeEnabled={doc?.tradeEnabled ?? true}
+              regulationsEnabled={doc?.regulationCitations ?? true}
               onAssignTrade={onAssignTrade}
               onAssignGrade={gradeFinding}
             />

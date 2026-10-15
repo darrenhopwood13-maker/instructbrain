@@ -114,9 +114,19 @@ const REGION_SCHEMA = {
 } as const;
 
 /** Strict JSON schema handed to the provider. Never free-text brace matching. */
-export function envelopeJsonSchema(snapshot: SurveyTypeSnapshot) {
+export function envelopeJsonSchema(
+  snapshot: SurveyTypeSnapshot,
+  /**
+   * Whether this report may cite at all. False when the report's brief has switched references
+   * off: the property is then left out of the schema entirely, so no provider - schema-accepting
+   * or not - is ever offered an instrument to name. Default true.
+   */
+  allowReferences = true,
+) {
   const statusIds = statusesOf(snapshot).map((status) => status.id);
-  const references = regulatoryReferencesOf(snapshot).map((reference) => reference.id);
+  const references = allowReferences
+    ? regulatoryReferencesOf(snapshot).map((reference) => reference.id)
+    : [];
 
   const properties: Record<string, unknown> = {
     category: { type: ["string", "null"] },
@@ -223,8 +233,11 @@ function schemaTypeName(definition: Record<string, unknown>): string {
  * names the model is given and the names the coercion reads cannot drift apart.
  * A hand-written list would be the same bug waiting to happen again.
  */
-export function envelopeFieldGuide(snapshot: SurveyTypeSnapshot): string {
-  const schema = envelopeJsonSchema(snapshot) as unknown as {
+export function envelopeFieldGuide(
+  snapshot: SurveyTypeSnapshot,
+  allowReferences = true,
+): string {
+  const schema = envelopeJsonSchema(snapshot, allowReferences) as unknown as {
     properties: Record<string, Record<string, unknown>>;
   };
   const observations = schema.properties["observations"] as {

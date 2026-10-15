@@ -107,6 +107,7 @@ function CustomReport() {
   const [advisoryFooter, setAdvisoryFooter] = useState(false);
   const [findingsPerPhoto, setFindingsPerPhoto] = useState<FindingsPerPhoto>("template");
   const [draftSummary, setDraftSummary] = useState(false);
+  const [regulationReferences, setRegulationReferences] = useState(true);
   const [docTitle, setDocTitle] = useState("");
   const [docSubtitle, setDocSubtitle] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -151,6 +152,9 @@ function CustomReport() {
         }
         setFindingsPerPhoto(findingsPerPhotoById(saved["findingsPerPhoto"]));
         if (typeof saved["draftSummary"] === "boolean") setDraftSummary(saved["draftSummary"]);
+        if (typeof saved["regulationReferences"] === "boolean") {
+          setRegulationReferences(saved["regulationReferences"]);
+        }
       }
     } catch {
       // A corrupt or blocked store simply means the defaults stand.
@@ -222,6 +226,7 @@ function CustomReport() {
     includeFix: stripped ? false : includeFix,
     includeSeverity: stripped ? false : includeSeverity,
     advisoryFooter,
+    regulationReferences,
     specialRequest: sanitiseSpecialRequest(specialRequest),
     findingsPerPhoto,
     draftSummary,
@@ -673,6 +678,33 @@ function CustomReport() {
                   </p>
                 </div>
               ) : null}
+
+              <div>
+                <label htmlFor="regulation-references" className="text-sm font-semibold">
+                  Regulation references
+                </label>
+                <Select
+                  value={regulationReferences ? "on" : "off"}
+                  onValueChange={(next) => setRegulationReferences(next === "on")}
+                >
+                  <SelectTrigger
+                    id="regulation-references"
+                    aria-label="Regulation references"
+                    className="mt-2 h-11 w-full bg-surface-raised text-sm"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="on">On — findings may name a regulation or standard</SelectItem>
+                    <SelectItem value="off">Off — findings name no instrument</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {regulationReferences
+                    ? "Where a finding engages one of the instruments this template carries, it names it. Only instruments on the template's own list can ever be named, and never a clause number."
+                    : "No regulation, standard or Approved Document is named anywhere in this report, and no Reference line is printed. Items already carrying a reference keep it and show it again if you switch this back on."}
+                </p>
+              </div>
 
               {minimal ? (
                 <p className="text-xs text-muted-foreground">

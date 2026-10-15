@@ -1,6 +1,6 @@
 /**
  * One short clip per task, with a voice-over and a visible pointer, played inline
- * in the Help sheet. Thirteen tasks, in the order a person actually works: set the
+ * in the Help sheet. Fourteen tasks, in the order a person actually works: set the
  * directory up, run the report, send it out.
  *
  * The narration is recorded from the same script the clip is filmed to, so the
@@ -125,5 +125,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     caption: "Reopen, fix, reissue - the client's link stays as issued.",
     clipUrl: `${HELP_CLIP_BASE}13-correct-an-issued-report.mp4`,
     posterUrl: `${HELP_CLIP_BASE}posters/13-correct-an-issued-report.jpg`,
+  },
+  {
+    id: "references",
+    title: "Reference the building and H&S regulations",
+    caption: "Which instruments a finding can name, and the switch in the AI brief.",
+    clipUrl: `${HELP_CLIP_BASE}14-regulation-references.mp4`,
+    posterUrl: `${HELP_CLIP_BASE}posters/14-regulation-references.jpg`,
   },
 ];

@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveTradeAllocation } from "@/lib/trade-switch";
 import { coerceSnapshot } from "@/lib/report/snapshot";
 import { ADVISORY_FOOTER_TEXT, coerceBrief } from "@/lib/report/brief";
+import { regulationReferencesFromBrief } from "@/lib/citation-switch";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
@@ -257,6 +258,9 @@ export async function loadReportDocument(
         }
       : null,
     snapshot: coerceSnapshot(report["survey_type_snapshot"]),
+    // The same switch the screen reads, resolved the same way, so the PDF can never disagree
+    // with the screen about whether this report cites.
+    regulationCitations: regulationReferencesFromBrief(report["brief"]),
     // The same two switches the screen reads, resolved the same way, so a PDF can
     // never disagree with the screen about whether trades are in play.
     tradeEnabled: resolveTradeAllocation(

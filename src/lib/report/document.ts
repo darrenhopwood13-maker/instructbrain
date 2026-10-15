@@ -143,6 +143,11 @@ export type ReportDocument = {
    * older document model reads exactly as it always did.
    */
   tradeEnabled?: boolean;
+  /**
+   * Whether this report's brief allows a finding to name a regulation or standard. Absent
+   * means yes - an older document model, or a brief that never carried the switch.
+   */
+  regulationCitations?: boolean;
   /** Which switch is in charge, so a screen can say so plainly. */
   tradeAllocation?: { organisation: boolean; report: boolean | null };
   synthesis: DocSynthesis | null;

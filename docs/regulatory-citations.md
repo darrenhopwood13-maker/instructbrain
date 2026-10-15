@@ -119,3 +119,94 @@ template**. These instruments were researched and verified, and are ready to use
 template exists: Water Supply (Water Fittings) Regulations 1999, HSE ACOP L8, HSE HSG274,
 BS 8580-1, BS EN 806, BS 8558, BS EN 12056, WRAS Approval, Water Industry Act 1991, COSHH 2002,
 HSE L122.
+
+## Added 15 October 2026 — site_walk and fit-out quality
+
+Two templates that carried no set at all now carry one, which is what switches the citation
+rule on for them. Before this, the prompt actively told the model **not** to cite on a site
+observation or a fit-out finding.
+
+| Template | Instruments | Version |
+|---|---|---|
+| `site_walk` (housekeeping and safety observations) | **21** | v3 → v4 |
+| `fitout_quality` (fit-out and finishes quality) | **16** | v1 → v2 |
+
+**The site safety set (21):** HSWA 1974 · CDM 2015 · MHSWR 1999 · Work at Height 2005 · PUWER 1998 ·
+LOLER 1998 · COSHH 2002 · MHOR 1992 · PPE at Work 1992 · EAWR 1989 · CAR 2012 · Confined Spaces 1997 ·
+DSEAR 2002 · Noise 2005 · Safety Signs and Signals 1996 · Workplace (H&S and Welfare) 1992 ·
+First-Aid 1981 · Regulatory Reform (Fire Safety) Order 2005 · BS 5975 · HSE L153 · HSE HSG150.
+
+**The fit-out set (16):** Building Regulations 2010 · Approved Documents A, B, C, E, F, K, L, M, P, O ·
+Approved Document 7 (material and workmanship) · BS 8000 · NHBC Standards · project specification ·
+manufacturer's instructions.
+
+### How these were verified — 15 October 2026
+
+Programmatic, not by summary. Every statutory entry was fetched and the instrument's own number
+checked against the page: **29 of 32 candidates passed on the first pass.** The three that failed were
+re-checked rather than dropped, and all three were **the checker's fault, not the data's**:
+
+- **Approved Documents C and E returned HTTP 404** — because gov.uk's own slug spells Part C
+  `...contaminates-and-moisture...` (their typo, in their URL) and Part E is `resistance-to-sound`.
+  The first pass used invented slugs.
+- **gov.uk then served a "GOV.UK" shell page** to a plain HTTP fetch, so title matching failed on
+  pages that exist. Re-verified in a real browser: **11 of 11 Approved Documents confirmed**, including
+  Part O (overheating) and Part 7 (material and workmanship), which are new to any set here.
+- **BS 8000** was not found on the BSI knowledge URL first tried; it is on BSI's own series landing
+  page, which was then verified.
+
+Nothing was excluded from this pass. Reused without re-verification: the instruments already recorded
+above, which keep their existing ids and labels.
+
+### The rule is now mandatory where a set exists
+
+Six templates carry a set. All six now lead their `regulatoryGuidance` with:
+
+> *Every finding that touches a listed instrument must name the SINGLE most relevant entry from the
+> regulatoryReferences list provided, by its id. Return null only where no listed instrument touches
+> the subject at all, and in that case say so in the finding text. NEVER invent, cite or infer a
+> clause, paragraph, section, table or part number - reference the document by name only.*
+
+The wording it replaces was permissive — *"where the defect **plausibly** engages a regulation...
+if no listed reference clearly applies, return null"* — and on the one template that could cite before
+today (snagging, set present since 2 Oct) **all 10 findings returned null.** Permission was being read
+as "don't bother". The `certificate_register` had a set and no per-template rule at all; it now has one.
+
+### One instrument, one spelling
+
+Ten snagging labels moved from an em dash to a hyphen (`Approved Document B — fire safety` →
+`Approved Document B - fire safety`) so an instrument no longer ships under two spellings depending on
+which template cites it.
+
+### Measured evidence, on a real photograph
+
+Composed prompt as the app builds it, sent to the configured vision model with a photograph from a
+live site (15 Oct 2026):
+
+- `site_walk`, 21 instruments — **all 21 appear in the prompt**; 20,898 characters.
+- `fitout_quality`, 16 instruments — **all 16 appear**; 19,533 characters.
+- a template with no set still carries the active prohibition.
+- **citations came back**: `hswa_1974`, `wah_2005`, `workplace_1992` on one call; `cdm_2015` on
+  another. All valid ids from the set. A no-set template returned none, correctly.
+- Repeated calls on the same photograph return **different but valid** instruments — the model is
+  choosing the most relevant, not echoing a list. Treat the reference as an assessment to review, in
+  the same way the cause and the severity are.
+
+### Prompt cost
+
+The proof is per photograph, every photograph, on every report of that type. The two sets add roughly
+**560-640 tokens per call** by the size of the lists. State it, do not let it be discovered on a bill.
+
+### Still true, and worth repeating
+
+**A template is frozen into a report at creation**, so neither of today's sets appears on any report
+that already exists — including the reports in the demo account. They will cite nothing, ever, and
+that is not a fault. New reports will.
+
+### Separately, found while testing (not caused by this change)
+
+With only `GOOGLE_API_KEY` present, the **google adapter returns HTTP 400** before the model is
+reached: *"Invalid JSON payload received. Unknown name `additionalProperties` at
+`generation_config.response_schema`"*. It fails identically on a template with no citation set, so the
+response-schema shape is the cause and it predates this work. The DeepSeek path works. If any
+deployment selects google for analysis, that provider cannot currently analyse a photograph at all.

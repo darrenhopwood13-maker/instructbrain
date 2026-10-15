@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DataError, coerceSnapshot } from "@/lib/data";
 import { resolveTradeAllocation } from "@/lib/trade-switch";
+import { regulationReferencesFromBrief } from "@/lib/citation-switch";
 import { coerceReportStatus } from "@/lib/types";
 import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { resolveLogoPath } from "@/lib/report/logo";
@@ -266,6 +267,9 @@ export const reportDocumentQuery = (reportId: string) =>
             }
           : null,
         snapshot: coerceSnapshot(report.survey_type_snapshot),
+        // The brief's own switch, resolved in one place. Off means no Reference line on the
+        // review screen and none in the PDF; findings keep any reference they already hold.
+        regulationCitations: regulationReferencesFromBrief(report.brief),
         // Two switches, resolved in one place. Off means no trade column, no
         // trade gate and no per-trade extracts for this report.
         tradeEnabled: resolveTradeAllocation(

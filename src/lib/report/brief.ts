@@ -246,6 +246,15 @@ export type ReportBrief = {
   findingsPerPhoto: FindingsPerPhoto;
   /** Draft an editable report summary after every finding is human-confirmed. */
   draftSummary: boolean;
+  /**
+   * Whether a finding may name a regulation, standard or Approved Document.
+   *
+   * Default true. Turning it off for a report removes the citation list from the AI prompt -
+   * so nothing is cited in the first place - hides the picker on the review screen and drops
+   * the Reference line from the PDF. It is a generation and display decision: references a
+   * finding already carries are kept, not deleted.
+   */
+  regulationReferences?: boolean;
   /** Snapshot of every survey type this report covers, keyed by definition id. */
   surveyTypes?: Array<{ id: string; label: string }>;
 };
@@ -260,6 +269,7 @@ export const EMPTY_BRIEF: ReportBrief = {
   specialRequest: "",
   findingsPerPhoto: "template",
   draftSummary: false,
+  regulationReferences: true,
   surveyTypes: [],
 };
 
@@ -318,6 +328,9 @@ export function coerceBrief(value: unknown): ReportBrief | null {
     ),
     findingsPerPhoto: findingsPerPhotoById(raw["findingsPerPhoto"]),
     draftSummary: boolOr(raw["draftSummary"], false),
+    // Only a real boolean counts; anything else means the brief never carried it, which
+    // resolves to on. See citation-switch.ts for the rule.
+    regulationReferences: boolOr(raw["regulationReferences"], true),
     surveyTypes,
   };
 }
@@ -345,6 +358,16 @@ export function briefPromptSection(brief: ReportBrief | null): string | null {
     }
     if (!brief.includeSeverity) {
       lines.push("Do not rate severity for this report. Return severity as null.");
+    }
+    // The switch is off in the brief. Say so explicitly, and say what that means for the
+    // text as well as the field: a finding that names an instrument in prose has cited it
+    // whether or not the structured field is filled in.
+    if (brief.regulationReferences === false) {
+      lines.push(
+        "Regulation references are switched off for this report. Do not name a regulation, a " +
+          "standard or an Approved Document anywhere in the finding, do not refer to any clause, " +
+          "section or table, and return regulatory_reference as null.",
+      );
     }
   }
 
