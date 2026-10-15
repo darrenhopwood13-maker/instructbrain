@@ -95,6 +95,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Photos in. Client-ready reports out. Reports referenced against the health and safety and building regulations that apply.",
       },
       { property: "og:type", content: "website" },
+      // The preview image, in our own brand, served from our own domain. Left
+      // out until now, so search results and chat previews fell back to whatever
+      // the host injected - a Lovable asset, which is what Google was showing.
+      { property: "og:image", content: "https://instructbrain.com/og.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "instructBrain — site photographs in, referenced reports out",
+      },
+      { property: "og:site_name", content: "instructBrain" },
+      { property: "og:url", content: "https://instructbrain.com/" },
+      { name: "twitter:image", content: "https://instructbrain.com/og.png" },
+      {
+        name: "twitter:image:alt",
+        content: "instructBrain — site photographs in, referenced reports out",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#24417B" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
