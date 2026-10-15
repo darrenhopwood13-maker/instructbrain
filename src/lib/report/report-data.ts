@@ -114,7 +114,7 @@ export const reportDocumentQuery = (reportId: string) =>
           .limit(1),
         from("findings")
           .select(
-            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason, ai_region",
+            "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, regulatory_clause, ai_abstain_reason, ai_region",
           )
           .eq("report_id", reportId)
           .order("sequence", { ascending: true }),
@@ -218,6 +218,10 @@ export const reportDocumentQuery = (reportId: string) =>
           confirmedAt: row.confirmed_at ?? null,
           likelyCause: row.likely_cause ?? null,
           regulatoryReference: row.regulatory_reference ?? null,
+          // A clause a person chose, stored as the publisher's own unit number. It rides into
+          // the issued version JSONB with the rest of the document, so an issued report's
+          // printed clause cannot move underneath it.
+          regulatoryClause: row.regulatory_clause ?? null,
           abstainReason: row.ai_abstain_reason ?? null,
           photos: attached,
         };
@@ -380,6 +384,8 @@ export type FindingPatch = Partial<{
   due_date: string | null;
   likely_cause: string | null;
   regulatory_reference: string | null;
+  /** The clause a person chose from the cited instrument's own list. Null until chosen. */
+  regulatory_clause: string | null;
   confirmed_at: string | null;
   confirmed_by: string | null;
   human_edited: boolean;
@@ -411,6 +417,10 @@ export const MATERIAL_CONTENT_FIELDS = [
   "severity",
   "condition_grade",
   "regulatory_reference",
+  // Naming a specific section changes what the finding asserts, exactly as naming the
+  // instrument does, so choosing a clause withdraws the person's confirmation of the item.
+  // Deleting a clause is the same class of change and withdraws it too.
+  "regulatory_clause",
 ] as const;
 
 /** Does this patch change what the item SAYS, as opposed to where it is routed? */

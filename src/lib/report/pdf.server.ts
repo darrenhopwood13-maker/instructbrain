@@ -71,6 +71,7 @@ import {
 import {
   NOT_ASSESSED_ID,
   citedReferencesOf,
+  clauseLabel,
   isManualOnly,
   photoWorkflowOf,
   requiresConditionGrade,
@@ -1641,6 +1642,13 @@ async function drawFindingBody(
     if (formal && reference?.instrument !== reference?.label) {
       drawText(writer, formal, { size: 8, colour: MUTED });
     }
+    // The clause, when a person chose one. Every word comes from the FROZEN snapshot's own
+    // list - the instrument's label, the publisher's unit and its own heading - so nothing
+    // here can be invented, and a number this instrument does not carry prints as nothing at
+    // all rather than being shown as though the publisher had titled it. It reads from the
+    // document, never from a live finding row, so an issued copy cannot move underneath it.
+    const clause = clauseLabel(reference, finding.regulatoryClause);
+    if (clause) drawText(writer, clause, { size: 9, colour: MUTED });
   }
 
   const extras = readableCaptureFields(finding.captureFields, document.surveyTypes ?? []);

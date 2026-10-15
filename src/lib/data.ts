@@ -526,6 +526,7 @@ type FindingRow = {
   is_confidential: boolean;
   likely_cause: string | null;
   regulatory_reference: string | null;
+  regulatory_clause: string | null;
   sequence: number;
   ai_trade_confidence: number | null;
   ai_trade_reasoning: string | null;
@@ -538,7 +539,7 @@ type FindingRow = {
 };
 
 const findingColumns =
-  "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, sequence, due_date, due_date_overridden, lifecycle_state";
+  "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, regulatory_clause, sequence, due_date, due_date_overridden, lifecycle_state";
 
 function stringFields(value: unknown): Record<string, string> {
   const out: Record<string, string> = {};
@@ -625,6 +626,9 @@ function toFinding(row: FindingRow, photoIds: string[]): Finding {
     likelyCauseConfirmed: row.human_edited,
     regulatoryReference: row.regulatory_reference,
     regulatoryReferenceConfirmed: row.human_edited,
+    // A clause a person chose, and nothing else. Read back exactly as stored, so a number
+    // the instrument does not carry is left for the resolver to refuse rather than tidied here.
+    regulatoryClause: row.regulatory_clause,
   };
 }
 

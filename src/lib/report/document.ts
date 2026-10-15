@@ -76,6 +76,16 @@ export type DocFinding = {
   confirmedAt: string | null;
   likelyCause: string | null;
   regulatoryReference: string | null;
+  /**
+   * The clause a person chose for that instrument, as the publisher's own unit number
+   * (e.g. "4"). Null until chosen, and null is what every report assembled before this
+   * field existed says - so an older document reads exactly as it always did.
+   *
+   * Kept null rather than optional for the same reason `regulatoryReference` is: every
+   * assembler must state it, or the screen and the printed document fall out of step.
+   * Always resolved for printing from the FROZEN snapshot, never from a live finding row.
+   */
+  regulatoryClause: string | null;
   abstainReason: string | null;
   photos: DocFindingPhoto[];
 };

@@ -304,6 +304,29 @@ function ReportWorkspace() {
   };
 
   /**
+   * A person's clause choice for the instrument a finding already names.
+   *
+   * One number, from that instrument's own published list, written to `regulatory_clause`.
+   * The instrument itself is untouched, no AI value exists for a clause and none is written —
+   * what is stored is only ever a number somebody picked. Because naming a section changes
+   * what the finding asserts, the write withdraws the item's confirmation through the one
+   * write path (`MATERIAL_CONTENT_FIELDS`), which is why nothing here touches `confirmed_at`.
+   */
+  const assignClause = async (findingId: string, clause: string | null) => {
+    const before = (findings.data ?? []).find((item) => item.id === findingId);
+    await updateFinding(
+      id,
+      findingId,
+      { regulatory_clause: clause },
+      {
+        regulatory_reference: before?.regulatoryReference ?? null,
+        regulatory_clause: before?.regulatoryClause ?? null,
+      },
+    );
+    await refresh();
+  };
+
+  /**
    * The list offered when a person allocates an item: THIS JOB'S register.
    *
    * It used to be the register plus every trade the product knows, which offered
@@ -633,6 +656,7 @@ function ReportWorkspace() {
               regulationsEnabled={doc?.regulationCitations ?? true}
               onAssignTrade={onAssignTrade}
               onAssignGrade={gradeFinding}
+              onAssignClause={assignClause}
             />
           )}
         </div>

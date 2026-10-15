@@ -1,4 +1,5 @@
 import { buildVoice } from "@/lib/oracle-persona";
+import { CLAUSE_SETS } from "@/lib/regulatory-clauses";
 import type { SurveyDefinition } from "@/lib/survey-types";
 
 /**
@@ -491,6 +492,10 @@ Describe conditions only. Never describe, identify, count or characterise any pe
       instrument: "SI 1989/635",
       jurisdiction: "Great Britain",
       source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.eawr_1989,
     },
     {
       id: "car_2012",
@@ -843,6 +848,10 @@ export const electricalInstallationDefinition: SurveyDefinition = {
       instrument: "SI 1989/635",
       jurisdiction: "Great Britain",
       source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.eawr_1989,
     },
     {
       id: "esqcr_2002",
@@ -850,6 +859,10 @@ export const electricalInstallationDefinition: SurveyDefinition = {
       instrument: "SI 2002/2665",
       jurisdiction: "Great Britain",
       source: "https://www.legislation.gov.uk/uksi/2002/2665/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.esqcr_2002,
     },
     {
       id: "bldg_regs_2010",
@@ -857,6 +870,10 @@ export const electricalInstallationDefinition: SurveyDefinition = {
       instrument: "The Building Regulations 2010, SI 2010/2214",
       jurisdiction: "England and Wales",
       source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.bldg_regs_2010,
     },
     {
       id: "ad_p",
@@ -990,6 +1007,10 @@ export const mechanicalServicesDefinition: SurveyDefinition = {
       instrument: "The Building Regulations 2010, SI 2010/2214",
       jurisdiction: "England and Wales",
       source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.bldg_regs_2010,
     },
     {
       id: "gsiur_1998",
@@ -1306,6 +1327,10 @@ You do not hold the drawings. Where a point turns on the specification, say what
       instrument: "The Building Regulations 2010, SI 2010/2214",
       jurisdiction: "England and Wales",
       source: "https://www.legislation.gov.uk/uksi/2010/2214/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.bldg_regs_2010,
     },
     {
       id: "ad_a",
@@ -1787,6 +1812,10 @@ export const certificateRegisterDefinition: SurveyDefinition = {
       instrument: "SI 1989/635",
       jurisdiction: "Great Britain",
       source: "https://www.legislation.gov.uk/uksi/1989/635/contents",
+      // The clauses a person may choose from for this instrument. Read verbatim from
+      // the publisher's own contents page; see regulatory-clauses.ts. Nothing here is
+      // ever sent to the model.
+      clauses: CLAUSE_SETS.eawr_1989,
     },
     {
       id: "bs_7671",

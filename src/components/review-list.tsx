@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StatusPill } from "@/components/status-pill";
 import { FieldCard } from "@/components/field-card";
+import { ClauseCard } from "@/components/review/clause-card";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,8 @@ import { cn } from "@/lib/utils";
 import type { Finding } from "@/lib/types";
 import {
   NOT_ASSESSED_ID,
+  clauseLabel,
+  clausesOf,
   definesField,
   derivedFieldsOf,
   regulatoryReferencesOf,
@@ -92,6 +95,7 @@ export function ReviewList({
   onAddTradeToDirectory,
   onEditText,
   onAssignGrade,
+  onAssignClause,
 }: {
   snapshot: SurveyTypeSnapshot;
   findings: Finding[];
@@ -122,6 +126,12 @@ export function ReviewList({
   ) => Promise<void>;
   /** Persists a person's condition-grade decision. Null clears it. */
   onAssignGrade?: (findingId: string, grade: string | null) => Promise<void>;
+  /**
+   * Persists a person's clause choice for the instrument the finding already names. Null
+   * clears it. Never called with anything but a number from that instrument's own list,
+   * because the control only offers that list.
+   */
+  onAssignClause?: (findingId: string, clause: string | null) => Promise<void>;
 }) {
   const shortcuts = useMemo(() => reviewShortcuts(snapshot), [snapshot]);
   const keyToStatus = useMemo(() => {
@@ -255,14 +265,23 @@ export function ReviewList({
     [items, applyOverride],
   );
 
-  /** Optimistic overlay, real write, rollback and a visible error on failure. */
-  const persist = useCallback(
-    async (id: string, optimistic: Partial<Finding>, patch: ConfirmPatch): Promise<boolean> => {
+  /**
+   * The one write-through: optimistic overlay, real write, rollback and a visible error on
+   * failure. Every control on this screen that persists something goes through it, so a
+   * failed write can never leave the screen looking as though it worked. `write` is null when
+   * the caller has no writer at all, which is how a preview with no route behind it behaves.
+   */
+  const writeThrough = useCallback(
+    async (
+      id: string,
+      optimistic: Partial<Finding>,
+      write: (() => Promise<void>) | null,
+    ): Promise<boolean> => {
       const previous = overrides[id];
       applyOverride(id, optimistic);
-      if (!onConfirm) return true;
+      if (!write) return true;
       try {
-        await onConfirm(id, patch);
+        await write();
         return true;
       } catch (error) {
         setOverrides((prev) => {
@@ -277,8 +296,68 @@ export function ReviewList({
         return false;
       }
     },
-    [applyOverride, onConfirm, overrides],
+    [applyOverride, overrides],
   );
+
+  /** Optimistic overlay, real write, rollback and a visible error on failure. */
+  const persist = useCallback(
+    (id: string, optimistic: Partial<Finding>, patch: ConfirmPatch): Promise<boolean> =>
+      writeThrough(id, optimistic, onConfirm ? () => onConfirm(id, patch) : null),
+    [writeThrough, onConfirm],
+  );
+
+  /**
+   * A person's clause choice, for the instrument the finding already names.
+   *
+   * Nothing is written until a person chooses, and what is written is only ever a number from
+   * that instrument's own published list - the control offers nothing else. A clause names a
+   * specific section, so the write withdraws the item's confirmation through the one write
+   * path (see MATERIAL_CONTENT_FIELDS); the overlay says so at once so the screen and the
+   * record agree.
+   */
+  const assignClause = useCallback(
+    async (index: number, clause: string | null): Promise<void> => {
+      const item = items[index];
+      if (!item || !onAssignClause) return;
+      const ok = await writeThrough(item.id, { regulatoryClause: clause, confirmed: false }, () =>
+        onAssignClause(item.id, clause),
+      );
+      if (!ok) return;
+      toast.success(clause ? `Clause ${clause} recorded` : "Clause cleared", {
+        description: clause
+          ? "Chosen by a person from the entries this instrument publishes for itself."
+          : "The instrument is still named; only the clause was removed.",
+      });
+    },
+    [items, onAssignClause, writeThrough],
+  );
+
+  /**
+   * The clause control for one finding - or nothing at all.
+   *
+   * Nothing is shown unless BOTH are true: the finding already names an instrument, and that
+   * instrument's own published list titles its numbered units (`clausesOf` is empty for every
+   * other instrument, which is what keeps a picker of bare numbers off the screen). The list
+   * is read out of the report's frozen snapshot, so a report created before clause lists
+   * existed offers none and reads exactly as it always did.
+   *
+   * The clause is a PERSON's choice: there is no suggestion, no model value and no free text
+   * anywhere in this path. The only way a clause arrives is somebody picking one of the
+   * entries the instrument publishes for itself.
+   */
+  const clauseCardFor = (item: Finding, index: number) => {
+    if (!onAssignClause) return null;
+    const reference = references.find((entry) => entry.id === item.regulatoryReference) ?? null;
+    if (!reference) return null;
+    if (clausesOf(reference).length === 0) return null;
+    return (
+      <ClauseCard
+        finding={item}
+        reference={reference}
+        onChoose={(clause) => assignClause(index, clause)}
+      />
+    );
+  };
 
   const setStatus = useCallback(
     (index: number, status: StatusDefinition) => {
@@ -1127,6 +1206,12 @@ export function ReviewList({
                             updateItem(index, {
                               regulatoryReference: value === "__none__" ? null : value,
                               regulatoryReferenceConfirmed: false,
+                              // A clause belongs to one instrument's own list: "4" means
+                              // nothing under a different one. Changing the instrument
+                              // therefore clears the on-screen choice, exactly as this field
+                              // itself is only ever an on-screen choice. Nothing is deleted
+                              // from the report - the stored clause is untouched.
+                              regulatoryClause: null,
                             })
                           }
                         >
@@ -1169,6 +1254,11 @@ export function ReviewList({
                     </p>
                   </FieldCard>
                 ) : null}
+
+                {/* The clause, immediately beside the reference that owns it. Rendered only
+                    when this finding already names an instrument whose own list titles its
+                    numbered units - see clauseCardFor. */}
+                {showReference ? clauseCardFor(item, index) : null}
               </div>
 
               {blocked ? (

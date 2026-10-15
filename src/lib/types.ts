@@ -123,6 +123,13 @@ export type Finding = {
   likelyCauseConfirmed?: boolean;
   regulatoryReference?: string | null;
   regulatoryReferenceConfirmed?: boolean;
+  /**
+   * The clause a PERSON chose for that instrument, from the list the instrument supplies -
+   * the publisher's own unit number as a string, e.g. "4". Never free text and never chosen
+   * by a model, so this is only ever a number that is on the instrument's own list. Null
+   * until somebody chooses one.
+   */
+  regulatoryClause?: string | null;
 };
 
 export type DirectoryEntry = {

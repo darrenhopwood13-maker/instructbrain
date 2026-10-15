@@ -44,6 +44,7 @@ const FINDING_DEFAULTS = {
   confirmedAt: null,
   likelyCause: null,
   regulatoryReference: null,
+  regulatoryClause: null,
   abstainReason: null,
   photos: [],
 };

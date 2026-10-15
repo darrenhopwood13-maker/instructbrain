@@ -89,6 +89,42 @@ export type CategoryDefinition = {
   confidential?: boolean;
 };
 
+/**
+ * One numbered unit of an instrument, exactly as the publisher prints it.
+ *
+ * The number is the publisher's own unit reference - "4", "20A", "SCHEDULE 5" - and the
+ * heading is the publisher's own title for it. Neither is ever inferred, tidied or invented:
+ * a heading that is not in the source is not a heading.
+ */
+export type ClauseDefinition = {
+  number: string;
+  heading: string;
+};
+
+/**
+ * The clauses a person may choose from for one instrument.
+ *
+ * This is a closed list for a PERSON, never for a model. It exists only on instruments whose
+ * published contents page titles each numbered unit, because a list of bare numbers is not a
+ * choice anybody can make. A reference with no `clauses` offers no clause at all, and the
+ * screens then show no clause control - which is what every instrument outside the three
+ * listed instruments in `regulatory-clauses.ts` does.
+ *
+ * It is frozen into the report's survey type snapshot at creation, like every other part of
+ * the definition, so a later edit to the list cannot change a report already issued.
+ */
+export type ClauseSet = {
+  /** The publisher's own noun for a unit, printed before the number: "regulation". */
+  scheme: string;
+  /** The instrument's formal reference, so the set says which document its clauses belong to. */
+  instrument: string;
+  /** The page the list was read from, so a reader can check it. */
+  source: string;
+  /** The date it was read. */
+  retrieved: string;
+  entries: ClauseDefinition[];
+};
+
 export type ReferenceDefinition = {
   id: string;
   label: string;
@@ -101,6 +137,11 @@ export type ReferenceDefinition = {
   jurisdiction?: string;
   /** The page it was verified against, so a reader can check it themselves. */
   source?: string;
+  /**
+   * The clauses a person may choose from for this instrument. Present only where the publisher
+   * titles its numbered units. Absent means no clause is offered and none can be chosen.
+   */
+  clauses?: ClauseSet;
 };
 
 export type AiGuidance = Record<string, string>;
@@ -401,6 +442,55 @@ export function resolveRegulatoryReference(
 ): ReferenceDefinition | null {
   if (typeof value !== "string") return null;
   return regulatoryReferencesOf(snapshot).find((ref) => ref.id === value.trim()) ?? null;
+}
+
+/**
+ * The clauses offered for one instrument. An empty list means this instrument offers none -
+ * either it has no list at all, or none of its entries carries a heading - so no clause
+ * control is shown and no clause can be chosen.
+ */
+export function clausesOf(reference: ReferenceDefinition | null | undefined): ClauseDefinition[] {
+  const entries = reference?.clauses?.entries;
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(
+    (entry): entry is ClauseDefinition =>
+      isRecord(entry) && typeof entry["number"] === "string" && typeof entry["heading"] === "string",
+  );
+}
+
+/**
+ * Resolve a stored clause number to its entry, or null.
+ *
+ * Strict on purpose. A number that is not on this instrument's own list resolves to nothing,
+ * so a clause from another instrument - or one written by hand - is never printed as though
+ * the publisher had titled it. That is the same rule `resolveRegulatoryReference` applies to
+ * an instrument id, and it is the reason the printed clause can never be an invention.
+ */
+export function resolveClause(
+  reference: ReferenceDefinition | null | undefined,
+  value: unknown,
+): ClauseDefinition | null {
+  if (typeof value !== "string") return null;
+  const number = value.trim();
+  if (number === "") return null;
+  return clausesOf(reference).find((entry) => entry.number === number) ?? null;
+}
+
+/**
+ * How a clause prints: the instrument, then the publisher's own unit and its own heading -
+ * "Electricity at Work Regulations 1989, regulation 4 - Systems, work activities and
+ * protective equipment".
+ *
+ * Every word of it comes from the frozen definition, so no part of the line can be invented,
+ * and a clause the instrument does not carry prints as nothing at all.
+ */
+export function clauseLabel(
+  reference: ReferenceDefinition | null | undefined,
+  value: unknown,
+): string | null {
+  const clause = resolveClause(reference, value);
+  if (!clause || !reference?.clauses) return null;
+  return `${reference.label}, ${reference.clauses.scheme} ${clause.number} - ${clause.heading}`;
 }
 
 /**

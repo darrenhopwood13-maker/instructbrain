@@ -96,7 +96,7 @@ export async function loadReportDocument(
     db
       .from("findings")
       .select(
-        "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, ai_abstain_reason, ai_region",
+        "id, ref, sequence, status, severity, hazard_category, finding_text, remedial_text, capture_fields, assigned_trade, ai_suggested_trade, ai_trade_reasoning, ai_trade_confidence, condition_grade, ai_suggested_grade, ai_grade_confidence, due_date, lifecycle_state, is_confidential, confirmed_at, likely_cause, regulatory_reference, regulatory_clause, ai_abstain_reason, ai_region",
       )
       .eq("report_id", reportId)
       .order("sequence", { ascending: true }),
@@ -204,6 +204,7 @@ export async function loadReportDocument(
         confirmedAt: (row["confirmed_at"] as string | null) ?? null,
         likelyCause: (row["likely_cause"] as string | null) ?? null,
         regulatoryReference: (row["regulatory_reference"] as string | null) ?? null,
+        regulatoryClause: (row["regulatory_clause"] as string | null) ?? null,
         abstainReason: (row["ai_abstain_reason"] as string | null) ?? null,
         photos: attached,
       };

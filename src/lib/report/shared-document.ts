@@ -81,6 +81,7 @@ export function sharedDocument(payload: any): ReportDocument {
       confirmedAt: row.confirmed_at ?? null,
       likelyCause: row.likely_cause ?? null,
       regulatoryReference: row.regulatory_reference ?? null,
+      regulatoryClause: row.regulatory_clause ?? null,
       abstainReason: row.ai_abstain_reason ?? null,
       photos: (payload.links ?? [])
         .filter((link: any) => link.finding_id === row.id)
