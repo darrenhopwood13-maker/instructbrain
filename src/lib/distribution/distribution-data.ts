@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 import { DataError } from "@/lib/data";
 import {
   buildExtractDocument,
@@ -42,6 +43,25 @@ function unwrap<T>(result: { data: T | null; error: any }): T {
     );
   }
   return (result.data ?? []) as T;
+}
+
+/**
+ * Signed links for the photographs an extract is about to show.
+ *
+ * Signed rather than stored: a report is a private object, and a URL that
+ * outlives the page it was made for is a URL that leaks. The extract screen
+ * reads them for an hour, and the person reading is already entitled to the
+ * report.
+ */
+async function signedPhotoUrls(paths: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const unique = [...new Set(paths.filter((path) => !!path))];
+  if (unique.length === 0) return map;
+  const { data } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(unique, 3600);
+  for (const entry of data ?? []) {
+    if (entry.path && entry.signedUrl) map.set(entry.path, entry.signedUrl);
+  }
+  return map;
 }
 
 export type DeliveryState = {
@@ -213,6 +233,64 @@ export const distributionPlanQuery = (
         remedialText: (row["remedial_text"] as string) ?? "",
         dueDate: (row["due_date"] as string | null) ?? null,
       }));
+
+      // Which photograph each item is about, so the extract can show it. The
+      // picture travels on the finding itself, so the plan, the printed extract
+      // and the record all name the same photograph for the same item.
+      const linkRows =
+        findings.length === 0
+          ? []
+          : (unwrap(
+              await table("finding_photos")
+                .select("finding_id, photo_id, role")
+                .in(
+                  "finding_id",
+                  findings.map((finding) => finding.id),
+                ),
+            ) as Array<Record<string, any>>);
+      const photoRows = unwrap(
+        await table("photos")
+          .select("id, sequence, storage_path, thumbnail_path")
+          .eq("report_id", reportId),
+      ) as Array<Record<string, any>>;
+      const photoById = new Map(photoRows.map((row) => [row["id"] as string, row]));
+      // An item's primary photograph wins; failing that, its first link. A
+      // photograph carrying several items is legitimately attached to each of
+      // them - they share the picture, and each entry shows it.
+      const linkByFinding = new Map<string, Record<string, any>>();
+      for (const link of linkRows) {
+        const key = link["finding_id"] as string;
+        const held = linkByFinding.get(key);
+        if (!held || (link["role"] === "primary" && held["role"] !== "primary")) {
+          linkByFinding.set(key, link);
+        }
+      }
+      const wanted = new Map<string, Record<string, any>>();
+      for (const link of linkByFinding.values()) {
+        const photo = photoById.get(link["photo_id"] as string);
+        if (photo) wanted.set(link["photo_id"] as string, photo);
+      }
+      // Only the photographs this plan actually shows are signed, not every
+      // picture on the report.
+      const photoUrls = await signedPhotoUrls(
+        [...wanted.values()].flatMap((photo) =>
+          [photo["storage_path"], photo["thumbnail_path"]].filter(
+            (path): path is string => typeof path === "string" && path !== "",
+          ),
+        ),
+      );
+      for (const finding of findings) {
+        const link = linkByFinding.get(finding.id);
+        const photo = link ? wanted.get(link["photo_id"] as string) : undefined;
+        if (!photo) continue;
+        const storagePath = (photo["storage_path"] as string | null) ?? null;
+        const thumbPath = (photo["thumbnail_path"] as string | null) ?? null;
+        finding.photo = {
+          sequence: (photo["sequence"] as number) ?? 0,
+          url: storagePath ? (photoUrls.get(storagePath) ?? null) : null,
+          thumbUrl: thumbPath ? (photoUrls.get(thumbPath) ?? null) : null,
+        };
+      }
 
       const distributionRows = unwrap(
         await table("distributions")

@@ -14,12 +14,14 @@ import {
   renderEmail,
   type EmailMessage,
   type ExtractItem,
+  type ExtractPhoto,
 } from "./templates";
 import { isManualOnly, resolveSeverity, type SurveyTypeSnapshot } from "@/lib/survey-types";
 import { absoluteUrl } from "@/lib/site-url";
 import { shareUrlForToken } from "@/lib/report/share-url";
 import { resolveLocation } from "@/lib/report/location";
 import { resolveGroupScope, NO_MATCHING_ID } from "@/lib/distribution/group-findings.server";
+import { PHOTO_BUCKET } from "@/lib/photos/storage-paths";
 
 type Db = SupabaseClient<any, any, any>;
 
@@ -476,6 +478,85 @@ export async function sendManualReportPdfEmail(
   return outcome;
 }
 
+/** How long a photograph's URL must keep working once it is in somebody's inbox. */
+const EMAIL_PHOTO_URL_SECONDS = 60 * 60 * 24 * 30;
+
+/**
+ * The photograph each item is about, ready for the covering email.
+ *
+ * Read and signed at send time, never stored on the distribution row: the email
+ * has to name a URL that still works when it is opened, and a URL written into a
+ * row would be one that expired before anybody read it. An item with no
+ * photograph, or one whose bytes cannot be signed, simply has none - the item
+ * still goes out, because a missing picture must never withhold work.
+ */
+async function tradeExtractPhotos(
+  db: Db,
+  reportId: string,
+  findingIds: string[],
+): Promise<Map<string, ExtractPhoto>> {
+  const found = new Map<string, ExtractPhoto>();
+  if (findingIds.length === 0) return found;
+
+  const { data: linkData } = await db
+    .from("finding_photos")
+    .select("finding_id, photo_id, role")
+    .in("finding_id", findingIds);
+  const links = (linkData ?? []) as Array<Record<string, any>>;
+  if (links.length === 0) return found;
+
+  const { data: photoData } = await db
+    .from("photos")
+    .select("id, sequence, storage_path, thumbnail_path")
+    .eq("report_id", reportId);
+  const photoById = new Map(
+    ((photoData ?? []) as Array<Record<string, any>>).map((row) => [row["id"] as string, row]),
+  );
+
+  // An item's primary photograph wins; failing that, its first link. A photograph
+  // carrying several items belongs to each of them, and each shows it.
+  const linkByFinding = new Map<string, Record<string, any>>();
+  for (const link of links) {
+    const key = link["finding_id"] as string;
+    const held = linkByFinding.get(key);
+    if (!held || (link["role"] === "primary" && held["role"] !== "primary")) {
+      linkByFinding.set(key, link);
+    }
+  }
+
+  const paths = new Set<string>();
+  for (const link of linkByFinding.values()) {
+    const photo = photoById.get(link["photo_id"] as string);
+    if (!photo) continue;
+    for (const path of [photo["storage_path"], photo["thumbnail_path"]]) {
+      if (typeof path === "string" && path !== "") paths.add(path);
+    }
+  }
+
+  const urls = new Map<string, string>();
+  if (paths.size > 0) {
+    const { data } = await db.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls([...paths], EMAIL_PHOTO_URL_SECONDS);
+    for (const entry of (data ?? []) as Array<{ path?: string; signedUrl?: string }>) {
+      if (entry.path && entry.signedUrl) urls.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  for (const [findingId, link] of linkByFinding) {
+    const photo = photoById.get(link["photo_id"] as string);
+    if (!photo) continue;
+    const storagePath = (photo["storage_path"] as string | null) ?? null;
+    const thumbPath = (photo["thumbnail_path"] as string | null) ?? null;
+    found.set(findingId, {
+      sequence: (photo["sequence"] as number) ?? 0,
+      url: storagePath ? (urls.get(storagePath) ?? null) : null,
+      thumbUrl: thumbPath ? (urls.get(thumbPath) ?? null) : null,
+    });
+  }
+  return found;
+}
+
 /** Builds the trade extract items straight from the database, confidential excluded. */
 export async function buildTradeExtractItems(
   db: Db,
@@ -554,6 +635,14 @@ export async function buildTradeExtractItems(
     }
   }
 
+  // The photograph each item is about, so the covering list shows the recipient
+  // what the item is without opening the attachment.
+  const photoByFinding = await tradeExtractPhotos(
+    db,
+    reportId,
+    rows.map((row) => row["id"] as string),
+  );
+
   const items: ExtractItem[] = rows.map((row) => {
     const fields = (row["capture_fields"] ?? {}) as Record<string, string>;
     return {
@@ -568,6 +657,7 @@ export async function buildTradeExtractItems(
       severityLabel: resolveSeverity(snapshot, row["severity"] as string | null)?.label ?? "",
       dueDate: (row["due_date"] as string | null) ?? null,
       isConfidential: row["is_confidential"] === true,
+      photo: photoByFinding.get(row["id"] as string) ?? null,
     };
   });
 

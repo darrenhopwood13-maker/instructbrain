@@ -29,6 +29,20 @@ export type RenderedEmail = {
   attachments: EmailAttachment[];
 };
 
+/**
+ * The item's own photograph.
+ *
+ * Two copies, because the two readers want different things: the screen and the
+ * printed extract want the print-quality image, the covering email wants a small
+ * one. Either may be null — a photograph whose bytes did not come back must never
+ * stop the item being listed.
+ */
+export type ExtractPhoto = {
+  sequence: number;
+  url: string | null;
+  thumbUrl: string | null;
+};
+
 /** A finding as it appears in a distribution. Confidential items must not be here. */
 export type ExtractItem = {
   ref: string;
@@ -37,6 +51,8 @@ export type ExtractItem = {
   severityLabel: string;
   dueDate: string | null;
   isConfidential: boolean;
+  /** Null or absent when the item has no usable photograph to show. */
+  photo?: ExtractPhoto | null;
 };
 
 export type InvitePayload = {
@@ -227,24 +243,30 @@ function itemTable(items: ExtractItem[]): string {
         `<th align="left" style="padding:6px 10px 6px 0;font-size:12px;color:${MUTED};border-bottom:1px solid ${RULE};font-weight:600;">${label}</th>`,
     )
     .join("")}</tr>`;
+  const cellStyle = `padding:8px 10px 8px 0;font-size:13px;line-height:1.5;color:${INK};border-bottom:1px solid ${RULE};vertical-align:top;`;
   const rows = items
-    .map(
-      (item) =>
-        `<tr>` +
-        [
-          itemLabel(item.ref),
-          item.location || "—",
-          item.action || "—",
-          item.severityLabel || "Unclassified",
-          item.dueDate ?? "Not set",
-        ]
-          .map(
-            (value) =>
-              `<td style="padding:8px 10px 8px 0;font-size:13px;line-height:1.5;color:${INK};border-bottom:1px solid ${RULE};vertical-align:top;">${esc(value)}</td>`,
-          )
-          .join("") +
-        `</tr>`,
-    )
+    .map((item) => {
+      // The photograph sits in the item's own cell, above its reference, so the
+      // covering list still shows a recipient what the item is when they never
+      // open the attachment. A fixed width in the attribute AND the style, because
+      // a mail client will otherwise stretch whatever it finds.
+      const shot = item.photo?.thumbUrl ?? item.photo?.url ?? null;
+      const first =
+        `<td style="${cellStyle}">` +
+        (shot
+          ? `<img src="${esc(shot)}" alt="${esc(`Photograph ${item.photo?.sequence ?? 1} - ${itemLabel(item.ref)}`)}" width="96" style="display:block;width:96px;height:auto;margin:0 0 6px;border:1px solid ${RULE};border-radius:4px;" />`
+          : "") +
+        `${esc(itemLabel(item.ref))}</td>`;
+      const rest = [
+        item.location || "—",
+        item.action || "—",
+        item.severityLabel || "Unclassified",
+        item.dueDate ?? "Not set",
+      ]
+        .map((value) => `<td style="${cellStyle}">${esc(value)}</td>`)
+        .join("");
+      return `<tr>${first}${rest}</tr>`;
+    })
     .join("");
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">${head}${rows}</table>`;
 }

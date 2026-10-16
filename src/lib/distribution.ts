@@ -3,7 +3,11 @@ import {
   resolveSeverity,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
-import { ConfidentialFindingError, type ExtractItem } from "@/lib/email/templates";
+import {
+  ConfidentialFindingError,
+  type ExtractItem,
+  type ExtractPhoto,
+} from "@/lib/email/templates";
 import { resolveLocation } from "@/lib/report/location";
 
 /**
@@ -62,6 +66,13 @@ export type GroupableFinding = {
   assignedFirmKey?: string | null;
   /** The contact a person explicitly assigned this item to, if any. */
   assignedContactId?: string | null;
+  /**
+   * The item's own photograph, once the caller has resolved one. Grouping never
+   * reads it - it travels on the finding so both extract paths (the plan screen
+   * and the covering email) can show the picture without a second lookup, and so
+   * the two can never disagree about which photograph belongs to which item.
+   */
+  photo?: ExtractPhoto | null;
   severityId: string | null;
   captureFields: Record<string, string>;
   isConfidential: boolean;
@@ -228,6 +239,7 @@ export function toExtractItem(
     severityLabel: resolveSeverity(snapshot, finding.severityId)?.label ?? "",
     dueDate: finding.dueDate,
     isConfidential: finding.isConfidential,
+    photo: finding.photo ?? null,
   };
 }
 

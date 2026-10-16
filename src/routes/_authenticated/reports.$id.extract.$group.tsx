@@ -124,25 +124,45 @@ function PrintExtract() {
 
         <section className="mt-8 space-y-6">
           <h2 className="editorial-title text-xl font-semibold">Items for action</h2>
-          {doc.items.map((item) => (
-            <article key={item.ref} className="rule-top break-inside-avoid pt-4">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="eyebrow">{itemLabel(item.ref)}</span>
-                <span className="text-sm font-semibold">
-                  {item.severityLabel || "Severity not recorded"}
-                </span>
-                <span className="ml-auto text-sm text-muted-foreground">
-                  Target: {formatTarget(query.data?.snapshot ?? null, null, item.dueDate)}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {item.location || "Location not recorded"}
-              </p>
-              <p className="mt-2 whitespace-pre-wrap leading-relaxed">
-                {item.action || "No action recorded."}
-              </p>
-            </article>
-          ))}
+          {doc.items.map((item) => {
+            // The item's own photograph, so a subcontractor can see what they are
+            // being asked to put right without cross-referencing the report. The
+            // print-quality copy is preferred; the covering email gets the small
+            // one. An item with no picture simply has none.
+            const photo = item.photo?.url ?? item.photo?.thumbUrl ?? null;
+            return (
+              <article key={item.ref} className="rule-top break-inside-avoid pt-4">
+                <div className="flex flex-wrap items-baseline gap-3">
+                  <span className="eyebrow">{itemLabel(item.ref)}</span>
+                  <span className="text-sm font-semibold">
+                    {item.severityLabel || "Severity not recorded"}
+                  </span>
+                  <span className="ml-auto text-sm text-muted-foreground">
+                    Target: {formatTarget(query.data?.snapshot ?? null, null, item.dueDate)}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {item.location || "Location not recorded"}
+                </p>
+                <p className="mt-2 whitespace-pre-wrap leading-relaxed">
+                  {item.action || "No action recorded."}
+                </p>
+                {photo ? (
+                  <figure className="mt-3">
+                    <img
+                      src={photo}
+                      alt={`Photograph ${item.photo?.sequence ?? 1} for ${itemLabel(item.ref)}`}
+                      className="max-h-80 w-auto rounded border border-border"
+                      loading="lazy"
+                    />
+                    <figcaption className="mt-1 text-xs text-muted-foreground">
+                      Photograph {item.photo?.sequence ?? 1}
+                    </figcaption>
+                  </figure>
+                ) : null}
+              </article>
+            );
+          })}
         </section>
 
         <footer className="rule-top mt-10 pt-4 text-xs text-muted-foreground">
