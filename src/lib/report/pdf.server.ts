@@ -1726,16 +1726,21 @@ async function drawFindingBody(
       const image = await embedPhoto(writer, fetcher, attached.photo);
       if (!image) continue;
       const shared = plated.has(attached.photo.id);
-      if (!shared) {
-        // A photograph carrying one item: full width beside that item, printed
-        // exactly as it was taken. There is nothing to tell apart on it.
+      // A marked area is shown whether the photograph carries one item or
+      // several. The surveyor pointed at this area, and the sheet that carries
+      // the mark is the sheet that has to show it: the item prints a copy of
+      // the photograph with everything but its own area faded back — context
+      // plus a highlight, and no ink on the evidence itself.
+      if (!shared && !attached.region) {
+        // One item, and nothing marked on it: full width beside that item,
+        // printed exactly as it was taken. There is nothing to tell apart on
+        // it, so there is no highlight to draw and no area to promise.
         drawImage(writer, image, writer.contentWidth * 0.62, 260, attached.photo.layers);
         continue;
       }
-      // The photograph is printed once, above the schedule, exactly as it was
-      // taken. Here the item prints a copy of it with everything but its own
-      // area faded back — the point is context plus a highlight, and no ink on
-      // the evidence itself.
+      // Sharing, or marked by hand. Both leave the item with a region to point
+      // at; only a photograph that is shared has also been printed once above
+      // the schedule, exactly as it was taken.
       if (!attached.region) {
         // "Printed on its own page with its pins" is only true if the photograph
         // has pins. A photograph whose bytes would not come back leaves no plate

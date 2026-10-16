@@ -10,6 +10,15 @@ import { siteWalkDefinition, snapshotOf } from "@/lib/survey-definitions";
  * pins, and each item prints a crop of its own patch instead of another
  * full-width copy of the same frame.
  *
+ * Extended 2026-10-16: a marked area is printed on a photograph carrying ONE
+ * item too. The issued EIC-2026-10-005 had areas marked by hand on nine of ten
+ * photographs, and the PDF printed none of them - the highlight was reserved
+ * for shared plates, so the ordinary case silently lost the surveyor's mark.
+ * The crop frame is therefore no longer the shared case only, and the paper
+ * comparison below now builds its separate side WITHOUT marked areas: an
+ * unmarked single-item photograph still prints full width, which is what that
+ * comparison has always been measuring.
+ *
  * What is asserted, and what is not. The content streams are compressed, so a
  * text search finds nothing and a `not.toContain` assertion would pass on an
  * unreadable page for the wrong reason. So:
@@ -167,8 +176,12 @@ function doc(findings: DocFinding[]): ReportDocument {
   } as ReportDocument;
 }
 
-/** Six items, either all on one photograph or each on its own. */
-function sixItems(shared: boolean): ReportDocument {
+/**
+ * Six items, either all on one photograph or each on its own. The marked area
+ * is the default because every photograph in a real report has one; pass null
+ * for the unmarked presentation the paper comparison needs.
+ */
+function sixItems(shared: boolean, region: DocRegion | null = REGION): ReportDocument {
   return doc(
     Array.from({ length: 6 }, (_, index) =>
       finding({
@@ -178,7 +191,7 @@ function sixItems(shared: boolean): ReportDocument {
           {
             photo: photo(shared ? "p1" : `p${index + 1}`, shared ? 4 : index + 1),
             role: "primary",
-            region: REGION,
+            region,
           },
         ],
       }),
@@ -235,16 +248,23 @@ describe("the photograph carrying six items, in the printed report", () => {
     serveImages();
 
     const shared = await buildReportPdf(sixItems(true), { variant: "full", includePhotos: true });
-    const separate = await buildReportPdf(sixItems(false), { variant: "full", includePhotos: true });
+    // Unmarked on the separate side, deliberately: a marked single-item
+    // photograph now prints the compact crop frame, so measuring that against
+    // the shared plate would compare the frame with itself.
+    const separate = await buildReportPdf(sixItems(false, null), {
+      variant: "full",
+      includePhotos: true,
+    });
 
     // Real bytes came back: the file is a PDF, not an empty shell.
     expect(new TextDecoder().decode(shared.bytes.slice(0, 5))).toBe("%PDF-");
     const sharedPages = await pageCount(shared.bytes);
     const separatePages = await pageCount(separate.bytes);
     expect(sharedPages).toBeGreaterThan(0);
-    // Measured at this size: 3 pages shared against 4 separate. Below four items
-    // on one photograph the two are level, which is why this asserts "no worse"
-    // rather than a saving — the saving is real at six and grows from there.
+    // Six items on one photograph against six photographs of their own. The
+    // shared side prints the plate as well as the crops, so the claim is "no
+    // worse", not a saving - and it is a claim about the crop frame never
+    // costing more paper than a full-width picture, which is what this guards.
     expect(sharedPages).toBeLessThanOrEqual(separatePages);
   });
 
@@ -258,13 +278,18 @@ describe("the photograph carrying six items, in the printed report", () => {
     expect(await pageCount(built.bytes)).toBeGreaterThan(0);
   });
 
-  it("still prints a photograph carrying a single item the old way", async () => {
+  it("prints a photograph carrying a single item, marked or unmarked", async () => {
     serveImages();
-    const single = doc([
+    const marked = doc([
       finding({ id: "a", ref: "F-001", photos: [{ photo: photo("p1", 4), role: "primary", region: REGION }] }),
     ]);
-    const built = await buildReportPdf(single, { variant: "full", includePhotos: true });
-    expect(await pageCount(built.bytes)).toBeGreaterThan(0);
+    const unmarked = doc([
+      finding({ id: "a", ref: "F-001", photos: [{ photo: photo("p1", 4), role: "primary", region: null }] }),
+    ]);
+    const builtMarked = await buildReportPdf(marked, { variant: "full", includePhotos: true });
+    const builtUnmarked = await buildReportPdf(unmarked, { variant: "full", includePhotos: true });
+    expect(await pageCount(builtMarked.bytes)).toBeGreaterThan(0);
+    expect(await pageCount(builtUnmarked.bytes)).toBeGreaterThan(0);
   });
 });
 
