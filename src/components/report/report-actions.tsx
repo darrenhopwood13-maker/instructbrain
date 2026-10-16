@@ -384,30 +384,34 @@ export function ReportActions({
               // A client link is a client-facing act: it needs a published
               // report behind it, exactly as the manualOnly path already
               // required. Until then the row says why instead of silently
-              // minting a link to a draft. Two ways to use the link now: copy
-              // it, or have the app send it in the branded email.
-              <>
-                <DropdownMenuItem
-                  className="min-h-11"
-                  disabled={!issued}
-                  onSelect={() => link.mutate()}
-                >
-                  <Link2 aria-hidden="true" className="size-4" />
-                  {issued ? "Create link" : "Publish before creating a link"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="min-h-11"
-                  disabled={!issued}
-                  onSelect={() => {
-                    setEmailMode("link");
-                    setEmailOpen(true);
-                  }}
-                >
-                  <Mail aria-hidden="true" className="size-4" />
-                  {issued ? "Send link by email" : "Publish before sending the link"}
-                </DropdownMenuItem>
-              </>
+              // minting a link to a draft.
+              <DropdownMenuItem
+                className="min-h-11"
+                disabled={!issued}
+                onSelect={() => link.mutate()}
+              >
+                <Link2 aria-hidden="true" className="size-4" />
+                {issued ? "Create link" : "Publish before creating a link"}
+              </DropdownMenuItem>
             )}
+            {/*
+              Outside the branch on purpose. Sending the link in the branded email
+              is not specific to one kind of report: a manual photographic report
+              shares as its frozen PDF exactly as any other issued report does, so
+              it takes the same email. Dal, wanting the whole app covered:
+              "Needs to operational throughout the app."
+            */}
+            <DropdownMenuItem
+              className="min-h-11"
+              disabled={!issued}
+              onSelect={() => {
+                setEmailMode("link");
+                setEmailOpen(true);
+              }}
+            >
+              <Mail aria-hidden="true" className="size-4" />
+              {issued ? "Send link by email" : "Publish before sending the link"}
+            </DropdownMenuItem>
             <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
               <Download aria-hidden="true" className="size-4" />
               {issued ? "Download report" : "Download draft PDF"}

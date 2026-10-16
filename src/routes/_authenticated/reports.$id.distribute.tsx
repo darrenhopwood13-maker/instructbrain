@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { EmptyState } from "@/components/empty-state";
 import { distributionPlanQuery, type PlanRow } from "@/lib/distribution/distribution-data";
-import { sendTradeExtract, retrySend } from "@/lib/email/email.functions";
+import { sendTradeExtract, retrySend, sendReportShared } from "@/lib/email/email.functions";
+import { createShareLink } from "@/lib/report/report-data";
 import { ensureTradeLink } from "@/lib/trade-access/trade-access";
 import { formatTarget } from "@/lib/findings/due-date";
 
@@ -123,8 +124,35 @@ function DistributionReview() {
     }
     setBusy(row.key);
     try {
+      // The whole report goes to a client as the branded link email - the same
+      // one the report header sends - and not as a table of findings. This is the
+      // single row a quick or custom report has, because there is no project
+      // directory to route by. Dal, once the report header had that email:
+      // "Needs to operational throughout the app."
+      //
+      // Only once the report is published. A share link serves the published
+      // report, so a draft has no link to give; a draft therefore still leaves as
+      // the work pack below, exactly as it did before this change.
+      if (isQuick && plan.data?.reportStatus === "issued") {
+        const share = await createShareLink({
+          reportId: id,
+          organisationId: plan.data?.organisationId ?? "",
+          days: 30,
+        });
+        const outcome = await sendReportShared({
+          data: { reportId: id, shareId: share.id, email, name },
+        });
+        if (!outcome.ok) {
+          toast.error("The report link was not sent", { description: outcome.error ?? "" });
+          return false;
+        }
+        toast.success(`Sent to ${email}`, {
+          description: "The report link is in their inbox. It works for 30 days.",
+        });
+        return true;
+      }
       // A live, trade-scoped link so the recipient can respond without an account.
-      if (!row.unassigned && !isQuick && plan.data) {
+      if (!row.unassigned && plan.data) {
         await ensureTradeLink({
           reportId: id,
           organisationId: plan.data.organisationId,
@@ -137,7 +165,7 @@ function DistributionReview() {
       const outcome = await sendTradeExtract({
         data: {
           reportId: id,
-          trade: row.unassigned || isQuick ? null : row.key,
+          trade: row.unassigned ? null : row.key,
           email,
           name,
           directoryId: row.directoryId,
@@ -257,7 +285,7 @@ function DistributionReview() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {isQuick
-            ? "A custom report has no project directory, so the whole report goes to one recipient you enter below."
+            ? "A custom report has no project directory, so the whole report goes to one recipient you enter below. They receive the branded email with the link to read it and download their own copy."
             : (GROUPING_BLURB[data?.grouping ?? "trade"] ?? "Grouped by responsible trade.")}{" "}
           Nothing leaves instructBrain until you press send.
         </p>
@@ -315,7 +343,6 @@ function DistributionReview() {
           </div>
         </div>
       ) : (
-
         <>
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-surface-raised p-4">
             <div className="min-w-0">
@@ -459,7 +486,11 @@ function DistributionReview() {
                         onClick={() => void sendRow(row)}
                       >
                         <Send aria-hidden="true" className="size-4" />
-                        {row.latestDelivery ? "Send again" : "Send"}
+                        {row.latestDelivery
+                          ? "Send again"
+                          : isQuick && plan.data?.reportStatus === "issued"
+                            ? "Send the report link"
+                            : "Send"}
                       </Button>
                       {row.latestDelivery &&
                       ["bounced", "failed", "complained"].includes(row.latestDelivery.status) ? (
