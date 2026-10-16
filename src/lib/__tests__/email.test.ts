@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import {
-  EmailConfigurationError,
-  isResendConfigured,
-  resolveResendKey,
-} from "@/lib/email/config";
+import { EmailConfigurationError, isResendConfigured, resolveResendKey } from "@/lib/email/config";
 import {
   ConfidentialFindingError,
   earliestTargetDate,
@@ -223,10 +219,7 @@ describe("no automatic sending", () => {
   const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
   it("does not send email from the issue, versioning or report data layer", () => {
-    for (const path of [
-      "src/lib/report/report-data.ts",
-      "src/lib/report/document.ts",
-    ]) {
+    for (const path of ["src/lib/report/report-data.ts", "src/lib/report/document.ts"]) {
       const source = read(path);
       expect(source).not.toContain("email.functions");
       expect(source).not.toContain("email.server");
@@ -235,7 +228,12 @@ describe("no automatic sending", () => {
     const actions = read("src/components/report/report-actions.tsx");
     expect(actions).not.toContain("email.server");
     expect(actions).not.toContain("sendRenderedEmail");
-    expect(actions).toContain("onClick={() => emailPdf.mutate()}");
+    // The screen presses a mutation and the transport stays on the server. Two
+    // mutations now, because one dialog sends either the report as a PDF or the
+    // branded email carrying its link.
+    expect(actions).toContain("@/lib/email/email.functions");
+    expect(actions).toContain("emailPdf.mutate()");
+    expect(actions).toContain("emailLink.mutate()");
   });
 
   it("keeps the provider transport server-only", () => {
@@ -248,7 +246,11 @@ describe("no automatic sending", () => {
 
 describe("manual photographic PDF email", () => {
   it("attaches the published PDF without a browser review link", () => {
-    const attachment = { filename: "PHOTO-001.pdf", content: "JVBERi0=", contentType: "application/pdf" };
+    const attachment = {
+      filename: "PHOTO-001.pdf",
+      content: "JVBERi0=",
+      contentType: "application/pdf",
+    };
     const rendered = renderEmail({
       template: "MANUAL_REPORT_PDF",
       data: {

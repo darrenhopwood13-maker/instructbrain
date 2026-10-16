@@ -10,6 +10,7 @@ import {
   FolderOutput,
   Link2,
   Loader2,
+  Mail,
   Send,
   Share2,
   Smartphone,
@@ -49,7 +50,7 @@ import {
 } from "@/lib/report/save-pdf";
 import { ReportLanguageControl } from "@/components/report/report-language";
 import { isManualOnly } from "@/lib/survey-types";
-import { sendManualReportPdf } from "@/lib/email/email.functions";
+import { sendManualReportPdf, sendReportShared } from "@/lib/email/email.functions";
 import type { ResultView } from "@/lib/report/grouping";
 
 /** The report header has one issue action and one Share menu holding every way out. */
@@ -71,6 +72,12 @@ export function ReportActions({
   const [emailOpen, setEmailOpen] = useState(false);
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  /**
+   * Which email the one dialog is sending: the report as a PDF attachment, or
+   * the link that carries it. One dialog, because the fields and the rule (a
+   * person presses send, nothing else does) are identical either way.
+   */
+  const [emailMode, setEmailMode] = useState<"pdf" | "link">("pdf");
   const [summaryStarted, setSummaryStarted] = useState(false);
   const synthesise = useServerFn(synthesiseReport);
   const buildPdf = useServerFn(downloadReportPdf);
@@ -103,7 +110,8 @@ export function ReportActions({
       await queryClient.invalidateQueries({ queryKey: ["report-document", document.report.id] });
       await queryClient.invalidateQueries({ queryKey: ["report", document.report.id] });
       toast.success("Reopened for editing", {
-        description: "The published version is unchanged. Publishing again creates the next version.",
+        description:
+          "The published version is unchanged. Publishing again creates the next version.",
       });
     },
   });
@@ -201,6 +209,55 @@ export function ReportActions({
       }),
   });
 
+  /**
+   * Send the link itself, rather than the file.
+   *
+   * Dal: "when we send a report by link and we select by email, can we make sure
+   * it's a branded link with details about viewing and downloading". Until now
+   * that was impossible from the app: the menu minted a link and copied it to the
+   * clipboard, and the branded email built to carry it had no button anywhere -
+   * `sendReportShared` was referenced only by a test. So the only way to send a
+   * link was to paste it into the person's own mail client, unbranded and
+   * unexplained.
+   *
+   * The link is minted first because the email needs its id, and it is minted
+   * once per send: the email names one link, so what the client holds is what the
+   * app can account for.
+   */
+  const emailLink = useMutation({
+    mutationFn: async () => {
+      const share = await createShareLink({
+        reportId: document.report.id,
+        organisationId: document.organisation?.id ?? "",
+        days: 30,
+      });
+      const outcome = await sendReportShared({
+        data: {
+          reportId: document.report.id,
+          shareId: share.id,
+          email: recipientEmail.trim(),
+          name: recipientName || null,
+        },
+      });
+      return { outcome, email: recipientEmail.trim() };
+    },
+    onSuccess: async ({ outcome, email }) => {
+      if (!outcome.ok) {
+        toast.error("The link was not sent", { description: outcome.error ?? "Please try again." });
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["report-shares", document.report.id] });
+      setEmailOpen(false);
+      setRecipientName("");
+      setRecipientEmail("");
+      toast.success("Link sent", { description: `Sent to ${email}. It works for 30 days.` });
+    },
+    onError: (error) =>
+      toast.error("The link was not sent", {
+        description: error instanceof Error ? error.message : "Nothing was sent.",
+      }),
+  });
+
   const pdf = useMutation({
     mutationFn: async (mode: "download" | "share") => {
       const result = await buildPdf({ data: { reportId: document.report.id, view: resultView } });
@@ -219,7 +276,9 @@ export function ReportActions({
           : result.outcome === "shared"
             ? result.filename
             : `${result.filename} is in your downloads.`;
-      toast.success(result.outcome === "shared" ? "Report shared" : "Report saved", { description });
+      toast.success(result.outcome === "shared" ? "Report shared" : "Report saved", {
+        description,
+      });
     },
     onError: (error) =>
       toast.error("The report could not be built", {
@@ -231,7 +290,10 @@ export function ReportActions({
     <>
       <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
         {!isManualOnly(document.snapshot) ? (
-          <ReportLanguageControl reportId={document.report.id} value={document.report.outputLanguage} />
+          <ReportLanguageControl
+            reportId={document.report.id}
+            value={document.report.outputLanguage}
+          />
         ) : null}
         {issued ? (
           <Button
@@ -273,7 +335,9 @@ export function ReportActions({
               type="button"
               variant="quiet"
               className="min-h-11 w-full sm:w-auto"
-              disabled={pdf.isPending || link.isPending || emailPdf.isPending}
+              disabled={
+                pdf.isPending || link.isPending || emailPdf.isPending || emailLink.isPending
+              }
             >
               {pdf.isPending || link.isPending ? (
                 <Loader2 aria-hidden="true" className="size-4 animate-spin" />
@@ -307,7 +371,10 @@ export function ReportActions({
                 <DropdownMenuItem
                   className="min-h-11"
                   disabled={!issued}
-                  onSelect={() => setEmailOpen(true)}
+                  onSelect={() => {
+                    setEmailMode("pdf");
+                    setEmailOpen(true);
+                  }}
                 >
                   <Send aria-hidden="true" className="size-4" />
                   {issued ? "Email PDF" : "Publish before emailing"}
@@ -317,11 +384,29 @@ export function ReportActions({
               // A client link is a client-facing act: it needs a published
               // report behind it, exactly as the manualOnly path already
               // required. Until then the row says why instead of silently
-              // minting a link to a draft.
-              <DropdownMenuItem className="min-h-11" disabled={!issued} onSelect={() => link.mutate()}>
-                <Link2 aria-hidden="true" className="size-4" />
-                {issued ? "Create link" : "Publish before creating a link"}
-              </DropdownMenuItem>
+              // minting a link to a draft. Two ways to use the link now: copy
+              // it, or have the app send it in the branded email.
+              <>
+                <DropdownMenuItem
+                  className="min-h-11"
+                  disabled={!issued}
+                  onSelect={() => link.mutate()}
+                >
+                  <Link2 aria-hidden="true" className="size-4" />
+                  {issued ? "Create link" : "Publish before creating a link"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="min-h-11"
+                  disabled={!issued}
+                  onSelect={() => {
+                    setEmailMode("link");
+                    setEmailOpen(true);
+                  }}
+                >
+                  <Mail aria-hidden="true" className="size-4" />
+                  {issued ? "Send link by email" : "Publish before sending the link"}
+                </DropdownMenuItem>
+              </>
             )}
             <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
               <Download aria-hidden="true" className="size-4" />
@@ -360,9 +445,13 @@ export function ReportActions({
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Email published PDF</DialogTitle>
+            <DialogTitle>
+              {emailMode === "link" ? "Send the report link" : "Email published PDF"}
+            </DialogTitle>
             <DialogDescription>
-              The recipient receives the published report as a PDF attachment. Nothing is sent until you press Send PDF.
+              {emailMode === "link"
+                ? "The recipient gets a branded email carrying the link, telling them how to view the report and how to download their own copy. The link works for 30 days. Nothing is sent until you press Send link."
+                : "The recipient receives the published report as a PDF attachment. Nothing is sent until you press Send PDF."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -388,14 +477,23 @@ export function ReportActions({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="quiet" onClick={() => setEmailOpen(false)}>Cancel</Button>
+            <Button variant="quiet" onClick={() => setEmailOpen(false)}>
+              Cancel
+            </Button>
             <Button
               variant="brand"
-              disabled={emailPdf.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(recipientEmail.trim())}
-              onClick={() => emailPdf.mutate()}
+              disabled={
+                (emailMode === "link" ? emailLink.isPending : emailPdf.isPending) ||
+                !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(recipientEmail.trim())
+              }
+              onClick={() => (emailMode === "link" ? emailLink.mutate() : emailPdf.mutate())}
             >
-              {emailPdf.isPending ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Send aria-hidden="true" className="size-4" />}
-              Send PDF
+              {(emailMode === "link" ? emailLink.isPending : emailPdf.isPending) ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <Send aria-hidden="true" className="size-4" />
+              )}
+              {emailMode === "link" ? "Send link" : "Send PDF"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -531,4 +629,3 @@ function IssueDialog({
     </Dialog>
   );
 }
-

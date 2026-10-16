@@ -13,11 +13,7 @@ import { itemLabel } from "@/lib/item-label";
 import { BRAND_CREDIT } from "@/lib/brand";
 
 export type EmailTemplateName =
-  | "INVITE"
-  | "REPORT_SHARED"
-  | "MANUAL_REPORT_PDF"
-  | "TRADE_EXTRACT"
-  | "CLOSE_OUT_REQUEST";
+  "INVITE" | "REPORT_SHARED" | "MANUAL_REPORT_PDF" | "TRADE_EXTRACT" | "CLOSE_OUT_REQUEST";
 
 export type EmailAttachment = {
   filename: string;
@@ -72,7 +68,6 @@ export type ManualReportPdfPayload = {
   attachment: EmailAttachment;
 };
 
-
 export type TradeExtractPayload = {
   /** Null for a custom report, which belongs to no project. */
   projectName: string | null;
@@ -110,7 +105,6 @@ export type CloseOutPayload = {
   sentByName: string;
   attachment?: EmailAttachment | null;
 };
-
 
 export type EmailMessage =
   | { template: "INVITE"; data: InvitePayload }
@@ -256,9 +250,15 @@ function itemTable(items: ExtractItem[]): string {
 }
 
 function textShell(lines: string[]): string {
-  return ["instructBrain", "", ...lines, "", "—", BRAND_CREDIT, "This message was sent by a person using instructBrain. Nothing is sent automatically."].join(
-    "\n",
-  );
+  return [
+    "instructBrain",
+    "",
+    ...lines,
+    "",
+    "—",
+    BRAND_CREDIT,
+    "This message was sent by a person using instructBrain. Nothing is sent automatically.",
+  ].join("\n");
 }
 
 /* ------------------------------------------------------------------ */
@@ -282,14 +282,17 @@ export function renderEmail(message: EmailMessage): RenderedEmail {
 
 function renderInvite(data: InvitePayload): RenderedEmail {
   const subject = `You have been invited to ${data.organisationName} on instructBrain`;
-  const html = shell(subject, [
-    h1(`Join ${data.organisationName}`),
-    p(
-      `${data.invitedByName} has invited you to work on reports for ${data.organisationName} as ${data.roleLabel}.`,
-    ),
-    button("Accept the invitation", data.acceptUrl),
-    small("You will be asked to set a password when you accept. The link is for you alone."),
-  ].join(""));
+  const html = shell(
+    subject,
+    [
+      h1(`Join ${data.organisationName}`),
+      p(
+        `${data.invitedByName} has invited you to work on reports for ${data.organisationName} as ${data.roleLabel}.`,
+      ),
+      button("Accept the invitation", data.acceptUrl),
+      small("You will be asked to set a password when you accept. The link is for you alone."),
+    ].join(""),
+  );
   const text = textShell([
     `Join ${data.organisationName}`,
     "",
@@ -310,19 +313,36 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
     ? `This link expires on ${data.expiresOn}. Save your own copy before then.`
     : "This link stays live until it is withdrawn. Save your own copy for your records.";
   const pdfLine = data.attachment
-    ? "A PDF of the full report is attached."
-    : "The report was too large to attach as a PDF, so please use the link above.";
-  const html = shell(subject, [
-    h1(data.reportTitle),
-    p(`${data.sentByName} has shared a read-only copy of this report with you.`),
-    definitions([
-      ["Project", data.projectName],
-      ["Reference", data.reference ?? ""],
-      ["Issue date", data.issueDate ?? ""],
-    ]),
-    button("Open the report", data.shareUrl),
-    small(`${pdfLine} ${expiry}`),
-  ].join(""));
+    ? "A PDF of the full report is attached as well, so you have a copy without opening the link."
+    : "The report is not attached to this email. Open the link to read it or to download it.";
+  // What the reader can actually do with the link, said plainly, because the
+  // alternative is a client email that mentions a report and leaves them to work
+  // out what happens when they press it. Two things, in order: read it, then keep
+  // it. Dal asked for exactly this - "a branded link with details about viewing
+  // and downloading".
+  const howTo = [
+    p(
+      "Open the link to read the report in your browser. There is nothing to sign in to, and nothing to install.",
+    ),
+    p(
+      "To keep your own copy, use the download button on that page to save the PDF. The copy you save is the report as it was issued, so it cannot change afterwards.",
+    ),
+  ].join("");
+  const html = shell(
+    subject,
+    [
+      h1(data.reportTitle),
+      p(`${data.sentByName} has shared a read-only copy of this report with you.`),
+      definitions([
+        ["Project", data.projectName],
+        ["Reference", data.reference ?? ""],
+        ["Issue date", data.issueDate ?? ""],
+      ]),
+      button("View the report", data.shareUrl),
+      howTo,
+      small(`${pdfLine} ${expiry}`),
+    ].join(""),
+  );
   const text = textShell([
     data.reportTitle,
     "",
@@ -332,7 +352,10 @@ function renderReportShared(data: ReportSharedPayload): RenderedEmail {
     data.reference ? `Reference: ${data.reference}` : "",
     data.issueDate ? `Issue date: ${data.issueDate}` : "",
     "",
-    `Open the report: ${data.shareUrl}`,
+    `View the report: ${data.shareUrl}`,
+    "",
+    "Open the link to read the report in your browser. There is nothing to sign in to, and nothing to install.",
+    "To keep your own copy, use the download button on that page to save the PDF. The copy you save is the report as it was issued, so it cannot change afterwards.",
     "",
     pdfLine,
     expiry,
@@ -344,16 +367,19 @@ function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
   const subject = data.reference
     ? `${data.reportTitle} (${data.reference}) — ${data.projectName}`
     : `${data.reportTitle} — ${data.projectName}`;
-  const html = shell(subject, [
-    h1(data.reportTitle),
-    p(`${data.sentByName} has sent you the published photographic report.`),
-    definitions([
-      ["Project", data.projectName],
-      ["Reference", data.reference ?? ""],
-      ["Issue date", data.issueDate ?? ""],
-    ]),
-    small("The complete published report is attached as a PDF."),
-  ].join(""));
+  const html = shell(
+    subject,
+    [
+      h1(data.reportTitle),
+      p(`${data.sentByName} has sent you the published photographic report.`),
+      definitions([
+        ["Project", data.projectName],
+        ["Reference", data.reference ?? ""],
+        ["Issue date", data.issueDate ?? ""],
+      ]),
+      small("The complete published report is attached as a PDF."),
+    ].join(""),
+  );
   const text = textShell([
     data.reportTitle,
     "",
@@ -367,7 +393,6 @@ function renderManualReportPdf(data: ManualReportPdfPayload): RenderedEmail {
   ]);
   return { subject, html, text, attachments: [data.attachment] };
 }
-
 
 /** What the recipient can actually do with what they have been sent. */
 function closingLine(data: TradeExtractPayload): string {
@@ -403,8 +428,9 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   // A work pack for an unpublished report says so, in the subject line and on
   // the face of the message. It is still sent -- starting early is the point --
   // but it must not read as the client's report.
-  const subject = (data.isDraft ? "DRAFT WORK PACK — " : "")
-    + [data.trade, `${count} item${count === 1 ? "" : "s"}`, data.projectName]
+  const subject =
+    (data.isDraft ? "DRAFT WORK PACK — " : "") +
+    [data.trade, `${count} item${count === 1 ? "" : "s"}`, data.projectName]
       .filter(Boolean)
       .join(" — ")
       .concat(data.reportReference ? ` (${data.reportReference})` : "");
@@ -422,29 +448,30 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
   // list, read a shared copy, or simply receive the attachment.
   const closing = closingLine(data);
 
-  const html = shell(subject, [
-    h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
-    p(`${data.sentByName} has sent you the items below from ${surveyPhrase}.`),
-    ...(data.isDraft
-      ? [
-          p(
-            "<strong>DRAFT WORK PACK.</strong> The report behind these items has not been published yet, so the wording and the list may still change.",
-          ),
-        ]
-      : []),
-    definitions([
-      ...(data.projectName ? [["Project", data.projectName] as [string, string]] : []),
-      ["Report reference", data.reportReference ?? ""],
-      ["Items", String(count)],
-      ["Severity", breakdownLine],
-      ["Earliest target date", earliest ?? "Not set"],
-    ]),
-    itemTable(data.items),
-    ...(data.itemListUrl
-      ? [button(listLinkLabel(data), data.itemListUrl)]
-      : []),
-    small(closing),
-  ].join(""));
+  const html = shell(
+    subject,
+    [
+      h1(`${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`),
+      p(`${data.sentByName} has sent you the items below from ${surveyPhrase}.`),
+      ...(data.isDraft
+        ? [
+            p(
+              "<strong>DRAFT WORK PACK.</strong> The report behind these items has not been published yet, so the wording and the list may still change.",
+            ),
+          ]
+        : []),
+      definitions([
+        ...(data.projectName ? [["Project", data.projectName] as [string, string]] : []),
+        ["Report reference", data.reportReference ?? ""],
+        ["Items", String(count)],
+        ["Severity", breakdownLine],
+        ["Earliest target date", earliest ?? "Not set"],
+      ]),
+      itemTable(data.items),
+      ...(data.itemListUrl ? [button(listLinkLabel(data), data.itemListUrl)] : []),
+      small(closing),
+    ].join(""),
+  );
 
   const text = textShell([
     `${data.trade}: ${count} item${count === 1 ? "" : "s"} to action`,
@@ -482,25 +509,28 @@ function renderTradeExtract(data: TradeExtractPayload): RenderedEmail {
 
 function renderCloseOut(data: CloseOutPayload): RenderedEmail {
   const subject = `Overdue: ${itemLabel(data.ref)} — ${data.projectName}`;
-  const html = shell(subject, [
-    h1(`${itemLabel(data.ref)} is overdue`),
-    p(`${data.sentByName} is asking for an update on the item below.`),
-    definitions([
-      ["Project", data.projectName],
-      ["Item", itemLabel(data.ref)],
-      ["Location", data.location],
-      ["Required action", data.requiredAction],
-      ["Target date", data.targetDate ?? "Not set"],
-    ]),
-    ...(data.itemListUrl ? [button("Update this item", data.itemListUrl)] : []),
-    small(
-      data.itemListUrl
-        ? data.attachment
-          ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
-          : "Recording the close-out keeps the report complete and defensible."
-        : "Reply to this email with an update on this item and the surveyor will record the close-out.",
-    ),
-  ].join(""));
+  const html = shell(
+    subject,
+    [
+      h1(`${itemLabel(data.ref)} is overdue`),
+      p(`${data.sentByName} is asking for an update on the item below.`),
+      definitions([
+        ["Project", data.projectName],
+        ["Item", itemLabel(data.ref)],
+        ["Location", data.location],
+        ["Required action", data.requiredAction],
+        ["Target date", data.targetDate ?? "Not set"],
+      ]),
+      ...(data.itemListUrl ? [button("Update this item", data.itemListUrl)] : []),
+      small(
+        data.itemListUrl
+          ? data.attachment
+            ? "A PDF of this item is attached. Recording the close-out keeps the report complete and defensible."
+            : "Recording the close-out keeps the report complete and defensible."
+          : "Reply to this email with an update on this item and the surveyor will record the close-out.",
+      ),
+    ].join(""),
+  );
 
   const text = textShell([
     `${itemLabel(data.ref)} is overdue`,
@@ -519,5 +549,4 @@ function renderCloseOut(data: CloseOutPayload): RenderedEmail {
     ...(data.attachment ? ["", "A PDF of this item is attached."] : []),
   ]);
   return { subject, html, text, attachments: data.attachment ? [data.attachment] : [] };
-
 }
