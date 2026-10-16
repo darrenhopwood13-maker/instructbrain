@@ -896,6 +896,3033 @@ export type Database = {
         }
         Relationships: []
       }
+      bak_20261014b_audit_log: {
+        Row: {
+          action: string | null
+          actor_id: string | null
+          actor_name: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string | null
+          finding_id: string | null
+          id: string | null
+          report_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string | null
+          finding_id?: string | null
+          id?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string | null
+          finding_id?: string | null
+          id?: string | null
+          report_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_compliance_runs: {
+        Row: {
+          archived_at: string | null
+          check_date: string | null
+          check_type: string | null
+          competent_person: string | null
+          created_at: string | null
+          id: string | null
+          locked_at: string | null
+          locked_by: string | null
+          organisation_id: string | null
+          performed_by_name: string | null
+          performed_by_user: string | null
+          project_id: string | null
+          report_id: string | null
+          report_number: string | null
+          signed_at: string | null
+          site_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_distributions: {
+        Row: {
+          channel: Database["public"]["Enums"]["distribution_channel"] | null
+          created_at: string | null
+          directory_id: string | null
+          document_path: string | null
+          error: string | null
+          finding_ids: string[] | null
+          id: string | null
+          opened_at: string | null
+          recipient_snapshot: Json | null
+          report_id: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string | null
+          trade: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["distribution_channel"] | null
+          created_at?: string | null
+          directory_id?: string | null
+          document_path?: string | null
+          error?: string | null
+          finding_ids?: string[] | null
+          id?: string | null
+          opened_at?: string | null
+          recipient_snapshot?: Json | null
+          report_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["distribution_channel"] | null
+          created_at?: string | null
+          directory_id?: string | null
+          document_path?: string | null
+          error?: string | null
+          finding_ids?: string[] | null
+          id?: string | null
+          opened_at?: string | null
+          recipient_snapshot?: Json | null
+          report_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_finding_photos: {
+        Row: {
+          created_at: string | null
+          finding_id: string | null
+          id: string | null
+          photo_id: string | null
+          region: Json | null
+          role: Database["public"]["Enums"]["finding_photo_role"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          finding_id?: string | null
+          id?: string | null
+          photo_id?: string | null
+          region?: Json | null
+          role?: Database["public"]["Enums"]["finding_photo_role"] | null
+        }
+        Update: {
+          created_at?: string | null
+          finding_id?: string | null
+          id?: string | null
+          photo_id?: string | null
+          region?: Json | null
+          role?: Database["public"]["Enums"]["finding_photo_role"] | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_finding_translations: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          language: string | null
+          organisation_id: string | null
+          report_id: string | null
+          source_checksum: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          language?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          source_checksum?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          language?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          source_checksum?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_findings: {
+        Row: {
+          ai_abstain_reason: string | null
+          ai_confidence: number | null
+          ai_grade_confidence: number | null
+          ai_raw_output: Json | null
+          ai_region: Json | null
+          ai_suggested_grade: string | null
+          ai_suggested_trade: string | null
+          ai_tier: string | null
+          ai_trade_confidence: number | null
+          ai_trade_reasoning: string | null
+          assigned_contact_id: string | null
+          assigned_trade: string | null
+          capture_fields: Json | null
+          condition_grade: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          due_date: string | null
+          due_date_overridden: boolean | null
+          finding_text: string | null
+          hazard_category: string | null
+          hs_notes: string | null
+          human_edited: boolean | null
+          id: string | null
+          is_confidential: boolean | null
+          lifecycle_note: string | null
+          lifecycle_state: string | null
+          lifecycle_updated_at: string | null
+          likely_cause: string | null
+          rectification_alt: string | null
+          ref: string | null
+          regulatory_reference: string | null
+          remedial_text: string | null
+          report_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sequence: number | null
+          severity: string | null
+          severity_rationale: string | null
+          snag_title: string | null
+          status: string | null
+          tradesman_hack: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_photo_markups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          layers: Json | null
+          organisation_id: string | null
+          photo_id: string | null
+          report_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_report_shares: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_report_versions: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          issued_at: string | null
+          issued_by: string | null
+          organisation_id: string | null
+          report_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_scope: {
+        Row: {
+          id: string | null
+        }
+        Insert: {
+          id?: string | null
+        }
+        Update: {
+          id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261014b_trade_access: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          trade: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_actions: {
+        Row: {
+          closed_on: string | null
+          closeout_note: string | null
+          closeout_photo_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          opened_on: string | null
+          organisation_id: string | null
+          owner: string | null
+          point_id: string | null
+          project_id: string | null
+          raised_entry_id: string | null
+          raised_run_id: string | null
+          status: string | null
+          target_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          closed_on?: string | null
+          closeout_note?: string | null
+          closeout_photo_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          opened_on?: string | null
+          organisation_id?: string | null
+          owner?: string | null
+          point_id?: string | null
+          project_id?: string | null
+          raised_entry_id?: string | null
+          raised_run_id?: string | null
+          status?: string | null
+          target_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          closed_on?: string | null
+          closeout_note?: string | null
+          closeout_photo_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          opened_on?: string | null
+          organisation_id?: string | null
+          owner?: string | null
+          point_id?: string | null
+          project_id?: string | null
+          raised_entry_id?: string | null
+          raised_run_id?: string | null
+          status?: string | null
+          target_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_entries: {
+        Row: {
+          answers: Json | null
+          confirmed: boolean | null
+          created_at: string | null
+          id: string | null
+          na_reason: string | null
+          note: string | null
+          organisation_id: string | null
+          photo_id: string | null
+          point_id: string | null
+          run_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          confirmed?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          na_reason?: string | null
+          note?: string | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          point_id?: string | null
+          run_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          confirmed?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          na_reason?: string | null
+          note?: string | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          point_id?: string | null
+          run_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_points: {
+        Row: {
+          check_type: string | null
+          created_at: string | null
+          decommission_note: string | null
+          decommission_photo_id: string | null
+          decommissioned_at: string | null
+          decommissioned_by: string | null
+          id: string | null
+          location: string | null
+          organisation_id: string | null
+          project_id: string | null
+          state: string | null
+          unit_ref: string | null
+          unit_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          check_type?: string | null
+          created_at?: string | null
+          decommission_note?: string | null
+          decommission_photo_id?: string | null
+          decommissioned_at?: string | null
+          decommissioned_by?: string | null
+          id?: string | null
+          location?: string | null
+          organisation_id?: string | null
+          project_id?: string | null
+          state?: string | null
+          unit_ref?: string | null
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          check_type?: string | null
+          created_at?: string | null
+          decommission_note?: string | null
+          decommission_photo_id?: string | null
+          decommissioned_at?: string | null
+          decommissioned_by?: string | null
+          id?: string | null
+          location?: string | null
+          organisation_id?: string | null
+          project_id?: string | null
+          state?: string | null
+          unit_ref?: string | null
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_comp_runs: {
+        Row: {
+          archived_at: string | null
+          check_date: string | null
+          check_type: string | null
+          competent_person: string | null
+          created_at: string | null
+          id: string | null
+          locked_at: string | null
+          locked_by: string | null
+          organisation_id: string | null
+          performed_by_name: string | null
+          performed_by_user: string | null
+          project_id: string | null
+          report_id: string | null
+          report_number: string | null
+          signed_at: string | null
+          site_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_events: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          organisation_id: string | null
+          report_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_markups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          layers: Json | null
+          organisation_id: string | null
+          photo_id: string | null
+          report_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_shares: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_demoset_versions: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          issued_at: string | null
+          issued_by: string | null
+          organisation_id: string | null
+          report_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_directory_contacts: {
+        Row: {
+          created_at: string | null
+          directory_id: string | null
+          email: string | null
+          id: string | null
+          is_primary: boolean | null
+          name: string | null
+          phone: string | null
+          receives_copies: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          directory_id?: string | null
+          email?: string | null
+          id?: string | null
+          is_primary?: boolean | null
+          name?: string | null
+          phone?: string | null
+          receives_copies?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          directory_id?: string | null
+          email?: string | null
+          id?: string | null
+          is_primary?: boolean | null
+          name?: string | null
+          phone?: string | null
+          receives_copies?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hs2_findings: {
+        Row: {
+          ai_abstain_reason: string | null
+          ai_confidence: number | null
+          ai_grade_confidence: number | null
+          ai_raw_output: Json | null
+          ai_region: Json | null
+          ai_suggested_grade: string | null
+          ai_suggested_trade: string | null
+          ai_tier: string | null
+          ai_trade_confidence: number | null
+          ai_trade_reasoning: string | null
+          assigned_contact_id: string | null
+          assigned_trade: string | null
+          capture_fields: Json | null
+          condition_grade: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          due_date: string | null
+          due_date_overridden: boolean | null
+          finding_text: string | null
+          hazard_category: string | null
+          hs_notes: string | null
+          human_edited: boolean | null
+          id: string | null
+          is_confidential: boolean | null
+          lifecycle_note: string | null
+          lifecycle_state: string | null
+          lifecycle_updated_at: string | null
+          likely_cause: string | null
+          rectification_alt: string | null
+          ref: string | null
+          regulatory_reference: string | null
+          remedial_text: string | null
+          report_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sequence: number | null
+          severity: string | null
+          severity_rationale: string | null
+          snag_title: string | null
+          status: string | null
+          tradesman_hack: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hs2_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hs2_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hsdraft_findings: {
+        Row: {
+          ai_abstain_reason: string | null
+          ai_confidence: number | null
+          ai_grade_confidence: number | null
+          ai_raw_output: Json | null
+          ai_region: Json | null
+          ai_suggested_grade: string | null
+          ai_suggested_trade: string | null
+          ai_tier: string | null
+          ai_trade_confidence: number | null
+          ai_trade_reasoning: string | null
+          assigned_contact_id: string | null
+          assigned_trade: string | null
+          capture_fields: Json | null
+          condition_grade: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          due_date: string | null
+          due_date_overridden: boolean | null
+          finding_text: string | null
+          hazard_category: string | null
+          hs_notes: string | null
+          human_edited: boolean | null
+          id: string | null
+          is_confidential: boolean | null
+          lifecycle_note: string | null
+          lifecycle_state: string | null
+          lifecycle_updated_at: string | null
+          likely_cause: string | null
+          rectification_alt: string | null
+          ref: string | null
+          regulatory_reference: string | null
+          remedial_text: string | null
+          report_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sequence: number | null
+          severity: string | null
+          severity_rationale: string | null
+          snag_title: string | null
+          status: string | null
+          tradesman_hack: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hsdraft_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_hsdraft_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_events: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          organisation_id: string | null
+          report_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_markups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          layers: Json | null
+          organisation_id: string | null
+          photo_id: string | null
+          report_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_shares: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_inv002_versions: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          issued_at: string | null
+          issued_by: string | null
+          organisation_id: string | null
+          report_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_compliance_runs: {
+        Row: {
+          archived_at: string | null
+          check_date: string | null
+          check_type: string | null
+          competent_person: string | null
+          created_at: string | null
+          id: string | null
+          locked_at: string | null
+          locked_by: string | null
+          organisation_id: string | null
+          performed_by_name: string | null
+          performed_by_user: string | null
+          project_id: string | null
+          report_id: string | null
+          report_number: string | null
+          signed_at: string | null
+          site_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          check_date?: string | null
+          check_type?: string | null
+          competent_person?: string | null
+          created_at?: string | null
+          id?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          organisation_id?: string | null
+          performed_by_name?: string | null
+          performed_by_user?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          report_number?: string | null
+          signed_at?: string | null
+          site_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_finding_translations: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          language: string | null
+          organisation_id: string | null
+          report_id: string | null
+          source_checksum: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          language?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          source_checksum?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          language?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          source_checksum?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_photo_markups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          layers: Json | null
+          organisation_id: string | null
+          photo_id: string | null
+          report_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          layers?: Json | null
+          organisation_id?: string | null
+          photo_id?: string | null
+          report_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_ref_counters: {
+        Row: {
+          last_number: number | null
+          organisation_id: string | null
+          period: string | null
+          type_code: string | null
+        }
+        Insert: {
+          last_number?: number | null
+          organisation_id?: string | null
+          period?: string | null
+          type_code?: string | null
+        }
+        Update: {
+          last_number?: number | null
+          organisation_id?: string | null
+          period?: string | null
+          type_code?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_report_creation_events: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          organisation_id: string | null
+          report_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_report_shares: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_report_versions: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          issued_at: string | null
+          issued_by: string | null
+          organisation_id: string | null
+          report_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_orgmove_trade_access: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          label: string | null
+          organisation_id: string | null
+          report_id: string | null
+          revoked_at: string | null
+          token: string | null
+          trade: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          label?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          revoked_at?: string | null
+          token?: string | null
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_photo_paths: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          id: string | null
+          print_path: string | null
+          report_id: string | null
+          storage_path: string | null
+          thumbnail_path: string | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          id?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          id?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_reports_orgmove: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_sw_events: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          organisation_id: string | null
+          report_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_sw_findings: {
+        Row: {
+          ai_abstain_reason: string | null
+          ai_confidence: number | null
+          ai_grade_confidence: number | null
+          ai_raw_output: Json | null
+          ai_region: Json | null
+          ai_suggested_grade: string | null
+          ai_suggested_trade: string | null
+          ai_tier: string | null
+          ai_trade_confidence: number | null
+          ai_trade_reasoning: string | null
+          assigned_contact_id: string | null
+          assigned_trade: string | null
+          capture_fields: Json | null
+          condition_grade: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          due_date: string | null
+          due_date_overridden: boolean | null
+          finding_text: string | null
+          hazard_category: string | null
+          hs_notes: string | null
+          human_edited: boolean | null
+          id: string | null
+          is_confidential: boolean | null
+          lifecycle_note: string | null
+          lifecycle_state: string | null
+          lifecycle_updated_at: string | null
+          likely_cause: string | null
+          rectification_alt: string | null
+          ref: string | null
+          regulatory_reference: string | null
+          remedial_text: string | null
+          report_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sequence: number | null
+          severity: string | null
+          severity_rationale: string | null
+          snag_title: string | null
+          status: string | null
+          tradesman_hack: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_abstain_reason?: string | null
+          ai_confidence?: number | null
+          ai_grade_confidence?: number | null
+          ai_raw_output?: Json | null
+          ai_region?: Json | null
+          ai_suggested_grade?: string | null
+          ai_suggested_trade?: string | null
+          ai_tier?: string | null
+          ai_trade_confidence?: number | null
+          ai_trade_reasoning?: string | null
+          assigned_contact_id?: string | null
+          assigned_trade?: string | null
+          capture_fields?: Json | null
+          condition_grade?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          due_date_overridden?: boolean | null
+          finding_text?: string | null
+          hazard_category?: string | null
+          hs_notes?: string | null
+          human_edited?: boolean | null
+          id?: string | null
+          is_confidential?: boolean | null
+          lifecycle_note?: string | null
+          lifecycle_state?: string | null
+          lifecycle_updated_at?: string | null
+          likely_cause?: string | null
+          rectification_alt?: string | null
+          ref?: string | null
+          regulatory_reference?: string | null
+          remedial_text?: string | null
+          report_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sequence?: number | null
+          severity?: string | null
+          severity_rationale?: string | null
+          snag_title?: string | null
+          status?: string | null
+          tradesman_hack?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_sw_photos: {
+        Row: {
+          analysis_path: string | null
+          blurred_path: string | null
+          capture_fields: Json | null
+          captured_at: string | null
+          checksum: string | null
+          created_at: string | null
+          faces_detected: boolean | null
+          gps_lat: number | null
+          gps_lng: number | null
+          height: number | null
+          id: string | null
+          original_filename: string | null
+          print_path: string | null
+          report_id: string | null
+          sequence: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          analysis_path?: string | null
+          blurred_path?: string | null
+          capture_fields?: Json | null
+          captured_at?: string | null
+          checksum?: string | null
+          created_at?: string | null
+          faces_detected?: boolean | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          height?: number | null
+          id?: string | null
+          original_filename?: string | null
+          print_path?: string | null
+          report_id?: string | null
+          sequence?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_sw_reports: {
+        Row: {
+          author_id: string | null
+          brief: Json | null
+          cover_photo_id: string | null
+          created_at: string | null
+          current_version: number | null
+          executive_summary: string | null
+          handover: Json | null
+          id: string | null
+          is_quick: boolean | null
+          issued_at: string | null
+          logo_path: string | null
+          methodology_text: string | null
+          organisation_id: string | null
+          output_language: string | null
+          project_id: string | null
+          reference: string | null
+          report_date: string | null
+          scope_text: string | null
+          status: string | null
+          submitted_at: string | null
+          subtitle: string | null
+          survey_type_id: string | null
+          survey_type_ids: Json | null
+          survey_type_snapshot: Json | null
+          synthesis: Json | null
+          synthesis_confirmed: boolean | null
+          title: string | null
+          trade_allocation_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          brief?: Json | null
+          cover_photo_id?: string | null
+          created_at?: string | null
+          current_version?: number | null
+          executive_summary?: string | null
+          handover?: Json | null
+          id?: string | null
+          is_quick?: boolean | null
+          issued_at?: string | null
+          logo_path?: string | null
+          methodology_text?: string | null
+          organisation_id?: string | null
+          output_language?: string | null
+          project_id?: string | null
+          reference?: string | null
+          report_date?: string | null
+          scope_text?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          subtitle?: string | null
+          survey_type_id?: string | null
+          survey_type_ids?: Json | null
+          survey_type_snapshot?: Json | null
+          synthesis?: Json | null
+          synthesis_confirmed?: boolean | null
+          title?: string | null
+          trade_allocation_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_20261015_sw_versions: {
+        Row: {
+          created_at: string | null
+          document: Json | null
+          id: string | null
+          issued_at: string | null
+          issued_by: string | null
+          organisation_id: string | null
+          report_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          document?: Json | null
+          id?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          organisation_id?: string | null
+          report_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      bak_20261015_title_change: {
+        Row: {
+          id: string | null
+          reference: string | null
+          title: string | null
+        }
+        Insert: {
+          id?: string | null
+          reference?: string | null
+          title?: string | null
+        }
+        Update: {
+          id?: string | null
+          reference?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       compliance_actions: {
         Row: {
           closed_on: string | null
@@ -1354,6 +4381,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          package_label: string | null
           template_id: string
           trade: string
           updated_at: string
@@ -1364,6 +4392,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          package_label?: string | null
           template_id: string
           trade: string
           updated_at?: string
@@ -1374,6 +4403,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          package_label?: string | null
           template_id?: string
           trade?: string
           updated_at?: string
@@ -1615,6 +4645,7 @@ export type Database = {
           likely_cause: string | null
           rectification_alt: string | null
           ref: string
+          regulatory_clause: string | null
           regulatory_reference: string | null
           remedial_text: string | null
           report_id: string
@@ -1660,6 +4691,7 @@ export type Database = {
           likely_cause?: string | null
           rectification_alt?: string | null
           ref: string
+          regulatory_clause?: string | null
           regulatory_reference?: string | null
           remedial_text?: string | null
           report_id: string
@@ -1705,6 +4737,7 @@ export type Database = {
           likely_cause?: string | null
           rectification_alt?: string | null
           ref?: string
+          regulatory_clause?: string | null
           regulatory_reference?: string | null
           remedial_text?: string | null
           report_id?: string
@@ -2012,6 +5045,7 @@ export type Database = {
           id: string
           is_active: boolean
           notes: string | null
+          package_label: string | null
           project_id: string
           trade: string
           updated_at: string
@@ -2022,6 +5056,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          package_label?: string | null
           project_id: string
           trade: string
           updated_at?: string
@@ -2032,6 +5067,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          package_label?: string | null
           project_id?: string
           trade?: string
           updated_at?: string
