@@ -86,6 +86,16 @@ export type HubProduct = {
     seconds: number;
     /** The origin that serves it, named when the film cannot be loaded. */
     source: string;
+    /**
+     * True ONLY where that product's own promo page plays this same film.
+     *
+     * The player tells the viewer where else they can watch it, so this is a
+     * claim about another page and it is set only where that page really does
+     * carry the film. instructBrain's ninety-second film lives in the launcher
+     * only, so its entry leaves this off rather than pointing at a page playing
+     * a different cut.
+     */
+    sameFilmAsPromoPage?: boolean;
   };
   share: {
     /** The message a recipient receives. Verbatim. */
@@ -171,6 +181,9 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
       url: "https://instructsite.ai/__l5e/assets-v1/02e16568-f992-4b9a-8531-597b9496dd2a/instructsite-promo.mp4",
       seconds: 33,
       source: "instructsite.ai",
+      // instructSite's own promo page plays this exact file, so the player may
+      // send a viewer there. True because it was checked, not because it is tidy.
+      sameFilmAsPromoPage: true,
     },
     share: {
       message:

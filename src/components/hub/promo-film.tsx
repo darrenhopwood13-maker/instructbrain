@@ -54,7 +54,11 @@ export function PromoFilm({
         data-testid="hub-film"
       />
       <p className="mt-2 text-xs text-muted-foreground">
-        {`${film.seconds} seconds, with sound. This is the same film as ${product.label}'s own promo page.`}
+        {`${film.seconds} seconds, with sound.${
+          film.sameFilmAsPromoPage
+            ? ` This is the same film as ${product.label}'s own promo page.`
+            : ""
+        }`}
       </p>
     </div>
   );
