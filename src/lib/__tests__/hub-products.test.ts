@@ -102,10 +102,10 @@ describe("the instructBrain offer", () => {
     expect(brain.cta?.label).toContain("3 Free Reports");
   });
 
-  it("plays the real 30-second promo, not a placeholder", () => {
+  it("plays the real ninety-second promo from this app, not a placeholder", () => {
     expect(brain.demo).toBe("reel");
-    expect(brain.film?.url).toContain("instructbrain-promo-30s.mp4");
-    expect(brain.film?.seconds).toBe(30);
+    expect(brain.film?.url).toBe("/instructbrain-promo-90s.mp4");
+    expect(brain.film?.seconds).toBe(90);
   });
 });
 

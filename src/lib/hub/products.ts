@@ -13,8 +13,6 @@
  * module carries a colour literal.
  */
 
-import brainPromoAsset from "@/assets/instructbrain-promo.asset.json";
-
 export const HUB_PRODUCT_IDS = ["brain", "site", "enterprise", "dabs"] as const;
 
 export type HubProductId = (typeof HUB_PRODUCT_IDS)[number];
@@ -125,10 +123,13 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     ],
     demo: "reel",
     film: {
-      // This project's own asset store. Lovable rewrites this file when the
-      // film is replaced, so the asset id is never typed out by hand here.
-      url: brainPromoAsset.url,
-      seconds: 30,
+      // The ninety-second film, served from this app's own origin out of
+      // `public/`, so it cannot depend on an asset id being re-issued. Portrait
+      // 9:16, because this player is the portrait modal in the launcher.
+      // When the film is replaced, replace the file AND `seconds` - the runtime
+      // printed under the player is read from here, never guessed.
+      url: "/instructbrain-promo-90s.mp4",
+      seconds: 90,
       source: "instructbrain.com",
     },
     share: {
