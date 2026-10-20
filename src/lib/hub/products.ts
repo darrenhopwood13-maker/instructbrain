@@ -141,6 +141,8 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
       url: "/instructbrain-promo-90s.mp4",
       seconds: 90,
       source: "instructbrain.com",
+      // /promo plays this same file now, so the player may say so.
+      sameFilmAsPromoPage: true,
     },
     share: {
       message:

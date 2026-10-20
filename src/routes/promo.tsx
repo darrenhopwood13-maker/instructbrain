@@ -1,18 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import promoAsset from "@/assets/instructbrain-promo.asset.json";
 
-const PROMO_URL = promoAsset.url;
+/**
+ * The same file the launcher plays, served from this app's own origin.
+ *
+ * One film, one file: if the hub and this page ever point at different cuts,
+ * the launcher's "same film as the promo page" line becomes a lie, so both read
+ * from `public/instructbrain-promo-90s.mp4`.
+ */
+const PROMO_URL = "/instructbrain-promo-90s.mp4";
 
 export const Route = createFileRoute("/promo")({
   head: () => ({
     meta: [
-      { title: "instructBrain in 30 seconds — watch the promo" },
+      { title: "instructBrain in 90 seconds — watch the promo" },
       {
         name: "description",
         content:
-          "Photos in. Client-ready reports out. Watch how instructBrain turns site photographs into published UK construction reports in 30 seconds.",
+          "Photos in. Client-ready reports out. Watch how instructBrain turns site photographs into published UK construction reports in 90 seconds.",
       },
-      { property: "og:title", content: "instructBrain in 30 seconds" },
+      { property: "og:title", content: "instructBrain in 90 seconds" },
       {
         property: "og:description",
         content:
@@ -48,7 +54,7 @@ function PromoPage() {
       <main className="shell-container flex flex-1 flex-col items-center pb-20 pt-10">
         <p className="eyebrow">Watch</p>
         <h1 className="editorial-title mt-1 text-center text-2xl font-semibold sm:text-3xl">
-          instructBrain in 30 seconds
+          instructBrain in 90 seconds
         </h1>
         <p className="mt-2 max-w-xl text-center text-sm leading-relaxed text-muted-foreground">
           Photos in. Client-ready reports out — condition surveys, snagging, property inventories,
@@ -69,7 +75,7 @@ function PromoPage() {
             playsInline
             preload="metadata"
             className="aspect-[9/16] w-full rounded-2xl border border-brand-accent/50 bg-surface-sunken shadow-2xl"
-            aria-label="instructBrain 30-second product promo video"
+            aria-label="instructBrain 90-second product promo video"
           />
         </div>
 
