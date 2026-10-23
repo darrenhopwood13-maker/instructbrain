@@ -31,15 +31,15 @@ export const Route = createFileRoute("/_authenticated/map")({
 });
 
 /**
- * Brand colours for the map, in hex because MapLibre has no oklch parser.
- * Converted from the same tokens the app declares - oklch(87.73% .2803 139.6) is
- * #57ff00, oklch(74% .2 13) is #ff6a86, oklch(34.2% .091 262.9) is #1e3667 - so the
- * basemap and the chrome cannot drift apart. See /public/map/ib-console-style.json.
+ * Pin colours, in hex because MapLibre has no oklch parser. Converted from the app's own
+ * tokens - oklch(87.73% .2803 139.6) is #57ff00, and the light surface's destructive is
+ * #b3261e - so the map cannot drift from the chrome. The basemap itself is
+ * /public/map/ib-light-style.json: the light working surface, not a navy slab.
  */
 const ACCENT = "#57ff00";
-const FAIL = "#ff6a86";
-const INK = "#1e3667";
-const OPEN = "#d6dae1";
+const FAIL = "#b3261e";
+const PIN_RING = "#ffffff";
+const SELECTED_RING = "#24417b";
 
 const POINTS_KEY = (organisationIds: string[]) => ["map", "points", [...organisationIds].sort()];
 
@@ -418,7 +418,7 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
 
       const instance = new maplibregl.Map({
         container: container.current,
-        style: "/map/ib-console-style.json",
+        style: "/map/ib-light-style.json",
         center: [-0.11, 51.521],
         zoom: 10.6,
         attributionControl: { compact: true },
@@ -448,7 +448,7 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
             "circle-radius": 7,
             "circle-color": ["case", [">", ["get", "overdue"], 0], FAIL, ACCENT],
             "circle-stroke-width": 2.5,
-            "circle-stroke-color": INK,
+            "circle-stroke-color": PIN_RING,
           },
         });
 
@@ -461,7 +461,7 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
             "circle-radius": 11,
             "circle-color": "rgba(0,0,0,0)",
             "circle-stroke-width": 2,
-            "circle-stroke-color": OPEN,
+            "circle-stroke-color": SELECTED_RING,
           },
         });
 
