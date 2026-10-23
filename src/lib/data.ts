@@ -793,7 +793,7 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
         unwrap(
           await from("findings")
             .select(
-              "id, ref, status, lifecycle_state, severity, due_date, created_at, closed_at, updated_at, assigned_trade, report_id, snag_title, finding_text, reports!inner(organisation_id)",
+              "id, ref, status, lifecycle_state, severity, hazard_category, due_date, created_at, closed_at, updated_at, assigned_trade, report_id, snag_title, finding_text, reports!inner(organisation_id)",
             )
             .in("reports.organisation_id", organisationIds)
             .order("created_at", { ascending: false })
@@ -804,6 +804,7 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
           status: string | null;
           lifecycle_state: string | null;
           severity: string | null;
+          hazard_category: string | null;
           due_date: string | null;
           created_at: string | null;
           closed_at: string | null;
@@ -833,9 +834,9 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
         }>,
         unwrap(
           await from("projects")
-            .select("id, name, reference")
+            .select("id, name, reference, address")
             .in("organisation_id", organisationIds),
-        ) as Array<{ id: string; name: string; reference: string | null }>,
+        ) as Array<{ id: string; name: string; reference: string | null; address: string | null }>,
       ]);
 
       const projectById = new Map(projectRows.map((row) => [row.id, row]));
@@ -859,6 +860,7 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
             status: row.status,
             lifecycleState: row.lifecycle_state,
             severity: row.severity,
+            hazardCategory: row.hazard_category ?? null,
             dueDate: row.due_date,
             createdAt: row.created_at,
             closedAt: row.closed_at ?? null,
@@ -871,6 +873,7 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
             surveyLabel: report?.survey_type_snapshot?.label ?? null,
             projectId: report?.project_id ?? null,
             projectName: project?.name ?? null,
+            projectAddress: project?.address ?? null,
             projectRef: project?.reference ?? null,
           };
         });

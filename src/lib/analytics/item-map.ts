@@ -45,6 +45,7 @@ export type DashboardItem = {
   status: string | null;
   lifecycleState: string | null;
   severity: string | null;
+  hazardCategory?: string | null;
   dueDate: string | null;
   createdAt: string | null;
   /** When the item was signed off. Null while open, and null for closes that pre-date tracking. */
@@ -59,6 +60,8 @@ export type DashboardItem = {
   surveyLabel: string | null;
   projectId: string | null;
   projectName: string | null;
+  /** Used so a town name can find its project in a comparison. */
+  projectAddress?: string | null;
   projectRef: string | null;
 };
 

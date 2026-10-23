@@ -16,6 +16,8 @@ import { projectPoints, type ProjectPoint } from "@/lib/map/project-points.funct
 import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/lib/map/summary";
 import { insightByProject, type ProjectInsight } from "@/lib/map/insight";
 import { buildTrends } from "@/lib/map/trends";
+import type { DashboardItem } from "@/lib/analytics/item-map";
+import { compareSuggestions, parseComparison, type Comparison } from "@/lib/map/compare";
 import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -249,7 +251,7 @@ function MapScreen() {
                 ))}
               </div>
 
-              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} /> : (
+              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
               <>
               <div className="grid grid-cols-2 gap-2">
                 <Tile label="Projects" value={totals.projects} />
@@ -818,7 +820,143 @@ function Stat({ label, value, bad }: { label: string; value: string; bad?: boole
   );
 }
 
-function TrendPanel({ trends, totals }: { trends: ReturnType<typeof buildTrends>; totals: ReturnType<typeof mapTotals> }) {
+function CompareBox({ items, today }: { items: DashboardItem[]; today: string }) {
+  const [query, setQuery] = useState("");
+  const [asked, setAsked] = useState<string | null>(null);
+  const suggestions = useMemo(() => compareSuggestions(items), [items]);
+  const comparison: Comparison | null = useMemo(
+    () => (asked ? parseComparison(asked, items, today) : null),
+    [asked, items, today],
+  );
+
+  const run = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setQuery(trimmed);
+    setAsked(trimmed);
+  };
+
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+        Compare work
+      </p>
+      <form
+        className="mt-2 flex gap-1.5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          run(query);
+        }}
+      >
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="e.g. electrical vs M&E"
+          aria-label="What do you want to compare?"
+          className="min-w-0 flex-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] outline-none placeholder:text-muted-foreground focus:border-foreground/40"
+        />
+        <button
+          type="submit"
+          className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-background"
+        >
+          Go
+        </button>
+      </form>
+
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {suggestions.map((suggestion) => (
+          <button
+            key={suggestion}
+            type="button"
+            onClick={() => run(suggestion)}
+            className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+
+      {asked && !comparison ? (
+        <p className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+          Nothing on this map matches &ldquo;{asked}&rdquo;. No items are assigned to those trades or
+          projects yet, so there is nothing to compare.
+        </p>
+      ) : null}
+
+      {comparison ? (
+        <div className="mt-2 space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            By {comparison.dimensionLabel.toLowerCase()}
+          </div>
+          {comparison.groups.map((group) => (
+            <div key={group.key} className="rounded-lg border border-border bg-card px-3 py-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px] font-bold text-foreground">{group.label}</span>
+                <span className="text-[10px] text-muted-foreground">{group.raised} items</span>
+              </div>
+              <div className="mt-1.5 grid grid-cols-3 gap-2">
+                <Figure label="Open" value={`${group.open}`} />
+                <Figure
+                  label="Past date"
+                  value={`${group.overdue}`}
+                  bad={group.overdue > 0}
+                  sub={group.overdue > 0 && group.lateShare !== null ? `${group.lateShare}%` : undefined}
+                />
+                <Figure
+                  label="Days to close"
+                  value={
+                    group.medianDaysToClose === null
+                      ? "-"
+                      : group.medianDaysToClose === 0
+                        ? "Same day"
+                        : `${group.medianDaysToClose}`
+                  }
+                />
+              </div>
+            </div>
+          ))}
+          {comparison.verdict ? (
+            <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
+              <p className="text-[11px] leading-relaxed text-foreground">{comparison.verdict}</p>
+              {comparison.unmatched.length > 0 ? (
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Could not place: {comparison.unmatched.join(", ")}.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <p className="text-[10px] leading-relaxed text-muted-foreground">{comparison.caveat}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Figure({ label, value, bad, sub }: { label: string; value: string; bad?: boolean; sub?: string | undefined }) {
+  return (
+    <div>
+      <div className={"text-[13px] font-bold leading-none tabular-nums " + (bad ? "text-fail" : "text-foreground")}>
+        {value}
+        {sub ? <span className="ml-1 text-[10px] font-normal text-muted-foreground">{sub}</span> : null}
+      </div>
+      <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function TrendPanel({
+  trends,
+  totals,
+  items,
+  today,
+}: {
+  trends: ReturnType<typeof buildTrends>;
+  totals: ReturnType<typeof mapTotals>;
+  items: DashboardItem[];
+  today: string;
+}) {
   const peak = Math.max(1, ...trends.cohorts.map((cohort) => cohort.raised));
   const change = trends.raisedChange;
 
@@ -849,6 +987,8 @@ function TrendPanel({ trends, totals }: { trends: ReturnType<typeof buildTrends>
           />
         </div>
       </div>
+
+      <CompareBox items={items} today={today} />
 
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
