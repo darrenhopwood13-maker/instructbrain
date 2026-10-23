@@ -8,6 +8,7 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { orgDashboardQuery } from "@/lib/data";
 import { projectPoints, type ProjectPoint } from "@/lib/map/project-points.functions";
 import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/lib/map/summary";
+import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
 
 export const Route = createFileRoute("/_authenticated/map")({
@@ -287,71 +288,24 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: "bad
 /**
  * Street level, from Mapillary.
  *
- * Chosen for the licence as much as the price: imagery is CC BY-SA, so a photograph can
- * be kept and printed inside a report with attribution, which Google's terms do not
- * allow. The token is read from the build environment (VITE_MAPILLARY_TOKEN) because a
- * token in the bundle is public - in production this lookup belongs on the server.
- *
- * With no token the pane says so and stays empty. An empty state is honest; a stock
- * photograph standing in for a site is not.
+ * The lookup runs in a server function, so the token stays in server configuration
+ * (MAPILLARY_TOKEN) and never enters the bundle. Everything the pane can say is a real
+ * state: not configured, no coverage within 50m, the service refusing the key, or an
+ * actual photograph with its date and CC BY-SA credit. Nothing is substituted.
  */
 function StreetLevel({ point }: { point: ProjectPoint }) {
-  const token = (import.meta.env["VITE_MAPILLARY_TOKEN"] as string | undefined) ?? "";
-  const [state, setState] = useState<
-    { kind: "idle" } | { kind: "loading" } | { kind: "none" } | { kind: "error"; reason: string } | {
-      kind: "image";
-      url: string;
-      when: string;
-      id: string;
-    }
-  >({ kind: "idle" });
+  const load = useServerFn(streetLevel);
+  const pinned = point.latitude !== null && point.longitude !== null;
 
-  const key = `${point.latitude},${point.longitude}`;
+  const query = useQuery({
+    queryKey: ["street-level", point.latitude, point.longitude],
+    enabled: pinned,
+    queryFn: () => load({ data: { latitude: point.latitude!, longitude: point.longitude! } }),
+    staleTime: 60 * 60 * 1000,
+    retry: 1,
+  });
 
-  useEffect(() => {
-    if (!token || point.latitude === null || point.longitude === null) {
-      setState({ kind: "idle" });
-      return;
-    }
-    let cancelled = false;
-    setState({ kind: "loading" });
-    const d = 0.00045;
-    const e = 0.0003;
-    const bbox = [point.longitude - d, point.latitude - e, point.longitude + d, point.latitude + e].join(",");
-    const url =
-      "https://graph.mapillary.com/images?access_token=" +
-      encodeURIComponent(token) +
-      "&fields=id,thumb_1024_url,captured_at&limit=1&bbox=" +
-      bbox;
-
-    void fetch(url)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Mapillary answered ${response.status}`);
-        return response.json() as Promise<{ data?: Array<{ id: string; thumb_1024_url?: string; captured_at?: number }> }>;
-      })
-      .then((body) => {
-        if (cancelled) return;
-        const image = body.data?.[0];
-        if (!image?.thumb_1024_url) {
-          setState({ kind: "none" });
-          return;
-        }
-        setState({
-          kind: "image",
-          url: image.thumb_1024_url,
-          when: image.captured_at ? formatDate(new Date(image.captured_at).toISOString()) : "date unknown",
-          id: image.id,
-        });
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        setState({ kind: "error", reason: error instanceof Error ? error.message : String(error) });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [key, token, point.latitude, point.longitude]);
+  const result = query.data;
 
   return (
     <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface-sunken">
@@ -361,30 +315,38 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
         </span>
       </div>
 
-      {!token ? (
+      {!pinned ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
-          Street level is switched to Mapillary - free, crowdsourced, no billing account. It needs an
-          access token before it can fetch a photograph, and this pane stays empty rather than showing
-          one that is not your site.
+          This project has no postcode, so there is no point to look up imagery for.
         </p>
-      ) : state.kind === "loading" ? (
+      ) : query.isPending ? (
         <p className="px-3 py-3 text-[11.5px] text-muted-foreground">Looking for imagery within 50m…</p>
-      ) : state.kind === "none" ? (
+      ) : query.isError ? (
+        <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
+          Street level could not be asked for. Nothing has been substituted for it.
+        </p>
+      ) : result?.state === "not_configured" ? (
+        <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
+          Street level is switched to Mapillary - free, crowdsourced, no billing account. It needs
+          MAPILLARY_TOKEN in the server environment before it can fetch a photograph, and this pane
+          stays empty rather than showing one that is not your site.
+        </p>
+      ) : result?.state === "none" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
           No Mapillary imagery within 50 metres of this address. New-build and rural sites often have
           none - a coverage gap, not a fault in the app.
         </p>
-      ) : state.kind === "error" ? (
+      ) : result?.state === "unavailable" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
-          Mapillary could not be reached: {state.reason}. Nothing has been substituted for it.
+          {result.reason} Nothing has been substituted for it.
         </p>
-      ) : state.kind === "image" ? (
+      ) : result?.state === "ok" ? (
         <>
-          <img src={state.url} alt={`Street level at ${point.address}`} className="mt-2 w-full" />
+          <img src={result.imageUrl} alt={`Street level at ${point.address}`} className="mt-2 w-full" />
           <p className="px-3 py-2 text-[10.5px] text-muted-foreground">
-            Captured {state.when} · © Mapillary contributors, CC BY-SA 4.0 ·{" "}
+            Captured {formatDate(result.capturedAt)} · © Mapillary contributors, CC BY-SA 4.0 ·{" "}
             <a
-              href={`https://www.mapillary.com/map/im/${state.id}`}
+              href={`https://www.mapillary.com/map/im/${result.imageId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
