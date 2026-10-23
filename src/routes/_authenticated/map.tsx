@@ -120,7 +120,15 @@ function MapScreen() {
            the document taller than the screen. */
         .map-screen .map-frame { height: 64dvh; }
         @media (min-width: 1024px) {
-          .map-screen .map-grid,
+          /* flex-1 on the grid sets flex-basis: 0, which overrides a plain height and lets
+             the rail's content stretch the document - the map then gets pushed up and a
+             white band appears under it, and the detail card ends up below the fold.
+             Pinning the grid to the viewport height and taking it out of the flex
+             distribution is what makes the rail scroll inside itself instead. */
+          .map-screen .map-grid {
+            flex: 0 0 auto;
+            height: calc(100dvh - var(--ib-header));
+          }
           .map-screen .map-frame { height: calc(100dvh - var(--ib-header)); }
         }
         .map-screen .maplibregl-ctrl-group {
