@@ -11,6 +11,12 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 export default defineConfig({
   vite: {
     plugins: [mcpPlugin()],
+    // MapLibre spawns its tile worker with `new Worker(new URL(...))`. Vite's dependency
+    // pre-bundling rewrites that URL, and the worker then fails to load with
+    // "Worker failed to load. Check that the worker URL is correct" - the map paints its
+    // background and nothing else. Excluding the package serves its own ESM untouched, so
+    // the worker resolves in dev and in the Lovable preview as well as in the build.
+    optimizeDeps: { exclude: ["maplibre-gl"] },
     resolve: {
       alias: [
         {

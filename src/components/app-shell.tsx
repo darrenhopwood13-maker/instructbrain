@@ -1,5 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FolderOpen, HardHat, Users, UserCog, ClipboardList } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  HardHat,
+  Users,
+  UserCog,
+  ClipboardList,
+  Map as MapIcon,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth";
@@ -129,6 +137,7 @@ const baseNav = [
   { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
   { to: "/reports", key: "nav.reports", icon: ClipboardList, exact: false },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
+  { to: "/map", key: "nav.map", icon: MapIcon, exact: false },
   { to: "/field", key: "nav.field", icon: HardHat, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
 ] as const;
