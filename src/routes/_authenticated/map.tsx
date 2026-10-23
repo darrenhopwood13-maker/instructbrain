@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -80,6 +81,20 @@ function MapScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
+  // The map fills what is left of the viewport under the shell header, so it needs to
+  // know how tall that header actually is - it wraps differently on a phone. Measured,
+  // not guessed, so a future change to the header cannot leave a gap or a scrollbar.
+  const [headerHeight, setHeaderHeight] = useState(85);
+  useEffect(() => {
+    const el = document.querySelector(".app-shell-header");
+    if (!el) return;
+    const apply = () => setHeaderHeight(Math.round(el.getBoundingClientRect().height));
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (selectedId && !selected) setSelectedId(null);
   }, [selectedId, selected]);
@@ -90,8 +105,16 @@ function MapScreen() {
   return (
     <AppShell surface="light">
       <style>{`
-        .map-screen { --map-border: var(--border); }
+        .map-screen { --map-border: var(--border); --ib-header: 85px; }
         .map-screen .map-canvas { position: absolute; inset: 0; }
+        /* The map is the page. It starts under the shell header and runs to the foot
+           of the viewport; the rail scrolls inside that height rather than pushing
+           the document taller than the screen. */
+        .map-screen .map-frame { height: 64dvh; }
+        @media (min-width: 1024px) {
+          .map-screen .map-grid,
+          .map-screen .map-frame { height: calc(100dvh - var(--ib-header)); }
+        }
         .map-screen .maplibregl-ctrl-group {
           background: var(--card) !important; border: 1px solid var(--border) !important;
           border-radius: 10px !important; overflow: hidden;
@@ -106,20 +129,13 @@ function MapScreen() {
         }
       `}</style>
 
-      <div className="map-screen -mx-4 flex min-h-0 flex-col sm:-mx-6 lg:-mx-10">
-        <header className="flex flex-wrap items-end justify-between gap-3 px-4 pb-4 sm:px-6 lg:px-10">
-          <div className="min-w-0">
-            <p className="eyebrow">Geography</p>
-            <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Where the work is</h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              Every project pinned from the postcode on its record. Green is on track, red is past
-              its target date.
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {loading ? "Placing your projects…" : `${totals.pinned} of ${totals.projects} placed`}
-          </p>
-        </header>
+      <div
+        className="map-screen -mx-4 -mb-28 -mt-10 flex min-h-0 flex-col sm:-mx-6 sm:-mb-20 lg:-mx-10 lg:-mt-12"
+        style={{ "--ib-header": `${headerHeight}px` } as CSSProperties}
+      >
+        {/* No page header. The map is the page - the title block was eating a fifth of
+            the screen to say what the pins already say. Heading kept for the outline. */}
+        <h1 className="sr-only">Where the work is</h1>
 
         {failed ? (
           <div className="px-4 sm:px-6 lg:px-10">
@@ -133,8 +149,8 @@ function MapScreen() {
             />
           </div>
         ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px]">
-            <div className="relative h-[56vh] border-y border-border lg:h-[calc(100dvh-11rem)] lg:border-b-0 lg:border-r">
+          <div className="map-grid grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="map-frame relative border-b border-border lg:border-b-0 lg:border-r">
               <MapCanvas
                 points={points}
                 counts={counts}
