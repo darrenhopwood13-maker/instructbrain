@@ -14,6 +14,8 @@ import { ErrorState, LoadingState } from "@/components/query-states";
 import { orgDashboardQuery } from "@/lib/data";
 import { projectPoints, type ProjectPoint } from "@/lib/map/project-points.functions";
 import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/lib/map/summary";
+import { insightByProject, type ProjectInsight } from "@/lib/map/insight";
+import { buildTrends } from "@/lib/map/trends";
 import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -83,11 +85,17 @@ function MapScreen() {
     () => countsByProject(itemsQuery.data?.items ?? [], today),
     [itemsQuery.data, today],
   );
+  const insights = useMemo(
+    () => insightByProject(itemsQuery.data?.items ?? [], today),
+    [itemsQuery.data, today],
+  );
+  const trends = useMemo(() => buildTrends(itemsQuery.data?.items ?? [], today), [itemsQuery.data, today]);
   const totals = useMemo(() => mapTotals(points, counts), [points, counts]);
   const caveats = useMemo(() => mapCaveats(totals), [totals]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<MapView>("map");
+  const [panel, setPanel] = useState<"overview" | "trends">("overview");
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
   // The map fills what is left of the viewport under the shell header, so it needs to
@@ -116,6 +124,23 @@ function MapScreen() {
       <style>{`
         .map-screen { --map-border: var(--border); --ib-header: 85px; }
         .map-screen .map-canvas { position: absolute; inset: 0; }
+        .map-screen .pin-popup .maplibregl-popup-content {
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          background: var(--card);
+          box-shadow: 0 8px 24px rgba(16, 24, 40, 0.14);
+        }
+        .map-screen .pin-popup .maplibregl-popup-tip { border-top-color: var(--card); }
+        .map-screen .pin-pop-title { font-weight: 700; font-size: 13px; color: var(--foreground); }
+        .map-screen .pin-pop-address { margin-top: 2px; font-size: 11px; color: var(--muted-foreground); }
+        .map-screen .pin-pop-stats {
+          display: flex; flex-wrap: wrap; gap: 10px;
+          margin-top: 8px; font-size: 11px; color: var(--muted-foreground);
+        }
+        .map-screen .pin-pop-stats b { color: var(--foreground); font-variant-numeric: tabular-nums; }
+        .map-screen .pin-pop-late b { color: var(--fail); }
+        .map-screen .pin-pop-note { margin-top: 6px; font-size: 11px; line-height: 1.45; color: var(--muted-foreground); }
         /* The map is the page. It starts under the shell header and runs to the foot
            of the viewport; the rail scrolls inside that height rather than pushing
            the document taller than the screen. */
@@ -174,6 +199,7 @@ function MapScreen() {
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 view={view}
+                insights={insights}
               />
               <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-lg border border-border bg-card/95 shadow-sm backdrop-blur">
                 {VIEWS.map((option) => {
@@ -204,6 +230,27 @@ function MapScreen() {
             </div>
 
             <aside className="min-h-0 overflow-y-auto border-b border-border px-4 py-4 sm:px-6 lg:px-5">
+              <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
+                {(["overview", "trends"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setPanel(option)}
+                    aria-pressed={panel === option}
+                    className={
+                      "flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors " +
+                      (panel === option
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground")
+                    }
+                  >
+                    {option === "overview" ? "Projects" : "Trends"}
+                  </button>
+                ))}
+              </div>
+
+              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} /> : (
+              <>
               <div className="grid grid-cols-2 gap-2">
                 <Tile label="Projects" value={totals.projects} />
                 <Tile label="Placed" value={totals.pinned} />
@@ -246,6 +293,8 @@ function MapScreen() {
                 with no postcode cannot be placed and is counted rather than hidden. Items and target
                 dates are the same figures the dashboard reads.
               </p>
+              </>
+              )}
             </aside>
           </div>
         )}
@@ -447,10 +496,53 @@ const VIEWS: { id: MapView; label: string }[] = [
 type MapCanvasProps = {
   points: ProjectPoint[];
   counts: Map<string, ProjectCounts>;
+  insights: Map<string, ProjectInsight>;
   selectedId: string | null;
   onSelect: (projectId: string) => void;
   view: MapView;
 };
+
+/** Popup content is built as HTML for MapLibre, so names from the database are escaped. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, insight: ProjectInsight | undefined): string {
+  const rows: string[] = [];
+  if (point.address) rows.push(`<div class="pin-pop-address">${escapeHtml(point.address)}</div>`);
+
+  const items = counts?.items ?? 0;
+  const open = counts?.open ?? 0;
+  const overdue = counts?.overdue ?? 0;
+  rows.push(
+    `<div class="pin-pop-stats"><span><b>${items}</b> items</span><span><b>${open}</b> open</span>` +
+      `<span class="${overdue > 0 ? "pin-pop-late" : ""}"><b>${overdue}</b> past their date</span></div>`,
+  );
+
+  if (insight?.averageDaysLate != null) {
+    rows.push(`<div class="pin-pop-note">Late ones are ${insight.averageDaysLate} days past their date on average.</div>`);
+  }
+  if (insight?.oldestOpenDays != null) {
+    rows.push(`<div class="pin-pop-note">Oldest open item was raised ${insight.oldestOpenDays} days ago.</div>`);
+  }
+  if (insight && insight.severity.length > 0) {
+    const mix = insight.severity.map((entry) => `${entry.count} ${escapeHtml(entry.label)}`).join(" · ");
+    rows.push(`<div class="pin-pop-note">Open by severity: ${mix}.</div>`);
+  }
+  if (insight?.busiestTrade) {
+    rows.push(`<div class="pin-pop-note">Most open work sits with ${escapeHtml(insight.busiestTrade)}.</div>`);
+  }
+
+  return (
+    `<div class="pin-pop"><div class="pin-pop-title">${escapeHtml(point.name)}</div>` +
+    rows.join("") +
+    `</div>`
+  );
+}
 
 /**
  * The map itself, loaded on demand.
@@ -461,13 +553,16 @@ type MapCanvasProps = {
  * use as well as prototypes - OpenStreetMap's own raster tiles are not, which is why
  * the prototype note about a paid contract does not apply to this route.
  */
-function MapCanvas({ points, counts, selectedId, onSelect, view }: MapCanvasProps) {
+function MapCanvas({ points, counts, insights, selectedId, onSelect, view }: MapCanvasProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("maplibre-gl").Map | null>(null);
   const [ready, setReady] = useState(false);
   const fitted = useRef(false);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const dataRef = useRef({ points, counts, insights });
+  dataRef.current = { points, counts, insights };
+  const popupRef = useRef<import("maplibre-gl").Popup | null>(null);
 
   const features = useMemo(
     () => ({
@@ -597,8 +692,37 @@ function MapCanvas({ points, counts, selectedId, onSelect, view }: MapCanvasProp
         );
 
         instance.on("click", "project-pins", (event: import("maplibre-gl").MapLayerMouseEvent) => {
-          const id = event.features?.[0]?.properties?.["projectId"];
-          if (typeof id === "string") onSelectRef.current(id);
+          const feature = event.features?.[0];
+          const id = feature?.properties?.["projectId"];
+          if (typeof id !== "string") return;
+          onSelectRef.current(id);
+
+          const { points: latestPoints, counts: latestCounts, insights: latestInsights } = dataRef.current;
+          const point = latestPoints.find((candidate) => candidate.projectId === id);
+          if (!point) return;
+
+          popupRef.current?.remove();
+          const coordinates =
+            feature?.geometry?.type === "Point"
+              ? (feature.geometry.coordinates as [number, number])
+              : [point.longitude ?? 0, point.latitude ?? 0] as [number, number];
+
+          popupRef.current = new maplibregl.Popup({
+            closeButton: true,
+            closeOnClick: false,
+            maxWidth: "300px",
+            offset: 14,
+            className: "pin-popup",
+          })
+            .setLngLat(coordinates)
+            .setHTML(pinPopupHtml(point, latestCounts.get(id), latestInsights.get(id)))
+            .addTo(instance);
+        });
+
+        // Clicking the map itself dismisses it; clicking a pin keeps it.
+        instance.on("click", (event: import("maplibre-gl").MapMouseEvent) => {
+          const hits = instance.queryRenderedFeatures(event.point, { layers: ["project-pins"] });
+          if (hits.length === 0) popupRef.current?.remove();
         });
         instance.on("mouseenter", "project-pins", () => {
           instance.getCanvas().style.cursor = "pointer";
@@ -675,4 +799,138 @@ function MapCanvas({ points, counts, selectedId, onSelect, view }: MapCanvasProp
   }, [view, ready]);
 
   return <div ref={container} className="map-canvas" aria-label="Map of your projects" role="img" />;
+}
+
+function Stat({ label, value, bad }: { label: string; value: string; bad?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2">
+      <div
+        className={
+          "font-display text-2xl font-bold leading-none tracking-tight " + (bad ? "text-fail" : "text-foreground")
+        }
+      >
+        {value}
+      </div>
+      <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function TrendPanel({ trends, totals }: { trends: ReturnType<typeof buildTrends>; totals: ReturnType<typeof mapTotals> }) {
+  const peak = Math.max(1, ...trends.cohorts.map((cohort) => cohort.raised));
+  const change = trends.raisedChange;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          Productive proactiveness
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Tile label="Raised this month" value={trends.raisedThisMonth} />
+          <Stat
+            label="vs last month"
+            value={change === null ? "-" : `${change > 0 ? "+" : ""}${change}%`}
+            bad={change !== null && change > 0}
+          />
+          <Stat label="Closed out" value={`${trends.clearanceRate ?? 0}%`} />
+          <Stat
+            label="Late share of open"
+            value={`${trends.overdueShare ?? 0}%`}
+            bad={(trends.overdueShare ?? 0) > 0}
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          Raised per month
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          {trends.cohorts.map((cohort) => {
+            const width = Math.round((cohort.raised / peak) * 100);
+            return (
+              <li key={cohort.key} className="flex items-center gap-2 text-[11px]">
+                <span className="w-14 shrink-0 text-muted-foreground">{cohort.label}</span>
+                <span className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-sm bg-foreground/70"
+                    style={{ width: `${width}%` }}
+                  />
+                  {cohort.stillOpen > 0 ? (
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-sm bg-fail"
+                      style={{ width: `${Math.round((cohort.overdue / peak) * 100)}%` }}
+                    />
+                  ) : null}
+                </span>
+                <span className="w-10 shrink-0 text-right font-bold tabular-nums">{cohort.raised}</span>
+                <span className="w-16 shrink-0 text-right text-[10px] text-muted-foreground">
+                  {cohort.stillOpen} open
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-1.5 text-[10px] text-muted-foreground">
+          Grey is everything raised that month, red is how much of it is past its date.
+        </p>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          How long the backlog has been open
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          {trends.ageing.map((band) => {
+            const widest = Math.max(1, ...trends.ageing.map((entry) => entry.count));
+            return (
+              <li key={band.label} className="flex items-center gap-2 text-[11px]">
+                <span className="w-16 shrink-0 text-muted-foreground">{band.label}</span>
+                <span className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-sm bg-foreground/70"
+                    style={{ width: `${Math.round((band.count / widest) * 100)}%` }}
+                  />
+                </span>
+                <span className="w-8 shrink-0 text-right font-bold tabular-nums">{band.count}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          Where the process stalls
+        </p>
+        <ul className="mt-2 space-y-2">
+          {trends.stalls.map((stall) => (
+            <li key={stall.label} className="rounded-lg border border-border bg-card px-3 py-2">
+              <div className="text-[12px] font-bold text-foreground">{stall.label}</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                {stall.count} open - {stall.detail}
+              </div>
+            </li>
+          ))}
+          {trends.stalls.length === 0 ? (
+            <li className="text-[11px] text-muted-foreground">Nothing is sitting open.</li>
+          ) : null}
+        </ul>
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          What this measures
+        </p>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+          {trends.depthPerSurvey != null ? `${trends.depthPerSurvey} items per survey on record. ` : ""}
+          {trends.medianDaysLate != null ? `Half of the late work is ${trends.medianDaysLate} days late or more. ` : ""}
+          {totals.projects} projects in scope. {trends.caveat}
+        </p>
+      </div>
+    </div>
+  );
 }
