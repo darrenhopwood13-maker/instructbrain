@@ -38,13 +38,19 @@ export type TrendReport = {
   /** Share of still-open items that are past their date. */
   overdueShare: number | null;
   medianDaysLate: number | null;
+  /** Median days from raised to signed off, over everything closed. Null when nothing records it. */
+  medianDaysToClose: number | null;
+  /** Items closed in the current month. */
+  closedThisMonth: number;
+  /** Closed items whose close date came from the last update rather than a recorded sign-off. */
+  backfilledCloses: number;
   /** Where the backlog is sitting: worst trade, worst age band. */
   stalls: Stall[];
   caveat: string;
 };
 
 const CAVEAT =
-  "Findings carry no close-out date, so clearance is what is still open today against the month it was raised - not how long it took to close.";
+  "Cycle time is measured from the day an item was raised to the day it was signed off. Items closed before close-out tracking began are dated from their last update, and are counted separately.";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -107,6 +113,9 @@ export function buildTrends(items: DashboardItem[], today: string, months = 6): 
   const tradeOpen = new Map<string, { open: number; late: number }>();
   const reports = new Set<string>();
   const lateDays: number[] = [];
+  const closeDays: number[] = [];
+  let closedThisMonth = 0;
+  let backfilledCloses = 0;
   let closed = 0;
   let open = 0;
   let overdue = 0;
@@ -122,6 +131,21 @@ export function buildTrends(items: DashboardItem[], today: string, months = 6): 
 
     if (state === "closed") {
       closed += 1;
+      if (item.closedAt) {
+        const closedOn = item.closedAt.slice(0, 7);
+        if (closedOn === today.slice(0, 7)) closedThisMonth += 1;
+        const raised = item.createdAt ?? item.reportDate;
+        if (raised) {
+          const from = Date.parse(raised.length === 10 ? `${raised}T00:00:00Z` : raised);
+          const to = Date.parse(item.closedAt);
+          if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from) {
+            closeDays.push(Math.round((to - from) / 86_400_000));
+          }
+        }
+        // The migration dated older closes from updated_at, so equality here means we never saw
+        // the sign-off itself - the number is honest but it was not measured live.
+        if (item.updatedAt !== null && item.closedAt === item.updatedAt) backfilledCloses += 1;
+      }
       continue;
     }
 
@@ -189,6 +213,9 @@ export function buildTrends(items: DashboardItem[], today: string, months = 6): 
     clearanceRate: items.length > 0 ? Math.round((closed / items.length) * 100) : null,
     overdueShare: open > 0 ? Math.round((overdue / open) * 100) : null,
     medianDaysLate: median(lateDays),
+    medianDaysToClose: median(closeDays),
+    closedThisMonth,
+    backfilledCloses,
     stalls,
     caveat: CAVEAT,
   };

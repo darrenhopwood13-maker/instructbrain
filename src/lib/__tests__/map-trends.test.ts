@@ -15,6 +15,8 @@ function item(over: Partial<DashboardItem>): DashboardItem {
     severity: "medium",
     dueDate: "2026-10-30",
     createdAt: "2026-10-02T09:00:00Z",
+    closedAt: null,
+    updatedAt: null,
     assignedTrade: "Plastering",
     reportId: "r1",
     reportRef: "SNG-2026-10-001",
@@ -92,8 +94,32 @@ describe("buildTrends", () => {
     expect(report.stalls[1]?.label).toContain("90");
   });
 
+  it("measures real cycle time now that closes carry a date", () => {
+    const items = [
+      item({ id: "a", createdAt: "2026-10-01T09:00:00Z", closedAt: "2026-10-11T09:00:00Z", lifecycleState: "verified" }),
+      item({ id: "b", createdAt: "2026-09-01T09:00:00Z", closedAt: "2026-09-22T09:00:00Z", lifecycleState: "closed" }),
+      item({ id: "c", createdAt: "2026-10-01T09:00:00Z" }),
+    ];
+    // 10 days and 21 days closed, so the middle value is 15.5 -> 16.
+    expect(buildTrends(items, TODAY, 6).medianDaysToClose).toBe(16);
+  });
+
+  it("counts what was closed this month, and flags closes it only inherited", () => {
+    const items = [
+      item({ id: "a", closedAt: "2026-10-05T09:00:00Z", updatedAt: "2026-10-05T09:00:00Z", lifecycleState: "closed" }),
+      item({ id: "b", createdAt: "2026-10-01T09:00:00Z", closedAt: "2026-09-15T09:00:00Z", updatedAt: "2026-10-04T09:00:00Z", lifecycleState: "closed" }),
+    ];
+    const report = buildTrends(items, TODAY, 6);
+    expect(report.closedThisMonth).toBe(1);
+    expect(report.backfilledCloses).toBe(1);
+  });
+
+  it("has no cycle time when nothing carries a close date", () => {
+    expect(buildTrends([item({})], TODAY, 6).medianDaysToClose).toBeNull();
+  });
+
   it("always returns the caveat, so the screen cannot show the numbers without it", () => {
-    expect(buildTrends([], TODAY, 6).caveat).toContain("no close-out date");
+    expect(buildTrends([], TODAY, 6).caveat).toContain("signed off");
   });
 });
 

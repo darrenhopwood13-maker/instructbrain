@@ -837,6 +837,12 @@ function TrendPanel({ trends, totals }: { trends: ReturnType<typeof buildTrends>
           />
           <Stat label="Closed out" value={`${trends.clearanceRate ?? 0}%`} />
           <Stat
+            label="Median days to close"
+            value={trends.medianDaysToClose === null ? "-" : `${trends.medianDaysToClose}`}
+            bad={(trends.medianDaysToClose ?? 0) > 30}
+          />
+          <Stat label="Closed this month" value={`${trends.closedThisMonth}`} />
+          <Stat
             label="Late share of open"
             value={`${trends.overdueShare ?? 0}%`}
             bad={(trends.overdueShare ?? 0) > 0}
@@ -928,6 +934,9 @@ function TrendPanel({ trends, totals }: { trends: ReturnType<typeof buildTrends>
         <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
           {trends.depthPerSurvey != null ? `${trends.depthPerSurvey} items per survey on record. ` : ""}
           {trends.medianDaysLate != null ? `Half of the late work is ${trends.medianDaysLate} days late or more. ` : ""}
+          {trends.backfilledCloses > 0
+            ? `${trends.backfilledCloses} closed items pre-date close-out tracking, so their close date is their last update. `
+            : ""}
           {totals.projects} projects in scope. {trends.caveat}
         </p>
       </div>

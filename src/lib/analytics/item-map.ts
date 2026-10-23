@@ -47,6 +47,10 @@ export type DashboardItem = {
   severity: string | null;
   dueDate: string | null;
   createdAt: string | null;
+  /** When the item was signed off. Null while open, and null for closes that pre-date tracking. */
+  closedAt?: string | null;
+  /** Last time the row changed - used to recognise a close that predates close-out tracking. */
+  updatedAt?: string | null;
   assignedTrade: string | null;
   reportId: string;
   reportRef: string | null;

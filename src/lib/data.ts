@@ -536,10 +536,12 @@ type FindingRow = {
   due_date: string | null;
   due_date_overridden: boolean | null;
   lifecycle_state: string | null;
+  closed_at: string | null;
+  updated_at: string | null;
 };
 
 const findingColumns =
-  "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, regulatory_clause, sequence, due_date, due_date_overridden, lifecycle_state";
+  "id, ref, status, severity, hazard_category, finding_text, snag_title, remedial_text, capture_fields, human_edited, assigned_trade, ai_suggested_trade, ai_trade_confidence, ai_trade_reasoning, condition_grade, ai_suggested_grade, ai_grade_confidence, confirmed_at, is_confidential, likely_cause, regulatory_reference, regulatory_clause, sequence, due_date, due_date_overridden, lifecycle_state, closed_at, updated_at";
 
 function stringFields(value: unknown): Record<string, string> {
   const out: Record<string, string> = {};
@@ -791,7 +793,7 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
         unwrap(
           await from("findings")
             .select(
-              "id, ref, status, lifecycle_state, severity, due_date, created_at, assigned_trade, report_id, snag_title, finding_text, reports!inner(organisation_id)",
+              "id, ref, status, lifecycle_state, severity, due_date, created_at, closed_at, updated_at, assigned_trade, report_id, snag_title, finding_text, reports!inner(organisation_id)",
             )
             .in("reports.organisation_id", organisationIds)
             .order("created_at", { ascending: false })
@@ -804,6 +806,8 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
           severity: string | null;
           due_date: string | null;
           created_at: string | null;
+          closed_at: string | null;
+          updated_at: string | null;
           assigned_trade: string | null;
           report_id: string;
           snag_title: string | null;
@@ -857,6 +861,8 @@ export const orgDashboardQuery = (organisationIds: string[]) =>
             severity: row.severity,
             dueDate: row.due_date,
             createdAt: row.created_at,
+            closedAt: row.closed_at ?? null,
+            updatedAt: row.updated_at ?? null,
             assignedTrade: row.assigned_trade,
             reportId: row.report_id,
             reportRef: report?.reference ?? null,
