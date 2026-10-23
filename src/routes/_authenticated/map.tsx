@@ -469,6 +469,11 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
         style: "/map/ib-light-style.json",
         center: [-0.11, 51.521],
         zoom: 10.6,
+        // The tile data stops at zoom 14; above that MapLibre overzooms. The style now carries its
+        // road widths, label sizes and building contrast out to zoom 18, so the map still reads as a
+        // map up there instead of fading to a blank page. 18 is the ceiling: past it the same z14
+        // geometry is stretched so far that a building fills the screen.
+        maxZoom: 18,
         attributionControl: { compact: true },
       });
       map.current = instance;
