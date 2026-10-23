@@ -14,9 +14,17 @@
 
 const GRAPH = "https://graph.mapillary.com/images";
 
-/** About 50m of longitude at UK latitudes, and a little less of latitude. */
-const BOX_DEGREES_LNG = 0.00045;
-const BOX_DEGREES_LAT = 0.0003;
+/**
+ * About 120m either side of the point, which is a city block rather than a district.
+ * The first version searched 50m and found nothing on a street in Mayfair with plenty
+ * of coverage, because capture points sit where the camera vehicle drove, not on the
+ * doorstep. 120m still answers "what does this site look like", and the pane says so.
+ */
+const BOX_DEGREES_LNG = 0.0017;
+const BOX_DEGREES_LAT = 0.0011;
+
+/** Ten candidates, newest kept. `limit=1` returns whichever the service feels like. */
+const CANDIDATES = 10;
 
 const FIELDS = "id,thumb_1024_url,captured_at,compass_angle";
 
@@ -75,7 +83,7 @@ export async function lookupStreetImage(
 
   const url =
     `${GRAPH}?access_token=${encodeURIComponent(token)}` +
-    `&fields=${FIELDS}&limit=1&bbox=${encodeURIComponent(bbox)}`;
+    `&fields=${FIELDS}&limit=${CANDIDATES}&bbox=${encodeURIComponent(bbox)}`;
 
   let response: { status: number; body: unknown };
   try {
@@ -100,7 +108,12 @@ export async function lookupStreetImage(
   const parsed = response.body as {
     data?: Array<{ id?: string; thumb_1024_url?: string; captured_at?: number }>;
   } | null;
-  const image = parsed?.data?.[0];
+
+  // Newest usable capture, not whichever the service happened to list first: the pane
+  // says "captured <date>", and that date should be the most recent one there is.
+  const image = (parsed?.data ?? [])
+    .filter((candidate) => Boolean(candidate.id && candidate.thumb_1024_url))
+    .sort((a, b) => (b.captured_at ?? 0) - (a.captured_at ?? 0))[0];
   if (!image?.id || !image.thumb_1024_url) return { state: "none" };
 
   const captured =

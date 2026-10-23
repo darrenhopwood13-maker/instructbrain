@@ -17,6 +17,9 @@ export default defineConfig({
     // background and nothing else. Excluding the package serves its own ESM untouched, so
     // the worker resolves in dev and in the Lovable preview as well as in the build.
     optimizeDeps: { exclude: ["maplibre-gl"] },
+    // The map worker imports a shared chunk. Built as the default IIFE it cannot resolve
+    // that import, so the worker fails in production even though dev looks fine.
+    worker: { format: "es" },
     resolve: {
       alias: [
         {

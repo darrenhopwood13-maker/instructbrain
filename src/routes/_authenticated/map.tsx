@@ -3,6 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import "maplibre-gl/dist/maplibre-gl.css";
+// The tile worker as its own emitted asset. MapLibre works out a worker URL from its
+// own module location, which Vite rewrites in a production build - the map then paints
+// its background and nothing else, with "Worker failed to load" in the console. Passing
+// the URL Vite emitted removes the guesswork in both dev and the published build.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { AppShell } from "@/components/app-shell";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { orgDashboardQuery } from "@/lib/data";
@@ -320,7 +325,7 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
           This project has no postcode, so there is no point to look up imagery for.
         </p>
       ) : query.isPending ? (
-        <p className="px-3 py-3 text-[11.5px] text-muted-foreground">Looking for imagery within 50m…</p>
+        <p className="px-3 py-3 text-[11.5px] text-muted-foreground">Looking for imagery within about 120m…</p>
       ) : query.isError ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
           Street level could not be asked for. Nothing has been substituted for it.
@@ -333,7 +338,7 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
         </p>
       ) : result?.state === "none" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
-          No Mapillary imagery within 50 metres of this address. New-build and rural sites often have
+          No Mapillary imagery within about 120 metres of this address. New-build and rural sites often have
           none - a coverage gap, not a fault in the app.
         </p>
       ) : result?.state === "unavailable" ? (
@@ -409,6 +414,7 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
     void (async () => {
       const maplibregl = await import("maplibre-gl");
       if (cancelled || !container.current) return;
+      maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
       const instance = new maplibregl.Map({
         container: container.current,

@@ -67,6 +67,27 @@ describe("lookupStreetImage", () => {
     expect(result.state === "unavailable" && result.reason).toContain("could not be reached");
   });
 
+  it("keeps the newest capture when the service returns several", async () => {
+    const result = await lookupStreetImage(
+      LAT,
+      LNG,
+      respond(200, {
+        data: [
+          { id: "old", thumb_1024_url: "https://example.invalid/old.jpg", captured_at: Date.UTC(2019, 0, 5) },
+          { id: "new", thumb_1024_url: "https://example.invalid/new.jpg", captured_at: Date.UTC(2025, 8, 14) },
+          { id: "undated", thumb_1024_url: "https://example.invalid/undated.jpg" },
+        ],
+      }),
+      TOKEN,
+    );
+    expect(result).toEqual({
+      state: "ok",
+      imageId: "new",
+      imageUrl: "https://example.invalid/new.jpg",
+      capturedAt: "2025-09-14",
+    });
+  });
+
   it("never returns the token to the caller", async () => {
     const result = await lookupStreetImage(
       LAT,
@@ -89,7 +110,8 @@ describe("lookupStreetImage", () => {
       TOKEN,
     );
     expect(requested).toContain("bbox=");
-    expect(requested).toContain("limit=1");
+    // Ten candidates, so the newest can be chosen rather than trusting the first row.
+    expect(requested).toContain("limit=10");
     const bbox = decodeURIComponent(requested.split("bbox=")[1] ?? "");
     const edges = bbox.split(",").map(Number);
     const west = edges[0]!;
@@ -100,7 +122,8 @@ describe("lookupStreetImage", () => {
     expect(east).toBeGreaterThan(LNG);
     expect(south).toBeLessThan(LAT);
     expect(north).toBeGreaterThan(LAT);
-    // Roughly 50m either side, not a district.
-    expect(east - west).toBeLessThan(0.002);
+    // Roughly 120m either side: a city block, not a district.
+    expect(east - west).toBeGreaterThan(0.002);
+    expect(east - west).toBeLessThan(0.005);
   });
 });
