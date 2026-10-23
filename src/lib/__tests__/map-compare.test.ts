@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { DashboardItem } from "@/lib/analytics/item-map";
-import { compareSuggestions, parseComparison } from "@/lib/map/compare";
+import {
+  compareSuggestions,
+  comparisonFor,
+  modelProfile,
+  modelVocabulary,
+  parseComparison,
+  validateInterpretation,
+  type CompareDimension,
+} from "@/lib/map/compare";
 
 const TODAY = "2026-10-23";
 
@@ -152,5 +160,97 @@ describe("compareSuggestions", () => {
     const suggestions = compareSuggestions(ITEMS);
     expect(suggestions.length).toBeGreaterThan(1);
     expect(suggestions.some((suggestion) => suggestion.includes("Electrical"))).toBe(true);
+  });
+});
+
+const VOCAB: Record<CompareDimension, string[]> = {
+  trade: ["Electrical", "M&E"],
+  project: ["Northbank Phase 3", "Wapping Wharf, Bristol BS1 6WE"],
+  severity: ["high", "low"],
+  hazard: [],
+  survey: [],
+  month: ["2026-10"],
+};
+
+describe("validateInterpretation - the guard on a model's answer", () => {
+  it("keeps values that exist in the reader's data", () => {
+    const result = validateInterpretation(VOCAB, {
+      dimension: "trade",
+      groups: ["Electrical", "M&E"],
+      unmatched: [],
+    });
+    expect(result).toEqual({ dimension: "trade", groups: ["Electrical", "M&E"], unmatched: [] });
+  });
+
+  it("drops an invented value instead of comparing it", () => {
+    const result = validateInterpretation(VOCAB, {
+      dimension: "trade",
+      groups: ["Scaffolder", "Electrical"],
+      unmatched: ["scaffolder"],
+    });
+    expect(result?.groups).toEqual(["Electrical"]);
+  });
+
+  it("returns nothing when every value was invented", () => {
+    expect(
+      validateInterpretation(VOCAB, { dimension: "trade", groups: ["Scaffolder"], unmatched: [] }),
+    ).toBeNull();
+  });
+
+  it("canonicalises the model's casing to the stored value", () => {
+    const result = validateInterpretation(VOCAB, {
+      dimension: "trade",
+      groups: ["electrical"],
+      unmatched: [],
+    });
+    expect(result?.groups).toEqual(["Electrical"]);
+  });
+
+  it("rejects a dimension that was not offered", () => {
+    expect(
+      validateInterpretation(VOCAB, { dimension: "supplier", groups: ["Electrical"], unmatched: [] }),
+    ).toBeNull();
+  });
+
+  it("rejects a dimension with no values to choose from", () => {
+    expect(validateInterpretation(VOCAB, { dimension: "hazard", groups: ["Waste"], unmatched: [] })).toBeNull();
+  });
+});
+
+describe("comparisonFor", () => {
+  it("builds the measured comparison from values alone", () => {
+    const result = comparisonFor("trade", ["Electrical", "M&E"], ITEMS, TODAY);
+    expect(result?.groups.map((group) => group.label)).toEqual(["Electrical", "M&E"]);
+    expect(result?.groups[0]?.medianDaysToClose).toBe(10);
+  });
+
+  it("collapses a project named twice (by name and by address) into one group", () => {
+    const withAddress: DashboardItem[] = [
+      item({ id: "p1", projectName: "Northbank Phase 3", projectAddress: "Wapping Wharf, Bristol BS1 6WE" }),
+      item({ id: "p2", projectName: "Wellington Place Block C", projectAddress: "Wellington Place, Leeds LS1 4AP" }),
+    ];
+    const result = comparisonFor(
+      "project",
+      ["Northbank Phase 3", "Wapping Wharf, Bristol BS1 6WE"],
+      withAddress,
+      TODAY,
+    );
+    expect(result?.groups.map((group) => group.label)).toEqual([
+      "Northbank Phase 3",
+      "Everything else",
+    ]);
+  });
+});
+
+describe("what a model is allowed to see", () => {
+  it("sends project names and counts, never a project address", () => {
+    const withAddress: DashboardItem[] = [
+      item({ id: "p1", projectName: "Northbank Phase 3", projectAddress: "Wapping Wharf, Bristol BS1 6WE" }),
+    ];
+    const vocabulary = modelVocabulary(withAddress);
+    const profile = modelProfile(withAddress, TODAY);
+
+    expect(vocabulary.project).toEqual(["Northbank Phase 3"]);
+    expect(JSON.stringify({ vocabulary, profile })).not.toContain("Wapping Wharf");
   });
 });

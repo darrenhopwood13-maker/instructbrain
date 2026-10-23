@@ -7,7 +7,7 @@
  * Model identifiers and keys come from config.ts, as everywhere else.
  */
 import { aiConfig, estimateCostUsd, type AiConfig } from "@/lib/ai/config";
-import { AiProviderError } from "@/lib/ai/adapters.server";
+import { callTextJson, type TextJsonResult } from "@/lib/ai/text-json.server";
 
 export type SynthesisResult = {
   executiveSummary: string;
@@ -107,146 +107,15 @@ function buildPrompt(input: SynthesisInput): { system: string; user: string } {
   return { system, user };
 }
 
+/**
+ * Provider branching lives in `callTextJson` so it exists once, not once per feature. This wrapper
+ * only says which schema and model the synthesis pass wants.
+ */
 async function callModel(
   config: AiConfig,
   prompt: { system: string; user: string },
-): Promise<{ payload: unknown; raw: unknown; usage: { inputTokens: number; outputTokens: number } }> {
-  const model = config.models.escalation;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.requestTimeoutMs);
-
-  try {
-    if (config.provider === "anthropic") {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": config.apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: config.maxOutputTokens,
-          system: `${prompt.system}\nReply with JSON matching this schema and nothing else: ${JSON.stringify(SCHEMA)}`,
-          messages: [{ role: "user", content: prompt.user }],
-        }),
-      });
-      const raw = await response.json();
-      if (!response.ok) throw new AiProviderError(JSON.stringify(raw), response.status);
-      const text = (raw?.content ?? []).map((part: any) => part?.text ?? "").join("");
-      return {
-        payload: JSON.parse(text),
-        raw,
-        usage: {
-          inputTokens: raw?.usage?.input_tokens ?? 0,
-          outputTokens: raw?.usage?.output_tokens ?? 0,
-        },
-      };
-    }
-
-    if (config.provider === "google") {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`,
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: prompt.system }] },
-            contents: [{ role: "user", parts: [{ text: prompt.user }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              maxOutputTokens: config.maxOutputTokens,
-            },
-          }),
-        },
-      );
-      const raw = await response.json();
-      if (!response.ok) throw new AiProviderError(JSON.stringify(raw), response.status);
-      const text = (raw?.candidates?.[0]?.content?.parts ?? [])
-        .map((part: any) => part?.text ?? "")
-        .join("");
-      return {
-        payload: JSON.parse(text),
-        raw,
-        usage: {
-          inputTokens: raw?.usageMetadata?.promptTokenCount ?? 0,
-          outputTokens: raw?.usageMetadata?.candidatesTokenCount ?? 0,
-        },
-      };
-    }
-
-    if (config.provider === "deepseek") {
-      // Same OpenAI-compatible shape, with DeepSeek's two differences: it takes
-      // `max_tokens`, and it accepts only `json_object` — never `json_schema`.
-      // json_object also requires the literal word "json" in the prompt, so the
-      // expected shape is named here rather than enforced by the API. The reply
-      // is still run through coerce() below, so a malformed answer is caught.
-      const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: config.maxOutputTokens,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: `${prompt.system}\n\nReturn valid JSON only.` },
-            { role: "user", content: prompt.user },
-          ],
-        }),
-      });
-      const raw = await response.json();
-      if (!response.ok) throw new AiProviderError(JSON.stringify(raw), response.status);
-      const text = raw?.choices?.[0]?.message?.content ?? "";
-      return {
-        payload: JSON.parse(text),
-        raw,
-        usage: {
-          inputTokens: raw?.usage?.prompt_tokens ?? 0,
-          outputTokens: raw?.usage?.completion_tokens ?? 0,
-        },
-      };
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        max_completion_tokens: config.maxOutputTokens,
-        response_format: {
-          type: "json_schema",
-          json_schema: { name: "report_synthesis", strict: true, schema: SCHEMA },
-        },
-        messages: [
-          { role: "system", content: prompt.system },
-          { role: "user", content: prompt.user },
-        ],
-      }),
-    });
-    const raw = await response.json();
-    if (!response.ok) throw new AiProviderError(JSON.stringify(raw), response.status);
-    const text = raw?.choices?.[0]?.message?.content ?? "";
-    return {
-      payload: JSON.parse(text),
-      raw,
-      usage: {
-        inputTokens: raw?.usage?.prompt_tokens ?? 0,
-        outputTokens: raw?.usage?.completion_tokens ?? 0,
-      },
-    };
-  } finally {
-    clearTimeout(timer);
-  }
+): Promise<TextJsonResult> {
+  return callTextJson(config, prompt, { schema: SCHEMA, schemaName: "report_synthesis" });
 }
 
 function coerce(payload: unknown): SynthesisResult {

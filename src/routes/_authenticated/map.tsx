@@ -17,7 +17,15 @@ import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/li
 import { insightByProject, type ProjectInsight } from "@/lib/map/insight";
 import { buildTrends } from "@/lib/map/trends";
 import type { DashboardItem } from "@/lib/analytics/item-map";
-import { compareSuggestions, parseComparison, type Comparison } from "@/lib/map/compare";
+import {
+  compareSuggestions,
+  modelProfile,
+  modelVocabulary,
+  comparisonFor,
+  parseComparison,
+  type Comparison,
+} from "@/lib/map/compare";
+import { interpretCompare } from "@/lib/map/compare.functions";
 import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
 
@@ -823,17 +831,53 @@ function Stat({ label, value, bad }: { label: string; value: string; bad?: boole
 function CompareBox({ items, today }: { items: DashboardItem[]; today: string }) {
   const [query, setQuery] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
+  const [comparison, setComparison] = useState<Comparison | null>(null);
+  const [source, setSource] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
   const suggestions = useMemo(() => compareSuggestions(items), [items]);
-  const comparison: Comparison | null = useMemo(
-    () => (asked ? parseComparison(asked, items, today) : null),
-    [asked, items, today],
-  );
+  const askModel = useServerFn(interpretCompare);
 
   const run = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     setQuery(trimmed);
     setAsked(trimmed);
+    setNotice(null);
+
+    // The built-in matcher answers instantly and cannot invent a group. Only when it cannot read
+    // the question is a model worth asking, and its answer is checked against the same values.
+    const direct = parseComparison(trimmed, items, today);
+    if (direct) {
+      setComparison(direct);
+      setSource("built-in matcher");
+      return;
+    }
+
+    setComparison(null);
+    setSource(null);
+    setThinking(true);
+    askModel({
+      data: {
+        query: trimmed,
+        vocabulary: modelVocabulary(items),
+        profile: modelProfile(items, today),
+      },
+    })
+      .then((result) => {
+        if (result.status === "ok") {
+          const built = comparisonFor(result.dimension, result.groups, items, today, result.unmatched);
+          setComparison(built);
+          setSource(`model ${result.model}`);
+          if (!built) setNotice("The model named a group with no items in it, so there is nothing to compare.");
+          return;
+        }
+        setNotice(result.note);
+      })
+      .catch(() => {
+        setNotice("The model could not be reached, so the question went unanswered.");
+      })
+      .finally(() => setThinking(false));
   };
 
   return (
@@ -851,15 +895,16 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="e.g. electrical vs M&E"
+          placeholder="e.g. which trade is dragging its heels?"
           aria-label="What do you want to compare?"
           className="min-w-0 flex-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] outline-none placeholder:text-muted-foreground focus:border-foreground/40"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-background"
+          disabled={thinking}
+          className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-background disabled:opacity-50"
         >
-          Go
+          {thinking ? "..." : "Go"}
         </button>
       </form>
 
@@ -876,17 +921,27 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
         ))}
       </div>
 
-      {asked && !comparison ? (
+      {thinking ? (
+        <p className="mt-2 text-[11px] text-muted-foreground">Reading the question...</p>
+      ) : null}
+
+      {notice && !comparison ? (
         <p className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-          Nothing on this map matches &ldquo;{asked}&rdquo;. No items are assigned to those trades or
-          projects yet, so there is nothing to compare.
+          {notice}
         </p>
       ) : null}
 
       {comparison ? (
         <div className="mt-2 space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-            By {comparison.dimensionLabel.toLowerCase()}
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              By {comparison.dimensionLabel.toLowerCase()}
+            </span>
+            {source ? (
+              <span className="text-[9px] uppercase tracking-[0.06em] text-muted-foreground/80">
+                {source}
+              </span>
+            ) : null}
           </div>
           {comparison.groups.map((group) => (
             <div key={group.key} className="rounded-lg border border-border bg-card px-3 py-2">

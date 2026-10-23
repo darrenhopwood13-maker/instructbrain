@@ -452,17 +452,20 @@ export function parseComparison(
 
   const scored = (["trade", "project", "severity", "hazard", "survey", "month"] as CompareDimension[])
     .map((dimension) => scoreDimension(dimension, allTerms, items))
-    .filter((entry) => entry.hits.length > 0)
-    // An explicit dimension word beats a coincidental name match every time.
-    .sort((a, b) => {
-      const aHint = hinted.includes(a.dimension) ? 1 : 0;
-      const bHint = hinted.includes(b.dimension) ? 1 : 0;
-      if (aHint !== bHint) return bHint - aHint;
-      if (b.weight !== a.weight) return b.weight - a.weight;
-      return b.hits.length - a.hits.length;
-    });
+    .filter((entry) => entry.hits.length > 0);
 
-  const best = scored[0];
+  if (scored.length === 0) return null;
+
+  // An explicit dimension word ("severity", "trade", "project") constrains where to look. If the
+  // reader said "trade" and no trade matched, the honest thing is to hand the question on rather
+  // than answer about hazards because a hazard happened to contain the word.
+  const inHinted = scored.filter((entry) => hinted.includes(entry.dimension));
+  if (hinted.length > 0 && inHinted.length === 0) return null;
+
+  const pool = inHinted.length > 0 ? inHinted : scored;
+  pool.sort((a, b) => (b.weight !== a.weight ? b.weight - a.weight : b.hits.length - a.hits.length));
+
+  const best = pool[0];
   if (!best) return null;
 
   const dimension = best.dimension;
@@ -471,24 +474,26 @@ export function parseComparison(
   const againstRest = sides.length < 2;
 
   for (const words of sides) {
-    let found: string | null = null;
+    // Every word in a side is tried, not just the first: "compare fire protection with the
+    // decorators" names two trades on one side of the sentence.
+    const found: string[] = [];
     for (const word of words) {
       const hit = best.values.find((value) => matchesValue(value, word));
-      if (hit) {
-        found = hit;
-        break;
-      }
+      if (hit && !found.includes(hit)) found.push(hit);
     }
-    if (!found) {
+    if (found.length === 0) {
       unmatched.push(words.join(" "));
       continue;
     }
-    const key = resolveKey(
-      items.filter((item) => belongsTo(item, dimension, found ?? "")),
-      dimension,
-      found,
-    );
-    if (!matched.includes(key)) matched.push(key);
+    for (const value of found) {
+      const key = resolveKey(
+        items.filter((item) => belongsTo(item, dimension, value)),
+        dimension,
+        value,
+      );
+      if (!matched.includes(key)) matched.push(key);
+      if (matched.length >= 4) break;
+    }
   }
 
   let groups: CompareGroup[];
@@ -552,4 +557,201 @@ export function compareSuggestions(items: DashboardItem[]): string[] {
   if (trades.length >= 1) suggestions.push(`${trades[0]} vs everything else`);
 
   return suggestions.slice(0, 4);
+}
+
+/** Every value the reader could legitimately name, per dimension, taken from their own items. */
+export function compareVocabulary(items: DashboardItem[]): Record<CompareDimension, string[]> {
+  return {
+    trade: searchableValues("trade", items),
+    project: searchableValues("project", items),
+    severity: searchableValues("severity", items),
+    hazard: searchableValues("hazard", items),
+    survey: searchableValues("survey", items),
+    month: searchableValues("month", items),
+  };
+}
+
+export type ValueProfile = {
+  value: string;
+  raised: number;
+  open: number;
+  overdue: number;
+  medianDaysToClose: number | null;
+};
+
+/**
+ * The counts behind each value, so a model can answer "which trade is dragging its heels" by
+ * looking at what is actually happening instead of picking a name at random. The numbers travel
+ * with the question; the numbers in the answer always come from the screen's own arithmetic.
+ */
+export function compareProfile(
+  items: DashboardItem[],
+  today: string,
+): Record<CompareDimension, ValueProfile[]> {
+  const build = (dimension: CompareDimension): ValueProfile[] => {
+    const buckets = new Map<string, DashboardItem[]>();
+    for (const item of items) {
+      const key = groupKey(item, dimension);
+      if (!key) continue;
+      const list = buckets.get(key) ?? [];
+      list.push(item);
+      buckets.set(key, list);
+    }
+    return [...buckets.entries()]
+      .map(([value, groupItems]) => {
+        const summary = summarise(value, groupLabelFor(dimension, value), groupItems, today);
+        return {
+          value,
+          raised: summary.raised,
+          open: summary.open,
+          overdue: summary.overdue,
+          medianDaysToClose: summary.medianDaysToClose,
+        };
+      })
+      .sort((a, b) => b.overdue - a.overdue || b.open - a.open)
+      .slice(0, 40);
+  };
+
+  return {
+    trade: build("trade"),
+    project: build("project"),
+    severity: build("severity"),
+    hazard: build("hazard"),
+    survey: build("survey"),
+    month: build("month"),
+  };
+}
+
+export type Interpretation = {
+  dimension: CompareDimension;
+  /** Values exactly as they appear in the vocabulary - never the model's paraphrase of them. */
+  groups: string[];
+  unmatched: string[];
+};
+
+const DIMENSIONS: CompareDimension[] = ["trade", "project", "severity", "hazard", "survey", "month"];
+
+/**
+ * Check a model's reading of a question against the reader's real values.
+ *
+ * This is the guard that makes a model safe here: it may only pick from a list it was handed, and
+ * anything it invents is dropped rather than compared. A model that answers "scaffolders" when no
+ * scaffolder exists has its answer thrown away, and the screen says nothing matched.
+ */
+export function validateInterpretation(
+  vocabulary: Record<CompareDimension, string[]>,
+  payload: unknown,
+): Interpretation | null {
+  const raw = (payload ?? {}) as Record<string, unknown>;
+  const dimension = typeof raw["dimension"] === "string" ? raw["dimension"].trim() : "";
+  if (!DIMENSIONS.includes(dimension as CompareDimension)) return null;
+
+  const allowed = vocabulary[dimension as CompareDimension] ?? [];
+  if (allowed.length === 0) return null;
+
+  const wanted = Array.isArray(raw["groups"]) ? raw["groups"] : [];
+  const groups: string[] = [];
+  for (const entry of wanted) {
+    if (typeof entry !== "string") continue;
+    const match = allowed.find((value) => value.toLowerCase() === entry.trim().toLowerCase());
+    if (match && !groups.includes(match)) groups.push(match);
+    if (groups.length >= 4) break;
+  }
+
+  if (groups.length === 0) return null;
+
+  const unmatched = Array.isArray(raw["unmatched"])
+    ? (raw["unmatched"] as unknown[]).filter((item): item is string => typeof item === "string").slice(0, 4)
+    : [];
+
+  return { dimension: dimension as CompareDimension, groups, unmatched };
+}
+
+/**
+ * What may leave the browser when a model is asked to read a question: names and counts only.
+ *
+ * Project *addresses* are deliberately absent. They are the one thing here that is a customer's
+ * precise location, and the built-in matcher already searches them locally, so a town name still
+ * works without a street address ever being sent to a provider.
+ */
+export function modelVocabulary(items: DashboardItem[]): Record<CompareDimension, string[]> {
+  const names = new Set<string>();
+  for (const item of items) {
+    const name = item.projectName?.trim();
+    if (name) names.add(name);
+  }
+  return {
+    ...compareVocabulary(items),
+    project: [...names].sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+export function modelProfile(
+  items: DashboardItem[],
+  today: string,
+): Record<CompareDimension, ValueProfile[]> {
+  const profile = compareProfile(items, today);
+  const names = new Set(modelVocabulary(items).project);
+  return { ...profile, project: profile.project.filter((entry) => names.has(entry.value)) };
+}
+
+/**
+ * Build the measured comparison for values the reader (or the model) named. All arithmetic happens
+ * here, on the client's own items, so no figure can arrive from a model.
+ */
+export function comparisonFor(
+  dimension: CompareDimension,
+  values: string[],
+  items: DashboardItem[],
+  today: string,
+  unmatched: string[] = [],
+): Comparison | null {
+  if (values.length === 0) return null;
+
+  // Three values can resolve onto the same project (name and address both named), so resolve first.
+  const keys: string[] = [];
+  for (const value of values) {
+    const key = resolveKey(
+      items.filter((item) => belongsTo(item, dimension, value)),
+      dimension,
+      value,
+    );
+    if (!keys.includes(key)) keys.push(key);
+  }
+  if (keys.length === 0) return null;
+
+  let groups: CompareGroup[];
+  if (keys.length === 1) {
+    const only = keys[0] ?? "";
+    const inGroup = items.filter((item) => groupKey(item, dimension) === only);
+    groups = [
+      summarise(only, groupLabelFor(dimension, only), inGroup, today),
+      summarise("__rest__", "Everything else", items.filter((item) => groupKey(item, dimension) !== only), today),
+    ];
+  } else {
+    groups = keys.slice(0, 4).map((key) =>
+      summarise(
+        key,
+        groupLabelFor(dimension, key),
+        items.filter((item) => groupKey(item, dimension) === key),
+        today,
+      ),
+    );
+    // More than two groups means the question was a ranking ("which trade is worst"), so put the
+    // worst first rather than leaving the verdict to compare whichever two arrived first.
+    if (groups.length > 2) {
+      groups = [...groups].sort((a, b) => b.overdue - a.overdue || b.open - a.open);
+    }
+  }
+
+  return {
+    dimension,
+    dimensionLabel: DIMENSION_LABEL[dimension],
+    groups,
+    unmatched,
+    againstRest: keys.length === 1,
+    verdict: verdictFor(groups, dimension),
+    caveat:
+      "Counted from the findings on this map, using the same overdue rule as the dashboard. Cycle time only includes items with a recorded close date.",
+  };
 }
