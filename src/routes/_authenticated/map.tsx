@@ -87,6 +87,7 @@ function MapScreen() {
   const caveats = useMemo(() => mapCaveats(totals), [totals]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<MapView>("map");
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
   // The map fills what is left of the viewport under the shell header, so it needs to
@@ -172,7 +173,29 @@ function MapScreen() {
                 counts={counts}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                view={view}
               />
+              <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-lg border border-border bg-card/95 shadow-sm backdrop-blur">
+                {VIEWS.map((option) => {
+                  const active = option.id === view;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setView(option.id)}
+                      aria-pressed={active}
+                      className={
+                        "px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors " +
+                        (active
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:text-foreground")
+                      }
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
               {loading ? (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center bg-background/40">
                   <LoadingState label="Placing your projects…" />
@@ -413,11 +436,20 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
   );
 }
 
+type MapView = "map" | "satellite" | "3d";
+
+const VIEWS: { id: MapView; label: string }[] = [
+  { id: "map", label: "Map" },
+  { id: "satellite", label: "Satellite" },
+  { id: "3d", label: "3D" },
+];
+
 type MapCanvasProps = {
   points: ProjectPoint[];
   counts: Map<string, ProjectCounts>;
   selectedId: string | null;
   onSelect: (projectId: string) => void;
+  view: MapView;
 };
 
 /**
@@ -429,7 +461,7 @@ type MapCanvasProps = {
  * use as well as prototypes - OpenStreetMap's own raster tiles are not, which is why
  * the prototype note about a paid contract does not apply to this route.
  */
-function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
+function MapCanvas({ points, counts, selectedId, onSelect, view }: MapCanvasProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("maplibre-gl").Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -474,6 +506,7 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
         // map up there instead of fading to a blank page. 18 is the ceiling: past it the same z14
         // geometry is stretched so far that a building fills the screen.
         maxZoom: 18,
+        maxPitch: 70,
         attributionControl: { compact: true },
       });
       map.current = instance;
@@ -481,6 +514,30 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
 
       instance.on("load", () => {
         instance.addSource("projects", { type: "geojson", data: features });
+
+        // Satellite photography, inserted beneath the style's label layers so street and place
+        // names still read on top of it, and hidden until someone picks that view.
+        instance.addSource("satellite", {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: "Imagery: Esri, Maxar, Earthstar Geographics",
+        });
+        const baseLayers = instance.getStyle()?.layers ?? [];
+        const firstLabel = baseLayers.find((layer) => layer.type === "symbol")?.id;
+        instance.addLayer(
+          {
+            id: "satellite-imagery",
+            type: "raster",
+            source: "satellite",
+            layout: { visibility: "none" },
+            paint: { "raster-opacity": 1 },
+          },
+          firstLabel,
+        );
 
         instance.addLayer({
           id: "project-halo",
@@ -517,6 +574,27 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
             "circle-stroke-color": SELECTED_RING,
           },
         });
+
+        // Real extrusions for the 3D view. The tiles carry render_height and render_min_height, so
+        // this lifts the actual building shapes off the ground rather than leaning a flat map back.
+        instance.addLayer(
+          {
+            id: "buildings-3d",
+            type: "fill-extrusion",
+            source: "openmaptiles",
+            "source-layer": "building",
+            minzoom: 13,
+            layout: { visibility: "none" },
+            paint: {
+              "fill-extrusion-color": "#ccd2dd",
+              "fill-extrusion-height": ["coalesce", ["get", "render_height"], 12],
+              "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+              "fill-extrusion-opacity": 0.95,
+              "fill-extrusion-vertical-gradient": true,
+            },
+          },
+          "project-halo",
+        );
 
         instance.on("click", "project-pins", (event: import("maplibre-gl").MapLayerMouseEvent) => {
           const id = event.features?.[0]?.properties?.["projectId"];
@@ -574,6 +652,27 @@ function MapCanvas({ points, counts, selectedId, onSelect }: MapCanvasProps) {
       instance.flyTo({ center: [point.longitude, point.latitude], zoom: 16, speed: 1.1, curve: 1.4 });
     }
   }, [selectedId, ready, points]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const instance = map.current;
+    if (!instance) return;
+    if (!instance.getLayer("satellite-imagery") || !instance.getLayer("buildings-3d")) return;
+
+    const showSatellite = view === "satellite";
+    const show3d = view === "3d";
+
+    instance.setLayoutProperty("satellite-imagery", "visibility", showSatellite ? "visible" : "none");
+    instance.setLayoutProperty("buildings-3d", "visibility", show3d ? "visible" : "none");
+    // The flat building fill would z-fight with the extrusions standing on it.
+    if (instance.getLayer("building")) {
+      instance.setLayoutProperty("building", "visibility", show3d ? "none" : "visible");
+    }
+
+    instance.easeTo(
+      show3d ? { pitch: 58, bearing: -22, duration: 900 } : { pitch: 0, bearing: 0, duration: 700 },
+    );
+  }, [view, ready]);
 
   return <div ref={container} className="map-canvas" aria-label="Map of your projects" role="img" />;
 }
