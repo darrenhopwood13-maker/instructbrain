@@ -55,6 +55,14 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** Google dates a panorama to the month, so print the month - not a day it never claimed. */
+function formatMonthYear(value: string | null): string {
+  if (!value) return "-";
+  const date = new Date(`${value.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+}
+
 function MapScreen() {
   const { organisationIds } = useOrganisations();
   const loadPoints = useServerFn(projectPoints);
@@ -202,9 +210,10 @@ function MapScreen() {
               ) : null}
 
               <p className="mt-4 border-t border-border pt-3 text-[11px] leading-relaxed text-muted-foreground">
-                Pins come from the postcode on the project address, resolved with postcodes.io - free,
-                no key, UK only. A project with no postcode cannot be placed and is counted rather than
-                hidden. Items and target dates are the same figures the dashboard reads.
+                Pins come from the postcode on the project address: Google Geocoding first, which
+                returns a rooftop point, then postcodes.io as a free fallback - UK only. A project
+                with no postcode cannot be placed and is counted rather than hidden. Items and target
+                dates are the same figures the dashboard reads.
               </p>
             </aside>
           </div>
@@ -307,12 +316,13 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: "bad
 }
 
 /**
- * Street level, from Mapillary.
+ * Street level: Google first, Mapillary behind it.
  *
- * The lookup runs in a server function, so the token stays in server configuration
- * (MAPILLARY_TOKEN) and never enters the bundle. Everything the pane can say is a real
- * state: not configured, no coverage within 50m, the service refusing the key, or an
- * actual photograph with its date and CC BY-SA credit. Nothing is substituted.
+ * The lookup runs in a server function, so neither key reaches the browser - the Google
+ * image arrives as bytes we fetched, the Mapillary one as a public CDN URL. Everything the
+ * pane can say is a real state: neither provider configured, no coverage from either, a key
+ * or quota refused, or an actual photograph with its capture date and the credit line its
+ * licence requires. Nothing is substituted.
  */
 function StreetLevel({ point }: { point: ProjectPoint }) {
   const load = useServerFn(streetLevel);
@@ -322,17 +332,20 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
     queryKey: ["street-level", point.latitude, point.longitude],
     enabled: pinned,
     queryFn: () => load({ data: { latitude: point.latitude!, longitude: point.longitude! } }),
-    staleTime: 60 * 60 * 1000,
+    // A panorama does not change between two clicks on the same afternoon, and Google
+    // bills per image. The cache is the difference between one call and a dozen.
+    staleTime: 12 * 60 * 60 * 1000,
     retry: 1,
   });
 
   const result = query.data;
+  const provider = result?.state === "ok" ? result.provider : null;
 
   return (
     <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface-sunken">
       <div className="flex items-center gap-2 px-3 pt-2.5">
         <span className="text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-brand-accent">
-          Mapillary
+          {provider ? `Street level · ${provider}` : "Street level"}
         </span>
       </div>
 
@@ -341,21 +354,20 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
           This project has no postcode, so there is no point to look up imagery for.
         </p>
       ) : query.isPending ? (
-        <p className="px-3 py-3 text-[11.5px] text-muted-foreground">Looking for imagery within about 120m…</p>
+        <p className="px-3 py-3 text-[11.5px] text-muted-foreground">Looking for the nearest capture…</p>
       ) : query.isError ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
           Street level could not be asked for. Nothing has been substituted for it.
         </p>
       ) : result?.state === "not_configured" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
-          Street level is switched to Mapillary - free, crowdsourced, no billing account. It needs
-          MAPILLARY_TOKEN in the server environment before it can fetch a photograph, and this pane
-          stays empty rather than showing one that is not your site.
+          Street level needs GOOGLE_MAPS_API_KEY or MAPILLARY_TOKEN in the server environment. Until
+          then this pane stays empty rather than showing a photograph that is not your site.
         </p>
       ) : result?.state === "none" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
-          No Mapillary imagery within about 120 metres of this address. New-build and rural sites often have
-          none - a coverage gap, not a fault in the app.
+          No street-level coverage within reach of this address, from Google or Mapillary. New-build
+          and rural sites often have none - a coverage gap, not a fault in the app.
         </p>
       ) : result?.state === "unavailable" ? (
         <p className="px-3 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
@@ -363,17 +375,29 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
         </p>
       ) : result?.state === "ok" ? (
         <>
-          <img src={result.imageUrl} alt={`Street level at ${point.address}`} className="mt-2 w-full" />
+          <img
+            src={result.imageUrl}
+            alt={`Street-level view of ${point.address || point.name}`}
+            className="mt-2 w-full"
+          />
           <p className="px-3 py-2 text-[10.5px] text-muted-foreground">
-            Captured {formatDate(result.capturedAt)} · © Mapillary contributors, CC BY-SA 4.0 ·{" "}
-            <a
-              href={`https://www.mapillary.com/map/im/${result.imageId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              open on Mapillary
-            </a>
+            {result.provider === "Google"
+              ? `Captured ${formatMonthYear(result.capturedAt)}`
+              : `Captured ${formatDate(result.capturedAt)}`}{" "}
+            · {result.credit}
+            {result.linkUrl ? (
+              <>
+                {" · "}
+                <a
+                  href={result.linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  open on Mapillary
+                </a>
+              </>
+            ) : null}
           </p>
         </>
       ) : null}

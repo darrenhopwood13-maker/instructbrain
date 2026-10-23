@@ -1,16 +1,23 @@
 /**
- * Street-level imagery, from Mapillary.
+ * Street-level imagery for the map, in two providers and one answer.
  *
- * Chosen for the licence as much as the price: captures are CC BY-SA, so a photograph
- * can be kept and printed inside a client report with attribution, which Google's terms
- * do not allow. The token is read here, on the server, and never reaches the browser -
- * a `VITE_` prefixed key is baked into the bundle and anyone could lift it and spend
- * the quota. This module is server-only for that reason.
+ * Google first: it covers nearly every street in the UK and its capture dates are recent,
+ * which is what a site manager actually needs before a visit. Mapillary behind it, because
+ * it is free and its captures are CC BY-SA, so a photograph can be kept and printed inside
+ * a client report with attribution - Google's terms do not allow that. The free provider is
+ * the safety net, not the headline, because its UK coverage outside cities is thin.
  *
- * The lookup is deliberately narrow: the newest capture within a small box around the
- * project point. A street view that quietly shows a different street is worse than no
- * street view, so "nothing near here" is a first-class answer and is said out loud.
+ * Neither token reaches the browser: Mapillary's is read here from MAPILLARY_TOKEN, and the
+ * Google image is fetched as bytes server-side and handed over as a data URL, so no key
+ * appears in a URL a user could copy. A `VITE_` prefixed key would be baked into the bundle
+ * and anyone could spend the quota. This module is server-only for that reason.
+ *
+ * The lookup is deliberately narrow: the nearest capture to the project point, and "nothing
+ * near here" is a first-class answer, said out loud. A street view that quietly shows a
+ * different street is worse than no street view.
  */
+
+import { lookupGoogleStreetView, type GoogleStreetView } from "@/lib/map/google-maps.server";
 
 const GRAPH = "https://graph.mapillary.com/images";
 
@@ -28,7 +35,7 @@ const CANDIDATES = 10;
 
 const FIELDS = "id,thumb_1024_url,captured_at,compass_angle";
 
-export type StreetLevelResult =
+export type MapillaryLookup =
   | { state: "not_configured" }
   | { state: "none" }
   | { state: "unavailable"; reason: string }
@@ -71,7 +78,7 @@ export async function lookupStreetImage(
   longitude: number,
   fetchJson: FetchJson = graphFetch,
   token: string | undefined = mapillaryToken(),
-): Promise<StreetLevelResult> {
+): Promise<MapillaryLookup> {
   if (!token) return { state: "not_configured" };
 
   const bbox = [
@@ -125,4 +132,83 @@ export async function lookupStreetImage(
     imageUrl: image.thumb_1024_url,
     capturedAt: captured,
   };
+}
+
+// ---------------------------------------------------------------------------
+// One answer, two providers
+// ---------------------------------------------------------------------------
+
+/**
+ * What the pane is allowed to show. `provider` is on the result rather than assumed,
+ * because the credit line is a licence condition and "Mapillary" printed under a Google
+ * photograph is both wrong and a compliance problem.
+ */
+export type StreetLevelResult =
+  | { state: "not_configured" }
+  | { state: "none" }
+  | { state: "unavailable"; reason: string }
+  | {
+      state: "ok";
+      provider: "Google" | "Mapillary";
+      imageId: string;
+      imageUrl: string;
+      capturedAt: string | null;
+      /** The attribution the provider's licence requires, verbatim. */
+      credit: string;
+      /** Link to the original capture, where the provider offers one. */
+      linkUrl: string | null;
+    };
+
+export type StreetLevelDeps = {
+  google?: (latitude: number, longitude: number) => Promise<GoogleStreetView>;
+  mapillary?: (latitude: number, longitude: number) => Promise<MapillaryLookup>;
+};
+
+const MAPILLARY_CREDIT = "© Mapillary contributors, CC BY-SA 4.0";
+
+/**
+ * Google, then Mapillary, then the truth.
+ *
+ * A refusal is reported ahead of a coverage gap: "the key was rejected" is something we
+ * can fix, whereas "no imagery here" beside a street Google definitely covers would send
+ * someone looking in the wrong place.
+ */
+export async function lookupStreetLevel(
+  latitude: number,
+  longitude: number,
+  deps: StreetLevelDeps = {},
+): Promise<StreetLevelResult> {
+  const google = await (deps.google ?? lookupGoogleStreetView)(latitude, longitude);
+  if (google.state === "ok") {
+    return {
+      state: "ok",
+      provider: "Google",
+      imageId: google.panoId,
+      imageUrl: google.dataUrl,
+      capturedAt: google.capturedAt,
+      credit: google.credit,
+      linkUrl: null,
+    };
+  }
+
+  const mapillary = await (deps.mapillary ?? lookupStreetImage)(latitude, longitude);
+  if (mapillary.state === "ok") {
+    return {
+      state: "ok",
+      provider: "Mapillary",
+      imageId: mapillary.imageId,
+      imageUrl: mapillary.imageUrl,
+      capturedAt: mapillary.capturedAt,
+      credit: MAPILLARY_CREDIT,
+      linkUrl: `https://www.mapillary.com/map/im/${mapillary.imageId}`,
+    };
+  }
+
+  if (google.state === "unavailable") return { state: "unavailable", reason: google.reason };
+  if (mapillary.state === "unavailable") return { state: "unavailable", reason: mapillary.reason };
+
+  if (google.state === "not_configured" && mapillary.state === "not_configured") {
+    return { state: "not_configured" };
+  }
+  return { state: "none" };
 }

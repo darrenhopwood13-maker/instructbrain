@@ -35,6 +35,7 @@ function point(over: Partial<ProjectPoint> & { projectId: string }): ProjectPoin
     longitude: -0.143776,
     locationLabel: "W1J 6JH, Westminster",
     precision: "postcode",
+    placedBy: "postcodes.io",
     pinned: true,
     ...over,
   };
