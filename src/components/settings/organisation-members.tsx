@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, UserPlus } from "lucide-react";
+import { Check, Link2, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ErrorState, LoadingState } from "@/components/query-states";
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  createMemberSignInLink,
   inviteOrganisationMember,
   listOrganisationMembers,
   normaliseEmail,
@@ -45,10 +46,33 @@ export function OrganisationMembers({ organisationId }: { organisationId: string
   const queryClient = useQueryClient();
   const load = useServerFn(listOrganisationMembers);
   const invite = useServerFn(inviteOrganisationMember);
+  const signInLink = useServerFn(createMemberSignInLink);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrganisationRole>("surveyor");
+  const [linkFor, setLinkFor] = useState<{ email: string; url: string; kind: "invite" | "sign-in" } | null>(
+    null,
+  );
+  const [copied, setCopied] = useState(false);
+
+  // An owner can hand over a link when the email does not arrive, which is the common case on a
+  // site where the office mail server filters anything automated.
+  const makeLink = useMutation({
+    mutationFn: async (userId: string) => signInLink({ data: { organisationId, userId } }),
+    onSuccess: (outcome) => {
+      if (!outcome.ok) {
+        toast.error("No link for that person", { description: outcome.reason });
+        return;
+      }
+      setCopied(false);
+      setLinkFor({ email: outcome.email, url: outcome.url, kind: outcome.kind });
+    },
+    onError: (error) =>
+      toast.error("No link for that person", {
+        description: error instanceof Error ? error.message : "Unknown error.",
+      }),
+  });
 
   const members = useQuery({
     queryKey: ["organisation-members", organisationId],
@@ -115,9 +139,24 @@ export function OrganisationMembers({ organisationId }: { organisationId: string
               className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-border bg-surface-raised px-4 py-3 text-sm"
             >
               <span className="min-w-0 flex-1 truncate">{member.email}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
                 {member.roleLabel}
                 {member.isYou ? " - you" : ""}
+                <Button
+                  type="button"
+                  variant="quiet"
+                  className="min-h-9 px-2 text-xs"
+                  aria-label={`Get a sign-in link for ${member.email}`}
+                  disabled={makeLink.isPending}
+                  onClick={() => makeLink.mutate(member.userId)}
+                >
+                  {makeLink.isPending && makeLink.variables === member.userId ? (
+                    <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  ) : (
+                    <Link2 aria-hidden="true" className="size-3.5" />
+                  )}
+                  Link
+                </Button>
               </span>
             </li>
           ))}
@@ -183,6 +222,53 @@ export function OrganisationMembers({ organisationId }: { organisationId: string
             >
               {send.isPending ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : null}
               Add to organisation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={linkFor !== null}
+        onOpenChange={(next) => {
+          if (!next) setLinkFor(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign-in link</DialogTitle>
+            <DialogDescription>
+              {linkFor?.kind === "invite"
+                ? "Send this to them yourself if the email did not arrive. It sets up their account and lets them choose a password."
+                : "Send this to them yourself if the email did not arrive. It signs them straight in once."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <p className="text-sm font-medium break-all">{linkFor?.email}</p>
+            <Input readOnly value={linkFor?.url ?? ""} onFocus={(event) => event.currentTarget.select()} />
+            <p className="text-xs text-muted-foreground">
+              Single use, and it stops working after about an hour. Anyone who opens it becomes that
+              person, so send it to them and nobody else.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="brand"
+              className="min-h-11"
+              onClick={async () => {
+                if (!linkFor) return;
+                try {
+                  await navigator.clipboard.writeText(linkFor.url);
+                  setCopied(true);
+                } catch {
+                  toast.error("Copying was blocked", {
+                    description: "Select the link and copy it by hand.",
+                  });
+                }
+              }}
+            >
+              {copied ? <Check aria-hidden="true" className="size-4" /> : null}
+              {copied ? "Copied" : "Copy link"}
             </Button>
           </DialogFooter>
         </DialogContent>

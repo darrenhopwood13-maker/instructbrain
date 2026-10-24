@@ -202,3 +202,72 @@ export const inviteOrganisationMember = createServerFn({ method: "POST" })
 
     return { ok: true, email, role, emailed, alreadyHadAccount };
   });
+
+export type SignInLinkOutcome =
+  | { ok: true; email: string; url: string; kind: "invite" | "sign-in" }
+  | { ok: false; reason: string };
+
+/**
+ * A sign-in link an owner or admin can hand over themselves.
+ *
+ * Invitations leave the building through the mail server, and a mail server can
+ * quietly refuse: a site address that filters it, a mailbox that is full, an
+ * office that treats anything automated as spam. When that happens the person
+ * sits waiting for an email that is never coming, and the office has no way to
+ * finish the job. This creates the same link the email would have carried, and
+ * shows it to the owner once so they can send it by whatever they actually use -
+ * a text, a WhatsApp, over the shoulder on site.
+ *
+ * The link is single use and expires, so it is shown, never stored, and an
+ * owner still cannot use this to reach inside anybody else's organisation
+ * because the membership is checked first.
+ */
+export const createMemberSignInLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({ organisationId: z.string().uuid(), userId: z.string().uuid() })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<SignInLinkOutcome> => {
+    await assertOwnerOrAdmin(context.supabase, data.organisationId);
+
+    const { data: membership } = await context.supabase
+      .from("memberships")
+      .select("user_id")
+      .eq("organisation_id", data.organisationId)
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (!membership) return { ok: false, reason: "That person is not in this organisation." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: found } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    const email = found?.user?.email;
+    if (!email) return { ok: false, reason: "That person has no email address on their account." };
+
+    const activated = Boolean(found?.user?.email_confirmed_at || found?.user?.last_sign_in_at);
+    const attempts: Array<{ type: "invite" | "magiclink" | "recovery"; kind: "invite" | "sign-in" }> =
+      activated
+        ? [
+            { type: "magiclink", kind: "sign-in" },
+            { type: "recovery", kind: "sign-in" },
+          ]
+        : [
+            { type: "invite", kind: "invite" },
+            { type: "magiclink", kind: "sign-in" },
+            { type: "recovery", kind: "sign-in" },
+          ];
+
+    const redirectTo = absoluteUrl("/auth/accept-invite");
+    for (const attempt of attempts) {
+      const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: attempt.type,
+        email,
+        options: { redirectTo },
+      });
+      const url = link?.properties?.action_link;
+      if (!error && url) return { ok: true, email, url, kind: attempt.kind };
+    }
+
+    return { ok: false, reason: "A sign-in link could not be created for that account." };
+  });
