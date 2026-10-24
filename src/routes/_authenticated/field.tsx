@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Camera, Lock, Monitor } from "lucide-react";
+import { ArrowRight, Camera, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { RoleNotice } from "@/components/role-notice";
@@ -328,13 +328,6 @@ function FieldHome() {
         )}
       </section>
 
-      <p className="mt-5 hidden items-center gap-2 text-base text-muted-foreground sm:flex">
-        <Monitor aria-hidden="true" className="size-4 shrink-0" />
-        <Link to="/dashboard" className="font-semibold text-brand-accent-ink">
-          Open the full dashboard
-        </Link>
-      </p>
-
       {/* Primary action in thumb reach on a phone; inline on desktop. */}
       <div className="fixed inset-x-0 bottom-0 z-20 space-y-2 border-t border-border bg-background/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mt-6 sm:border-0 sm:bg-transparent sm:p-0">
         <button
@@ -346,13 +339,6 @@ function FieldHome() {
           <Camera aria-hidden="true" className="size-6" />
           {start.isPending ? "Starting…" : "Start site walk"}
         </button>
-        <Link
-          to="/dashboard"
-          className="flex min-h-12 items-center justify-center gap-2 text-base font-semibold text-brand-accent-ink sm:hidden"
-        >
-          <Monitor aria-hidden="true" className="size-4" />
-          Full dashboard
-        </Link>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { useIsWideViewport } from "@/hooks/use-mobile";
 import { useIsPlatformAdmin } from "@/lib/platform-admin";
 import { HelpSheet, OPEN_HELP_EVENT } from "@/components/help-sheet";
+import { BackButton } from "@/components/back-button";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -198,6 +199,8 @@ export function AppShell({
             the wordmark plus two 44px-tall controls, and at 640px the primary
             nav joins the row and 16px gaps push the wordmark into an ellipsis. */}
         <div className="shell-container flex items-center gap-2 py-5 md:gap-4">
+          {/* Same corner on every screen, so nobody has to look for the way back. */}
+          <BackButton fallback={capabilities.estate ? "/map" : "/reports"} />
           <Link to="/map" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
               {/* 16px on a phone, not 18px: the wordmark is the flexible element,
