@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertEstateAccess } from "@/lib/roles.server";
 import { geocodeWithGoogle, type GooglePlacement } from "@/lib/map/google-maps.server";
 import { geocodeUkAddress, extractUkPostcode } from "@/lib/weather/geocode.server";
 
@@ -49,6 +50,10 @@ export const projectPoints = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<ProjectPoint[]> => {
     const { organisationIds } = data;
     if (organisationIds.length === 0) return [];
+
+    // Every project on the account, placed on one map: that is the estate view, so it is
+    // checked here rather than trusted to the browser having hidden a link.
+    await assertEstateAccess(context.supabase);
 
     const { data: rows, error } = await context.supabase
       .from("projects")
