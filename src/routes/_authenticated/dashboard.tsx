@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Camera, ClipboardCheck } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -19,6 +19,14 @@ import { ControlRoom } from "@/components/dashboard/control-room";
 import { complianceProjectId } from "@/lib/compliance/destination";
 import { useOrganisations } from "@/lib/use-organisations";
 
+/**
+ * The dashboard and the map were two screens answering "how is the estate" from the same
+ * items. On 24 Oct 2026 Dal picked the map as the single surface: the figures, the two
+ * ways in and the analysis all live there now, in the rail's Estate tab.
+ *
+ * This route stays as a signpost rather than a 404, because it is bookmarked, it is where
+ * sign-in lands, and the field cockpit links back to it.
+ */
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
@@ -26,6 +34,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { name: "description", content: "Start a report, or pick up an open one." },
     ],
   }),
+  beforeLoad: () => {
+    throw redirect({ to: "/map", replace: true });
+  },
   component: Dashboard,
 });
 

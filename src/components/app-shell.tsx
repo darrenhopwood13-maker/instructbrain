@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
   FolderOpen,
   HardHat,
   Users,
@@ -134,9 +133,10 @@ function AccountMenu() {
  * job that wants its own place rather than a section at the bottom of a page.
  */
 const baseNav = [
-  { to: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard, exact: true },
   { to: "/reports", key: "nav.reports", icon: ClipboardList, exact: false },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
+  /* The map is the home slot: it absorbed the dashboard on 24 Oct 2026, so the two
+     entries that pointed at the same job became one. */
   { to: "/map", key: "nav.map", icon: MapIcon, exact: false },
   { to: "/field", key: "nav.field", icon: HardHat, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
@@ -189,7 +189,7 @@ export function AppShell({
             the wordmark plus two 44px-tall controls, and at 640px the primary
             nav joins the row and 16px gaps push the wordmark into an ellipsis. */}
         <div className="shell-container flex items-center gap-2 py-5 md:gap-4">
-          <Link to="/dashboard" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
+          <Link to="/map" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
             <span className="min-w-0">
               {/* 16px on a phone, not 18px: the wordmark is the flexible element,
                   and at 320px Audiowide needs 143px where the row can give 135.

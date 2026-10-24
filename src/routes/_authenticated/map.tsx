@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -16,6 +16,7 @@ import { projectPoints, type ProjectPoint } from "@/lib/map/project-points.funct
 import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/lib/map/summary";
 import { insightByProject, type ProjectInsight } from "@/lib/map/insight";
 import { buildTrends } from "@/lib/map/trends";
+import { controlRoomTotals, raisedByWeek } from "@/lib/analytics/control-room";
 import type { DashboardItem } from "@/lib/analytics/item-map";
 import {
   compareSuggestions,
@@ -36,6 +37,8 @@ import { FileBarChart, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ReportPanel } from "@/components/map/report-panel";
+import { EstatePanel } from "@/components/map/estate-panel";
+import { EstateStrip } from "@/components/map/estate-strip";
 import { AnswerVisual } from "@/components/map/answer-visual";
 // Type only: pdf-lib is 400kB and is imported when someone actually exports a sheet, not
 // when the map loads. The type still keeps the popup's payload and the PDF in step.
@@ -99,6 +102,7 @@ function MapScreen() {
   const { user } = useSession();
   const loadPoints = useServerFn(projectPoints);
   const today = todayIso();
+  const navigate = useNavigate();
 
   const pointsQuery = useQuery({
     queryKey: POINTS_KEY(organisationIds),
@@ -120,6 +124,18 @@ function MapScreen() {
     [itemsQuery.data, today],
   );
   const trends = useMemo(() => buildTrends(itemsQuery.data?.items ?? [], today), [itemsQuery.data, today]);
+
+  /* The dashboard's figures, counted here from the same items the pins are drawn from -
+     the same maths the dashboard page used, so folding the two screens together cannot
+     change a number. Memoised on the query data rather than on a fresh array literal,
+     otherwise every render would recount the whole estate. */
+  const estateItems = useMemo(() => itemsQuery.data?.items ?? [], [itemsQuery.data]);
+  const estateReports = useMemo(() => itemsQuery.data?.reports ?? [], [itemsQuery.data]);
+  const estateTotals = useMemo(
+    () => controlRoomTotals(estateItems, estateReports, today),
+    [estateItems, estateReports, today],
+  );
+  const estateWeeks = useMemo(() => raisedByWeek(estateItems, 12, today), [estateItems, today]);
   const totals = useMemo(() => mapTotals(points, counts), [points, counts]);
   const caveats = useMemo(() => mapCaveats(totals), [totals]);
 
@@ -257,7 +273,7 @@ function MapScreen() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<MapView>("map");
-  const [panel, setPanel] = useState<"overview" | "trends">("overview");
+  const [panel, setPanel] = useState<"overview" | "trends" | "estate">("overview");
   const [reportOpen, setReportOpen] = useState(false);
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
@@ -357,8 +373,11 @@ function MapScreen() {
         .map-screen .maplibregl-ctrl-attrib a { color: var(--muted-foreground) !important; }
         /* Clear the fixed mobile nav and the help bubble, which both sit over the
            attribution pill at the bottom of the map on a phone. */
+        /* The figure strip sits along the foot of the map, so the attribution pill has
+           to clear it rather than sit under it. */
+        .map-screen .maplibregl-ctrl-bottom-left { bottom: 96px; }
         @media (max-width: 639px) {
-          .map-screen .maplibregl-ctrl-bottom-left { bottom: 68px; }
+          .map-screen .maplibregl-ctrl-bottom-left { bottom: 156px; }
         }
       `}</style>
 
@@ -415,6 +434,24 @@ function MapScreen() {
                   );
                 })}
               </div>
+              <EstateStrip
+                totals={itemsQuery.isSuccess ? estateTotals : null}
+                onStart={() => void navigate({ to: "/reports/choose", search: {} })}
+                onCompliance={() => {
+                  /* A selected pin is the project someone is on. With nothing selected, send
+                     them to the list rather than guessing which site they meant. */
+                  if (selectedId) {
+                    void navigate({
+                      to: "/projects/$id/compliance",
+                      params: { id: selectedId },
+                      search: { type: "fire" },
+                    });
+                    return;
+                  }
+                  void navigate({ to: "/projects" });
+                }}
+                onOpenEstate={() => setPanel("estate")}
+              />
               {loading ? (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center bg-background/40">
                   <LoadingState label="Placing your projects…" />
@@ -424,7 +461,7 @@ function MapScreen() {
 
             <aside className="min-h-0 overflow-y-auto border-b border-border px-4 py-4 sm:px-6 lg:px-5">
               <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
-                {(["overview", "trends"] as const).map((option) => (
+                {(["overview", "trends", "estate"] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -437,7 +474,7 @@ function MapScreen() {
                         : "text-muted-foreground hover:text-foreground")
                     }
                   >
-                    {option === "overview" ? "Projects" : "Trends"}
+                    {option === "overview" ? "Projects" : option === "trends" ? "Trends" : "Estate"}
                   </button>
                 ))}
               </div>
@@ -450,7 +487,21 @@ function MapScreen() {
                 <FileBarChart className="size-3.5" /> Report
               </button>
 
-              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
+              {panel === "trends" ? (
+                <TrendPanel trends={trends} totals={totals} items={estateItems} today={today} />
+              ) : panel === "estate" ? (
+                <EstatePanel
+                  totals={estateTotals}
+                  weeks={estateWeeks}
+                  items={estateItems}
+                  today={today}
+                  organisationIds={organisationIds}
+                  isPending={itemsQuery.isPending}
+                  isError={itemsQuery.isError}
+                  error={itemsQuery.error}
+                  onRetry={() => void itemsQuery.refetch()}
+                />
+              ) : (
               <>
               <div className="grid grid-cols-2 gap-2">
                 <Tile label="Projects" value={totals.projects} />
