@@ -35,7 +35,7 @@ export function BackButton({
         }
         void router.navigate({ to: fallback });
       }}
-      className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-raised text-foreground transition-colors hover:border-brand-accent hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9 border border-border bg-surface-raised text-foreground transition-colors hover:border-brand-accent hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
     </button>

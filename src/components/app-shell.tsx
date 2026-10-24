@@ -198,7 +198,7 @@ export function AppShell({
         {/* Tighter gaps below md: at 320px the row is only just wide enough for
             the wordmark plus two 44px-tall controls, and at 640px the primary
             nav joins the row and 16px gaps push the wordmark into an ellipsis. */}
-        <div className="shell-container flex items-center gap-2 py-5 md:gap-4">
+        <div className="shell-container flex items-center gap-1 py-5 sm:gap-2 md:gap-4">
           {/* Same corner on every screen, so nobody has to look for the way back. */}
           <BackButton fallback={capabilities.estate ? "/map" : "/reports"} />
           <Link to="/map" className="mr-auto flex min-w-0 items-center gap-2.5 rounded-md">
@@ -207,7 +207,7 @@ export function AppShell({
                   and at 320px Audiowide needs 143px where the row can give 135.
                   It stays 16px until md because between 640 and 1023 the primary
                   nav shares the row with it and 20px does not fit. */}
-              <span className="wordmark block truncate text-base leading-tight md:text-xl">
+              <span className="wordmark block truncate text-base leading-tight max-[359px]:text-[15px] md:text-xl">
                 <span className="wordmark-instruct text-foreground">instruct</span>
                 <span className={surface === "light" ? "work-wordmark-brain" : "text-brand-accent"}>
                   Brain
