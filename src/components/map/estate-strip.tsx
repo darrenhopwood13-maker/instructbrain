@@ -67,7 +67,7 @@ export function EstateStrip({
                 >
                   {figure.value === null ? "—" : figure.value}
                 </dd>
-                <dt className="mt-0.5 truncate text-[9.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <dt className="mt-0.5 text-[9px] font-semibold uppercase leading-[1.2] tracking-[0.05em] text-muted-foreground">
                   {figure.label}
                 </dt>
               </div>
