@@ -45,6 +45,13 @@ export type RecentReport = {
   reference: string;
   status: ReportStatus;
   updated: string;
+  /**
+   * The same instant as `updated`, machine-readable, so the list can be narrowed by
+   * period. Optional because some older fixtures and snapshots predate it; the list
+   * query always supplies it, and a filter by period simply cannot judge a report
+   * without one rather than guessing from the formatted label.
+   */
+  updatedAt?: string;
   /** Null for a quick report that has never been attached to a project. */
   projectId: string | null;
   isQuick: boolean;

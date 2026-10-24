@@ -1,12 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ClipboardList, Trash2 } from "lucide-react";
+import { ClipboardList, Search, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { ReportStatusPill } from "@/components/status-pill";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +26,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { allReportsQuery } from "@/lib/data";
+import { allReportsQuery, projectsQuery } from "@/lib/data";
 import { reportStacks, stackSummary } from "@/lib/reports/report-stacks";
+import {
+  NO_FILTERS,
+  countActiveFilters,
+  filterReports,
+  filtersAreActive,
+  periodLabels,
+  surveyOptions,
+  type ReportFilters,
+} from "@/lib/reports/filter";
+import { reportStatusLabels, type ReportStatus } from "@/lib/types";
 import { useOrganisations } from "@/lib/use-organisations";
 import { bulkDeleteReports } from "@/lib/delete.functions";
 import { toast } from "sonner";
@@ -46,23 +64,41 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 function AllReports() {
   const { organisationIds } = useOrganisations();
   const reports = useQuery(allReportsQuery(organisationIds));
+  const projects = useQuery(projectsQuery(organisationIds));
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [filters, setFilters] = useState<ReportFilters>(NO_FILTERS);
   const list = reports.data ?? [];
+
+  const projectNameById = useMemo(
+    () => new Map((projects.data ?? []).map((project) => [project.id, project.name])),
+    [projects.data],
+  );
+
+  /* Narrow first, group second: the stacks are a view of what is left, so a type with
+     nothing in it disappears rather than sitting there as an empty heading. */
+  const visible = useMemo(
+    () => filterReports(list, filters, { projectNameById }),
+    [list, filters, projectNameById],
+  );
+  const filtering = filtersAreActive(filters);
+  const activeCount = countActiveFilters(filters);
 
   /* One stack per report type, newest type first, so the page reads as a few
      headings rather than one long wall of reports. */
-  const stacks = useMemo(() => reportStacks(list), [list]);
+  const stacks = useMemo(() => reportStacks(visible), [visible]);
 
   /* Which stacks are open. Null means nobody has touched them yet, in which case
      the newest type is already open - landing on a page of closed lids tells you
-     nothing about what you have. */
+     nothing about what you have. While filtering, everything that matched is open:
+     the point of a filter is to see the results, not to hunt for them behind lids. */
   const [openStacks, setOpenStacks] = useState<string[] | null>(null);
-  const openKeys = openStacks ?? (stacks[0] ? [stacks[0].key] : []);
+  const defaultOpenKeys = filtering ? stacks.map((stack) => stack.key) : stacks[0] ? [stacks[0].key] : [];
+  const openKeys = openStacks === null ? defaultOpenKeys : openStacks.filter((key) => stacks.some((stack) => stack.key === key));
   const toggleStack = (key: string) =>
-    setOpenStacks((current) => {
-      const base = new Set(current ?? (stacks[0] ? [stacks[0].key] : []));
+    setOpenStacks(() => {
+      const base = new Set(openKeys);
       if (base.has(key)) {
         base.delete(key);
       } else {
@@ -72,7 +108,25 @@ function AllReports() {
     });
   const allOpen = stacks.length > 0 && stacks.every((stack) => openKeys.includes(stack.key));
 
-  const allSelected = list.length > 0 && list.every((report) => selected.has(report.id));
+  /* Any change to a filter re-opens the matching stacks and drops anything selected
+     that is no longer on screen, so a delete can never reach a report the person
+     cannot see. */
+  const change = (next: Partial<ReportFilters>) => {
+    setOpenStacks(null);
+    setSelected((current) => {
+      const shown = new Set(
+        filterReports(list, { ...filters, ...next }, { projectNameById }).map((report) => report.id),
+      );
+      return new Set([...current].filter((id) => shown.has(id)));
+    });
+    setFilters((current) => ({ ...current, ...next }));
+  };
+  const resetFilters = () => {
+    setOpenStacks(null);
+    setFilters(NO_FILTERS);
+  };
+
+  const allSelected = visible.length > 0 && visible.every((report) => selected.has(report.id));
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -86,7 +140,7 @@ function AllReports() {
     });
 
   const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(list.map((report) => report.id)));
+    setSelected(allSelected ? new Set() : new Set(visible.map((report) => report.id)));
 
   const bulk = useMutation({
     mutationFn: async () => bulkDeleteReports({ data: { reportIds: [...selected] } }),
@@ -108,7 +162,9 @@ function AllReports() {
             <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">All reports</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               {reports.isSuccess
-                ? `${list.length} report${list.length === 1 ? "" : "s"} in ${stacks.length} report type${stacks.length === 1 ? "" : "s"}, newest type first. Open a stack to see what is in it, or select reports to delete.`
+                ? filtering
+                  ? `${visible.length} of ${list.length} report${list.length === 1 ? "" : "s"} match${visible.length === 1 ? "es" : ""} your filter${activeCount === 1 ? "" : "s"}. Clear ${activeCount === 1 ? "it" : "them"} to see everything again.`
+                  : `${list.length} report${list.length === 1 ? "" : "s"} in ${stacks.length} report type${stacks.length === 1 ? "" : "s"}, newest type first. Open a stack to see what is in it, or select reports to delete.`
                 : "Every report on your account, grouped by report type, newest type first."}
             </p>
           </div>
@@ -119,6 +175,109 @@ function AllReports() {
           </Button>
         </div>
       </header>
+
+      {/* The filter bar sits where the eye lands after the count, and it stays visible:
+          a person narrowing a list needs to see what is doing the narrowing and be able
+          to undo it in one tap. Search first, then the four cross-cuts, then clear. */}
+      <section
+        aria-label="Filter reports"
+        className="mt-6 rounded-xl border border-border bg-surface-raised p-3 shadow-raised sm:p-4"
+      >
+        <div className="grid min-w-0 gap-2 min-[560px]:grid-cols-[minmax(0,1fr)_auto] min-[560px]:items-center">
+          <div className="relative min-w-0">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="search"
+              value={filters.search}
+              onChange={(event) => change({ search: event.target.value })}
+              placeholder="Search title, reference, project or type"
+              aria-label="Search reports"
+              className="h-11 pl-9"
+            />
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-2 min-[560px]:justify-end">
+            <span aria-live="polite" className="text-xs font-semibold text-muted-foreground">
+              {reports.isSuccess ? `${visible.length} shown` : "—"}
+            </span>
+            <Button
+              variant="quiet"
+              className="min-h-11"
+              onClick={resetFilters}
+              disabled={!filtering}
+            >
+              <X aria-hidden="true" className="size-4" />
+              Clear{activeCount > 0 ? ` (${activeCount})` : ""}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-2 grid min-w-0 gap-2 min-[420px]:grid-cols-2 min-[820px]:grid-cols-4">
+          <Select
+            value={filters.status}
+            onValueChange={(value) => change({ status: value as ReportStatus | "all" })}
+          >
+            <SelectTrigger className="h-11 w-full" aria-label="Filter by status">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any status</SelectItem>
+              {(Object.keys(reportStatusLabels) as ReportStatus[]).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {reportStatusLabels[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.survey} onValueChange={(value) => change({ survey: value })}>
+            <SelectTrigger className="h-11 w-full" aria-label="Filter by report type">
+              <SelectValue placeholder="Report type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any report type</SelectItem>
+              {surveyOptions(list).map((option) => (
+                <SelectItem key={option.value || "__none"} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.project} onValueChange={(value) => change({ project: value })}>
+            <SelectTrigger className="h-11 w-full" aria-label="Filter by project">
+              <SelectValue placeholder="Project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any project</SelectItem>
+              <SelectItem value="none">Not on a project</SelectItem>
+              {(projects.data ?? []).map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.period}
+            onValueChange={(value) => change({ period: value as ReportFilters["period"] })}
+          >
+            <SelectTrigger className="h-11 w-full" aria-label="Filter by when it was last worked on">
+              <SelectValue placeholder="Any time" />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(periodLabels) as Array<ReportFilters["period"]>).map((period) => (
+                <SelectItem key={period} value={period}>
+                  {periodLabels[period]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </section>
 
       {selected.size > 0 ? (
         <div className="sticky top-20 z-20 mt-6 grid min-w-0 gap-2 rounded-xl border border-border bg-surface-raised px-3 py-3 shadow-raised min-[360px]:grid-cols-[minmax(0,1fr)_auto] min-[360px]:items-center min-[360px]:gap-3 min-[360px]:px-4">
@@ -177,6 +336,18 @@ function AllReports() {
             title="No reports yet"
             description="Start one from the dashboard and it will appear here."
           />
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            eyebrow="Nothing matches"
+            title="No reports match those filters"
+            description="Try a broader search, a different report type, or clear the filters to see everything again."
+            action={
+              <Button variant="brand" className="min-h-11" onClick={resetFilters}>
+                Clear filters
+              </Button>
+            }
+          />
         ) : (
           <>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -190,7 +361,7 @@ function AllReports() {
                     className="size-5 accent-brand-blue"
                   />
                 </span>
-                Select all {list.length} report{list.length === 1 ? "" : "s"}
+                Select all {visible.length} report{visible.length === 1 ? "" : "s"}
               </label>
               <Button
                 variant="quiet"
@@ -254,9 +425,11 @@ function AllReports() {
                                 </div>
                                 <span className="flex min-w-0 flex-col gap-0.5 break-words text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-1">
                                   <span>
-                                    {report.isQuick && !report.projectId
-                                      ? "Custom report"
-                                      : "Project report"}
+                                    {report.projectId
+                                      ? (projectNameById.get(report.projectId) ?? "Project report")
+                                      : report.isQuick
+                                        ? "Custom report"
+                                        : "Not on a project"}
                                   </span>
                                   <span className="hidden sm:inline" aria-hidden="true">
                                     ·
