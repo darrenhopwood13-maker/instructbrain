@@ -21,7 +21,6 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFieldRouteImport } from './routes/_authenticated/field'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
-import { Route as AuthenticatedReportingRouteImport } from './routes/_authenticated/reporting'
 import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
 import { Route as AuthAcceptInviteRouteImport } from './routes/auth.accept-invite'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -114,11 +113,6 @@ const AuthenticatedFieldRoute = AuthenticatedFieldRouteImport.update({
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   id: '/map',
   path: '/map',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReportingRoute = AuthenticatedReportingRouteImport.update({
-  id: '/reporting',
-  path: '/reporting',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
@@ -318,7 +312,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/field': typeof AuthenticatedFieldRoute
   '/map': typeof AuthenticatedMapRoute
-  '/reporting': typeof AuthenticatedReportingRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -365,7 +358,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/field': typeof AuthenticatedFieldRoute
   '/map': typeof AuthenticatedMapRoute
-  '/reporting': typeof AuthenticatedReportingRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -411,7 +403,6 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/field': typeof AuthenticatedFieldRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
-  '/_authenticated/reporting': typeof AuthenticatedReportingRoute
   '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
   '/auth/accept-invite': typeof AuthAcceptInviteRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -460,7 +451,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/field'
     | '/map'
-    | '/reporting'
     | '/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -507,7 +497,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/field'
     | '/map'
-    | '/reporting'
     | '/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -552,7 +541,6 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/field'
     | '/_authenticated/map'
-    | '/_authenticated/reporting'
     | '/_authenticated/upgrade'
     | '/auth/accept-invite'
     | '/auth/callback'
@@ -696,13 +684,6 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/map'
       preLoaderRoute: typeof AuthenticatedMapRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reporting': {
-      id: '/_authenticated/reporting'
-      path: '/reporting'
-      fullPath: '/reporting'
-      preLoaderRoute: typeof AuthenticatedReportingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/upgrade': {
@@ -1004,7 +985,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFieldRoute: typeof AuthenticatedFieldRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
-  AuthenticatedReportingRoute: typeof AuthenticatedReportingRoute
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRouteWithChildren
   AuthenticatedReportsIdRoute: typeof AuthenticatedReportsIdRouteWithChildren
@@ -1023,7 +1003,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFieldRoute: AuthenticatedFieldRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
-  AuthenticatedReportingRoute: AuthenticatedReportingRoute,
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRouteWithChildren,
   AuthenticatedReportsIdRoute: AuthenticatedReportsIdRouteWithChildren,

@@ -30,6 +30,7 @@ import {
 import { interpretCompare } from "@/lib/map/compare.functions";
 import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
+import { ReportPanel } from "@/components/map/report-panel";
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({
@@ -177,7 +178,7 @@ function MapScreen() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<MapView>("map");
-  const [panel, setPanel] = useState<"overview" | "trends">("overview");
+  const [panel, setPanel] = useState<"overview" | "trends" | "report">("overview");
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
   // The map fills what is left of the viewport under the shell header, so it needs to
@@ -333,7 +334,7 @@ function MapScreen() {
 
             <aside className="min-h-0 overflow-y-auto border-b border-border px-4 py-4 sm:px-6 lg:px-5">
               <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
-                {(["overview", "trends"] as const).map((option) => (
+                {(["overview", "trends", "report"] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -346,12 +347,19 @@ function MapScreen() {
                         : "text-muted-foreground hover:text-foreground")
                     }
                   >
-                    {option === "overview" ? "Projects" : "Trends"}
+                    {option === "overview" ? "Projects" : option === "trends" ? "Trends" : "Report"}
                   </button>
                 ))}
               </div>
 
-              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
+              {panel === "report" ? (
+                <ReportPanel
+                  items={itemsQuery.data?.items ?? []}
+                  selectedProjectId={selectedId}
+                  selectedProjectName={selected?.name ?? null}
+                  truncated={itemsQuery.data?.truncated ?? false}
+                />
+              ) : panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
               <>
               <div className="grid grid-cols-2 gap-2">
                 <Tile label="Projects" value={totals.projects} />
