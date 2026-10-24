@@ -534,6 +534,40 @@ export function parseComparison(
   };
 }
 
+/** The worst few values on a dimension, for a ranking question about one site. */
+export function rankComparison(
+  dimension: CompareDimension,
+  items: DashboardItem[],
+  today: string,
+  limit = 3,
+): Comparison | null {
+  const ranked = compareProfile(items, today)[dimension]
+    .filter((entry) => entry.raised > 0)
+    .slice(0, limit)
+    .map((entry) => entry.value);
+  if (ranked.length === 0) return null;
+  return comparisonFor(dimension, ranked, items, today);
+}
+
+/**
+ * A question asked about ONE site. Everything in scope is that project, so "which project" is not
+ * an answer worth giving - if the reader's words resolve to projects, the useful split is by trade.
+ */
+export function scopedComparison(
+  query: string,
+  items: DashboardItem[],
+  today: string,
+): Comparison | null {
+  if (items.length === 0) return null;
+  const direct = parseComparison(query, items, today);
+  if (!direct) return null;
+  // A half-answer is worse than none on a single site: if the reader named work that is not here,
+  // say so (or ask the model) rather than comparing whatever similar-sounding thing did match.
+  if (direct.unmatched.length > 0) return null;
+  if (direct.dimension === "project") return rankComparison("trade", items, today, 3);
+  return direct;
+}
+
 /** Example questions, offered as chips so the box is discoverable rather than a blank guess. */
 export function compareSuggestions(items: DashboardItem[]): string[] {
   const busiest = (dimension: CompareDimension) => {

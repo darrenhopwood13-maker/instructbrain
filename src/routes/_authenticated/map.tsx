@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +21,8 @@ import {
   compareSuggestions,
   modelProfile,
   modelVocabulary,
+  rankComparison,
+  scopedComparison,
   comparisonFor,
   parseComparison,
   type Comparison,
@@ -103,6 +105,76 @@ function MapScreen() {
   const totals = useMemo(() => mapTotals(points, counts), [points, counts]);
   const caveats = useMemo(() => mapCaveats(totals), [totals]);
 
+  const askModel = useServerFn(interpretCompare);
+
+  /**
+   * One site's answer, in the pin popup.
+   *
+   * Scoped to that project's items, so the answer is about this site rather than the estate. The
+   * model is asked only when the built-in matcher cannot read the question, it is given this
+   * project's values only, and its answer is validated against them - the same guard as the rail.
+   */
+  const answerSite = useCallback(
+    async (projectId: string, query: string): Promise<SiteAnswer> => {
+      const scoped = (itemsQuery.data?.items ?? []).filter((item) => item.projectId === projectId);
+      const toAnswer = (comparison: Comparison, note: string | null): SiteAnswer => ({
+        rows: comparison.groups.slice(0, 4).map((group) => ({
+          label: group.label,
+          open: group.open,
+          overdue: group.overdue,
+          daysToClose: group.medianDaysToClose,
+        })),
+        verdict: comparison.verdict,
+        note,
+      });
+
+      if (scoped.length === 0) {
+        return { rows: [], verdict: "", note: "No items have been raised on this site yet." };
+      }
+
+      const direct = scopedComparison(query, scoped, today);
+      if (direct) return toAnswer(direct, "Read by the built-in matcher.");
+
+      try {
+        const result = await askModel({
+          data: {
+            query,
+            vocabulary: modelVocabulary(scoped),
+            profile: modelProfile(scoped, today),
+          },
+        });
+        if (result.status === "ok") {
+          const built =
+            result.dimension === "project"
+              ? rankComparison("trade", scoped, today, 3)
+              : comparisonFor(result.dimension, result.groups, scoped, today, result.unmatched);
+          if (built) return toAnswer(built, `Read by ${result.model}.`);
+        }
+        // Trade first, then severity: some sites have work but no trade assigned to it, and a
+        // severity split is still a real answer rather than an empty box.
+        const fallback =
+          rankComparison("trade", scoped, today, 3) ?? rankComparison("severity", scoped, today, 3);
+        if (fallback) {
+          return toAnswer(
+            fallback,
+            `Nothing on this site matched “${query}”, so this is the split by ${fallback.dimensionLabel.toLowerCase()}.`,
+          );
+        }
+        return {
+          rows: [],
+          verdict: "",
+          note:
+            result.status === "ok"
+              ? "Nothing on this site matched that question."
+              : result.note,
+        };
+      } catch {
+        return { rows: [], verdict: "", note: "That question could not be answered just now." };
+      }
+    },
+    [askModel, itemsQuery.data, today],
+  );
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<MapView>("map");
   const [panel, setPanel] = useState<"overview" | "trends">("overview");
@@ -151,6 +223,25 @@ function MapScreen() {
         .map-screen .pin-pop-stats b { color: var(--foreground); font-variant-numeric: tabular-nums; }
         .map-screen .pin-pop-late b { color: var(--fail); }
         .map-screen .pin-pop-note { margin-top: 6px; font-size: 11px; line-height: 1.45; color: var(--muted-foreground); }
+        .map-screen .pin-pop-ask { display: flex; gap: 5px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .map-screen .pin-pop-input {
+          flex: 1; min-width: 0; border: 1px solid var(--border); border-radius: 7px;
+          background: var(--card); color: var(--foreground); font: inherit; font-size: 11px;
+          padding: 4px 7px; outline: none;
+        }
+        .map-screen .pin-pop-input:focus { border-color: var(--foreground); }
+        .map-screen .pin-pop-go {
+          flex: 0 0 auto; border: 0; border-radius: 7px; background: var(--foreground);
+          color: var(--background); font-family: var(--font-sans); font-size: 9.5px;
+          font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 9px;
+          cursor: pointer;
+        }
+        .map-screen .pin-pop-answer { margin-top: 6px; font-size: 10.5px; line-height: 1.45; color: var(--muted-foreground); }
+        .map-screen .pin-pop-answer:empty { display: none; }
+        .map-screen .pin-pop-answer-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+        .map-screen .pin-pop-answer-row b { color: var(--foreground); font-weight: 700; }
+        .map-screen .pin-pop-answer-verdict { margin-top: 5px; color: var(--foreground); }
+        .map-screen .pin-pop-answer-note { margin-top: 4px; font-size: 10px; opacity: 0.85; }
         /* The map is the page. It starts under the shell header and runs to the foot
            of the viewport; the rail scrolls inside that height rather than pushing
            the document taller than the screen. */
@@ -210,6 +301,7 @@ function MapScreen() {
                 onSelect={setSelectedId}
                 view={view}
                 insights={insights}
+                ask={answerSite}
               />
               <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-lg border border-border bg-card/95 shadow-sm backdrop-blur">
                 {VIEWS.map((option) => {
@@ -503,6 +595,13 @@ const VIEWS: { id: MapView; label: string }[] = [
   { id: "3d", label: "3D" },
 ];
 
+/** A compact answer for the pin popup: the rows, and one sentence of conclusion. */
+type SiteAnswer = {
+  rows: Array<{ label: string; open: number; overdue: number; daysToClose: number | null }>;
+  verdict: string;
+  note: string | null;
+};
+
 type MapCanvasProps = {
   points: ProjectPoint[];
   counts: Map<string, ProjectCounts>;
@@ -510,6 +609,8 @@ type MapCanvasProps = {
   selectedId: string | null;
   onSelect: (projectId: string) => void;
   view: MapView;
+  /** Ask a question about one site. Runs in the route, where the model call lives. */
+  ask: (projectId: string, query: string) => Promise<SiteAnswer>;
 };
 
 /** Popup content is built as HTML for MapLibre, so names from the database are escaped. */
@@ -537,7 +638,13 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
     rows.push(`<div class="pin-pop-note">Late ones are ${insight.averageDaysLate} days past their date on average.</div>`);
   }
   if (insight?.oldestOpenDays != null) {
-    rows.push(`<div class="pin-pop-note">Oldest open item was raised ${insight.oldestOpenDays} days ago.</div>`);
+    rows.push(
+      `<div class="pin-pop-note">${
+        insight.oldestOpenDays === 0
+          ? "Oldest open item was raised today."
+          : `Oldest open item was raised ${insight.oldestOpenDays} days ago.`
+      }</div>`,
+    );
   }
   if (insight && insight.severity.length > 0) {
     const mix = insight.severity.map((entry) => `${entry.count} ${escapeHtml(entry.label)}`).join(" · ");
@@ -546,6 +653,15 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
   if (insight?.busiestTrade) {
     rows.push(`<div class="pin-pop-note">Most open work sits with ${escapeHtml(insight.busiestTrade)}.</div>`);
   }
+
+  rows.push(
+    `<form class="pin-pop-ask" autocomplete="off">` +
+      `<input class="pin-pop-input" name="q" placeholder="Ask about this site" ` +
+      `aria-label="Ask about this site" maxlength="200" />` +
+      `<button class="pin-pop-go" type="submit">Ask</button>` +
+      `</form>` +
+      `<div class="pin-pop-answer" role="status" aria-live="polite"></div>`,
+  );
 
   return (
     `<div class="pin-pop"><div class="pin-pop-title">${escapeHtml(point.name)}</div>` +
@@ -563,13 +679,15 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
  * use as well as prototypes - OpenStreetMap's own raster tiles are not, which is why
  * the prototype note about a paid contract does not apply to this route.
  */
-function MapCanvas({ points, counts, insights, selectedId, onSelect, view }: MapCanvasProps) {
+function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask }: MapCanvasProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("maplibre-gl").Map | null>(null);
   const [ready, setReady] = useState(false);
   const fitted = useRef(false);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const askRef = useRef(ask);
+  askRef.current = ask;
   const dataRef = useRef({ points, counts, insights });
   dataRef.current = { points, counts, insights };
   const popupRef = useRef<import("maplibre-gl").Popup | null>(null);
@@ -727,6 +845,47 @@ function MapCanvas({ points, counts, insights, selectedId, onSelect, view }: Map
             .setLngLat(coordinates)
             .setHTML(pinPopupHtml(point, latestCounts.get(id), latestInsights.get(id)))
             .addTo(instance);
+
+          // The popup's HTML is a string, so its form is wired after MapLibre has put it in the
+          // DOM. Asking here keeps the answer beside the pin instead of sending the reader to
+          // another tab.
+          const element = popupRef.current.getElement();
+          const form = element.querySelector<HTMLFormElement>(".pin-pop-ask");
+          const input = element.querySelector<HTMLInputElement>(".pin-pop-input");
+          const answer = element.querySelector<HTMLElement>(".pin-pop-answer");
+          form?.addEventListener("submit", (submitEvent) => {
+            submitEvent.preventDefault();
+            submitEvent.stopPropagation();
+            const question = input?.value.trim() ?? "";
+            if (!question || !answer) return;
+            answer.textContent = "Reading…";
+            void askRef
+              .current(id, question)
+              .then((result) => {
+                if (result.rows.length === 0) {
+                  answer.textContent = result.note ?? "Nothing on this site matches that question.";
+                  return;
+                }
+                const body = result.rows
+                  .map((row) => {
+                    const late = row.overdue > 0 ? `${row.overdue} past date` : "none late";
+                    const close =
+                      row.daysToClose === null ? "" : ` · ${row.daysToClose}d to close`;
+                    return (
+                      `<div class="pin-pop-answer-row"><b>${escapeHtml(row.label)}</b>` +
+                      `<span>${row.open} open · ${late}${close}</span></div>`
+                    );
+                  })
+                  .join("");
+                answer.innerHTML =
+                  body +
+                  (result.verdict ? `<div class="pin-pop-answer-verdict">${escapeHtml(result.verdict)}</div>` : "") +
+                  (result.note ? `<div class="pin-pop-answer-note">${escapeHtml(result.note)}</div>` : "");
+              })
+              .catch(() => {
+                answer.textContent = "That question could not be answered just now.";
+              });
+          });
         });
 
         // Clicking the map itself dismisses it; clicking a pin keeps it.

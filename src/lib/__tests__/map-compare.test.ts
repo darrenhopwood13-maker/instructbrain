@@ -4,6 +4,8 @@ import type { DashboardItem } from "@/lib/analytics/item-map";
 import {
   compareSuggestions,
   comparisonFor,
+  rankComparison,
+  scopedComparison,
   modelProfile,
   modelVocabulary,
   parseComparison,
@@ -252,5 +254,41 @@ describe("what a model is allowed to see", () => {
 
     expect(vocabulary.project).toEqual(["Northbank Phase 3"]);
     expect(JSON.stringify({ vocabulary, profile })).not.toContain("Wapping Wharf");
+  });
+});
+
+describe("asking about a single site", () => {
+  const site: DashboardItem[] = [
+    item({ id: "s1", projectId: "p9", projectName: "Albert Dock Conversion", assignedTrade: "Electrical", lifecycleState: "open", dueDate: "2026-10-01" }),
+    item({ id: "s2", projectId: "p9", projectName: "Albert Dock Conversion", assignedTrade: "Decorator", dueDate: "2026-11-01" }),
+    item({ id: "s3", projectId: "p9", projectName: "Albert Dock Conversion", assignedTrade: "Decorator", dueDate: "2026-11-02" }),
+  ];
+
+  it("splits a single site by trade when the question names the site", () => {
+    const result = scopedComparison("Albert Dock Conversion, who is behind?", site, TODAY);
+    expect(result?.dimension).toBe("trade");
+    expect(result?.groups.map((group) => group.label)).toContain("Electrical");
+  });
+
+  it("answers a trade question about one site directly", () => {
+    const result = scopedComparison("electrical vs decorator", site, TODAY);
+    expect(result?.dimension).toBe("trade");
+    expect(result?.groups.map((group) => group.label)).toEqual(["Electrical", "Decorator"]);
+  });
+
+  it("returns nothing when the words mean nothing here, so the model can be asked", () => {
+    expect(scopedComparison("which is dragging its heels", site, TODAY)).toBeNull();
+  });
+
+  it("refuses a half-answer when the other side is not on this site", () => {
+    // "joiner" has no work here, so comparing the survey that happens to say "electrical"
+    // against everything else would answer a question nobody asked.
+    expect(scopedComparison("electrical vs joiner", site, TODAY)).toBeNull();
+  });
+
+  it("ranks the worst trades on a site, worst first", () => {
+    const ranked = rankComparison("trade", site, TODAY, 3);
+    expect(ranked?.groups[0]?.label).toBe("Electrical");
+    expect(ranked?.groups[0]?.overdue).toBe(1);
   });
 });
