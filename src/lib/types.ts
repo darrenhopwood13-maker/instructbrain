@@ -61,6 +61,12 @@ export type RecentReport = {
    * survey type at all, which is a real state and not the same as an empty name.
    */
   surveyLabel: string | null;
+  /**
+   * The organisation the report belongs to. References are unique per organisation,
+   * so an account that spans two of them can legitimately show the same reference
+   * twice - the name is what tells the reader that, rather than looking like a fault.
+   */
+  organisationName?: string | null;
 };
 
 export type Report = {

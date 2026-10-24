@@ -431,6 +431,17 @@ function AllReports() {
                                         ? "Custom report"
                                         : "Not on a project"}
                                   </span>
+                                  {/* Only where the account spans more than one organisation:
+                                      that is the only case where the same reference can
+                                      appear twice, and the name is what explains it. */}
+                                  {organisationIds.length > 1 && report.organisationName ? (
+                                    <>
+                                      <span className="hidden sm:inline" aria-hidden="true">
+                                        ·
+                                      </span>
+                                      <span>{report.organisationName}</span>
+                                    </>
+                                  ) : null}
                                   <span className="hidden sm:inline" aria-hidden="true">
                                     ·
                                   </span>

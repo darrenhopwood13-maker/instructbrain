@@ -1028,7 +1028,11 @@ export const allReportsQuery = (organisationIds: string[]) =>
       const rows = unwrap(
         await from("reports")
           .select(
-            "id, title, reference, status, updated_at, project_id, is_quick, survey_type_snapshot",
+            /* The organisation is carried too: an account can belong to more than one, and
+               references are unique per organisation - so two identical references in one
+               list are two companies, not a duplicate. Without the name the list looks
+               broken rather than scoped. */
+            "id, title, reference, status, updated_at, project_id, is_quick, survey_type_snapshot, organisations(name)",
           )
           .in("organisation_id", organisationIds)
           .order("updated_at", { ascending: false }),
@@ -1041,6 +1045,7 @@ export const allReportsQuery = (organisationIds: string[]) =>
         project_id: string | null;
         is_quick: boolean | null;
         survey_type_snapshot: { label?: string } | null;
+        organisations: { name?: string } | null;
       }>;
       return rows.map((row) => ({
         id: row.id,
@@ -1052,6 +1057,7 @@ export const allReportsQuery = (organisationIds: string[]) =>
         projectId: row.project_id,
         isQuick: row.is_quick === true,
         surveyLabel: row.survey_type_snapshot?.label ?? null,
+        organisationName: row.organisations?.name ?? null,
       }));
     },
   });
