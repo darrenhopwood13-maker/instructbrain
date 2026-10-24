@@ -30,7 +30,13 @@ import {
 import { interpretCompare } from "@/lib/map/compare.functions";
 import { streetLevel } from "@/lib/map/street-level.functions";
 import { useOrganisations } from "@/lib/use-organisations";
+import { useSession } from "@/lib/auth";
+import { organisationQuery } from "@/lib/data";
+import { FileBarChart, Share2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { ReportPanel } from "@/components/map/report-panel";
+import { AnswerVisual } from "@/components/map/answer-visual";
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({
@@ -178,7 +184,8 @@ function MapScreen() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<MapView>("map");
-  const [panel, setPanel] = useState<"overview" | "trends" | "report">("overview");
+  const [panel, setPanel] = useState<"overview" | "trends">("overview");
+  const [reportOpen, setReportOpen] = useState(false);
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
   // The map fills what is left of the viewport under the shell header, so it needs to
@@ -334,7 +341,7 @@ function MapScreen() {
 
             <aside className="min-h-0 overflow-y-auto border-b border-border px-4 py-4 sm:px-6 lg:px-5">
               <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
-                {(["overview", "trends", "report"] as const).map((option) => (
+                {(["overview", "trends"] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -347,19 +354,20 @@ function MapScreen() {
                         : "text-muted-foreground hover:text-foreground")
                     }
                   >
-                    {option === "overview" ? "Projects" : option === "trends" ? "Trends" : "Report"}
+                    {option === "overview" ? "Projects" : "Trends"}
                   </button>
                 ))}
               </div>
 
-              {panel === "report" ? (
-                <ReportPanel
-                  items={itemsQuery.data?.items ?? []}
-                  selectedProjectId={selectedId}
-                  selectedProjectName={selected?.name ?? null}
-                  truncated={itemsQuery.data?.truncated ?? false}
-                />
-              ) : panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="mb-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-foreground transition-colors hover:border-foreground/40"
+              >
+                <FileBarChart className="size-3.5" /> Report
+              </button>
+
+              {panel === "trends" ? <TrendPanel trends={trends} totals={totals} items={itemsQuery.data?.items ?? []} today={today} /> : (
               <>
               <div className="grid grid-cols-2 gap-2">
                 <Tile label="Projects" value={totals.projects} />
@@ -406,6 +414,23 @@ function MapScreen() {
               </>
               )}
             </aside>
+
+            <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Report</DialogTitle>
+                  <DialogDescription>
+                    Counted from the same findings this map is drawn from, for the period you choose.
+                  </DialogDescription>
+                </DialogHeader>
+                <ReportPanel
+                  items={itemsQuery.data?.items ?? []}
+                  selectedProjectId={selectedId}
+                  selectedProjectName={selected?.name ?? null}
+                  truncated={itemsQuery.data?.truncated ?? false}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </div>
@@ -1004,6 +1029,10 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
   const [thinking, setThinking] = useState(false);
   const suggestions = useMemo(() => compareSuggestions(items), [items]);
   const askModel = useServerFn(interpretCompare);
+  const { user } = useSession();
+  const { organisationId } = useOrganisations();
+  const organisation = useQuery(organisationQuery(organisationId));
+  const [sharing, setSharing] = useState(false);
 
   const run = (value: string) => {
     const trimmed = value.trim();
@@ -1045,6 +1074,48 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
         setNotice("The model could not be reached, so the question went unanswered.");
       })
       .finally(() => setThinking(false));
+  };
+
+  /** The answer on screen, as a one-page PDF: same groups, same counts, same provenance. */
+  const share = async () => {
+    if (!comparison) return;
+    setSharing(true);
+    setNotice(null);
+    try {
+      const { renderAnswerPdf } = await import("@/lib/reporting/answer-pdf");
+      const { bytes, filename } = await renderAnswerPdf({
+        question: asked ?? "",
+        dimensionLabel: comparison.dimensionLabel,
+        groups: comparison.groups.map((group) => ({
+          label: group.label,
+          items: group.raised,
+          open: group.open,
+          overdue: group.overdue,
+          lateShare: group.lateShare,
+          medianDaysToClose: group.medianDaysToClose,
+        })),
+        verdict: comparison.verdict,
+        caveat: comparison.caveat,
+        source: source ?? "built-in matcher",
+        organisationName: organisation.data?.name ?? "Your organisation",
+        generatedOn: today,
+        generatedBy: user?.email ?? "your account",
+        unmatched: comparison.unmatched,
+      });
+      const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The answer could not be exported");
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -1137,6 +1208,16 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
               </div>
             </div>
           ))}
+          <AnswerVisual
+            groups={comparison.groups.map((group) => ({
+              label: group.label,
+              items: group.raised,
+              open: group.open,
+              overdue: group.overdue,
+              lateShare: group.lateShare,
+              medianDaysToClose: group.medianDaysToClose,
+            }))}
+          />
           {comparison.verdict ? (
             <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
               <p className="text-[11px] leading-relaxed text-foreground">{comparison.verdict}</p>
@@ -1148,6 +1229,16 @@ function CompareBox({ items, today }: { items: DashboardItem[]; today: string })
             </div>
           ) : null}
           <p className="text-[10px] leading-relaxed text-muted-foreground">{comparison.caveat}</p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={share}
+            disabled={sharing}
+            className="w-full"
+          >
+            <Share2 className="mr-2 size-3.5" />
+            {sharing ? "Building the PDF..." : "Share these visuals as PDF"}
+          </Button>
         </div>
       ) : null}
     </div>
