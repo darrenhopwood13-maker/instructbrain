@@ -32,8 +32,10 @@ import {
  */
 
 const ROLES: Array<{ value: OrganisationRole; label: string; note: string }> = [
-  { value: "surveyor", label: "Surveyor", note: "Runs surveys and writes reports." },
-  { value: "supervisor", label: "Supervisor", note: "Reviews and signs off reports." },
+  // The two field/desk sides of the product, stated as what each can reach rather than as a
+  // job title, because the title is what made "Supervisor" sound like a site role.
+  { value: "surveyor", label: "Surveyor", note: "On site: captures photographs and writes reports. No estate map." },
+  { value: "supervisor", label: "Supervisor / director", note: "Reviews performance and signs reports off. The estate map, no capture." },
   { value: "viewer", label: "Viewer", note: "Can read reports, cannot change them." },
   { value: "admin", label: "Admin", note: "Everything a surveyor can do, plus settings and people." },
   { value: "owner", label: "Owner", note: "Full control, including deleting this organisation." },

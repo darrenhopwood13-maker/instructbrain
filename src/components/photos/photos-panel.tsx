@@ -149,6 +149,13 @@ export function PhotosPanel({
   /** Files stay addressable so a failed item can be retried, not re-picked. */
   const pendingRef = useRef<Map<string, Pending>>(new Map());
   const [busy, setBusy] = useState(false);
+  /**
+   * Once a report holds photographs, the three capture buttons are the largest thing on a
+   * screen whose job has moved on to reviewing them. They collapse to one "Add photos"
+   * control and open again on a tap: the space comes back without putting the camera out
+   * of reach, because there is always one more defect after you thought you had finished.
+   */
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [zoneValues, setZoneValues] = useState<Record<string, string>>({});
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkValues, setBulkValues] = useState<Record<string, string>>({});
@@ -825,14 +832,21 @@ export function PhotosPanel({
         />
 
         <div className="mt-4 hidden sm:block">
-          <PhotoCaptureActions
-            compact
-            onCamera={openCamera}
-            onInAppCamera={canUseInAppCamera() ? openInAppCamera : undefined}
-            onGallery={() => filePickerRef.current?.click()}
-            disabled={atPhotoCap}
-            busy={busy}
-          />
+          {photos.length > 0 && !captureOpen ? (
+            <Button variant="outline" className="w-full" onClick={() => setCaptureOpen(true)}>
+              <Camera aria-hidden="true" className="mr-2 size-4" />
+              Add photos
+            </Button>
+          ) : (
+            <PhotoCaptureActions
+              compact
+              onCamera={openCamera}
+              onInAppCamera={canUseInAppCamera() ? openInAppCamera : undefined}
+              onGallery={() => filePickerRef.current?.click()}
+              disabled={atPhotoCap}
+              busy={busy}
+            />
+          )}
         </div>
         {atPhotoCap ? (
           <p className="mt-3 text-sm text-fail-soft">
@@ -1007,6 +1021,11 @@ export function PhotosPanel({
           <p className="text-center text-sm text-fail-soft">
             Photograph limit reached for this report ({photoCap} on your plan).
           </p>
+        ) : photos.length > 0 && !captureOpen ? (
+          <Button variant="outline" className="w-full" onClick={() => setCaptureOpen(true)}>
+            <Camera aria-hidden="true" className="mr-2 size-4" />
+            Add photos
+          </Button>
         ) : (
           <PhotoCaptureActions
             compact

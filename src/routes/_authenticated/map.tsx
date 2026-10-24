@@ -11,6 +11,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { AppShell } from "@/components/app-shell";
 import { ErrorState, LoadingState } from "@/components/query-states";
+import { RoleNotice } from "@/components/role-notice";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { orgDashboardQuery } from "@/lib/data";
 import { projectPoints, type ProjectPoint } from "@/lib/map/project-points.functions";
 import { countsByProject, mapCaveats, mapTotals, type ProjectCounts } from "@/lib/map/summary";
@@ -98,6 +100,7 @@ function formatDistance(metres: number): string {
 }
 
 function MapScreen() {
+  const access = useCapabilities();
   const { organisationIds, organisationId } = useOrganisations();
   const { user } = useSession();
   const loadPoints = useServerFn(projectPoints);
@@ -298,6 +301,28 @@ function MapScreen() {
   const loading = pointsQuery.isPending || itemsQuery.isPending;
   const failed = pointsQuery.isError || itemsQuery.isError;
 
+  // The estate is for appointed people. Wait for the membership before deciding, or the
+  // notice flashes at someone who is entitled to be here every single load.
+  if (access.loading) {
+    return (
+      <AppShell surface="light">
+        <LoadingState label="Checking your access…" />
+      </AppShell>
+    );
+  }
+  if (!access.capabilities.estate) {
+    return (
+      <AppShell surface="light">
+        <RoleNotice
+          title="The estate map is for appointed users"
+          body="This screen shows every project at once, for the people who review performance. Your own sites and their reports are under Projects."
+          backTo="/projects"
+          backLabel="Go to projects"
+        />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell surface="light">
       <style>{`
@@ -436,8 +461,12 @@ function MapScreen() {
               </div>
               <EstateStrip
                 totals={itemsQuery.isSuccess ? estateTotals : null}
-                onStart={() => void navigate({ to: "/reports/choose", search: {} })}
-                onCompliance={() => {
+                onStart={
+                  access.capabilities.capture
+                    ? () => void navigate({ to: "/reports/choose", search: {} })
+                    : undefined
+                }
+                onCompliance={access.capabilities.capture ? () => {
                   /* A selected pin is the project someone is on. With nothing selected, send
                      them to the list rather than guessing which site they meant. */
                   if (selectedId) {
@@ -449,7 +478,7 @@ function MapScreen() {
                     return;
                   }
                   void navigate({ to: "/projects" });
-                }}
+                } : undefined}
                 onOpenEstate={() => setPanel("estate")}
               />
               {loading ? (

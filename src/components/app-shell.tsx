@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession, signOut } from "@/lib/auth";
 import { organisationQuery } from "@/lib/data";
 import { useOrganisations } from "@/lib/use-organisations";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { useI18n } from "@/i18n/i18n-provider";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useIsWideViewport } from "@/hooks/use-mobile";
@@ -162,6 +163,7 @@ export function AppShell({
 }) {
   const { t } = useI18n();
   const { organisationId } = useOrganisations();
+  const { capabilities } = useCapabilities();
   const organisation = useQuery(organisationQuery(organisationId));
   // One set of destinations, rendered once. Header links from `sm` upwards,
   // the fixed bar below it — never both, so the nav is not in the document twice.
@@ -169,9 +171,16 @@ export function AppShell({
   // The trade layer is optional: with it switched off the recipient directory has
   // nothing to do, so it leaves the navigation rather than sitting there empty.
   const tradeAllocationEnabled = organisation.data?.trade_allocation_enabled !== false;
-  const nav = baseNav.filter(
-    (item) => item.key !== "nav.directory" || tradeAllocationEnabled,
-  );
+  // Two questions per destination: is it switched on, and is it this person's job. The estate
+  // map and the field cockpit are for different people, and showing a director a camera, or a
+  // surveyor the whole estate, was the thing that made one product look like it fit nobody.
+  const nav = baseNav.filter((item) => {
+    if (item.key === "nav.directory" && !tradeAllocationEnabled) return false;
+    if (item.key === "nav.map") return capabilities.estate;
+    if (item.key === "nav.field") return capabilities.capture;
+    if (item.key === "nav.directory") return capabilities.manage;
+    return true;
+  });
 
   return (
     <div

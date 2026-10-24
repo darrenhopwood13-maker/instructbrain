@@ -17,8 +17,9 @@ export function EstateStrip({
   onOpenEstate,
 }: {
   totals: ControlRoomTotals | null;
-  onStart: () => void;
-  onCompliance: () => void;
+  /** Omitted for someone who reviews the estate but does not start work on it. */
+  onStart?: (() => void) | undefined;
+  onCompliance?: (() => void) | undefined;
   onOpenEstate: () => void;
 }) {
   const figures: Array<{ label: string; value: number | null; tone: "brand" | "fail" | null }> = [
@@ -32,7 +33,9 @@ export function EstateStrip({
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-2 sm:p-3">
       <div className="pointer-events-auto flex flex-col gap-2 rounded-xl border border-border bg-card/95 p-2 shadow-lg backdrop-blur sm:flex-row sm:items-stretch sm:gap-2.5 sm:p-2.5">
+        {onStart || onCompliance ? (
         <div className="flex gap-2">
+          {onStart ? (
           <button
             type="button"
             onClick={onStart}
@@ -41,6 +44,8 @@ export function EstateStrip({
             <Camera aria-hidden="true" className="size-4" />
             Start a report
           </button>
+          ) : null}
+          {onCompliance ? (
           <button
             type="button"
             onClick={onCompliance}
@@ -49,7 +54,9 @@ export function EstateStrip({
             <ClipboardCheck aria-hidden="true" className="size-4" />
             Compliance
           </button>
+          ) : null}
         </div>
+        ) : null}
 
         <div className="min-w-0 flex-1">
           <dl className="grid grid-cols-3 gap-x-2 gap-y-1 sm:grid-cols-5">

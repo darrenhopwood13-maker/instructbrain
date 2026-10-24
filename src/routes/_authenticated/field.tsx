@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Camera, Lock, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { RoleNotice } from "@/components/role-notice";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { InstallBar } from "@/components/field/install-bar";
 import { FieldCockpitView } from "@/components/field/field-cockpit-view";
 import { Button } from "@/components/ui/button";
@@ -66,6 +68,28 @@ const STANDALONE = "__standalone__";
 
 function FieldCockpit() {
   const { report } = Route.useSearch();
+  const access = useCapabilities();
+  // Capture is the field job. A director who scans the QR code on a hoarding gets told
+  // plainly that this is the site side, rather than a camera pointed at nothing.
+  if (access.loading) {
+    return (
+      <AppShell surface="light" chrome="field">
+        <LoadingState label="Checking your access…" />
+      </AppShell>
+    );
+  }
+  if (!access.capabilities.capture) {
+    return (
+      <AppShell surface="light" chrome="field">
+        <RoleNotice
+          title="The site app is for people on site"
+          body="This is the capture side of instructBrain: photographs, findings and sending the report to the desk. Reports and performance are on the dashboard side."
+          backTo="/reports"
+          backLabel="Go to reports"
+        />
+      </AppShell>
+    );
+  }
   return (
     <AppShell surface="light" chrome="field">
       {report ? <CaptureScreen reportId={report} /> : <FieldHome />}
