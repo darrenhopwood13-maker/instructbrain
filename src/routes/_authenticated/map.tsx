@@ -37,6 +37,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { ReportPanel } from "@/components/map/report-panel";
 import { AnswerVisual } from "@/components/map/answer-visual";
+// Type only: pdf-lib is 400kB and is imported when someone actually exports a sheet, not
+// when the map loads. The type still keeps the popup's payload and the PDF in step.
+import type { AnswerSheet } from "@/lib/reporting/answer-pdf";
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({
@@ -85,7 +88,8 @@ function formatMonthYear(value: string | null): string {
 }
 
 function MapScreen() {
-  const { organisationIds } = useOrganisations();
+  const { organisationIds, organisationId } = useOrganisations();
+  const { user } = useSession();
   const loadPoints = useServerFn(projectPoints);
   const today = todayIso();
 
@@ -114,6 +118,38 @@ function MapScreen() {
 
   const askModel = useServerFn(interpretCompare);
 
+  const organisation = useQuery(organisationQuery(organisationId));
+
+  /**
+   * A site answer, as a one-page PDF.
+   *
+   * The same borrow the rail makes: the sheet is filled from the answer the popup just showed, so
+   * the document cannot print a different figure or claim a different author. The organisation and
+   * the person exporting live here rather than in the popup, because the popup is plain HTML.
+   */
+  const exportAnswer = useCallback(
+    async (sheet: SiteAnswerSheet, scopeLabel: string) => {
+      const { renderAnswerPdf } = await import("@/lib/reporting/answer-pdf");
+      const { bytes, filename } = await renderAnswerPdf({
+        ...sheet,
+        scopeLabel,
+        organisationName: organisation.data?.name ?? "Your organisation",
+        generatedOn: today,
+        generatedBy: user?.email ?? "your account",
+      });
+      const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    },
+    [organisation.data?.name, today, user?.email],
+  );
+
   /**
    * One site's answer, in the pin popup.
    *
@@ -124,7 +160,7 @@ function MapScreen() {
   const answerSite = useCallback(
     async (projectId: string, query: string): Promise<SiteAnswer> => {
       const scoped = (itemsQuery.data?.items ?? []).filter((item) => item.projectId === projectId);
-      const toAnswer = (comparison: Comparison, note: string | null): SiteAnswer => ({
+      const toAnswer = (comparison: Comparison, source: string, note: string | null): SiteAnswer => ({
         rows: comparison.groups.slice(0, 4).map((group) => ({
           label: group.label,
           open: group.open,
@@ -133,14 +169,37 @@ function MapScreen() {
         })),
         verdict: comparison.verdict,
         note,
+        // What the popup can hand on. Filled here, from the comparison itself, so the sheet the
+        // reader exports and the answer they read on screen cannot disagree.
+        sheet: {
+          question: query,
+          dimensionLabel: comparison.dimensionLabel,
+          groups: comparison.groups.map((group) => ({
+            label: group.label,
+            items: group.raised,
+            open: group.open,
+            overdue: group.overdue,
+            lateShare: group.lateShare,
+            medianDaysToClose: group.medianDaysToClose,
+          })),
+          verdict: comparison.verdict,
+          caveat: comparison.caveat,
+          source,
+          unmatched: comparison.unmatched,
+        },
       });
 
       if (scoped.length === 0) {
-        return { rows: [], verdict: "", note: "No items have been raised on this site yet." };
+        return {
+          rows: [],
+          verdict: "",
+          note: "No items have been raised on this site yet.",
+          sheet: null,
+        };
       }
 
       const direct = scopedComparison(query, scoped, today);
-      if (direct) return toAnswer(direct, "Read by the built-in matcher.");
+      if (direct) return toAnswer(direct, "built-in matcher", "Read by the built-in matcher.");
 
       try {
         const result = await askModel({
@@ -155,7 +214,7 @@ function MapScreen() {
             result.dimension === "project"
               ? rankComparison("trade", scoped, today, 3)
               : comparisonFor(result.dimension, result.groups, scoped, today, result.unmatched);
-          if (built) return toAnswer(built, `Read by ${result.model}.`);
+          if (built) return toAnswer(built, `model ${result.model}`, `Read by ${result.model}.`);
         }
         // Trade first, then severity: some sites have work but no trade assigned to it, and a
         // severity split is still a real answer rather than an empty box.
@@ -164,6 +223,7 @@ function MapScreen() {
         if (fallback) {
           return toAnswer(
             fallback,
+            "built-in matcher",
             `Nothing on this site matched “${query}”, so this is the split by ${fallback.dimensionLabel.toLowerCase()}.`,
           );
         }
@@ -174,9 +234,15 @@ function MapScreen() {
             result.status === "ok"
               ? "Nothing on this site matched that question."
               : result.note,
+          sheet: null,
         };
       } catch {
-        return { rows: [], verdict: "", note: "That question could not be answered just now." };
+        return {
+          rows: [],
+          verdict: "",
+          note: "That question could not be answered just now.",
+          sheet: null,
+        };
       }
     },
     [askModel, itemsQuery.data, today],
@@ -250,6 +316,15 @@ function MapScreen() {
         .map-screen .pin-pop-answer-row b { color: var(--foreground); font-weight: 700; }
         .map-screen .pin-pop-answer-verdict { margin-top: 5px; color: var(--foreground); }
         .map-screen .pin-pop-answer-note { margin-top: 4px; font-size: 10px; opacity: 0.85; }
+        .map-screen .pin-pop-share {
+          margin-top: 7px; width: 100%; border: 1px solid var(--border); border-radius: 7px;
+          background: var(--card); color: var(--foreground); font-family: var(--font-sans);
+          font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+          padding: 5px 8px; cursor: pointer;
+        }
+        .map-screen .pin-pop-share:hover { border-color: var(--foreground); }
+        .map-screen .pin-pop-share[hidden] { display: none; }
+        .map-screen .pin-pop-share:disabled { opacity: 0.55; cursor: default; }
         /* The map is the page. It starts under the shell header and runs to the foot
            of the viewport; the rail scrolls inside that height rather than pushing
            the document taller than the screen. */
@@ -310,6 +385,7 @@ function MapScreen() {
                 view={view}
                 insights={insights}
                 ask={answerSite}
+                exportAnswer={exportAnswer}
               />
               <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-lg border border-border bg-card/95 shadow-sm backdrop-blur">
                 {VIEWS.map((option) => {
@@ -628,11 +704,16 @@ const VIEWS: { id: MapView; label: string }[] = [
   { id: "3d", label: "3D" },
 ];
 
+/** Everything a site answer's PDF needs, minus the organisation, date and author the route adds. */
+type SiteAnswerSheet = Omit<AnswerSheet, "organisationName" | "generatedOn" | "generatedBy" | "scopeLabel">;
+
 /** A compact answer for the pin popup: the rows, and one sentence of conclusion. */
 type SiteAnswer = {
   rows: Array<{ label: string; open: number; overdue: number; daysToClose: number | null }>;
   verdict: string;
   note: string | null;
+  /** The same answer as a printable sheet, or null when there was nothing to show. */
+  sheet: SiteAnswerSheet | null;
 };
 
 type MapCanvasProps = {
@@ -644,6 +725,8 @@ type MapCanvasProps = {
   view: MapView;
   /** Ask a question about one site. Runs in the route, where the model call lives. */
   ask: (projectId: string, query: string) => Promise<SiteAnswer>;
+  /** Hand the answer on as a PDF, labelled with the site it was asked about. */
+  exportAnswer: (sheet: SiteAnswerSheet, scopeLabel: string) => Promise<void>;
 };
 
 /** Popup content is built as HTML for MapLibre, so names from the database are escaped. */
@@ -693,7 +776,10 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
       `aria-label="Ask about this site" maxlength="200" />` +
       `<button class="pin-pop-go" type="submit">Ask</button>` +
       `</form>` +
-      `<div class="pin-pop-answer" role="status" aria-live="polite"></div>`,
+      `<div class="pin-pop-answer" role="status" aria-live="polite"></div>` +
+      // Only shown once there is an answer to hand on - an export button above an empty box is
+      // a button that produces nothing.
+      `<button class="pin-pop-share" type="button" hidden>Share as PDF</button>`,
   );
 
   return (
@@ -712,7 +798,7 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
  * use as well as prototypes - OpenStreetMap's own raster tiles are not, which is why
  * the prototype note about a paid contract does not apply to this route.
  */
-function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask }: MapCanvasProps) {
+function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask, exportAnswer }: MapCanvasProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("maplibre-gl").Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -721,6 +807,8 @@ function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask }
   onSelectRef.current = onSelect;
   const askRef = useRef(ask);
   askRef.current = ask;
+  const exportRef = useRef(exportAnswer);
+  exportRef.current = exportAnswer;
   const dataRef = useRef({ points, counts, insights });
   dataRef.current = { points, counts, insights };
   const popupRef = useRef<import("maplibre-gl").Popup | null>(null);
@@ -886,12 +974,37 @@ function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask }
           const form = element.querySelector<HTMLFormElement>(".pin-pop-ask");
           const input = element.querySelector<HTMLInputElement>(".pin-pop-input");
           const answer = element.querySelector<HTMLElement>(".pin-pop-answer");
+          const shareButton = element.querySelector<HTMLButtonElement>(".pin-pop-share");
+          // What is on screen right now, kept so the export hands on exactly that answer instead of
+          // asking the question again and risking a different reading.
+          let shown: { sheet: SiteAnswerSheet; scopeLabel: string } | null = null;
+
+          shareButton?.addEventListener("click", (clickEvent) => {
+            clickEvent.preventDefault();
+            clickEvent.stopPropagation();
+            if (!shown) return;
+            const label = shareButton.textContent ?? "Share as PDF";
+            shareButton.disabled = true;
+            shareButton.textContent = "Making the PDF…";
+            void exportRef
+              .current(shown.sheet, shown.scopeLabel)
+              .catch(() => {
+                if (answer) answer.textContent = "The answer could not be exported just now.";
+              })
+              .finally(() => {
+                shareButton.disabled = false;
+                shareButton.textContent = label;
+              });
+          });
+
           form?.addEventListener("submit", (submitEvent) => {
             submitEvent.preventDefault();
             submitEvent.stopPropagation();
             const question = input?.value.trim() ?? "";
             if (!question || !answer) return;
             answer.textContent = "Reading…";
+            if (shareButton) shareButton.hidden = true;
+            shown = null;
             void askRef
               .current(id, question)
               .then((result) => {
@@ -914,6 +1027,8 @@ function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask }
                   body +
                   (result.verdict ? `<div class="pin-pop-answer-verdict">${escapeHtml(result.verdict)}</div>` : "") +
                   (result.note ? `<div class="pin-pop-answer-note">${escapeHtml(result.note)}</div>` : "");
+                shown = result.sheet ? { sheet: result.sheet, scopeLabel: point.name } : null;
+                if (shareButton) shareButton.hidden = shown === null;
               })
               .catch(() => {
                 answer.textContent = "That question could not be answered just now.";

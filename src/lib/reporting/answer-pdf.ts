@@ -41,6 +41,11 @@ export type AnswerSheet = {
   caveat: string;
   /** "built-in matcher" or "model deepseek-flash" - stated, never implied. */
   source: string;
+  /**
+   * What the question was asked about, when that is narrower than the organisation - "Albert Dock
+   * Liverpool" for a question asked at a pin. Left out for a whole-estate answer.
+   */
+  scopeLabel?: string;
   organisationName: string;
   generatedOn: string;
   /** Who ran it, so the sheet says who to ask about it. */
@@ -106,7 +111,8 @@ export async function renderAnswerPdf(sheet: AnswerSheet): Promise<{ bytes: Uint
     y -= 19;
   }
   y -= 4;
-  page.drawText(clean(`Compared by ${sheet.dimensionLabel.toLowerCase()} - answered by the ${sheet.source}`), {
+  const provenance = `${sheet.scopeLabel ? `${sheet.scopeLabel} - ` : ""}Compared by ${sheet.dimensionLabel.toLowerCase()} - answered by the ${sheet.source}`;
+  page.drawText(clean(provenance), {
     x: MARGIN,
     y,
     size: 8.5,
@@ -121,7 +127,7 @@ export async function renderAnswerPdf(sheet: AnswerSheet): Promise<{ bytes: Uint
 
   for (const group of sheet.groups) {
     page.drawText(clean(group.label), { x: MARGIN, y, size: 11, font: bold, color: INK });
-    const countLabel = `${group.items} items`;
+    const countLabel = `${group.items} ${group.items === 1 ? "item" : "items"}`;
     page.drawText(countLabel, {
       x: PAGE_W - MARGIN - regular.widthOfTextAtSize(countLabel, 8.5),
       y,
