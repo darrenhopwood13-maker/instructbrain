@@ -13,6 +13,8 @@
  * panorama when someone opens a project - never a preload of the whole estate.
  */
 
+import { distanceBetween } from "@/lib/map/geo";
+
 const GEOCODE = "https://maps.googleapis.com/maps/api/geocode/json";
 const STREET_METADATA = "https://maps.googleapis.com/maps/api/streetview/metadata";
 const STREET_IMAGE = "https://maps.googleapis.com/maps/api/streetview";
@@ -160,6 +162,8 @@ export type GoogleStreetView =
       dataUrl: string;
       capturedAt: string | null;
       credit: string;
+      /** How far the panorama sits from the point asked for, in metres, when Google says. */
+      distanceMetres: number | null;
     };
 
 type MetadataBody = {
@@ -266,5 +270,12 @@ export async function lookupGoogleStreetView(
     // Google reports yyyy-mm; the pane prints a month and year rather than inventing a day.
     capturedAt: body.date?.trim() ? `${body.date.trim()}-01` : null,
     credit: body.copyright?.trim() || "© Google",
+    distanceMetres:
+      typeof panoLat === "number" && typeof panoLng === "number"
+        ? distanceBetween(
+            { latitude: panoLat, longitude: panoLng },
+            { latitude, longitude },
+          )
+        : null,
   };
 }

@@ -18,6 +18,7 @@
  */
 
 import { lookupGoogleStreetView, type GoogleStreetView } from "@/lib/map/google-maps.server";
+import { distanceBetween } from "@/lib/map/geo";
 
 const GRAPH = "https://graph.mapillary.com/images";
 
@@ -33,7 +34,7 @@ const BOX_DEGREES_LAT = 0.0011;
 /** Ten candidates, newest kept. `limit=1` returns whichever the service feels like. */
 const CANDIDATES = 10;
 
-const FIELDS = "id,thumb_1024_url,captured_at,compass_angle";
+const FIELDS = "id,thumb_1024_url,captured_at,compass_angle,geometry";
 
 export type MapillaryLookup =
   | { state: "not_configured" }
@@ -45,6 +46,8 @@ export type MapillaryLookup =
       imageUrl: string;
       /** yyyy-mm-dd, or null when Mapillary did not say. */
       capturedAt: string | null;
+      /** How far the capture sits from the point asked for, in metres, when Mapillary says. */
+      distanceMetres: number | null;
     };
 
 type FetchJson = (url: string) => Promise<{ status: number; body: unknown }>;
@@ -113,7 +116,12 @@ export async function lookupStreetImage(
   }
 
   const parsed = response.body as {
-    data?: Array<{ id?: string; thumb_1024_url?: string; captured_at?: number }>;
+    data?: Array<{
+      id?: string;
+      thumb_1024_url?: string;
+      captured_at?: number;
+      geometry?: { coordinates?: [number, number] };
+    }>;
   } | null;
 
   // Newest usable capture, not whichever the service happened to list first: the pane
@@ -126,11 +134,23 @@ export async function lookupStreetImage(
   const captured =
     typeof image.captured_at === "number" ? new Date(image.captured_at).toISOString().slice(0, 10) : null;
 
+  // Mapillary returns [lng, lat]; the pane prints the distance so a capture round the corner is
+  // not read as a photograph of the gate.
+  const coordinates = image.geometry?.coordinates;
+  const distanceMetres =
+    Array.isArray(coordinates) && typeof coordinates[0] === "number" && typeof coordinates[1] === "number"
+      ? distanceBetween(
+          { latitude: coordinates[1], longitude: coordinates[0] },
+          { latitude, longitude },
+        )
+      : null;
+
   return {
     state: "ok",
     imageId: image.id,
     imageUrl: image.thumb_1024_url,
     capturedAt: captured,
+    distanceMetres,
   };
 }
 
@@ -157,6 +177,14 @@ export type StreetLevelResult =
       credit: string;
       /** Link to the original capture, where the provider offers one. */
       linkUrl: string | null;
+      /** How far the capture is from the point asked for, in metres, when the provider says. */
+      distanceMetres: number | null;
+      /**
+       * Anything the reader needs to judge the picture rather than the answer: for a Google
+       * capture, that it is the nearest panorama rather than necessarily a photograph of the
+       * street. Null when the picture speaks for itself.
+       */
+      note: string | null;
     };
 
 export type StreetLevelDeps = {
@@ -167,17 +195,40 @@ export type StreetLevelDeps = {
 const MAPILLARY_CREDIT = "© Mapillary contributors, CC BY-SA 4.0";
 
 /**
- * Google, then Mapillary, then the truth.
+ * Mapillary first, then Google, then the truth.
  *
- * A refusal is reported ahead of a coverage gap: "the key was rejected" is something we
- * can fix, whereas "no imagery here" beside a street Google definitely covers would send
- * someone looking in the wrong place.
+ * The order is the point. Mapillary is camera-car capture, so what comes back is the street, which
+ * is what "street level" promises. Google has wider coverage and newer dates, but its "nearest
+ * panorama" can be a rooftop or an indoor photosphere - a gallery interior shown beside a site
+ * address reads as a photograph of the site, and it is not. So Google is the second pair of eyes,
+ * never the first, and when it does answer the pane says what kind of capture it is.
+ *
+ * A refusal is reported ahead of a coverage gap: "the key was rejected" is something we can fix,
+ * whereas "no imagery here" beside a street Google definitely covers would send someone looking
+ * in the wrong place.
  */
 export async function lookupStreetLevel(
   latitude: number,
   longitude: number,
   deps: StreetLevelDeps = {},
 ): Promise<StreetLevelResult> {
+  const mapillary = await (deps.mapillary ?? lookupStreetImage)(latitude, longitude);
+  if (mapillary.state === "ok") {
+    // Google is not asked at all when the free ground-level provider has the street. That is one
+    // fewer billed call per project, and the picture is the honest one.
+    return {
+      state: "ok",
+      provider: "Mapillary",
+      imageId: mapillary.imageId,
+      imageUrl: mapillary.imageUrl,
+      capturedAt: mapillary.capturedAt,
+      credit: MAPILLARY_CREDIT,
+      linkUrl: `https://www.mapillary.com/map/im/${mapillary.imageId}`,
+      distanceMetres: mapillary.distanceMetres,
+      note: null,
+    };
+  }
+
   const google = await (deps.google ?? lookupGoogleStreetView)(latitude, longitude);
   if (google.state === "ok") {
     return {
@@ -188,19 +239,10 @@ export async function lookupStreetLevel(
       capturedAt: google.capturedAt,
       credit: google.credit,
       linkUrl: null,
-    };
-  }
-
-  const mapillary = await (deps.mapillary ?? lookupStreetImage)(latitude, longitude);
-  if (mapillary.state === "ok") {
-    return {
-      state: "ok",
-      provider: "Mapillary",
-      imageId: mapillary.imageId,
-      imageUrl: mapillary.imageUrl,
-      capturedAt: mapillary.capturedAt,
-      credit: MAPILLARY_CREDIT,
-      linkUrl: `https://www.mapillary.com/map/im/${mapillary.imageId}`,
+      distanceMetres: google.distanceMetres,
+      note:
+        "Google's nearest capture - wider coverage than Mapillary, but it can be a rooftop or an " +
+        "indoor panorama rather than the street itself.",
     };
   }
 

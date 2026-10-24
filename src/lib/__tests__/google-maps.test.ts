@@ -207,44 +207,51 @@ describe("lookupStreetLevel", () => {
       dataUrl: "data:image/jpeg;base64,AAAA",
       capturedAt: "2025-06-01",
       credit: "© 2025 Google",
+      distanceMetres: 18,
     });
 
-  it("prefers Google when it has coverage", async () => {
-    const result = await lookupStreetLevel(LAT, LNG, {
-      google: googleOk,
-      mapillary: () =>
-        Promise.resolve({
-          state: "ok" as const,
-          imageId: "9",
-          imageUrl: "https://example.invalid/thumb.jpg",
-          capturedAt: "2022-07-08",
-        }),
+  const mapillaryOk = () =>
+    Promise.resolve({
+      state: "ok" as const,
+      imageId: "1234567890",
+      imageUrl: "https://example.invalid/thumb.jpg",
+      capturedAt: "2022-07-08",
+      distanceMetres: 41,
     });
 
-    expect(result.state).toBe("ok");
-    if (result.state !== "ok") return;
-    expect(result.provider).toBe("Google");
-    expect(result.linkUrl).toBeNull();
-    expect(result.credit).toBe("© 2025 Google");
-  });
-
-  it("falls back to Mapillary when Google has no coverage, with the right credit line", async () => {
+  it("prefers Mapillary, because a camera car is what 'street level' promises", async () => {
+    let googleAsked = 0;
     const result = await lookupStreetLevel(LAT, LNG, {
-      google: () => Promise.resolve({ state: "none" as const }),
-      mapillary: () =>
-        Promise.resolve({
-          state: "ok" as const,
-          imageId: "1234567890",
-          imageUrl: "https://example.invalid/thumb.jpg",
-          capturedAt: "2022-07-08",
-        }),
+      google: () => {
+        googleAsked += 1;
+        return googleOk();
+      },
+      mapillary: mapillaryOk,
     });
 
     expect(result.state).toBe("ok");
     if (result.state !== "ok") return;
     expect(result.provider).toBe("Mapillary");
-    expect(result.credit).toBe("© Mapillary contributors, CC BY-SA 4.0");
-    expect(result.linkUrl).toBe("https://www.mapillary.com/map/im/1234567890");
+    expect(result.distanceMetres).toBe(41);
+    expect(result.note).toBeNull();
+    // Not one billed Google call when the free ground-level provider already has the street.
+    expect(googleAsked).toBe(0);
+  });
+
+  it("falls back to Google when Mapillary has no coverage, and says what kind of capture it is", async () => {
+    const result = await lookupStreetLevel(LAT, LNG, {
+      google: googleOk,
+      mapillary: () => Promise.resolve({ state: "none" as const }),
+    });
+
+    expect(result.state).toBe("ok");
+    if (result.state !== "ok") return;
+    expect(result.provider).toBe("Google");
+    expect(result.credit).toBe("© 2025 Google");
+    expect(result.linkUrl).toBeNull();
+    expect(result.distanceMetres).toBe(18);
+    // The nearest panorama is not always a photograph of the street; the pane says so.
+    expect(result.note).toContain("rooftop or an indoor panorama");
   });
 
   it("says there is nothing rather than blaming a provider when both are empty", async () => {
@@ -271,18 +278,20 @@ describe("lookupStreetLevel", () => {
     expect(result).toEqual({ state: "not_configured" });
   });
 
-  it("still shows a Mapillary capture when Google is refusing everything", async () => {
+  it("still shows the Mapillary capture when Google is refusing everything", async () => {
     const result = await lookupStreetLevel(LAT, LNG, {
       google: () => Promise.resolve({ state: "unavailable" as const, reason: "quota" }),
-      mapillary: () =>
-        Promise.resolve({
-          state: "ok" as const,
-          imageId: "55",
-          imageUrl: "https://example.invalid/thumb.jpg",
-          capturedAt: "2021-03-04",
-        }),
+      mapillary: mapillaryOk,
     });
     expect(result.state).toBe("ok");
     expect(result.state === "ok" && result.provider).toBe("Mapillary");
+  });
+
+  it("reports a rejected Mapillary token when Google has no coverage either", async () => {
+    const result = await lookupStreetLevel(LAT, LNG, {
+      google: () => Promise.resolve({ state: "none" as const }),
+      mapillary: () => Promise.resolve({ state: "unavailable" as const, reason: "Mapillary rejected the access token." }),
+    });
+    expect(result).toEqual({ state: "unavailable", reason: "Mapillary rejected the access token." });
   });
 });

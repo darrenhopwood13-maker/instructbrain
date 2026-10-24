@@ -87,6 +87,13 @@ function formatMonthYear(value: string | null): string {
   return date.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 }
 
+/** Metres under a kilometre, one decimal above it - a distance nobody has to convert in their head. */
+function formatDistance(metres: number): string {
+  if (!Number.isFinite(metres) || metres < 0) return "-";
+  if (metres < 1000) return `${Math.round(metres)} m`;
+  return `${(metres / 1000).toFixed(1)} km`;
+}
+
 function MapScreen() {
   const { organisationIds, organisationId } = useOrganisations();
   const { user } = useSession();
@@ -674,7 +681,10 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
           <p className="px-3 py-2 text-[10.5px] text-muted-foreground">
             {result.provider === "Google"
               ? `Captured ${formatMonthYear(result.capturedAt)}`
-              : `Captured ${formatDate(result.capturedAt)}`}{" "}
+              : `Captured ${formatDate(result.capturedAt)}`}
+            {result.distanceMetres === null
+              ? ""
+              : ` · ${formatDistance(result.distanceMetres)} from the site`}{" "}
             · {result.credit}
             {result.linkUrl ? (
               <>
@@ -690,6 +700,11 @@ function StreetLevel({ point }: { point: ProjectPoint }) {
               </>
             ) : null}
           </p>
+          {result.note ? (
+            <p className="px-3 pb-2.5 text-[10px] leading-relaxed text-muted-foreground/80">
+              {result.note}
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>

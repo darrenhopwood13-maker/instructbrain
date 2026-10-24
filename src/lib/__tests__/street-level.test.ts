@@ -36,7 +36,31 @@ describe("lookupStreetImage", () => {
       imageId: "1234567890",
       imageUrl: "https://example.invalid/thumb.jpg",
       capturedAt: "2025-05-09",
+      distanceMetres: null,
     });
+  });
+
+  it("measures how far the capture sits from the site, from the image's own position", async () => {
+    const result = await lookupStreetImage(
+      LAT,
+      LNG,
+      respond(200, {
+        data: [
+          {
+            id: "1234567890",
+            thumb_1024_url: "https://example.invalid/thumb.jpg",
+            captured_at: Date.UTC(2025, 4, 9),
+            // Mapillary answers [longitude, latitude]; 0.001 latitude north is about 110m.
+            geometry: { coordinates: [LNG, LAT + 0.001] },
+          },
+        ],
+      }),
+      TOKEN,
+    );
+
+    expect(result.state).toBe("ok");
+    expect(result.state === "ok" && result.distanceMetres).toBeGreaterThan(100);
+    expect(result.state === "ok" && result.distanceMetres).toBeLessThan(125);
   });
 
   it("treats an empty result as a coverage gap, not a failure", async () => {
@@ -85,6 +109,7 @@ describe("lookupStreetImage", () => {
       imageId: "new",
       imageUrl: "https://example.invalid/new.jpg",
       capturedAt: "2025-09-14",
+      distanceMetres: null,
     });
   });
 
