@@ -9,6 +9,7 @@ export const STRINGS = {
   "nav.field": "On site",
   "nav.projects": "Projects",
   "nav.map": "Map",
+  "nav.reporting": "Reporting",
   "nav.organisation": "Organisation",
   "nav.help": "Help",
   "nav.directory": "Directory",

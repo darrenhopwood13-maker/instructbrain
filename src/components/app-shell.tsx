@@ -6,6 +6,7 @@ import {
   Users,
   UserCog,
   ClipboardList,
+  FileBarChart,
   Map as MapIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -138,6 +139,7 @@ const baseNav = [
   { to: "/reports", key: "nav.reports", icon: ClipboardList, exact: false },
   { to: "/projects", key: "nav.projects", icon: FolderOpen, exact: false },
   { to: "/map", key: "nav.map", icon: MapIcon, exact: false },
+  { to: "/reporting", key: "nav.reporting", icon: FileBarChart, exact: false },
   { to: "/field", key: "nav.field", icon: HardHat, exact: false },
   { to: "/settings/directory", key: "nav.directory", icon: Users, exact: false },
 ] as const;
