@@ -65,17 +65,17 @@ export function FieldCockpitView({
           <Button
             type="button"
             variant="outline"
-            className="min-h-12 w-full text-base"
+            className="min-h-12 w-full gap-1.5 whitespace-nowrap px-2 text-sm font-semibold"
             onClick={open}
           >
-            <Send aria-hidden="true" className="size-5" />
+            <Send aria-hidden="true" className="size-4 shrink-0" />
             Send to office
           </Button>
         )}
       />
-      <Button asChild variant="brand" className="min-h-12 w-full text-base">
+      <Button asChild variant="brand" className="min-h-12 w-full gap-1.5 whitespace-nowrap px-2 text-sm font-semibold">
         <Link to="/reports/$id" params={{ id: report.id }} search={{ tab: "review" }}>
-          <ClipboardCheck aria-hidden="true" className="size-5" />
+          <ClipboardCheck aria-hidden="true" className="size-4 shrink-0" />
           Review here
         </Link>
       </Button>

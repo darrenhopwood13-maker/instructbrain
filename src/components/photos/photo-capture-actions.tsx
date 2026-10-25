@@ -43,8 +43,15 @@ export function PhotoCaptureActions({
   showHint?: boolean;
 }) {
   const stack = compact ? "grid grid-cols-2 gap-2" : "grid gap-2";
-  const tall = compact ? "min-h-12" : "min-h-14 text-base";
+  const tall = compact ? "min-h-12 px-2" : "min-h-14 text-base";
   const shaped = `${tall} h-auto w-full flex-col gap-0 whitespace-normal py-1.5`;
+  // In a two-column phone bar the labels have to stay on one line. At the default size the
+  // padding plus a size-5 icon left them wrapping onto two lines, which made the pinned bar
+  // twice as tall as it needed to be (Dal, 25 Oct 2026).
+  const label = compact
+    ? "flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold"
+    : "flex items-center gap-2";
+  const icon = compact ? "size-4 shrink-0" : "size-5 shrink-0";
 
   const hint = (text: string) =>
     showHint ? (
@@ -64,8 +71,8 @@ export function PhotoCaptureActions({
         onClick={onCamera}
         aria-label="Take photo with your phone's camera, at full resolution"
       >
-        <span className="flex items-center gap-2">
-          <Camera aria-hidden="true" className="size-5 shrink-0" />
+        <span className={label}>
+          <Camera aria-hidden="true" className={icon} />
           Take photo
         </span>
         {hint("Your phone's camera, full resolution")}
@@ -81,8 +88,8 @@ export function PhotoCaptureActions({
           onClick={onInAppCamera}
           aria-label="Keep shooting with the in-app camera. It stays open between shots but captures at a lower resolution."
         >
-          <span className="flex items-center gap-2">
-            <Smartphone aria-hidden="true" className="size-5 shrink-0" />
+          <span className={label}>
+            <Smartphone aria-hidden="true" className={icon} />
             Keep shooting
           </span>
           {hint("In-app, stays open, lower resolution")}
@@ -98,8 +105,8 @@ export function PhotoCaptureActions({
         onClick={onGallery}
         aria-label="Add from albums — Google Photos, albums or Files. Select as many as you like."
       >
-        <span className="flex items-center gap-2">
-          <ImagePlus aria-hidden="true" className="size-5 shrink-0" />
+        <span className={label}>
+          <ImagePlus aria-hidden="true" className={icon} />
           Add from albums
         </span>
         {hint("Google Photos, albums or Files")}
