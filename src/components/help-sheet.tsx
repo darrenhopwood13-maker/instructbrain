@@ -61,7 +61,10 @@ export function HelpSheet() {
   return (
     <>
       {hidden ? null : (
-        <div className="fixed bottom-20 right-4 z-30 sm:bottom-6">
+        /* Phones reach Help from the account menu. The floating bubble sat on top of the
+           capture bar on /field - covering the end of "Keep shooting" - and on the map's
+           bottom-right controls (Dal, 25 Oct 2026). */
+        <div className="fixed bottom-20 right-4 z-30 hidden sm:bottom-6 sm:block">
           <button
             type="button"
             onClick={() => setOpen(true)}
