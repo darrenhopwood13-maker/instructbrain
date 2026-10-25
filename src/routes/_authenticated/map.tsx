@@ -409,8 +409,12 @@ function MapScreen() {
         /* The figure strip sits along the foot of the map, so the attribution pill has
            to clear it rather than sit under it. */
         .map-screen .maplibregl-ctrl-bottom-left { bottom: 96px; }
+        .map-screen .maplibregl-ctrl-bottom-right { bottom: 96px; }
         @media (max-width: 639px) {
-          .map-screen .maplibregl-ctrl-bottom-left { bottom: 156px; }
+          /* The figure band is 110px tall on a phone, so the attribution has to clear that
+             rather than sit behind it. */
+          .map-screen .maplibregl-ctrl-bottom-left { bottom: 126px; }
+          .map-screen .maplibregl-ctrl-bottom-right { bottom: 126px; }
         }
       `}</style>
 
