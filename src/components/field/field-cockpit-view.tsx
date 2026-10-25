@@ -148,10 +148,14 @@ export function FieldCockpitView({
         snapshot={snapshot}
         pinnedFields={pinned ?? {}}
         onStatus={setStatus}
-        nextAction={actions}
         autoOpenCamera
         bottomFlush
       />
+
+      {/* The two exits sit at the end of the page, not in the pinned bar. That bar is for the
+          camera - it has no business spending a fifth of the screen on buttons used once
+          (Dal, 25 Oct 2026). */}
+      <section aria-label="Finish the report">{actions}</section>
     </div>
   );
 }
