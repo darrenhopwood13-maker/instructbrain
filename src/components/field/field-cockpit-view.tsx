@@ -1,28 +1,23 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ClipboardCheck, MapPin, Send } from "lucide-react";
+import { ClipboardCheck, Send } from "lucide-react";
 import { PhotosPanel } from "@/components/photos/photos-panel";
 import { FieldSyncPill } from "@/components/field/field-sync-pill";
 import { SendToDashboardControl } from "@/components/field/send-to-dashboard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { EMPTY_PHOTO_STATUS, type PhotoStatus } from "@/lib/report/next-action";
-import {
-  captureFieldsOf,
-  definitionLabel,
-  isManualOnly,
-  photoWorkflowOf,
-  type SurveyTypeSnapshot,
-} from "@/lib/survey-types";
-
-/** Generic location presets, used only when the template offers no list of its own. */
-const LOCATION_PRESETS = ["Ground floor", "Roof plant", "Stairwell A"];
+import { definitionLabel, isManualOnly, type SurveyTypeSnapshot } from "@/lib/survey-types";
 
 /**
- * The capture cockpit: straight to camera, a location tag that stamps every
- * following photograph until changed, a truthful sync pill, and two exits in
- * thumb reach. It renders the existing photo panel and hand-off — it does not
- * own the upload queue, the hand-off or any report logic.
+ * The capture cockpit: straight to camera, a truthful sync pill, and two exits in thumb reach.
+ *
+ * There used to be a second set of location chips up here as well - "Ground floor", "Roof
+ * plant", "Stairwell A" - writing to the same field the photograph panel already asks for and
+ * beating it when the photo was saved, without ever showing in that field (Dal, 25 Oct 2026:
+ * "what are these location labels for because we have a required location field below it").
+ * Two controls for one field, and the one you could not see was the one that won. There is now
+ * one place to set the location: the template's own field, in Step one, where the report reads
+ * it from.
  */
 export function FieldCockpitView({
   report,
@@ -35,27 +30,6 @@ export function FieldCockpitView({
 }) {
   const [status, setStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
   const manual = isManualOnly(snapshot);
-  const inventory = photoWorkflowOf(snapshot)?.kind === "inventory_room_schedule";
-
-  // The location tag writes into the template's own first capture field, so
-  // no discipline term is named here. Inventory rooms are set in its organiser.
-  const zoneField = useMemo(() => {
-    if (inventory) return null;
-    return (
-      captureFieldsOf(snapshot).find((field) => field.type === "text" || field.type === "select") ??
-      null
-    );
-  }, [snapshot, inventory]);
-  const chips = zoneField?.type === "select" && zoneField.options?.length
-    ? zoneField.options.slice(0, 6)
-    : LOCATION_PRESETS;
-
-  const [zone, setZone] = useState("");
-  const [custom, setCustom] = useState("");
-  const pinned = useMemo(
-    () => (zoneField && zone ? { [zoneField.id]: zone } : undefined),
-    [zoneField, zone],
-  );
 
   const actions = (
     <div className="grid grid-cols-2 gap-2">
@@ -97,56 +71,9 @@ export function FieldCockpitView({
 
       <FieldSyncPill uploaded={status.photoCount} pending={status.uploadsActive} />
 
-      {zoneField ? (
-        <section aria-labelledby="zone-heading" className="space-y-2">
-          <h2 id="zone-heading" className="flex items-center gap-1.5 text-base font-semibold">
-            <MapPin aria-hidden="true" className="size-4 shrink-0" />
-            {zoneField.label}
-            <span className="font-normal text-muted-foreground">
-              — {zone ? `stamping “${zone}”` : "none set"}
-            </span>
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {chips.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                aria-pressed={zone === chip}
-                onClick={() => setZone(zone === chip ? "" : chip)}
-                className="min-h-12 rounded-full border border-border bg-surface-raised px-4 text-base font-medium aria-pressed:border-brand-accent aria-pressed:bg-brand-accent/10"
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-          {zoneField.type === "text" ? (
-            <form
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (custom.trim()) setZone(custom.trim());
-                setCustom("");
-              }}
-            >
-              <Input
-                aria-label={`Other ${zoneField.label.toLowerCase()}`}
-                placeholder="Other…"
-                value={custom}
-                onChange={(event) => setCustom(event.target.value)}
-                className="h-12 text-base"
-              />
-              <Button type="submit" variant="outline" className="min-h-12">
-                Set
-              </Button>
-            </form>
-          ) : null}
-        </section>
-      ) : null}
-
       <PhotosPanel
         reportId={report.id}
         snapshot={snapshot}
-        pinnedFields={pinned ?? {}}
         onStatus={setStatus}
         autoOpenCamera
         bottomFlush

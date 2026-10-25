@@ -729,11 +729,28 @@ export function PhotosPanel({
         <h2 className="editorial-title mt-1 text-lg font-semibold">Photographs</h2>
 
         {zoneFields.length > 0 && !inventoryWorkflow ? (
+          zoneHasRequiredField ? (
+            /* Required, so it is not hidden behind a summary line. One place to set the
+               location, in plain sight, directly above the photographs it stamps. */
+            <div className="mt-3 rounded-lg border border-border bg-surface px-3.5 py-3">
+              <p className="mb-2 text-xs text-muted-foreground">
+                Stamped on every photograph you add from here, and read as the location for each
+                finding in the report.
+              </p>
+              <CaptureFieldsForm
+                fields={zoneFields}
+                values={zoneValues}
+                onChange={(fieldId, value) =>
+                  setZoneValues((current) => ({ ...current, [fieldId]: value }))
+                }
+                idPrefix="zone"
+                compact
+              />
+            </div>
+          ) : (
           <details className="mt-3 rounded-lg border border-border bg-surface px-3.5 py-2">
             <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">
-              {zoneHasRequiredField
-                ? "Add the location and details for these photographs"
-                : "Add a location tag (optional)"}
+              Add a location tag (optional)
             </summary>
             <div className="pb-2">
               <p className="mb-2 text-xs text-muted-foreground">
@@ -751,6 +768,7 @@ export function PhotosPanel({
               />
             </div>
           </details>
+          )
         ) : null}
 
         {zoneFields.length > 0 && inventoryWorkflow ? (
