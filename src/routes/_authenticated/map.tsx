@@ -278,6 +278,14 @@ function MapScreen() {
   const [view, setView] = useState<MapView>("map");
   const [panel, setPanel] = useState<"overview" | "trends" | "estate">("overview");
   const [reportOpen, setReportOpen] = useState(false);
+  // Which site the compliance register should be opened for. With nothing selected the button
+  // used to dump the reader on the projects list, which felt like a button that does nothing
+  // (Dal, 25 Oct 2026). Ask the question on the map instead.
+  const [compliancePicker, setCompliancePicker] = useState(false);
+  // A project card (the pin popup) is open. On a phone the figure strip underneath it has to
+  // give way: the two together left the card's own figures, ask box and Share button hidden
+  // behind the strip, which is what Dal saw on 25 Oct 2026.
+  const [cardOpen, setCardOpen] = useState(false);
   const selected = points.find((p) => p.projectId === selectedId) ?? null;
 
   // The map fills what is left of the viewport under the shell header, so it needs to
@@ -433,6 +441,7 @@ function MapScreen() {
                 counts={counts}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                onCardOpen={setCardOpen}
                 view={view}
                 insights={insights}
                 ask={answerSite}
@@ -460,6 +469,7 @@ function MapScreen() {
                 })}
               </div>
               <EstateStrip
+                tuckedAway={cardOpen}
                 totals={itemsQuery.isSuccess ? estateTotals : null}
                 onStart={
                   access.capabilities.capture
@@ -467,8 +477,8 @@ function MapScreen() {
                     : undefined
                 }
                 onCompliance={access.capabilities.capture ? () => {
-                  /* A selected pin is the project someone is on. With nothing selected, send
-                     them to the list rather than guessing which site they meant. */
+                  /* A selected pin is the project someone is on. With nothing selected, ask which
+                     site rather than guessing - or, worse, quietly sending them to a list. */
                   if (selectedId) {
                     void navigate({
                       to: "/projects/$id/compliance",
@@ -477,7 +487,7 @@ function MapScreen() {
                     });
                     return;
                   }
-                  void navigate({ to: "/projects" });
+                  setCompliancePicker(true);
                 } : undefined}
                 onOpenEstate={() => setPanel("estate")}
               />
@@ -592,6 +602,42 @@ function MapScreen() {
                   selectedProjectName={selected?.name ?? null}
                   truncated={itemsQuery.data?.truncated ?? false}
                 />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={compliancePicker} onOpenChange={setCompliancePicker}>
+              <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Compliance</DialogTitle>
+                  <DialogDescription>
+                    The weekly register is kept per site, so pick the one you want to open.
+                  </DialogDescription>
+                </DialogHeader>
+                <ul className="space-y-1.5">
+                  {points.map((point) => (
+                    <li key={point.projectId}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCompliancePicker(false);
+                          void navigate({
+                            to: "/projects/$id/compliance",
+                            params: { id: point.projectId },
+                            search: { type: "fire" },
+                          });
+                        }}
+                        className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-brand-accent"
+                      >
+                        <span className="min-w-0 truncate text-sm font-semibold">
+                          {point.name}
+                        </span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {counts.get(point.projectId)?.overdue ?? 0} past their date
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </DialogContent>
             </Dialog>
           </div>
@@ -817,6 +863,8 @@ type MapCanvasProps = {
   insights: Map<string, ProjectInsight>;
   selectedId: string | null;
   onSelect: (projectId: string) => void;
+  /** Told when the project card opens and closes, so the screen can move the figure strip. */
+  onCardOpen: (open: boolean) => void;
   view: MapView;
   /** Ask a question about one site. Runs in the route, where the model call lives. */
   ask: (projectId: string, query: string) => Promise<SiteAnswer>;
@@ -893,13 +941,15 @@ function pinPopupHtml(point: ProjectPoint, counts: ProjectCounts | undefined, in
  * use as well as prototypes - OpenStreetMap's own raster tiles are not, which is why
  * the prototype note about a paid contract does not apply to this route.
  */
-function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask, exportAnswer }: MapCanvasProps) {
+function MapCanvas({ points, counts, insights, selectedId, onSelect, onCardOpen, view, ask, exportAnswer }: MapCanvasProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("maplibre-gl").Map | null>(null);
   const [ready, setReady] = useState(false);
   const fitted = useRef(false);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const onCardOpenRef = useRef(onCardOpen);
+  onCardOpenRef.current = onCardOpen;
   const askRef = useRef(ask);
   askRef.current = ask;
   const exportRef = useRef(exportAnswer);
@@ -1061,6 +1111,24 @@ function MapCanvas({ points, counts, insights, selectedId, onSelect, view, ask, 
             .setLngLat(coordinates)
             .setHTML(pinPopupHtml(point, latestCounts.get(id), latestInsights.get(id)))
             .addTo(instance);
+
+          // MapLibre pans a card into the map's own box, and the map's box still counts the
+          // ground the figure strip is standing on. So a project card that lands under the strip
+          // is treated as fully on screen when most of it is hidden. The screen hides the strip
+          // on a phone while this card is open; from the sm breakpoint the strip stays, so the
+          // map gets nudged until the card clears it.
+          const popup = popupRef.current;
+          const clearOfStrip = () => {
+            if (!window.matchMedia("(min-width: 640px)").matches) return;
+            const strip = document.querySelector<HTMLElement>("[data-estate-strip]");
+            if (!strip || strip.getClientRects().length === 0) return;
+            const cardBox = popup.getElement().getBoundingClientRect();
+            const overlap = Math.round(cardBox.bottom - strip.getBoundingClientRect().top);
+            if (overlap > 0) instance.panBy([0, -(overlap + 12)], { duration: 260 });
+          };
+          onCardOpenRef.current(true);
+          popup.on("close", () => onCardOpenRef.current(false));
+          requestAnimationFrame(() => requestAnimationFrame(clearOfStrip));
 
           // The popup's HTML is a string, so its form is wired after MapLibre has put it in the
           // DOM. Asking here keeps the answer beside the pin instead of sending the reader to

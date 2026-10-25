@@ -15,12 +15,15 @@ export function EstateStrip({
   onStart,
   onCompliance,
   onOpenEstate,
+  tuckedAway = false,
 }: {
   totals: ControlRoomTotals | null;
   /** Omitted for someone who reviews the estate but does not start work on it. */
   onStart?: (() => void) | undefined;
   onCompliance?: (() => void) | undefined;
   onOpenEstate: () => void;
+  /** True while a project card is open on a phone: one card at a time, and the card wins. */
+  tuckedAway?: boolean;
 }) {
   const figures: Array<{ label: string; value: number | null; tone: "brand" | "fail" | null }> = [
     { label: "Reports", value: totals?.reports ?? null, tone: null },
@@ -31,7 +34,13 @@ export function EstateStrip({
   ];
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-2 sm:p-3">
+    <div
+      data-estate-strip=""
+      className={
+        "pointer-events-none absolute inset-x-0 bottom-0 z-10 p-2 sm:p-3 " +
+        (tuckedAway ? "hidden sm:block" : "")
+      }
+    >
       <div className="pointer-events-auto flex flex-col gap-2 rounded-xl border border-border bg-card/95 p-2 shadow-lg backdrop-blur sm:flex-row sm:items-stretch sm:gap-2.5 sm:p-2.5">
         {onStart || onCompliance ? (
         <div className="flex gap-2">
