@@ -4627,6 +4627,7 @@ export type Database = {
           assigned_contact_id: string | null
           assigned_trade: string | null
           capture_fields: Json
+          closed_at: string | null
           condition_grade: string | null
           confirmed_at: string | null
           confirmed_by: string | null
@@ -4673,6 +4674,7 @@ export type Database = {
           assigned_contact_id?: string | null
           assigned_trade?: string | null
           capture_fields?: Json
+          closed_at?: string | null
           condition_grade?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
@@ -4719,6 +4721,7 @@ export type Database = {
           assigned_contact_id?: string | null
           assigned_trade?: string | null
           capture_fields?: Json
+          closed_at?: string | null
           condition_grade?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
