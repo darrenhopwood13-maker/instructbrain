@@ -97,7 +97,7 @@ function AccountSettings() {
   };
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <p className="eyebrow">Your account</p>
       <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Account</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">

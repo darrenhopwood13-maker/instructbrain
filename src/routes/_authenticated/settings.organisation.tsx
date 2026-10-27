@@ -135,7 +135,7 @@ function OrganisationSettings() {
   });
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <header className="border-b border-border pb-6">
         <p className="eyebrow">Settings</p>
         <h1 className="editorial-title mt-1 text-2xl font-semibold sm:text-3xl">Organisation</h1>

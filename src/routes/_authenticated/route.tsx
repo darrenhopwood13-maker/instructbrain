@@ -36,7 +36,7 @@ function AuthenticatedLayout() {
 
   if (loading) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <LoadingState label="Checking your organisation membership…" />
       </AppShell>
     );
@@ -44,7 +44,7 @@ function AuthenticatedLayout() {
 
   if (error) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <ErrorState title="Could not read your organisation membership" error={error} />
       </AppShell>
     );
@@ -52,7 +52,7 @@ function AuthenticatedLayout() {
 
   if (needsOrganisation) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <LoadingState label="Taking you to set up your organisation…" />
       </AppShell>
     );

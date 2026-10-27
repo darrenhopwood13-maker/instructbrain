@@ -241,14 +241,14 @@ function DistributionReview() {
 
   if (plan.isPending) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <LoadingState label="Working out who receives what…" />
       </AppShell>
     );
   }
   if (plan.isError) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <ErrorState
           title="The distribution could not be prepared"
           error={plan.error}
@@ -261,7 +261,7 @@ function DistributionReview() {
   const data = plan.data;
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           {data?.projectId ? "Projects" : "Custom reports"}

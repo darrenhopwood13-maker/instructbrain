@@ -115,7 +115,7 @@ function ProjectDirectory() {
   const entries = directory.data ?? [];
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           Projects
