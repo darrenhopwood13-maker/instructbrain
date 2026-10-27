@@ -30,7 +30,7 @@ const TITLE = "instructBrain — client-ready reports from site photographs";
  *
  * To take it down, set this to false and publish. Nothing else needs changing.
  */
-const MAINTENANCE = true;
+const MAINTENANCE = false;
 
 const DESCRIPTION =
   "instructBrain turns site photographs into client-ready reports, referenced against the health and safety and building regulations that apply: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and publish. Free for your first 3 reports.";
