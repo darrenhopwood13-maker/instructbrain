@@ -1,7 +1,9 @@
 /**
  * One short clip per task, with a voice-over and a visible pointer, played inline
- * in the Help sheet. Fourteen tasks, in the order a person actually works: set the
- * directory up, run the report, send it out.
+ * in the Help sheet. Sixteen tasks: the fourteen in the order a person actually
+ * works - set the directory up, run the report, send it out - and then the two
+ * oversight screens, the map and the trends panel, which is where a manager looks
+ * before the next job rather than during one.
  *
  * The narration is recorded from the same script the clip is filmed to, so the
  * voice and the screen agree. Long-form walkthroughs are deliberately NOT here -
@@ -132,5 +134,19 @@ export const HELP_TOPICS: HelpTopic[] = [
     caption: "Which instruments a finding can name, and the switch in the AI brief.",
     clipUrl: `${HELP_CLIP_BASE}14-regulation-references.mp4`,
     posterUrl: `${HELP_CLIP_BASE}posters/14-regulation-references.jpg`,
+  },
+  {
+    id: "map",
+    title: "See every job on the map",
+    caption: "One pin per project, with the counts that need a person.",
+    clipUrl: `${HELP_CLIP_BASE}15-the-map.mp4`,
+    posterUrl: `${HELP_CLIP_BASE}posters/15-the-map.jpg`,
+  },
+  {
+    id: "trends",
+    title: "Read the trends",
+    caption: "What is going up, what came down, where the process stalls.",
+    clipUrl: `${HELP_CLIP_BASE}16-trends.mp4`,
+    posterUrl: `${HELP_CLIP_BASE}posters/16-trends.jpg`,
   },
 ];
