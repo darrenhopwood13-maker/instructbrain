@@ -66,7 +66,7 @@ function ProjectDashboard() {
 
   if (project.isPending) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <LoadingState label="Loading this project…" />
       </AppShell>
     );
@@ -74,7 +74,7 @@ function ProjectDashboard() {
 
   if (project.isError) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <ErrorState
           title="This project could not be loaded"
           error={project.error}
@@ -86,7 +86,7 @@ function ProjectDashboard() {
 
   if (!project.data) {
     return (
-      <AppShell>
+      <AppShell surface="light">
         <EmptyState
           icon={FileText}
           eyebrow="Not found"
@@ -107,7 +107,7 @@ function ProjectDashboard() {
   const overdueList = overdue.data ?? [];
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <nav aria-label="Breadcrumb" className="pb-4 text-sm">
         <Link to="/projects" className="font-medium text-muted-foreground hover:text-foreground">
           Projects

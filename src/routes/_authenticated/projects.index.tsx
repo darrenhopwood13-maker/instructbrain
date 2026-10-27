@@ -38,7 +38,7 @@ function ProjectsIndex() {
   const projects = query.data ?? [];
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 pb-10">
         <div className="min-w-0">
           <p className="eyebrow">Portfolio</p>

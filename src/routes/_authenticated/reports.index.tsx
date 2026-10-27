@@ -154,7 +154,7 @@ function AllReports() {
   });
 
   return (
-    <AppShell>
+    <AppShell surface="light">
       <header className="border-b border-border pb-6">
         <div className="grid min-w-0 gap-4 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-start">
           <div className="min-w-0">
