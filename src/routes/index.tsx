@@ -21,17 +21,6 @@ import { BRAND_CREDIT } from "@/lib/brand";
 // Redeploy trigger (no-op): Lovable rebuilds with Supabase envs on push.
 const TITLE = "instructBrain — client-ready reports from site photographs";
 
-/**
- * MAINTENANCE NOTICE, 27 Oct 2026.
- *
- * The site is on its own so a visitor is told the truth rather than meeting a broken
- * sign-in form. It is deliberately static: no Supabase call, no auth, no fetch, so it
- * paints even while the database is unreachable - which is the whole reason it exists.
- *
- * To take it down, set this to false and publish. Nothing else needs changing.
- */
-const MAINTENANCE = false;
-
 const DESCRIPTION =
   "instructBrain turns site photographs into client-ready reports, referenced against the health and safety and building regulations that apply: Custom Reports, Project Reports and Weekly Compliance Registers. AI drafts referenced findings; you review, confirm and publish. Free for your first 3 reports.";
 
@@ -89,7 +78,6 @@ function Landing() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      {MAINTENANCE ? <MaintenanceBanner /> : null}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
@@ -113,44 +101,6 @@ function Landing() {
       </main>
 
       <LandingFooter />
-    </div>
-  );
-}
-
-function MaintenanceBanner() {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="relative z-40 border-b-2 px-4 py-2.5 text-center sm:px-6"
-      style={{
-        // Sits a shade darker than the console behind it so the notice reads as a band
-        // above the site, not as part of the header.
-        background: "oklch(0.295 0.082 262.6)",
-        borderBottomColor: "var(--brand-accent)",
-        color: "oklch(0.985 0 0)",
-      }}
-    >
-      <style>{`
-        .ib-maint-dot { width:7px; height:7px; border-radius:9999px; background:var(--brand-accent); display:inline-block; vertical-align:middle; margin-right:7px; animation: ib-maint-pulse 2.4s ease-in-out infinite; }
-        @keyframes ib-maint-pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
-        @media (prefers-reduced-motion: reduce) { .ib-maint-dot { animation:none; } }
-      `}</style>
-      <p className="mx-auto max-w-4xl text-[12.5px] leading-relaxed sm:text-[13.5px]">
-        <span className="ib-maint-dot" aria-hidden="true" />
-        <strong className="font-bold">instructBrain is under maintenance.</strong>{" "}
-        <span style={{ color: "oklch(0.985 0 0 / 0.8)" }}>
-          Signing in and signing up are paused while we finish some work behind the scenes -
-          we expect to be back shortly. Anything urgent:{" "}
-        </span>
-        <a
-          href="mailto:hello@instructsite.ai"
-          className="font-semibold underline underline-offset-2"
-          style={{ color: "var(--brand-accent)" }}
-        >
-          hello@instructsite.ai
-        </a>
-      </p>
     </div>
   );
 }
