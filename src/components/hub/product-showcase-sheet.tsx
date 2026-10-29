@@ -173,7 +173,7 @@ export function ProductShowcaseSheet({
   );
 }
 
-/** The in-person demo: the real promo film, full attention, portrait. */
+/** The in-person demo: the real promo film, full attention, landscape. */
 export function PromoReelModal({
   product,
   open,

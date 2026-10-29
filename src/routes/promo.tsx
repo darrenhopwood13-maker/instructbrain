@@ -61,7 +61,7 @@ function PromoPage() {
           manual photographic reports and weekly compliance, published the same afternoon.
         </p>
 
-        <div className="mt-8 w-full max-w-[420px]">
+        <div className="mt-8 w-full max-w-[960px]">
           {/*
             The poster is not decoration. Without it, `preload="metadata"` plus a
             dark opening frame means this page renders as an empty navy rectangle
@@ -74,7 +74,7 @@ function PromoPage() {
             controls
             playsInline
             preload="metadata"
-            className="aspect-[9/16] w-full rounded-2xl border border-brand-accent/50 bg-surface-sunken shadow-2xl"
+            className="aspect-video w-full rounded-2xl border border-brand-accent/50 bg-surface-sunken shadow-2xl"
             aria-label="instructBrain 90-second product promo video"
           />
         </div>

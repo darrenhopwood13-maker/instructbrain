@@ -41,7 +41,7 @@ export function PromoFilm({
   }
 
   return (
-    <div className="mt-5 w-full max-w-[380px]">
+    <div className="mt-5 w-full">
       <video
         src={film.url}
         controls
@@ -49,7 +49,7 @@ export function PromoFilm({
         playsInline
         preload="metadata"
         onError={() => setFailed(true)}
-        className="aspect-[9/16] w-full rounded-2xl border bg-surface-sunken"
+        className="aspect-video w-full rounded-2xl border bg-surface-sunken"
         aria-label={`${product.label} promo film, ${film.seconds} seconds`}
         data-testid="hub-film"
       />

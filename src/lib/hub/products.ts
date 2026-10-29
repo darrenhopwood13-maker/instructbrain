@@ -134,8 +134,10 @@ export const HUB_PRODUCTS: readonly HubProduct[] = [
     demo: "reel",
     film: {
       // The ninety-second film, served from this app's own origin out of
-      // `public/`, so it cannot depend on an asset id being re-issued. Portrait
-      // 9:16, because this player is the portrait modal in the launcher.
+      // `public/`, so it cannot depend on an asset id being re-issued. Landscape
+      // 16:9, which is how Dal prefers to watch it - the earlier portrait cut was
+      // the 16:9 master padded into a 9:16 canvas, so 56% of every frame was
+      // empty navy. Both players now declare `aspect-video` to match the file.
       // When the film is replaced, replace the file AND `seconds` - the runtime
       // printed under the player is read from here, never guessed.
       url: "/instructbrain-promo-90s.mp4",
