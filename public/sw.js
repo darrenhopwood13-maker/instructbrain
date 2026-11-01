@@ -7,7 +7,7 @@
  * `beforeinstallprompt`, unless a service worker with a `fetch` handler is
  * registered and active. A correct manifest is NOT enough on its own - which is
  * why the "Add to home screen" offer never appeared on Android however right
- * `manifest.webmanifest` looked.
+ * `manifest-field.webmanifest` looked.
  *
  * IT CACHES NOTHING, ON PURPOSE. There is no `caches.open` in this file and
  * there should never be one: every request goes to the network exactly as it

@@ -1,23 +1,30 @@
 {
   "id": "/field",
   "name": "instructBrain Field",
-  "short_name": "instructBrain",
-  "description": "Capture site photographs and send the report to the dashboard.",
+  "short_name": "Field",
+  "description": "Photograph the site as you walk it. Everything saves as you go.",
   "start_url": "/field",
-  "scope": "/",
+  "scope": "/field",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#24417B",
   "theme_color": "#24417B",
+  "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/icons/instructbrain-512.png",
+      "src": "/icons/field-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/field-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/instructbrain-512.png",
+      "src": "/icons/field-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

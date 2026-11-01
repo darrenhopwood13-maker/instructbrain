@@ -65,8 +65,12 @@ export const Route = createFileRoute("/_authenticated/field")({
       // any other page opened the field cockpit. A document with two manifest
       // (or apple-touch-icon) links uses the first, so this could not be fixed
       // by adding a second one further down: the root had to stop declaring one.
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icons/instructbrain-512.png" },
+      // The field app has its own manifest at its own URL, scoped to /field. The site-wide
+      // one used to BE this, so any page that declared it advertised start_url "/field" and
+      // the brain icon - a home-screen icon made from the dashboard opened the site app.
+      { rel: "manifest", href: "/manifest-field.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/field-180.png" },
+      { rel: "icon", href: "/icons/field-192.png", sizes: "192x192" },
     ],
   }),
   component: FieldCockpit,
