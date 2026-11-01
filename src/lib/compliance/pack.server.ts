@@ -170,6 +170,8 @@ export type PackData = {
   actions: ComplianceAction[];
   photoUrls: Map<string, string>;
   photoCaptured: Map<string, string | null>;
+  /** Signed links to the drawn signatures, keyed by run id. */
+  signatureUrls: Map<string, string>;
 };
 
 function mapRun(row: Record<string, any>): ComplianceRun {
@@ -183,6 +185,8 @@ function mapRun(row: Record<string, any>): ComplianceRun {
     reportNumber: row["report_number"] ?? null,
     performedByName: row["performed_by_name"] ?? null,
     signedAt: row["signed_at"] ?? null,
+    signerName: row["signer_name"] ?? null,
+    signaturePath: row["signature_path"] ?? null,
     competentPerson: row["competent_person"] ?? null,
     lockedAt: row["locked_at"] ?? null,
     archivedAt: row["archived_at"] ?? null,
@@ -205,7 +209,7 @@ export async function loadPackData(
       db
         .from("compliance_runs")
         .select(
-          "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, report_id, created_at",
+          "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, signer_name, signature_path, competent_person, locked_at, report_id, created_at",
         )
         .eq("project_id", input.projectId)
         .eq("check_type", input.checkType)
@@ -314,6 +318,23 @@ export async function loadPackData(
     }
   }
 
+  // Signature images live in the same bucket, so they need the same signed links.
+  const signaturePaths = runs
+    .map((run) => run.signaturePath)
+    .filter((path): path is string => !!path);
+  const signatureUrls = new Map<string, string>();
+  if (signaturePaths.length > 0) {
+    const { data: signed } = await db.storage.from("report-photos").createSignedUrls(signaturePaths, 3600);
+    const byPath = new Map<string, string>();
+    for (const entry of signed ?? []) {
+      if (entry.path && entry.signedUrl) byPath.set(entry.path, entry.signedUrl);
+    }
+    for (const run of runs) {
+      const url = run.signaturePath ? byPath.get(run.signaturePath) : undefined;
+      if (url) signatureUrls.set(run.id, url);
+    }
+  }
+
   const organisationId = (projectRow as Record<string, any> | null)?.["organisation_id"] ?? null;
   let organisationName = "";
   if (organisationId) {
@@ -342,6 +363,7 @@ export async function loadPackData(
     actions,
     photoUrls,
     photoCaptured,
+    signatureUrls,
   };
 }
 
@@ -450,6 +472,9 @@ export async function buildCompliancePack(
 
   const latest = [...data.runs].sort((a, b) => b.checkDate.localeCompare(a.checkDate))[0] ?? null;
   const weekEnding = latest?.checkDate ?? null;
+  // Declared here because the signature on the cover is the first image in the document.
+  const fetcher: Fetcher = { spent: 0, cache: new Map() };
+  // Declared up here because the signature on the cover is the first image in the document.
 
   /* Cover ---------------------------------------------------------- */
   eyebrow(writer, "Weekly compliance register");
@@ -469,6 +494,48 @@ export async function buildCompliancePack(
   fact(writer, "Site reference", latest?.siteReference ?? data.project?.reference ?? "");
   fact(writer, "Report number", latest?.reportNumber ?? "");
   fact(writer, "Performed by", latest?.performedByName ?? "Not yet signed");
+  if (latest) {
+    if (latest.signedAt) {
+      const signer = latest.signerName ?? latest.performedByName;
+      const when = new Date(latest.signedAt).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      fact(
+        writer,
+        "Signed by",
+        signer
+          ? `${signer} - signed electronically at ${when}`
+          : `No signer was recorded on this check - timed at ${when}`,
+      );
+      const signatureImage = await embed(
+        writer,
+        fetcher,
+        `signature:${latest.id}`,
+        data.signatureUrls.get(latest.id),
+      );
+      if (signatureImage) {
+        drawImage(writer, signatureImage, 170, 46);
+      } else if (signer) {
+        text(writer, "No drawn signature was captured; the typed name and time above are the record.", {
+          size: 8,
+          colour: MUTED,
+          gapAfter: 2,
+        });
+      }
+      // Say what this signature is worth, on the document, not just in the app.
+      text(
+        writer,
+        "An electronic signature records who signed and when. It is evidence of intent, not a qualified electronic signature under eIDAS.",
+        { size: 7.5, colour: MUTED, gapAfter: 2 },
+      );
+    } else {
+      fact(writer, "Signed by", "Not yet signed - this week is still in progress");
+    }
+  }
   if (definition.requiresCompetentPerson) {
     fact(writer, "Competent person", latest?.competentPerson ?? "Not recorded");
   }
@@ -531,7 +598,6 @@ export async function buildCompliancePack(
   }
 
   /* Point detail with photographs ----------------------------------- */
-  const fetcher: Fetcher = { spent: 0, cache: new Map() };
   const pointById = new Map(data.points.map((point) => [point.id, point]));
 
   for (const run of [...data.runs].sort((a, b) => b.checkDate.localeCompare(a.checkDate))) {

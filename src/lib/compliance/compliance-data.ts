@@ -88,6 +88,10 @@ export type ComplianceRun = {
   reportNumber: string | null;
   performedByName: string | null;
   signedAt: string | null;
+  /** Who signed it off, typed at the moment of signing. Null on checks signed before Nov 2026. */
+  signerName: string | null;
+  /** Storage object holding the drawn signature. */
+  signaturePath: string | null;
   competentPerson: string | null;
   lockedAt: string | null;
   archivedAt: string | null;
@@ -111,7 +115,7 @@ export type ComplianceAction = {
 };
 
 const runColumns =
-  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, competent_person, locked_at, archived_at, report_id, created_at";
+  "id, organisation_id, project_id, check_type, check_date, site_reference, report_number, performed_by_name, signed_at, signer_name, signature_path, competent_person, locked_at, archived_at, report_id, created_at";
 const pointColumns =
   "id, project_id, check_type, location, unit_ref, unit_type, state, decommissioned_at, decommission_note";
 const entryColumns =
@@ -130,6 +134,8 @@ function toRun(row: Record<string, any>): ComplianceRun {
     reportNumber: row["report_number"] ?? null,
     performedByName: row["performed_by_name"] ?? null,
     signedAt: row["signed_at"] ?? null,
+    signerName: row["signer_name"] ?? null,
+    signaturePath: row["signature_path"] ?? null,
     competentPerson: row["competent_person"] ?? null,
     lockedAt: row["locked_at"] ?? null,
     archivedAt: row["archived_at"] ?? null,
@@ -515,11 +521,25 @@ export async function updateAction(
   check(await from("compliance_actions").update(update).eq("id", actionId));
 }
 
-/** Locking is one-way. The database refuses every later write to the run. */
-export async function lockRun(runId: string, performedByName: string | null) {
+/**
+ * Signing off completes the check and locks it in one statement.
+ *
+ * The signature travels with the lock rather than after it, because the database guard
+ * refuses every later write to a completed run - so there is no window in which a check
+ * is locked but unsigned, or signed by someone other than the person who locked it.
+ */
+export async function lockRun(
+  runId: string,
+  performedByName: string | null,
+  signature?: { path: string | null; signerName: string } | null,
+) {
   const now = new Date().toISOString();
   const update: Record<string, unknown> = { locked_at: now, signed_at: now };
   if (performedByName) update["performed_by_name"] = performedByName;
+  if (signature) {
+    update["signer_name"] = signature.signerName;
+    update["signature_path"] = signature.path;
+  }
   check(await from("compliance_runs").update(update).eq("id", runId));
 }
 

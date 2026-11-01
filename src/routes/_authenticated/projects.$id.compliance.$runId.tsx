@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorState, LoadingState } from "@/components/query-states";
 import { PackDownloadButton } from "@/components/compliance/pack-download";
+import { SignaturePad } from "@/components/compliance/signature-pad";
 
 import {
   Dialog,
@@ -53,6 +54,9 @@ import {
   type CompliancePoint,
 } from "@/lib/compliance/compliance-data";
 import { confirmableIds, planCarryForward } from "@/lib/compliance/carry-forward";
+import { describeSignOff, uploadSignature } from "@/lib/compliance/signature";
+import { useSession } from "@/lib/auth";
+import { displayNameFor } from "@/lib/audit/actor";
 
 export const Route = createFileRoute("/_authenticated/projects/$id/compliance/$runId")({
   head: () => {
@@ -253,9 +257,26 @@ function ComplianceRun() {
   });
 
   const complete = useMutation({
-    mutationFn: async () => lockRun(runId, run?.performedByName ?? null),
+    mutationFn: async (input: { signerName: string; signature: Blob | null }) => {
+      const signerName = input.signerName.trim();
+      if (!signerName) throw new Error("Type your name before signing the check off.");
+      let path: string | null = null;
+      if (input.signature) {
+        if (!organisationId) throw new Error("You are not a member of an organisation yet.");
+        path = await uploadSignature({
+          blob: input.signature,
+          organisationId,
+          reportId: run?.reportId ?? "",
+          runId,
+        });
+      }
+      // Name, signature and lock travel in one statement: the database refuses every later
+      // write to a completed check, so a signature added afterwards would be impossible.
+      await lockRun(runId, run?.performedByName ?? signerName, { path, signerName });
+    },
     onSuccess: () => {
-      toast.success("Check completed. It is now read-only.");
+      setSignOpen(false);
+      toast.success("Check signed off and locked. It is now read-only.");
       void refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -277,6 +298,10 @@ function ComplianceRun() {
     const entry = photoForRef.current;
     if (entry) photo.mutate({ entry, file });
   });
+  const { user } = useSession();
+  const [signOpen, setSignOpen] = useState(false);
+  const [signName, setSignName] = useState("");
+  const [signBlob, setSignBlob] = useState<Blob | null>(null);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const photoUrls = useQuery(runPhotosQuery(run?.reportId ?? null));
 
@@ -423,12 +448,17 @@ function ComplianceRun() {
           {run.competentPerson ? ` · Competent person ${run.competentPerson}` : ""}
         </p>
         {locked ? (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
-            <Lock aria-hidden="true" className="size-4" />
-            {archived
-              ? "Archived and retained as evidence. Nothing in it can be changed."
-              : "Completed and read-only. A correction is recorded as a new entry, never an edit."}
-          </p>
+          <div className="mt-3 space-y-1">
+            <p className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
+              <Lock aria-hidden="true" className="size-4" />
+              {archived
+                ? "Archived and retained as evidence. Nothing in it can be changed."
+                : "Completed and read-only. A correction is recorded as a new entry, never an edit."}
+            </p>
+            {describeSignOff(run) ? (
+              <p className="text-sm text-muted-foreground">{describeSignOff(run)}</p>
+            ) : null}
+          </div>
         ) : null}
       </header>
 
@@ -735,11 +765,15 @@ function ComplianceRun() {
           {!locked ? (
             <Button
               className="w-full sm:w-auto"
-              onClick={() => complete.mutate()}
+              onClick={() => {
+                setSignName(run.performedByName ?? displayNameFor(user) ?? "");
+                setSignBlob(null);
+                setSignOpen(true);
+              }}
               disabled={blockers.length > 0 || complete.isPending}
             >
               <Lock aria-hidden="true" className="size-4" />
-              Complete and lock this check
+              Sign off and lock this check
             </Button>
           ) : null}
           {locked && !archived ? (
@@ -909,6 +943,48 @@ function ComplianceRun() {
               disabled={newAction.isPending || !actionText.trim()}
             >
               Raise action
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={signOpen} onOpenChange={(open) => !open && setSignOpen(false)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Sign this check off</DialogTitle>
+            <DialogDescription>
+              Signing locks the check. Nothing in it can be changed afterwards - a correction
+              is recorded in the next week's check, never as an edit to this one.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="signer-name">Your name</Label>
+              <Input
+                id="signer-name"
+                value={signName}
+                onChange={(event) => setSignName(event.target.value)}
+                placeholder="Who is signing this off"
+                className="mt-1.5 h-11"
+                autoComplete="name"
+              />
+            </div>
+            <SignaturePad onChange={setSignBlob} disabled={complete.isPending} />
+            <p className="text-xs text-muted-foreground">
+              An electronic signature is evidence of intent. It is not a qualified electronic
+              signature, and the report says so.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => complete.mutate({ signerName: signName, signature: signBlob })}
+              disabled={complete.isPending || !signName.trim()}
+            >
+              <Check aria-hidden="true" className="size-4" />
+              Sign off and lock
             </Button>
           </DialogFooter>
         </DialogContent>

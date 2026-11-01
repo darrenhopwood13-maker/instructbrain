@@ -382,6 +382,8 @@ describe("production PDF entry points", () => {
           reportNumber: "FIRE-01",
           performedByName: "Site Manager",
           signedAt: "2026-09-11T10:00:00Z",
+          signerName: null,
+          signaturePath: null,
           competentPerson: null,
           lockedAt: "2026-09-11T10:00:00Z",
           archivedAt: null,
@@ -394,6 +396,7 @@ describe("production PDF entry points", () => {
       actions: [],
       photoUrls: new Map(),
       photoCaptured: new Map(),
+      signatureUrls: new Map(),
     };
 
     const built = await buildCompliancePack(packData, { checkType: "fire", single: true });
