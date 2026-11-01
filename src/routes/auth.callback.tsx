@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganisation, fetchMemberships, useSession } from "@/lib/auth";
 import { type NextDestination, safeNext } from "@/lib/next-destination";
+import { capabilitiesFor, homeRouteFor, type AppRole } from "@/lib/roles";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -29,7 +30,11 @@ export const Route = createFileRoute("/auth/callback")({
 function AuthCallback() {
   const navigate = useNavigate();
   const { next } = Route.useSearch();
-  const destination = next ?? "/dashboard";
+  /**
+   * Where to land after signing in. A deep link still wins, but the default is now the
+   * widest door the person's own role unlocks, not the estate map for everyone.
+   */
+  const landing = next ?? null;
   const { user, loading } = useSession();
 
   const [needsOrganisation, setNeedsOrganisation] = useState(false);
@@ -63,8 +68,14 @@ function AuthCallback() {
     fetchMemberships(user)
       .then((memberships) => {
         if (cancelled) return;
-        if (memberships.length === 0) setNeedsOrganisation(true);
-        else navigate({ to: destination, replace: true });
+        if (memberships.length === 0) {
+          setNeedsOrganisation(true);
+          return;
+        }
+        const home =
+          landing ??
+          homeRouteFor(capabilitiesFor(memberships.map((membership) => membership.role as AppRole)));
+        navigate({ to: home, replace: true });
       })
       .catch(() => {
         if (!cancelled) setNeedsOrganisation(true);
@@ -72,7 +83,7 @@ function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, navigate, linkProblem, destination]);
+  }, [loading, user, navigate, linkProblem, landing]);
 
 
   const submit = async (event: React.FormEvent) => {
@@ -83,7 +94,7 @@ function AuthCallback() {
       toast.success("Organisation created", {
         description: "You are the owner and can invite colleagues from Settings.",
       });
-      navigate({ to: destination, replace: true });
+      navigate({ to: landing ?? "/map", replace: true });
     } catch (error) {
       toast.error("Could not create the organisation", {
         description: error instanceof Error ? error.message : "Please try again.",

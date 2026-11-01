@@ -30,6 +30,7 @@ import { usePlanUsage } from "@/lib/plans";
 import { useOrganisations } from "@/lib/use-organisations";
 import { deleteOrganisation, getOrganisationDeleteSummary } from "@/lib/delete.functions";
 import { OrganisationMembers } from "@/components/settings/organisation-members";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/organisation")({
@@ -58,7 +59,15 @@ const swatches = [
 ];
 
 function OrganisationSettings() {
-  const { organisationId, role } = useOrganisations();
+  const { organisationId } = useOrganisations();
+  const { capabilities, loading: capabilitiesLoading } = useCapabilities();
+  /**
+   * The organisation's own record — name, address, brand, people — is `administer`.
+   * Everyone in the organisation may read it; only owners and admins may change it.
+   * Before this, the screen was shown identically to all five roles, with a live Save
+   * button, under copy admitting only owners and admins could change the logo.
+   */
+  const canAdminister = !capabilitiesLoading && capabilities.administer;
   const usage = usePlanUsage(organisationId);
   const { isPlatformAdmin } = useIsPlatformAdmin();
   const query = useQuery(organisationQuery(organisationId));
@@ -69,7 +78,7 @@ function OrganisationSettings() {
   const [address, setAddress] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const canEditLogo = role === "owner" || role === "admin";
+  const canEditLogo = canAdminister;
 
   const organisation = query.data ?? null;
   // Absent means on, so an account that has never touched the switch keeps the trade layer.
@@ -146,7 +155,7 @@ function OrganisationSettings() {
 
       <PlanUsageMeter usage={usage} className="mt-6 max-w-xl" />
 
-      {role === "owner" || role === "admin" ? (
+      {canAdminister ? (
         <section className="mt-6 max-w-xl rounded-lg border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -178,7 +187,7 @@ function OrganisationSettings() {
 
 
 
-      {role === "owner" || role === "admin" ? (
+      {canAdminister ? (
         <EmailSettingsPanel
           organisationId={organisationId}
           organisationName={organisation?.name ?? "your organisation"}
@@ -208,9 +217,15 @@ function OrganisationSettings() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               autoComplete="organization"
+              readOnly={!canAdminister}
               required
             />
             <p className="text-xs text-muted-foreground">Printed on the report cover page.</p>
+            {!canAdminister ? (
+              <p className="text-xs text-muted-foreground">
+                Only owners and admins can change the organisation name.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -220,6 +235,7 @@ function OrganisationSettings() {
               value={address}
               onChange={(event) => setAddress(event.target.value)}
               autoComplete="street-address"
+              readOnly={!canAdminister}
             />
           </div>
 
@@ -290,6 +306,7 @@ function OrganisationSettings() {
                   type="button"
                   aria-pressed={brand === swatch.id}
                   onClick={() => setBrand(swatch.id)}
+                  disabled={!canAdminister}
                   className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3 text-sm font-medium transition-colors ${
                     brand === swatch.id
                       ? "border-brand-accent bg-brand-accent-soft text-brand-accent-ink"
@@ -308,11 +325,13 @@ function OrganisationSettings() {
             <ErrorState title="Your changes were not saved" error={mutation.error} />
           ) : null}
 
-          <div className="rule-top pt-6">
-            <Button type="submit" variant="brand" disabled={mutation.isPending}>
-              {mutation.isPending ? "Saving…" : "Save changes"}
-            </Button>
-          </div>
+          {canAdminister ? (
+            <div className="rule-top pt-6">
+              <Button type="submit" variant="brand" disabled={mutation.isPending}>
+                {mutation.isPending ? "Saving…" : "Save changes"}
+              </Button>
+            </div>
+          ) : null}
         </form>
       )}
 

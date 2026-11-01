@@ -52,6 +52,7 @@ import { ReportLanguageControl } from "@/components/report/report-language";
 import { isManualOnly } from "@/lib/survey-types";
 import { sendManualReportPdf, sendReportShared } from "@/lib/email/email.functions";
 import type { ResultView } from "@/lib/report/grouping";
+import { useCapabilities } from "@/lib/use-capabilities";
 
 /** The report header has one issue action and one Share menu holding every way out. */
 export function ReportActions({
@@ -68,6 +69,15 @@ export function ReportActions({
   onDetachFromProject?: (() => void) | undefined;
 }) {
   const queryClient = useQueryClient();
+  const { capabilities, loading: capabilitiesLoading } = useCapabilities();
+  /**
+   * Publishing, distributing, sharing and reopening are the `issue` capability. A viewer
+   * reads the report and takes the PDF; showing them a Publish button that the database
+   * will refuse is worse than not showing it at all.
+   */
+  const canIssue = !capabilitiesLoading && capabilities.issue;
+  /** Restructuring a report (moving it between projects, detaching it) is site work. */
+  const canCapture = !capabilitiesLoading && capabilities.capture;
   const [issueOpen, setIssueOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [recipientName, setRecipientName] = useState("");
@@ -289,13 +299,13 @@ export function ReportActions({
   return (
     <>
       <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-        {!isManualOnly(document.snapshot) ? (
+        {canIssue && !isManualOnly(document.snapshot) ? (
           <ReportLanguageControl
             reportId={document.report.id}
             value={document.report.outputLanguage}
           />
         ) : null}
-        {issued ? (
+        {issued ? canIssue && (
           <Button
             type="button"
             variant="quiet"
@@ -306,7 +316,7 @@ export function ReportActions({
             <Unlock aria-hidden="true" className="size-4" />
             Reopen for editing
           </Button>
-        ) : (
+        ) : canIssue && (
           <Button
             type="button"
             variant="brand"
@@ -323,12 +333,14 @@ export function ReportActions({
           It sits here, as a button rather than a menu item, because a control
           nobody can find is the same as a control that is not there.
         */}
-        <Button variant="quiet" className="min-h-11 w-full sm:w-auto" asChild>
-          <Link to="/reports/$id/distribute" params={{ id: document.report.id }}>
-            <Users aria-hidden="true" className="size-4" />
-            Distribute
-          </Link>
-        </Button>
+        {canIssue && (
+          <Button variant="quiet" className="min-h-11 w-full sm:w-auto" asChild>
+            <Link to="/reports/$id/distribute" params={{ id: document.report.id }}>
+              <Users aria-hidden="true" className="size-4" />
+              Distribute
+            </Link>
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -358,7 +370,7 @@ export function ReportActions({
                 Open the report PDF
               </Link>
             </DropdownMenuItem>
-            {isManualOnly(document.snapshot) ? (
+            {canIssue && isManualOnly(document.snapshot) ? (
               <>
                 <DropdownMenuItem
                   className="min-h-11"
@@ -380,7 +392,7 @@ export function ReportActions({
                   {issued ? "Email PDF" : "Publish before emailing"}
                 </DropdownMenuItem>
               </>
-            ) : (
+            ) : canIssue && (
               // A client link is a client-facing act: it needs a published
               // report behind it, exactly as the manualOnly path already
               // required. Until then the row says why instead of silently
@@ -401,17 +413,19 @@ export function ReportActions({
               it takes the same email. Dal, wanting the whole app covered:
               "Needs to operational throughout the app."
             */}
-            <DropdownMenuItem
-              className="min-h-11"
-              disabled={!issued}
-              onSelect={() => {
-                setEmailMode("link");
-                setEmailOpen(true);
-              }}
-            >
-              <Mail aria-hidden="true" className="size-4" />
-              {issued ? "Send link by email" : "Publish before sending the link"}
-            </DropdownMenuItem>
+            {canIssue ? (
+              <DropdownMenuItem
+                className="min-h-11"
+                disabled={!issued}
+                onSelect={() => {
+                  setEmailMode("link");
+                  setEmailOpen(true);
+                }}
+              >
+                <Mail aria-hidden="true" className="size-4" />
+                {issued ? "Send link by email" : "Publish before sending the link"}
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem className="min-h-11" onSelect={() => pdf.mutate("download")}>
               <Download aria-hidden="true" className="size-4" />
               {issued ? "Download report" : "Download draft PDF"}
@@ -422,13 +436,13 @@ export function ReportActions({
                 Share via device
               </DropdownMenuItem>
             ) : null}
-            {onAddToProject ? (
+            {onAddToProject && canCapture ? (
               <DropdownMenuItem className="min-h-11" onSelect={onAddToProject}>
                 <FolderInput aria-hidden="true" className="size-4" />
                 Add to project
               </DropdownMenuItem>
             ) : null}
-            {onDetachFromProject ? (
+            {onDetachFromProject && canCapture ? (
               <DropdownMenuItem className="min-h-11" onSelect={onDetachFromProject}>
                 <FolderOutput aria-hidden="true" className="size-4" />
                 Detach from project

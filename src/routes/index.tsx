@@ -15,6 +15,8 @@ import { RoiRace } from "@/components/landing/roi-race";
 import { ComplianceTicker, PhotoToReport } from "@/components/landing/photo-to-report";
 import { Reveal } from "@/components/landing/reveal";
 import { useSession } from "@/lib/auth";
+import { homeRouteFor } from "@/lib/roles";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { absoluteUrl } from "@/lib/site-url";
 import { BRAND_CREDIT } from "@/lib/brand";
 
@@ -60,6 +62,7 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
+  const { capabilities, loading: capabilitiesLoading } = useCapabilities();
 
   // A signed-in visitor never needs the sales page — unless the URL carries
   // sign-in tokens from an email link. Those must reach the auth screens
@@ -73,8 +76,12 @@ function Landing() {
       window.location.replace(`${target}${hash}`);
       return;
     }
-    if (!loading && user) navigate({ to: "/dashboard", replace: true });
-  }, [loading, user, navigate]);
+    // Wait for the memberships: sending everyone to one route and correcting it a moment
+    // later is a visible flicker on the first screen a new user ever sees.
+    if (!loading && !capabilitiesLoading && user) {
+      navigate({ to: homeRouteFor(capabilities), replace: true });
+    }
+  }, [loading, capabilitiesLoading, user, capabilities, navigate]);
 
   return (
     <div className="flex min-h-dvh flex-col">
