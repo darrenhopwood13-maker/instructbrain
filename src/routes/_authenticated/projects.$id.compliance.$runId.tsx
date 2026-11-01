@@ -2,7 +2,7 @@ import { useSinglePhotoCapture } from "@/components/photos/single-photo-capture"
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Camera, Check, ChevronRight, Lock, Plus, Wrench, X } from "lucide-react";
+import { Archive, Camera, Check, ChevronRight, Copy, Lock, Plus, Wrench, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -40,6 +40,7 @@ import {
   complianceEntriesQuery,
   compliancePointsQuery,
   complianceRunQuery,
+  complianceRunsQuery,
   createPoint,
   lockRun,
   raiseAction,
@@ -51,6 +52,7 @@ import {
   type ComplianceEntry,
   type CompliancePoint,
 } from "@/lib/compliance/compliance-data";
+import { confirmableIds, planCarryForward } from "@/lib/compliance/carry-forward";
 
 export const Route = createFileRoute("/_authenticated/projects/$id/compliance/$runId")({
   head: () => {
@@ -278,6 +280,90 @@ function ComplianceRun() {
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const photoUrls = useQuery(runPhotosQuery(run?.reportId ?? null));
 
+  // ---- Carrying the week forward from the last check of the same type ---------
+  // A weekly fire check asks the same questions about the same points every week.
+  // Rather than 300 taps to say "nothing changed", take last week's answers for
+  // whatever is still blank, then let the inspector confirm only the points that
+  // genuinely match. Anything already answered differently stays as the inspector
+  // left it and is never swept up by the bulk confirm.
+  const pastRuns = useQuery(complianceRunsQuery(id, type));
+  const previousRun = useMemo(() => {
+    if (!run) return null;
+    return (
+      (pastRuns.data ?? []).find(
+        (candidate) => candidate.id !== runId && candidate.checkDate < run.checkDate,
+      ) ?? null
+    );
+  }, [pastRuns.data, runId, run]);
+  const previousEntries = useQuery(
+    complianceEntriesQuery(previousRun ? [previousRun.id] : []),
+  );
+  const carryPlan = useMemo(
+    () =>
+      planCarryForward({
+        current: entries.data ?? [],
+        previous: previousEntries.data ?? [],
+        comparableFieldIds: (entry) => {
+          const point = pointById.get(entry.pointId);
+          return fieldsForUnitType(definition, point?.unitType ?? null)
+            .filter((field) => !field.dueFromField)
+            .map((field) => field.id);
+        },
+      }),
+    [entries.data, previousEntries.data, pointById, definition],
+  );
+  const previousLabel = previousRun
+    ? new Date(previousRun.checkDate).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      })
+    : "";
+
+  const fillFromPrevious = useMutation({
+    mutationFn: async () => {
+      for (const { entry, answers } of carryPlan.takeFromPrevious) {
+        const merged: Record<string, unknown> = { ...answers };
+        for (const field of definition.fields) {
+          if (!field.dueFromField || merged[field.id]) continue;
+          const due = derivedDueDate(field, merged);
+          if (due) merged[field.id] = due;
+        }
+        await saveEntry(entry.id, {
+          answers: merged,
+          status: statusForEntry(type, pointById.get(entry.pointId), {
+            ...entry,
+            answers: merged,
+          }),
+        });
+      }
+      return carryPlan.takeFromPrevious.length;
+    },
+    onSuccess: (count) => {
+      const differs = carryPlan.changed.length;
+      toast.success(
+        `${count} point${count === 1 ? "" : "s"} filled in from ${previousLabel}. ` +
+          (differs === 0
+            ? "Nothing differs from last week."
+            : `${differs} differ and need looking at.`),
+      );
+      void refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const confirmUnchanged = useMutation({
+    mutationFn: async () => {
+      const confirmedIds = confirmableIds(carryPlan);
+      for (const entryId of confirmedIds) await saveEntry(entryId, { confirmed: true });
+      return confirmedIds.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} point${count === 1 ? "" : "s"} confirmed as unchanged.`);
+      void refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   if (project.isPending || runQuery.isPending || entries.isPending) {
     return <LoadingState label="Loading the check" />;
   }
@@ -300,6 +386,11 @@ function ComplianceRun() {
     actions: actions.data ?? [],
     runId,
   });
+
+  const confirmableCount = confirmableIds(carryPlan).filter((entryId) => {
+    const entry = runEntries.find((candidate) => candidate.id === entryId);
+    return entry ? !entry.confirmed : false;
+  }).length;
 
   return (
     <AppShell surface="light">
@@ -340,6 +431,50 @@ function ComplianceRun() {
           </p>
         ) : null}
       </header>
+
+      {!locked && previousRun ? (
+        <section
+          aria-labelledby="carry-forward-heading"
+          className="mt-6 rounded-lg border border-border bg-card p-4"
+        >
+          <h2 id="carry-forward-heading" className="text-sm font-semibold">
+            This check repeats the one from {previousLabel}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {carryPlan.takeFromPrevious.length > 0
+              ? `${carryPlan.takeFromPrevious.length} ${
+                  carryPlan.takeFromPrevious.length === 1 ? "point is" : "points are"
+                } still to answer. Take last week's answers, then confirm the ones that have not changed.`
+              : "Every point has an answer this week."}
+            {carryPlan.changed.length > 0
+              ? ` ${carryPlan.changed.length} differ${
+                  carryPlan.changed.length === 1 ? "s" : ""
+                } from last week and ${
+                  carryPlan.changed.length === 1 ? "is" : "are"
+                } left for you to look at.`
+              : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => fillFromPrevious.mutate()}
+              disabled={carryPlan.takeFromPrevious.length === 0 || fillFromPrevious.isPending}
+            >
+              <Copy aria-hidden="true" className="size-4" />
+              Take answers from {previousLabel}
+            </Button>
+            <Button
+              onClick={() => confirmUnchanged.mutate()}
+              disabled={confirmableCount === 0 || confirmUnchanged.isPending}
+            >
+              <Check aria-hidden="true" className="size-4" />
+              {confirmableCount === 0
+                ? "Nothing left to confirm"
+                : `Confirm ${confirmableCount} unchanged`}
+            </Button>
+          </div>
+        </section>
+      ) : null}
 
       {carried.length > 0 ? (
         <section
