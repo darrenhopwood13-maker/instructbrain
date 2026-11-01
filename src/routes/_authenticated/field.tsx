@@ -26,6 +26,15 @@ import { snapshotOf, systemDefinitions } from "@/lib/survey-definitions";
 import { definitionLabel } from "@/lib/survey-types";
 import { describeStartFailure, withNetworkRetry } from "@/lib/network-error";
 import { DEFAULT_TONE_ID, type ReportBrief } from "@/lib/report/brief";
+import { checkType } from "@/lib/compliance/checks";
+import {
+  bucketWork,
+  fieldWorkQuery,
+  isoDate,
+  orderedBuckets,
+  overdueDays,
+  summariseWork,
+} from "@/lib/field/work-list";
 
 type FieldSearch = { report?: string | undefined };
 
@@ -282,6 +291,8 @@ function FieldHome() {
         )}
       </section>
 
+      <FieldWork organisationIds={organisationIds} />
+
       <section aria-labelledby="open-heading" className="mt-5">
         <h2 id="open-heading" className="eyebrow">
           Carry on where you left off
@@ -341,5 +352,90 @@ function FieldHome() {
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Today's work, before anything else on the screen.
+ *
+ * The order is the order of the day: what is late, what is due now, what is left in the
+ * week. A check disappears from here the moment it is signed off, because a locked check is
+ * evidence, not a job.
+ */
+function FieldWork({ organisationIds }: { organisationIds: string[] }) {
+  const work = useQuery(fieldWorkQuery(organisationIds));
+  const today = isoDate(new Date());
+  const buckets = useMemo(() => bucketWork(work.data ?? [], today), [work.data, today]);
+  const summary = summariseWork(buckets, today);
+  const groups = orderedBuckets(buckets);
+
+  const when = (dueOn: string) => {
+    if (dueOn < today) {
+      const late = overdueDays({ dueOn }, today);
+      return `${late} day${late === 1 ? "" : "s"} late`;
+    }
+    if (dueOn === today) return "Due today";
+    return `Due ${new Date(`${dueOn}T00:00:00`).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    })}`;
+  };
+
+  return (
+    <section aria-labelledby="work-heading" className="mt-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="work-heading" className="eyebrow">
+          To do
+        </h2>
+        {summary ? <p className="text-sm text-muted-foreground">{summary}</p> : null}
+      </div>
+
+      {work.isPending ? (
+        <LoadingState label="Checking your work list…" />
+      ) : work.isError ? (
+        <ErrorState
+          title="Your work list could not be loaded"
+          error={work.error}
+          onRetry={() => void work.refetch()}
+        />
+      ) : groups.length === 0 ? (
+        <p className="mt-2 text-base text-muted-foreground">
+          Nothing scheduled. Ask the desk to set this week&apos;s checks up and they will appear here.
+        </p>
+      ) : (
+        <div className="mt-2 space-y-4">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <p className="text-sm font-semibold text-muted-foreground">{group.title}</p>
+              <ul className="mt-1.5 space-y-2">
+                {group.items.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      to="/projects/$id/compliance/$runId"
+                      params={{ id: item.projectId, runId: item.id }}
+                      search={{ type: item.checkType }}
+                      className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-surface-raised px-3 py-2 shadow-raised"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-base font-semibold">
+                          {item.projectName}
+                        </span>
+                        <span className="block truncate text-sm text-muted-foreground">
+                          {checkType(item.checkType).label} check · {when(item.dueOn)}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 text-sm font-semibold text-brand-accent">
+                        Start
+                        <ArrowRight aria-hidden="true" className="size-4" />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
