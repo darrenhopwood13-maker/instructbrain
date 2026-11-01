@@ -29,6 +29,11 @@ export function FieldCockpitView({
   projectName: string | null;
 }) {
   const [status, setStatus] = useState<PhotoStatus>(EMPTY_PHOTO_STATUS);
+  // Wrapped in an object on purpose: handing a bare function to a state setter makes React
+  // call it as an updater, which would fire a retry every time the panel re-rendered.
+  const [retryHolder, setRetryHolder] = useState<{ retry: (() => void) | undefined }>({
+    retry: undefined,
+  });
   const manual = isManualOnly(snapshot);
 
   const actions = (
@@ -69,12 +74,18 @@ export function FieldCockpitView({
         </p>
       </div>
 
-      <FieldSyncPill uploaded={status.photoCount} pending={status.uploadsActive} />
+      <FieldSyncPill
+        uploaded={status.photoCount}
+        pending={status.uploadsActive}
+        failed={status.uploadsFailed}
+        onRetry={retryHolder.retry}
+      />
 
       <PhotosPanel
         reportId={report.id}
         snapshot={snapshot}
         onStatus={setStatus}
+        onRetryReady={(retry) => setRetryHolder({ retry })}
         autoOpenCamera
         bottomFlush
       />

@@ -19,6 +19,8 @@ export type PhotoStatus = {
   uploadsDone: number;
   /** Uploads in the current batch, including finished ones. */
   uploadsTotal: number;
+  /** Uploads that ran out of attempts and are waiting for someone to retry them. */
+  uploadsFailed: number;
   /** Room-schedule readiness; empty for every other template. */
   readiness: ReadinessStep[];
 };
@@ -43,6 +45,7 @@ export const EMPTY_PHOTO_STATUS: PhotoStatus = {
   uploadsActive: 0,
   uploadsDone: 0,
   uploadsTotal: 0,
+  uploadsFailed: 0,
   readiness: [],
 };
 

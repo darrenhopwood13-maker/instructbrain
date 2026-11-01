@@ -22,6 +22,7 @@ import {
   normaliseEmail,
   type OrganisationRole,
 } from "@/lib/organisation/members.functions";
+import { useCapabilities } from "@/lib/use-capabilities";
 
 /**
  * Who is in this organisation, and a button to put someone new in it.
@@ -43,6 +44,9 @@ const ROLES: Array<{ value: OrganisationRole; label: string; note: string }> = [
 ];
 
 export function OrganisationMembers({ organisationId }: { organisationId: string }) {
+  const { capabilities, loading: capabilitiesLoading } = useCapabilities();
+  /** Inviting someone into the organisation is an `administer` act, not a read. */
+  const canInvite = !capabilitiesLoading && capabilities.administer;
   const queryClient = useQueryClient();
   const load = useServerFn(listOrganisationMembers);
   const invite = useServerFn(inviteOrganisationMember);
@@ -110,15 +114,17 @@ export function OrganisationMembers({ organisationId }: { organisationId: string
         <h2 id="members-heading" className="text-base font-semibold">
           People in this organisation
         </h2>
-        <Button
-          type="button"
-          variant="quiet"
-          className="min-h-11"
-          onClick={() => setOpen(true)}
-        >
-          <UserPlus aria-hidden="true" className="size-4" />
-          Invite someone
-        </Button>
+        {canInvite ? (
+          <Button
+            type="button"
+            variant="quiet"
+            className="min-h-11"
+            onClick={() => setOpen(true)}
+          >
+            <UserPlus aria-hidden="true" className="size-4" />
+            Invite someone
+          </Button>
+        ) : null}
       </div>
 
       {members.isPending ? (
@@ -142,21 +148,23 @@ export function OrganisationMembers({ organisationId }: { organisationId: string
               <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
                 {member.roleLabel}
                 {member.isYou ? " - you" : ""}
-                <Button
-                  type="button"
-                  variant="quiet"
-                  className="min-h-9 px-2 text-xs"
-                  aria-label={`Get a sign-in link for ${member.email}`}
-                  disabled={makeLink.isPending}
-                  onClick={() => makeLink.mutate(member.userId)}
-                >
-                  {makeLink.isPending && makeLink.variables === member.userId ? (
-                    <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-                  ) : (
-                    <Link2 aria-hidden="true" className="size-3.5" />
-                  )}
-                  Link
-                </Button>
+                {canInvite ? (
+                  <Button
+                    type="button"
+                    variant="quiet"
+                    className="min-h-9 px-2 text-xs"
+                    aria-label={`Get a sign-in link for ${member.email}`}
+                    disabled={makeLink.isPending}
+                    onClick={() => makeLink.mutate(member.userId)}
+                  >
+                    {makeLink.isPending && makeLink.variables === member.userId ? (
+                      <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                    ) : (
+                      <Link2 aria-hidden="true" className="size-3.5" />
+                    )}
+                    Link
+                  </Button>
+                ) : null}
               </span>
             </li>
           ))}

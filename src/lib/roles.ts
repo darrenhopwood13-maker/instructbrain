@@ -13,7 +13,7 @@
 
 export type AppRole = "owner" | "admin" | "surveyor" | "supervisor" | "viewer";
 
-export type Capability = "estate" | "capture" | "manage";
+export type Capability = "estate" | "capture" | "manage" | "issue" | "administer";
 
 export type Capabilities = {
   /** The whole estate: map, trends, portfolio figures. */
@@ -22,6 +22,17 @@ export type Capabilities = {
   capture: boolean;
   /** The organisation itself: settings, people, issuing evidence. */
   manage: boolean;
+  /**
+   * Getting a completed report out of the building: publish, distribute, share,
+   * reopen. Separated from `manage` because signing off someone else's survey is a
+   * different job from changing the company logo, and the two were being conflated.
+   */
+  issue: boolean;
+  /**
+   * The organisation's own record: name, address, brand, people, invites, deletion.
+   * This is what `manage` was always meant to protect on the settings screen.
+   */
+  administer: boolean;
 };
 
 /**
@@ -34,14 +45,20 @@ export type Capabilities = {
  * a job title would be the worst outcome of this change.
  */
 const BY_ROLE: Record<AppRole, Capabilities> = {
-  owner: { estate: true, capture: true, manage: true },
-  admin: { estate: true, capture: true, manage: true },
-  supervisor: { estate: true, capture: false, manage: true },
-  surveyor: { estate: false, capture: true, manage: false },
-  viewer: { estate: false, capture: false, manage: false },
+  owner: { estate: true, capture: true, manage: true, issue: true, administer: true },
+  admin: { estate: true, capture: true, manage: true, issue: true, administer: true },
+  supervisor: { estate: true, capture: false, manage: true, issue: true, administer: true },
+  surveyor: { estate: false, capture: true, manage: false, issue: false, administer: false },
+  viewer: { estate: false, capture: false, manage: false, issue: false, administer: false },
 };
 
-export const NO_CAPABILITIES: Capabilities = { estate: false, capture: false, manage: false };
+export const NO_CAPABILITIES: Capabilities = {
+  estate: false,
+  capture: false,
+  manage: false,
+  issue: false,
+  administer: false,
+};
 
 /**
  * Someone can be in two organisations with two roles. Take the union rather than the first
@@ -56,10 +73,25 @@ export function capabilitiesFor(roles: Array<AppRole | null | undefined>): Capab
       estate: all.estate || found.estate,
       capture: all.capture || found.capture,
       manage: all.manage || found.manage,
+      issue: all.issue || found.issue,
+      administer: all.administer || found.administer,
     };
   }, NO_CAPABILITIES);
 }
 
 export function can(capabilities: Capabilities, capability: Capability): boolean {
   return capabilities[capability] === true;
+}
+
+/**
+ * Where a person lands after signing in: the widest door their role unlocks.
+ *
+ * `/dashboard` redirects to `/map`, so every role used to arrive at the estate map — and a
+ * viewer's first screen after signing in was "the estate map is for appointed users". The
+ * refusal is correct; landing on it is not.
+ */
+export function homeRouteFor(capabilities: Capabilities): "/map" | "/field" | "/reports" {
+  if (capabilities.estate) return "/map";
+  if (capabilities.capture) return "/field";
+  return "/reports";
 }

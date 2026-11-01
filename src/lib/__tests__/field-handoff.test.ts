@@ -87,15 +87,21 @@ describe("send to the dashboard", () => {
 
 describe("the field app manifest", () => {
   it("opens on the cockpit and installs standalone", () => {
-    const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8")) as Record<
+    const manifest = JSON.parse(readFileSync("public/manifest-field.webmanifest", "utf8")) as Record<
       string,
       unknown
     >;
     expect(manifest["start_url"]).toBe("/field");
+    // Scoped to the field app: installing it must not claim the dashboard.
+    expect(manifest["scope"]).toBe("/field");
+    expect(manifest["id"]).toBe("/field");
     expect(manifest["display"]).toBe("standalone");
     expect(manifest["name"]).toContain("instructBrain");
-    const icons = manifest["icons"] as Array<{ purpose?: string }>;
+    const icons = manifest["icons"] as Array<{ purpose?: string; sizes?: string }>;
     expect(icons.some((icon) => icon.purpose === "maskable")).toBe(true);
+    // Android wants a 192 as well as a 512 before it will offer the install.
+    expect(icons.some((icon) => icon.sizes === "192x192")).toBe(true);
+    expect(icons.some((icon) => icon.sizes === "512x512")).toBe(true);
   });
 
   it("is declared by the field route, and not by the root", () => {
@@ -106,7 +112,7 @@ describe("the field app manifest", () => {
     // so a shared declaration is actively harmful: the route that owns the app
     // has to be the one that declares them.
     const field = readFileSync("src/routes/_authenticated/field.tsx", "utf8");
-    expect(field).toContain("/manifest.webmanifest");
+    expect(field).toContain("/manifest-field.webmanifest");
     expect(field).toContain("apple-touch-icon");
 
     const root = readFileSync("src/routes/__root.tsx", "utf8");

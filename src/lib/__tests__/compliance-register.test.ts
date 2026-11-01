@@ -23,6 +23,8 @@ function run(id: string, checkDate: string, locked = true): ComplianceRun {
     reportNumber: null,
     performedByName: "A Surveyor",
     signedAt: locked ? `${checkDate}T10:00:00Z` : null,
+    signerName: null,
+    signaturePath: null,
     competentPerson: null,
     lockedAt: locked ? `${checkDate}T10:00:00Z` : null,
     archivedAt: null,

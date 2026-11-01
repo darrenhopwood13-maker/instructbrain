@@ -78,6 +78,9 @@ function sizeLabel(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
+/** Retries only the uploads that ran out of attempts. */
+type RetryFailed = () => void;
+
 type Pending = {
   id: string;
   file: File;
@@ -95,6 +98,7 @@ export function PhotosPanel({
   onUploadedCount,
   nextAction,
   onStatus,
+  onRetryReady,
   autoOpenCamera = false,
   bottomFlush = false,
 }: {
@@ -114,6 +118,12 @@ export function PhotosPanel({
   nextAction?: ReactNode;
   /** Upload progress and room readiness, for the parent's next-step button. */
   onStatus?: (status: PhotoStatus) => void;
+  /**
+   * Hands the caller a way to retry the uploads that ran out of attempts. The files are
+   * still held in memory, so a retry re-pushes those objects and nothing else - it never
+   * re-uploads what already reached storage.
+   */
+  onRetryReady?: (retryFailed: RetryFailed | undefined) => void;
   /** Field cockpit: open the camera as soon as the panel can upload. */
   autoOpenCamera?: boolean;
   /** Field cockpit: no mobile navigation underneath, so the bar sits on the edge. */
@@ -516,15 +526,17 @@ export function PhotosPanel({
   const uploadsTotal = uploads.filter(
     (item) => item.state !== "cancelled" && item.state !== "skipped",
   ).length;
+  const failedIds = uploads.filter((item) => item.state === "error").map((item) => item.id);
   useEffect(() => {
     onStatus?.({
       photoCount: photos.length,
       uploadsActive,
       uploadsDone: uploadedCount,
       uploadsTotal,
+      uploadsFailed: failedIds.length,
       readiness,
     });
-  }, [onStatus, photos.length, uploadsActive, uploadedCount, uploadsTotal, readiness]);
+  }, [onStatus, photos.length, uploadsActive, uploadedCount, uploadsTotal, failedIds.length, readiness]);
 
   const retry = useCallback(
     (ids: string[]) => {
@@ -540,6 +552,19 @@ export function PhotosPanel({
     },
     [runQueue],
   );
+
+  // The sync pill sits outside this panel, so the retry has to travel with the status.
+  const retryFailed = useCallback(() => {
+    const ids = uploads
+      .filter((item) => item.state === "error")
+      .map((item) => item.id);
+    if (ids.length > 0) retry(ids);
+  }, [uploads, retry]);
+
+  useEffect(() => {
+    onRetryReady?.(retryFailed);
+    return () => onRetryReady?.(undefined);
+  }, [onRetryReady, retryFailed]);
 
   const toggle = (id: string, shiftKey: boolean) => {
     setSelected((current) => {
