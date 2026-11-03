@@ -39,6 +39,7 @@ describe("report template families", () => {
     const condition = templateGroups().find((group) => group.id === "condition");
     expect(condition?.definitions.map((definition) => definition.id)).toEqual([
       "schedule_of_condition",
+      "party_wall_condition",
       "weatherproofing",
       "damp_moisture",
     ]);

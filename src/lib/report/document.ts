@@ -1,12 +1,15 @@
 import {
   NOT_ASSESSED_ID,
+  isFactsOnly,
   isManualOnly,
   outputSectionsOf,
+  requiresPhotoEvidence,
   requiresTradeAssignment,
   resolveStatus,
   type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import type { MarkupLayer } from "@/lib/photos/markup";
+import { partyWallBlockersOf } from "@/lib/report/party-wall";
 import { resolveLocation } from "@/lib/report/location";
 
 /**
@@ -256,6 +259,24 @@ export type IssueBlockers = {
   notAssessed: DocFinding[];
   tradeMissing: DocFinding[];
   unconfirmed: DocFinding[];
+  /**
+   * Entries with no photograph, on a template that requires photographic
+   * evidence. Empty for every other template, so nothing changes for them.
+   */
+  photoMissing: DocFinding[];
+  /**
+   * Entries whose wording states an opinion — cause, significance or remedy — on
+   * a facts-only template. The schedule says on its face that it gives no opinion,
+   * so publishing one would make the document contradict itself.
+   */
+  opinionInWording: DocFinding[];
+  /**
+   * Elements on the document's own walk with no entry and no recorded exclusion.
+   * The element list is the scope: a silent element is a hole in the evidence.
+   */
+  unrecordedElements: string[];
+  /** Entries marked excluded that do not say why. */
+  excludedWithoutNote: DocFinding[];
   blocked: boolean;
 };
 
@@ -263,6 +284,10 @@ export type IssueBlockers = {
  * Invariant 1 and 6 in one place: nothing is issued while an item is
  * `not_assessed`, and nothing is issued while a trade attribution is still an
  * AI suggestion rather than a human decision.
+ *
+ * Two further gates come from frozen capabilities, so no template is named here:
+ * `requiresPhotoEvidence` refuses an entry with no photograph, and `factsOnly`
+ * refuses wording that states an opinion and an element left unrecorded.
  */
 export function issueBlockers(document: ReportDocument): IssueBlockers {
   const snapshot = document.snapshot;
@@ -282,17 +307,70 @@ export function issueBlockers(document: ReportDocument): IssueBlockers {
     : [];
   // Manual-only reports hold the user's own photographs and wording: nothing to confirm.
   const unconfirmed = isManualOnly(snapshot) ? [] : document.findings.filter((finding) => !finding.confirmedAt);
+
+  // The stricter record checks. Computed once, then handed out only to the
+  // templates whose frozen definitions asked for them.
+  const recordChecks =
+    requiresPhotoEvidence(snapshot) || isFactsOnly(snapshot)
+      ? partyWallBlockersOf(document)
+      : null;
+  const photoMissing = requiresPhotoEvidence(snapshot)
+    ? (recordChecks?.photoMissing ?? [])
+    : [];
+  const excludedWithoutNote = requiresPhotoEvidence(snapshot)
+    ? (recordChecks?.excludedWithoutNote ?? [])
+    : [];
+  const opinionInWording = isFactsOnly(snapshot)
+    ? (recordChecks?.opinionInWording ?? [])
+    : [];
+  const unrecordedElements = isFactsOnly(snapshot)
+    ? (recordChecks?.unrecordedElements ?? [])
+    : [];
+
   return {
     notAssessed,
     tradeMissing,
     unconfirmed,
-    blocked: notAssessed.length > 0 || tradeMissing.length > 0 || unconfirmed.length > 0,
+    photoMissing,
+    opinionInWording,
+    unrecordedElements,
+    excludedWithoutNote,
+    blocked:
+      notAssessed.length > 0 ||
+      tradeMissing.length > 0 ||
+      unconfirmed.length > 0 ||
+      photoMissing.length > 0 ||
+      opinionInWording.length > 0 ||
+      unrecordedElements.length > 0 ||
+      excludedWithoutNote.length > 0,
   };
 }
+
+/**
+ * One number for the whole gate.
+ *
+ * The publish dialog and the report page each used to sum their own subset of
+ * these arrays, which is how a count and a gate drift apart: the screen says
+ * everything is done and the publish button stays refused. Any surface that
+ * wants "how many things are left" calls this and nothing else.
+ */
+export function blockerCount(blockers: IssueBlockers): number {
+  return (
+    blockers.notAssessed.length +
+    blockers.tradeMissing.length +
+    blockers.unconfirmed.length +
+    blockers.photoMissing.length +
+    blockers.opinionInWording.length +
+    blockers.unrecordedElements.length +
+    blockers.excludedWithoutNote.length
+  );
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Statistics                                                          */
 /* ------------------------------------------------------------------ */
+
 
 export type DocumentStatistics = {
   total: number;

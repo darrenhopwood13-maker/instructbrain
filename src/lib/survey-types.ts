@@ -186,6 +186,18 @@ export type SurveyDefinition = {
   /** Manual-only reports never invoke photograph, summary or translation AI. */
   manualOnly?: boolean;
   /**
+   * Every entry must carry a photograph before the report can be issued. For a
+   * facts-only record the photograph is the evidence: an entry without one is a
+   * claim with nothing behind it. Frozen at creation, like the other flags.
+   */
+  requiresPhotoEvidence?: boolean;
+  /**
+   * The document records facts and publishes no opinion — no cause, no
+   * significance, no remedy. The issue gate refuses wording that states one, so
+   * the document cannot contradict the limitations printed on its own face.
+   */
+  factsOnly?: boolean;
+  /**
    * A project-bound report belongs to its project and must not be detached
    * from it. Compliance registers are the case that exists today: the run
    * that produced the report holds the project, so the report only makes
@@ -539,6 +551,25 @@ export function requiresConditionGrade(snapshot: SurveyTypeSnapshot | null | und
 
 export function requiresLifecycle(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
   return snapshot?.requiresLifecycle === true;
+}
+
+/**
+ * Frozen capability: every entry must carry a photograph before the report can be
+ * issued. For a facts-only record the photograph IS the evidence, so an entry
+ * without one is a claim with nothing behind it.
+ */
+export function requiresPhotoEvidence(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
+  return snapshot?.requiresPhotoEvidence === true;
+}
+
+/**
+ * Frozen capability: the document records facts and publishes no opinion. Used by
+ * the party wall schedule of condition, whose face states that it gives no opinion
+ * on cause, significance or remedy. The wording check is enforced at the issue
+ * gate, never by rewriting what a person wrote.
+ */
+export function isFactsOnly(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
+  return snapshot?.factsOnly === true;
 }
 
 export function supportsDistribution(snapshot: SurveyTypeSnapshot | null | undefined): boolean {

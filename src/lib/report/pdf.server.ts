@@ -72,6 +72,7 @@ import {
   NOT_ASSESSED_ID,
   citedReferencesOf,
   clauseLabel,
+  isFactsOnly,
   isManualOnly,
   photoWorkflowOf,
   requiresConditionGrade,
@@ -82,7 +83,7 @@ import {
 } from "@/lib/survey-types";
 import {
   SCHEDULE_OF_CONDITION_HEADING,
-  SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT,
+  scheduleLimitationsTextFor,
 } from "@/lib/report/schedule-of-condition";
 import { conditionGradeOf, conditionGradeSummary } from "@/lib/review/condition-grade";
 import {
@@ -2628,7 +2629,9 @@ export async function buildReportPdf(
   const manualFull = options.variant === "full" && isManualOnly(document.snapshot);
   // A condition survey is presented as a Schedule of Condition, with its
   // mandatory scope-and-limitations block printed on the artifact.
-  const scheduleCondition = options.variant === "full" && requiresConditionGrade(document.snapshot);
+  const scheduleCondition =
+    options.variant === "full" &&
+    (requiresConditionGrade(document.snapshot) || isFactsOnly(document.snapshot));
   const fetcher: PhotoFetcher | null =
     options.includePhotos === false ? null : { spent: 0, cache: new Map() };
 
@@ -2824,7 +2827,7 @@ export async function buildReportPdf(
     drawRule(writer, 14, 10);
     eyebrow(writer, SCHEDULE_OF_CONDITION_HEADING);
     drawText(writer, "Scope and limitations", { size: 9, bold: true, colour: MUTED, gapAfter: 2 });
-    drawText(writer, SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT, {
+    drawText(writer, scheduleLimitationsTextFor(document.snapshot), {
       size: 9,
       colour: MUTED,
       gapAfter: 4,

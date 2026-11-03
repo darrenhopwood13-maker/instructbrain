@@ -1,4 +1,5 @@
 import { buildVoice } from "@/lib/oracle-persona";
+import { PARTY_WALL_ELEMENT_LABELS } from "@/lib/report/party-wall";
 import { CLAUSE_SETS } from "@/lib/regulatory-clauses";
 import type { SurveyDefinition } from "@/lib/survey-types";
 
@@ -2036,12 +2037,121 @@ One finding per distinct issue. Never merge two issues into one line: they have 
   defaultDistributionGrouping: "trade",
 };
 
+/**
+ * Party wall schedule of condition.
+ *
+ * The second condition template, and deliberately the opposite of the first one
+ * in one respect: this document carries NO grade. A party wall schedule is a
+ * statement of fact recorded before notifiable works start, so that s.7(2)
+ * liability is settled by comparison with a dated record rather than by
+ * recollection. A grade is an opinion; this document says on its face that it
+ * gives none.
+ *
+ * Three frozen capabilities do the work:
+ *  - `factsOnly` — the issue gate refuses cause, significance and remedy wording.
+ *  - `requiresPhotoEvidence` — an entry with no photograph is a claim with
+ *    nothing behind it, and cannot be issued.
+ *  - `requiresConditionGrade: false` — no A–D legend is offered at all, so the
+ *    screen cannot ask for a grade the report would have to explain away.
+ *
+ * The element list is the walk, and it is the scope: every element must be
+ * recorded or excluded in writing before the schedule can be issued. That is the
+ * difference between a hole in the evidence and a documented exclusion.
+ */
+export const partyWallConditionDefinition: SurveyDefinition = {
+  id: "party_wall_condition",
+  version: 1,
+  houseVoice: HOUSE_VOICE,
+  label: "Party wall schedule of condition",
+  category: "condition",
+  findingsPerPhoto: "multiple",
+  statuses: [
+    { id: "noted", label: "Noted — the condition as found, recorded on site", tone: "neutral" },
+    {
+      id: "excluded",
+      label: "Excluded — not recorded, and the reason stated",
+      tone: "neutral",
+      description:
+        "Use when an element was not entered, not accessible or agreed out of scope. The entry must say why; an exclusion with no reason cannot be issued.",
+    },
+    { id: "not_assessed", label: "Not assessed", tone: "flag" },
+  ],
+  severityScale: [],
+  captureFields: [
+    {
+      id: "element",
+      label: "Element",
+      type: "select",
+      required: true,
+      options: PARTY_WALL_ELEMENT_LABELS,
+      hint: "The walk, in order. Every element must end up recorded or excluded in writing.",
+    },
+    {
+      id: "location",
+      label: "Location",
+      type: "text",
+      hint: "Room, face or elevation — e.g. Rear reception room, party wall face",
+    },
+    {
+      id: "extent",
+      label: "Extent",
+      type: "text",
+      hint: "Length, height or area of what is described, measured on site",
+    },
+    {
+      id: "measurement_mm",
+      label: "Measured width (mm)",
+      type: "number",
+      hint: "Crack width at its widest point, from the gauge with the scale card in frame",
+    },
+    {
+      id: "reading",
+      label: "Instrument reading",
+      type: "text",
+      hint: "e.g. plumb 4mm over 2m · 17.2% WME · invert 640mm — the instrument, never an estimate",
+    },
+  ],
+  aiGuidance: {
+    persona: `Recording the visible condition of the adjoining owner's property for a party wall schedule of condition, before notifiable works start.
+
+Describe what the photograph shows and nothing more: the element, where it is, how big it is, and its condition as found. This document is a statement of fact. It gives NO opinion on the cause of any defect, on structural significance, on fitness for purpose, or on any remedy — those are excluded by the schedule's own printed limitations.
+
+Never write cause, significance or remedy language, even where the photograph suggests one. "Likely movement", "subsidence suspected", "should be repaired" and "recommend monitoring" all belong in a different report, written by a person who has taken responsibility for the opinion.`,
+    focus:
+      "The element the photograph is focused on and its visible condition as found: cracking and its form, spalling, blown render, staining, deflection, missing parts, and any existing repair.",
+    descriptionGuidance:
+      "Name the element and its location, then describe what is visible in one or two sentences: the form, the extent and, where it can be measured in the frame, the size. Say what the photograph supports and nothing beyond it.",
+    remedialGuidance:
+      "Leave this empty. A party wall schedule records condition; it does not specify work. Do not write a remedy, a recommendation or a next step.",
+    failCriteria:
+      "Every element in the walk is recorded with its condition, or is explicitly excluded with a reason. An element left silent is a hole in the evidence.",
+    excludeCriteria:
+      "Do not report on concealed areas, do not infer what is behind a finish, and do not describe any person or personal possession.",
+    peopleGuidance:
+      "Record the building only. Describe no person and no personal possession, and do not count or characterise anyone in the frame.",
+    tradeGuidance:
+      "Do not suggest a trade. Return null.",
+    abstainGuidance:
+      "Where the frame is too dark, too distant, blurred or obstructed to identify the element or its condition, return not_assessed.",
+  },
+  defaultRemedial: "",
+  outputSections: ["cover", "scope", "methodology", "schedule", "appendix"],
+  requiresConditionGrade: false,
+  requiresPhotoEvidence: true,
+  factsOnly: true,
+  requiresTradeAssignment: false,
+  standardTrades: [],
+  requiresLifecycle: false,
+  supportsDistribution: false,
+};
+
 /** Every system definition, in picker order. */
 export const systemDefinitions: SurveyDefinition[] = [
   snaggingDefinition,
   siteWalkDefinition,
   healthSafetyHousekeepingDefinition,
   scheduleOfConditionDefinition,
+  partyWallConditionDefinition,
   weatherproofingDefinition,
   propertyInventoryDefinition,
   electricalInstallationDefinition,

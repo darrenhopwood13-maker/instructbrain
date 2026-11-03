@@ -67,6 +67,11 @@ export const TEMPLATE_CHOICE: Record<string, TemplateChoice> = {
     purpose:
       "Condition of each building element on a four-step grade, A to D. It records; it does not ask for a fix.",
   },
+  party_wall_condition: {
+    family: "condition",
+    purpose:
+      "The adjoining owner's property recorded before notifiable works start: facts only, a photograph per entry, and it says on its face that it gives no opinion.",
+  },
   weatherproofing: {
     family: "condition",
     purpose:

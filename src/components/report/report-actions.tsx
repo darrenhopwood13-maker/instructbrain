@@ -621,6 +621,37 @@ function IssueDialog({
                   <BlockerRefs findings={blockers.unconfirmed} onJump={jumpTo} />
                 </li>
               ) : null}
+              {blockers.photoMissing.length > 0 ? (
+                <li>
+                  {blockers.photoMissing.length} entr
+                  {blockers.photoMissing.length === 1 ? "y has" : "ies have"} no photograph. This
+                  record is evidence, so an entry with no photograph cannot be published:
+                  <BlockerRefs findings={blockers.photoMissing} onJump={jumpTo} />
+                </li>
+              ) : null}
+              {blockers.opinionInWording.length > 0 ? (
+                <li>
+                  {blockers.opinionInWording.length} entr
+                  {blockers.opinionInWording.length === 1 ? "y states" : "ies state"} an opinion —
+                  cause, significance or a remedy. This document says on its face that it gives
+                  none:
+                  <BlockerRefs findings={blockers.opinionInWording} onJump={jumpTo} />
+                </li>
+              ) : null}
+              {blockers.unrecordedElements.length > 0 ? (
+                <li>
+                  {blockers.unrecordedElements.length} element
+                  {blockers.unrecordedElements.length === 1 ? " has" : "s have"} no entry at all.
+                  Record it, or exclude it in writing: {blockers.unrecordedElements.join("; ")}.
+                </li>
+              ) : null}
+              {blockers.excludedWithoutNote.length > 0 ? (
+                <li>
+                  {blockers.excludedWithoutNote.length} exclusion
+                  {blockers.excludedWithoutNote.length === 1 ? " does" : "s do"} not say why:
+                  <BlockerRefs findings={blockers.excludedWithoutNote} onJump={jumpTo} />
+                </li>
+              ) : null}
             </ul>
             <p className="text-xs text-muted-foreground">
               Tap an item to jump straight to it. It is in the schedule below, and in the Review

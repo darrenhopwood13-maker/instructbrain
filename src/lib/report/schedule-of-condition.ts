@@ -1,4 +1,5 @@
-import { requiresConditionGrade, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { isFactsOnly, requiresConditionGrade, type SurveyTypeSnapshot } from "@/lib/survey-types";
+import { PARTY_WALL_LIMITATIONS } from "@/lib/report/party-wall";
 
 /**
  * The Schedule of Condition, as one shared shape.
@@ -40,4 +41,33 @@ export const SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT = SCHEDULE_OF_CONDITION_LIMI
 
 export function scheduleOfConditionLimitationsText(): string {
   return SCHEDULE_OF_CONDITION_LIMITATIONS_TEXT;
+}
+
+/**
+ * A party wall schedule is the other condition document, and it is a stricter
+ * one: it gives no opinion at all, so its limitations say so in as many words.
+ *
+ * It carries no grade — `requiresConditionGrade` is false — so the grade flag
+ * cannot be what tells a renderer to print a limitations block. If it were, the
+ * party wall schedule would print as an ordinary results list with no
+ * limitations on it, which is the one thing this document must never do. The
+ * `factsOnly` capability is the flag that means "this document says what it is
+ * not", and both renderers read it through `scheduleLimitationsFor`.
+ */
+export function isPartyWallSchedule(snapshot: SurveyTypeSnapshot | null | undefined): boolean {
+  return isFactsOnly(snapshot);
+}
+
+/** The limitations that apply to this document, in the order they print. */
+export function scheduleLimitationsFor(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): readonly string[] {
+  return isPartyWallSchedule(snapshot) ? PARTY_WALL_LIMITATIONS : SCHEDULE_OF_CONDITION_LIMITATIONS;
+}
+
+/** The applicable limitations as one block of prose, for the PDF. */
+export function scheduleLimitationsTextFor(
+  snapshot: SurveyTypeSnapshot | null | undefined,
+): string {
+  return scheduleLimitationsFor(snapshot).join(" ");
 }

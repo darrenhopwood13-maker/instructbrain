@@ -22,6 +22,7 @@ import { AnalysisPanel } from "@/components/ai/analysis-panel";
 import { ReportDocumentView } from "@/components/report/report-document-view";
 import { useReportTranslation } from "@/lib/i18n/use-report-translation";
 import { languageLabel } from "@/i18n/languages";
+import { PartyWallChecks } from "@/components/report/party-wall-checks";
 import { ReportActions } from "@/components/report/report-actions";
 import {
   EMPTY_PHOTO_STATUS,
@@ -43,7 +44,7 @@ import {
   type FindingPatch,
   type ReportPatch,
 } from "@/lib/report/report-data";
-import { formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
+import { blockerCount, formatDocumentDate, issueBlockers, type DocFinding } from "@/lib/report/document";
 import { definitionEyebrow } from "@/lib/report/letterhead";
 import { REFERENCE_LEGACY_NOTE, isAllocatedReference } from "@/lib/report/reference";
 import {
@@ -379,7 +380,7 @@ function ReportWorkspace() {
   const stepState = {
     hasFindings: findingsAll.length > 0,
     unresolved: docEarly
-      ? issueBlockers(docEarly).notAssessed.length + issueBlockers(docEarly).unconfirmed.length
+      ? blockerCount(issueBlockers(docEarly))
       : findingsAll.filter((f) => !f.confirmed).length,
     issued: docEarly?.report.status === "issued",
   };
@@ -508,6 +509,20 @@ function ReportWorkspace() {
             blockers.unconfirmed.length > 0
               ? `${blockers.unconfirmed.length} not confirmed by a person`
               : null,
+            blockers.photoMissing.length > 0
+              ? `${blockers.photoMissing.length} with no photograph`
+              : null,
+            blockers.opinionInWording.length > 0
+              ? `${blockers.opinionInWording.length} stating an opinion`
+              : null,
+            blockers.unrecordedElements.length > 0
+              ? `${blockers.unrecordedElements.length} element${
+                  blockers.unrecordedElements.length === 1 ? "" : "s"
+                } with no entry`
+              : null,
+            blockers.excludedWithoutNote.length > 0
+              ? `${blockers.excludedWithoutNote.length} exclusion without a reason`
+              : null,
           ]
             .filter(Boolean)
             .join(", ")}.`
@@ -579,6 +594,7 @@ function ReportWorkspace() {
             <p role="status" className="mt-3 text-sm text-muted-foreground">
               {stepNote}
             </p>
+            {doc ? <PartyWallChecks document={doc} /> : null}
           </>
         )}
       </div>

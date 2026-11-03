@@ -41,7 +41,7 @@ import {
 } from "@/lib/report/grouping";
 import {
   SCHEDULE_OF_CONDITION_HEADING,
-  SCHEDULE_OF_CONDITION_LIMITATIONS,
+  scheduleLimitationsFor,
 } from "@/lib/report/schedule-of-condition";
 import {
   CONDITION_GRADE_LEGEND,
@@ -85,7 +85,9 @@ import {
   severitiesOf,
   statusesOf,
   tradesOf,
+  isFactsOnly,
   isManualOnly,
+  type SurveyTypeSnapshot,
 } from "@/lib/survey-types";
 import { definitionEyebrow } from "@/lib/report/letterhead";
 import { AlertTriangle, Lock } from "lucide-react";
@@ -964,7 +966,7 @@ function Results({
   onPhotoRegion?: (findingId: string, photoId: string, region: DocRegion) => Promise<void> | void;
 } & Handlers) {
   const groups = groupResults(document, view);
-  const condition = requiresConditionGrade(document.snapshot);
+  const condition = requiresConditionGrade(document.snapshot) || isFactsOnly(document.snapshot);
   const views = resultViewsFor(document.snapshot);
   // Pins are computed once, from the whole document, so a photograph's numbers
   // do not change when the reader re-orders the schedule. The photographs that
@@ -1035,7 +1037,7 @@ function Results({
         )}
       </div>
 
-      {condition ? <ConditionsAndLimitations /> : null}
+      {condition ? <ConditionsAndLimitations snapshot={document.snapshot} /> : null}
 
       {groups.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
@@ -1279,12 +1281,13 @@ function PinReference({
  * printed ON the artifact, never held in conversation — the wording comes from
  * one shared list so the screen and the PDF cannot disagree.
  */
-function ConditionsAndLimitations() {
+function ConditionsAndLimitations({ snapshot }: { snapshot: SurveyTypeSnapshot }) {
+  const limitations = scheduleLimitationsFor(snapshot);
   return (
     <div className="mt-5 rounded-xl border border-border bg-surface-sunken p-4 text-left">
       <h3 className="eyebrow">Scope and limitations</h3>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
-        {SCHEDULE_OF_CONDITION_LIMITATIONS.map((clause) => (
+        {limitations.map((clause) => (
           <li key={clause}>{clause}</li>
         ))}
       </ul>
@@ -1346,7 +1349,7 @@ function FindingRow({
   const notAssessed = status.id === NOT_ASSESSED_ID;
   const primary = finding.photos[0];
   const references = regulatoryReferencesOf(snapshot);
-  const condition = requiresConditionGrade(snapshot);
+  const condition = requiresConditionGrade(snapshot) || isFactsOnly(snapshot);
   const grade = conditionGradeOf(finding.conditionGrade);
   // Where the item is, resolved the one way every renderer resolves it, so the
   // screen and the PDF cannot disagree. Absent when nothing recorded it: a
